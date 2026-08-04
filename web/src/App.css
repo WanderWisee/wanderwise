@@ -1,0 +1,214 @@
+.wanderwise-home {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+/* Navbar */
+.ww-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+}
+
+.ww-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ww-logo {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.ww-brand-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.ww-nav-link {
+  font-size: 18px;
+  color: #2b1c12;
+  text-decoration: none;
+}
+
+.ww-nav-link:hover {
+  text-decoration: underline;
+}
+
+/* Hero */
+.ww-hero {
+  max-width: 900px;
+  margin: 120px auto 0;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.ww-hero-title {
+  font-size: 38px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.ww-hero-subtitle {
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.ww-divider {
+  border: none;
+  border-top: 1px solid #2b1c12;
+  width: 100%;
+  margin: 0 auto 28px;
+}
+
+/* Actions */
+.ww-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.ww-login-btn {
+  background: none;
+  border: none;
+  font-size: 17px;
+  font-family: inherit;
+  color: #2b1c12;
+  cursor: pointer;
+}
+
+.ww-signup-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 28px;
+  font-size: 17px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ww-signup-btn:hover {
+  background-color: #2b1a0f;
+}
+
+.ww-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f2f2f2;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.ww-login-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 32px 36px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.ww-login-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ww-lock-icon {
+  font-size: 20px;
+  color: #7a0c0c;
+}
+
+.ww-login-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #7a0c0c;
+  margin: 0;
+}
+
+.ww-login-hr {
+  border: none;
+  border-top: 2px solid #7a0c0c;
+  margin-bottom: 24px;
+}
+
+.ww-form-group {
+  margin-bottom: 20px;
+}
+
+.ww-form-label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.ww-form-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  padding: 6px 2px;
+  font-size: 15px;
+  color: #333;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.ww-form-input::placeholder {
+  color: #aaa;
+}
+
+.ww-form-input:focus {
+  border-bottom: 1px solid #7a0c0c;
+}
+
+.ww-login-button {
+  width: 100%;
+  background-color: #5c0a0a;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 14px 20px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 8px 0 20px;
+}
+
+.ww-login-button:hover {
+  background-color: #440707;
+}
+
+.ww-student-account {
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.ww-login-links {
+  margin: 0;
+}
+
+.ww-link {
+  color: #7a0c0c;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ww-link:hover {
+  text-decoration: underline;
+}
+
+.ww-link-divider {
+  color: #999;
+  margin: 0 6px;
+}

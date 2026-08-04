@@ -212,3 +212,255 @@
   color: #999;
   margin: 0 6px;
 }
+
+/* App and auth mobile UI */
+.ww-auth-shell,
+.ww-app-shell,
+.ww-screen {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  color: #2b1c12;
+  margin: 0;
+  padding: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.ww-mobile-card,
+.ww-card {
+  background: #d6b98d;
+  border-radius: 28px;
+  padding: 24px;
+  margin: 16px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.ww-mobile-card {
+  max-width: 420px;
+  margin: 40px auto;
+}
+
+.ww-mobile-brand,
+.ww-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ww-mobile-brand span,
+.ww-card-header span {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.ww-mobile-button,
+.ww-cta-button,
+.ww-link-button {
+  width: 100%;
+  border: none;
+  border-radius: 24px;
+  padding: 14px 20px;
+  margin-top: 14px;
+  font-size: 16px;
+  color: #f6f3d9;
+  background: #3a2416;
+  cursor: pointer;
+}
+
+.ww-solid {
+  background: #2f1b13;
+}
+
+.ww-separator {
+  text-align: center;
+  margin: 18px 0;
+  color: #3a2416;
+}
+
+.ww-switch-copy {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.ww-switch-copy button {
+  border: none;
+  background: none;
+  color: #2b1c12;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ww-back-button {
+  background: none;
+  border: none;
+  color: #2b1c12;
+  font-size: 22px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.ww-field-group,
+.ww-plan-form {
+  margin-top: 18px;
+}
+
+.ww-field-group label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.ww-field-group input,
+.ww-plan-form input,
+.ww-search-input,
+.ww-date-input {
+  width: 100%;
+  border: 1px solid rgba(43, 28, 18, 0.2);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #2b1c12;
+  font-size: 15px;
+}
+
+.ww-date-row,
+.ww-guest-row,
+.ww-profile-actions,
+.ww-profile-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.ww-date-input {
+  flex: 1;
+}
+
+.ww-icon-button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 18px;
+  background: #3a2416;
+  color: #f6f3d9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ww-guest-count {
+  flex: 1;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 18px;
+}
+
+.ww-plan-form input {
+  margin-bottom: 12px;
+}
+
+.ww-message,
+.ww-error {
+  margin-top: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 18px;
+  padding: 12px 14px;
+}
+
+.ww-trip-item,
+.ww-destination-preview,
+.ww-hotel-card,
+.ww-guide-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 22px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.ww-destination-preview img,
+.ww-hotel-card img,
+.ww-guide-card img {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.ww-destination-info,
+.ww-guide-card-body,
+.ww-hotel-card-body {
+  padding: 16px;
+}
+
+.ww-brand-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.ww-brand-item {
+  border-radius: 22px;
+  padding: 22px 12px;
+  text-align: center;
+  background: #3a2416;
+  color: #f6f3d9;
+  font-weight: 700;
+}
+
+.ww-bottom-nav {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 16px 8px 24px;
+  background: #321f14;
+}
+
+.ww-nav-item {
+  color: #f6f3d9;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.ww-profile-bio {
+  text-align: center;
+}
+
+.ww-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.ww-profile-stats {
+  justify-content: space-between;
+}
+
+.ww-profile-stats div {
+  flex: 1;
+  padding: 16px;
+  text-align: center;
+}
+
+.ww-profile-actions {
+  justify-content: space-between;
+}
+
+.ww-loading {
+  min-height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+}

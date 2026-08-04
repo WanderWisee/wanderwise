@@ -30,8 +30,8 @@ export default function HomePage() {
         <hr className="ww-divider" />
 
         <div className="ww-actions">
-          <button className="ww-login-btn" onClick={() => navigate("/login")}>Log in</button>
-          <button className="ww-signup-btn">Sign up</button>
+          <button className="ww-login-btn" onClick={() => navigate('/auth')}>Log in</button>
+          <button className="ww-signup-btn" onClick={() => navigate('/auth')}>Sign up</button>
         </div>
       </main>
     </div>

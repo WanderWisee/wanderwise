@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "../App.css";
 
 export default function DashboardPage() {
   const [buddies, setBuddies] = useState(0);
+  const navigate = useNavigate();
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -24,16 +26,20 @@ export default function DashboardPage() {
   };
 
   const destinations = [
-    { name: "Tokyo, Japan", img: "/assets/tokyo.jpg" },
-    { name: "Bali, Indonesia", img: "/assets/bali.jpg" },
-    { name: "Paris, France", img: "/assets/paris.jpg" },
+    { name: "Boracay Islands", img: "/assets/boracay.jpg" },
+    { name: "El Nido, Palawan", img: "/assets/el-nido.jpg" },
+    { name: "Baguio City", img: "/assets/baguio.jpg" },
   ];
 
   return (
     <div className="ww-dashboard">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <div className="ww-logo">🛡️</div>
+          <img
+            src="/assets/logo.jpg"
+            alt="WanderWise logo"
+            className="ww-logo"
+          />
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
@@ -52,7 +58,9 @@ export default function DashboardPage() {
       <section className="ww-stories-card">
         <h2>Your Travel Stories</h2>
         <p>No trips yet. Start planning your next adventure!</p>
-        <button className="ww-start-planning-btn">+ Start Planning</button>
+        <button className="ww-start-planning-btn" onClick={() => navigate('/trip-planning')}>
+          + Start Planning
+        </button>
       </section>
 
       <section className="ww-explore-section">

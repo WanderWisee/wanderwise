@@ -24,8 +24,12 @@ export default function ResetPasswordPage() {
   return (
     <div className="wanderwise-reset">
       <header className="ww-navbar">
-        <div className="ww-brand">
-          <div className="ww-logo">🛡️</div>
+       <div className="ww-brand">
+          <img
+            src="/assets/logo.jpg"
+            alt="WanderWise logo"
+            className="ww-logo"
+          />
           <span className="ww-brand-name">WanderWise!</span>
         </div>
       </header>

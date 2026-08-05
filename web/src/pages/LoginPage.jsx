@@ -12,7 +12,11 @@ export default function LoginPage() {
     <div className="wanderwise-login">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <div className="ww-logo">🛡️</div>
+          <img
+            src="/assets/logo.jpg"
+            alt="WanderWise logo"
+            className="ww-logo"
+          />
           <span className="ww-brand-name">WanderWise!</span>
         </div>
       </header>

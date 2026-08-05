@@ -31,7 +31,7 @@ export default function HomePage() {
 
         <div className="ww-actions">
           <button className="ww-login-btn" onClick={() => navigate("/login")}>Log in</button>
-          <button className="ww-signup-btn">Sign up</button>
+          <button className="ww-signup-btn" onClick={() => navigate("/register")}>Sign up</button>
         </div>
       </main>
     </div>

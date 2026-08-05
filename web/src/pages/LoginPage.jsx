@@ -1,50 +1,72 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../App.css";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="ww-login-page">
-      <div className="ww-login-card">
-        <div className="ww-login-header">
-          <span className="ww-lock-icon">🔒</span>
-          <h1 className="ww-login-heading">User Login</h1>
+    <div className="wanderwise-login">
+      <header className="ww-navbar">
+        <div className="ww-brand">
+          <div className="ww-logo">🛡️</div>
+          <span className="ww-brand-name">WanderWise!</span>
         </div>
-        <hr className="ww-login-hr" />
+      </header>
 
-        <div className="ww-form-group">
-          <label className="ww-form-label">Username:</label>
+      <main className="ww-login-wrapper">
+        <div className="ww-login-card">
+          <button
+            className="ww-back-btn"
+            aria-label="Go back"
+            onClick={() => navigate('/')}
+          >
+            ←
+          </button>
+
+          <h1 className="ww-login-title">Let's get you in</h1>
+
+          <label className="ww-field-label">Username</label>
           <input
             type="text"
-            className="ww-form-input"
-            placeholder="Type Username or Student Number"
+            className="ww-field-input"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
+
+          <label className="ww-field-label">Password</label>
+          <div className="ww-password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="ww-field-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="ww-password-icon"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? "👁" : "🙈"}
+            </button>
+          </div>
+
+          <button className="ww-login-submit" onClick={() => navigate('/dashboard')}>Log in</button>
+
+          <div className="ww-links-row">
+            <a href="/forgot-password" className="ww-bottom-link">
+              Forgot Password
+            </a>
+            <a href="/register" className="ww-bottom-link">
+              Register Account
+            </a>
+          </div>
         </div>
-
-        <div className="ww-form-group">
-          <label className="ww-form-label">Password:</label>
-          <input
-            type="password"
-            className="ww-form-input"
-            placeholder="Type Password here"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        <button className="ww-login-button">Login</button>
-
-        <p className="ww-student-account">Student Account</p>
-        <p className="ww-login-links">
-          <a href="/reset-password" className="ww-link">↻ Reset Password</a>
-          <span className="ww-link-divider"> | </span>
-          <a href="/register" className="ww-link">✎ Register Account</a>
-        </p>
-      </div>
+      </main>
     </div>
   );
 }

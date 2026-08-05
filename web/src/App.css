@@ -1,3 +1,4 @@
+/*home page*/
 .wanderwise-home {
   min-height: 100vh;
   background-color: #f6f3d9;
@@ -88,8 +89,8 @@
   color: #a9e4dc;
   border: none;
   border-radius: 24px;
-  padding: 12px 28px;
-  font-size: 17px;
+  padding: 14px 28px;
+  font-size: 18px;
   font-family: inherit;
   cursor: pointer;
 }
@@ -98,117 +99,674 @@
   background-color: #2b1a0f;
 }
 
-.ww-login-page {
-  min-height: 100vh;
+.ww-map-section {
+    max-width: 900px;
+    margin: 40px auto 0;
+    padding: 0 24px;
+  }
+
+  .ww-map-title {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 18px;
+    text-align: center;
+  }
+
+  .ww-map-container {
+    position: relative;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(43, 28, 18, 0.15);
+    background: #f8f1db;
+  }
+
+  .ww-map-note {
+    margin-top: 14px;
+    text-align: center;
+    color: #2b1c12;
+    opacity: 0.85;
+  }
+
+  .ww-map-card {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(43, 28, 18, 0.15);
+    background: #f8f1db;
+    min-height: 420px;
+  }
+
+  .ww-map-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 420px;
+    font-size: 16px;
+    color: #2b1c12;
+  }
+
+/* login page*/
+.ww-links-row {
   display: flex;
-  align-items: center;
   justify-content: center;
-  background-color: #f2f2f2;
-  font-family: "Segoe UI", Arial, sans-serif;
+  gap: 48px;
 }
 
-.ww-login-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 32px 36px;
-  width: 100%;
-  max-width: 400px;
-}
-
-.ww-login-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.ww-lock-icon {
-  font-size: 20px;
-  color: #7a0c0c;
-}
-
-.ww-login-heading {
-  font-size: 22px;
-  font-weight: 700;
-  color: #7a0c0c;
-  margin: 0;
-}
-
-.ww-login-hr {
-  border: none;
-  border-top: 2px solid #7a0c0c;
-  margin-bottom: 24px;
-}
-
-.ww-form-group {
-  margin-bottom: 20px;
-}
-
-.ww-form-label {
-  display: block;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.ww-form-input {
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid #ccc;
-  padding: 6px 2px;
+.ww-bottom-link {
   font-size: 15px;
-  color: #333;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.ww-form-input::placeholder {
-  color: #aaa;
-}
-
-.ww-form-input:focus {
-  border-bottom: 1px solid #7a0c0c;
-}
-
-.ww-login-button {
-  width: 100%;
-  background-color: #5c0a0a;
-  color: #fff;
-  border: none;
-  border-radius: 24px;
-  padding: 14px 20px;
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
-  margin: 8px 0 20px;
-}
-
-.ww-login-button:hover {
-  background-color: #440707;
-}
-
-.ww-student-account {
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 6px;
-}
-
-.ww-login-links {
-  margin: 0;
-}
-
-.ww-link {
-  color: #7a0c0c;
+  color: #2b1c12;
   text-decoration: none;
-  font-weight: 600;
 }
 
-.ww-link:hover {
+.ww-bottom-link:hover {
   text-decoration: underline;
 }
 
-.ww-link-divider {
-  color: #999;
-  margin: 0 6px;
+.wanderwise-login {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+.ww-navbar {
+  display: flex;
+  align-items: center;
+  padding: 24px 48px;
+}
+
+.ww-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ww-logo {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.ww-brand-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.ww-login-wrapper {
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+}
+
+.ww-login-card {
+  position: relative;
+  background-color: #c8ac82;
+  border-radius: 20px;
+  padding: 48px 56px 60px;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ww-back-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #2b1c12;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-bottom: 24px;
+  padding: 0;
+}
+
+.ww-login-title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 500;
+  margin-bottom: 40px;
+}
+
+.ww-field-label {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ww-field-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #2b1c12;
+  font-family: inherit;
+  font-size: 16px;
+  color: #2b1c12;
+  padding: 6px 2px;
+  margin-bottom: 28px;
+  outline: none;
+}
+
+.ww-field-input:focus {
+  border-bottom: 2px solid #2b1c12;
+}
+
+.ww-login-submit {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 24px;
+  padding: 14px 20px;
+  font-size: 18px;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.ww-login-submit:hover {
+  background-color: #2b1a0f;
+}
+
+
+.ww-links-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+}
+
+.ww-bottom-link {
+  font-size: 15px;
+  color: #2b1c12;
+  text-decoration: none;
+}
+
+.ww-bottom-link:hover {
+  text-decoration: underline;
+}
+
+/* signup page */
+.wanderwise-register {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+.ww-navbar {
+  display: flex;
+  align-items: center;
+  padding: 24px 48px;
+}
+
+.ww-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ww-logo {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.ww-brand-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.ww-register-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 40px 24px 60px;
+}
+
+.ww-register-card {
+  position: relative;
+  background-color: #c8ac82;
+  border-radius: 20px;
+  padding: 48px 56px 56px;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ww-back-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #2b1c12;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.ww-register-title {
+  font-size: 32px;
+  font-weight: 500;
+  margin-bottom: 36px;
+}
+
+.ww-field-label {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.ww-field-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #2b1c12;
+  font-family: inherit;
+  font-size: 16px;
+  color: #2b1c12;
+  padding: 6px 2px;
+  margin-bottom: 26px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.ww-field-input[type="password"]::-ms-reveal,
+.ww-field-input[type="password"]::-ms-clear,
+.ww-field-input[type="password"]::-webkit-clear-button,
+.ww-field-input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+.ww-field-input:focus {
+  border-bottom: 2px solid #2b1c12;
+}
+
+.ww-register-submit {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 24px;
+  padding: 14px 20px;
+  font-size: 18px;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.ww-register-submit:hover {
+  background-color: #2b1a0f;
+}
+
+.ww-password-field {
+  position: relative;
+  display: block;
+  margin-bottom: 28px;
+}
+
+.ww-password-field .ww-field-input {
+  width: 100%;
+  padding-right: 42px;
+  margin-bottom: 0;
+  box-sizing: border-box;
+}
+
+.ww-password-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2b1c12;
+  font-size: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ww-password-icon:hover {
+  color: #3a2416;
+}
+
+/* reset password page */
+.wanderwise-reset {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+.ww-reset-wrapper {
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+}
+
+.ww-reset-card {
+  position: relative;
+  background-color: #c8ac82;
+  border-radius: 20px;
+  padding: 48px 56px 56px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ww-back-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #2b1c12;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-bottom: 24px;
+  padding: 0;
+}
+
+.ww-reset-title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 500;
+  margin-bottom: 40px;
+}
+
+.ww-field-label {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.ww-field-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #2b1c12;
+  font-family: inherit;
+  font-size: 16px;
+  color: #2b1c12;
+  padding: 6px 2px;
+  margin-bottom: 26px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ww-field-input:focus {
+  border-bottom: 2px solid #2b1c12;
+}
+
+.ww-reset-submit {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 24px;
+  padding: 14px 20px;
+  font-size: 18px;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.ww-reset-submit:hover {
+  background-color: #2b1a0f;
+}
+
+/* dashboard page */
+.ww-dashboard {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+/* Navbar */
+.ww-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 48px;
+  border-bottom: 1px solid #ddd8b8;
+}
+
+.ww-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ww-logo {
+  font-size: 26px;
+}
+
+.ww-brand-name {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.ww-nav-links {
+  display: flex;
+  gap: 32px;
+  font-size: 17px;
+}
+
+.ww-nav-links a {
+  color: #2b1c12;
+  text-decoration: none;
+}
+
+.ww-nav-links a:hover {
+  text-decoration: underline;
+}
+
+.ww-nav-icons {
+  display: flex;
+  gap: 20px;
+  font-size: 18px;
+}
+
+/* Travel Stories card */
+.ww-stories-card {
+  background-color: #c8ac82;
+  border-radius: 16px;
+  margin: 32px 48px;
+  padding: 32px 40px;
+}
+
+.ww-stories-card h2 {
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+.ww-stories-card p {
+  margin-bottom: 24px;
+}
+
+.ww-start-planning-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ww-start-planning-btn:hover {
+  background-color: #2b1a0f;
+}
+
+/* Section titles */
+.ww-section-title {
+  font-size: 28px;
+  margin: 0 48px 20px;
+}
+
+/* Map */
+.ww-explore-section {
+  margin-bottom: 32px;
+}
+
+.ww-map-container {
+  margin: 0 48px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Search bar */
+.ww-search-bar-section {
+  background-color: #c8ac82;
+  padding: 32px 48px;
+  margin-bottom: 40px;
+}
+
+.ww-search-title {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.ww-search-bar {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.ww-search-input-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ww-search-input-group label {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.ww-search-input-group input {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+}
+
+.ww-date-btn {
+  background-color: #d8c39c;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ww-buddies-counter {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.ww-counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #d8c39c;
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+.ww-counter-controls button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.ww-search-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ww-search-btn:hover {
+  background-color: #2b1a0f;
+}
+
+/* Destinations */
+.ww-destinations-section {
+  margin-bottom: 40px;
+}
+
+.ww-destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin: 0 48px;
+}
+
+.ww-destination-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.ww-destination-card h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.ww-itinerary-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ww-itinerary-btn:hover {
+  background-color: #2b1a0f;
+}
+
+/* Booking sites */
+.ww-booking-section {
+  margin-bottom: 48px;
+}
+
+.ww-booking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin: 0 48px;
+}
+
+.ww-booking-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  border-radius: 12px;
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+
+.ww-klook {
+  background-color: #ff5722;
+}
+
+.ww-airbnb {
+  background-color: #ff5a63;
+}
+
+.ww-agoda {
+  background-color: #ffffff;
+  color: #555;
+  border: 1px solid #ddd;
 }

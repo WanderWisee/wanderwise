@@ -6,6 +6,7 @@ import SignUpPage from './pages/SignUpPage';
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from './pages/DashboardPage';
 import TripPlanningPage from './pages/TripPlanningPage';
+import TravelTipsPage from './pages/TravelTipsPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/forgot-password" element={<ResetPasswordPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/trip-planning" element={<TripPlanningPage />} />
+        <Route path="/travel-tips" element={<TravelTipsPage />} />
       </Routes>
     </BrowserRouter>
   );

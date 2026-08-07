@@ -5,6 +5,7 @@ import "../App.css";
 
 export default function DashboardPage() {
   const [buddies, setBuddies] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   const { isLoaded } = useJsApiLoader({
@@ -86,7 +87,12 @@ export default function DashboardPage() {
         <div className="ww-search-bar">
           <div className="ww-search-input-group">
             <label>Search Places</label>
-            <input type="text" placeholder="" />
+            <input
+              type="text"
+              placeholder=""
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <button className="ww-date-btn">📅 Start Date</button>
           <button className="ww-date-btn">📅 End Date</button>
@@ -100,7 +106,12 @@ export default function DashboardPage() {
               <button onClick={() => setBuddies(buddies + 1)}>+</button>
             </div>
           </div>
-          <button className="ww-search-btn">Search</button>
+          <button
+            className="ww-search-btn"
+            onClick={() => navigate('/travel-tips', { state: { search: searchQuery } })}
+          >
+            Search
+          </button>
         </div>
       </section>
 

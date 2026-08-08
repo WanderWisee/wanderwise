@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import "../App.css";
+import "../../App.css";
 
 export default function TravelTipsPage() {
   const location = useLocation();
@@ -14,10 +14,10 @@ export default function TravelTipsPage() {
     { name: "Boracay, Aklan", img: "/assets/boracay.jpg" },
     { name: "El Nido, Palawan", img: "/assets/el-nido.jpg" },
     { name: "Baguio City", img: "/assets/baguio.jpg" },
-    { name: "Siargao Island", img: "/assets/siargao.jpg" },
+    { name: "Siargao Island", img: "/assets/siargao.png" },
     { name: "Chocolate Hills, Bohol", img: "/assets/bohol.jpg" },
     { name: "Vigan, Ilocos Sur", img: "/assets/vigan.jpg" },
-    { name: "Coron, Palawan", img: "/assets/coron.jpg" },
+    { name: "Coron, Palawan", img: "/assets/coron.webp" },
     { name: "Sagada, Mountain Province", img: "/assets/sagada.jpg" },
   ];
 
@@ -38,9 +38,9 @@ export default function TravelTipsPage() {
         </div>
         <nav className="ww-nav-links">
           <a href="/dashboard">Home</a>
-          <a href="/guides">Guides</a>
+          <a href="/travel-tips">Guides</a>
           <a href="/hotels">Hotels</a>
-          <span className="ww-menu-dropdown">Menu ▾</span>
+          <span className="ww-menu-dropdown">Menu </span>
         </nav>
         <div className="ww-nav-icons">
           <span>🔍</span>

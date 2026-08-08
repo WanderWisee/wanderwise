@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-import "../App.css";
+import "../../App.css";
 
 export default function DashboardPage() {
   const [buddies, setBuddies] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const navigate = useNavigate();
 
   const { isLoaded } = useJsApiLoader({
@@ -44,8 +46,8 @@ export default function DashboardPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/home">Home</a>
-          <a href="/guides">Guides</a>
+          <a href="/dashboard">Home</a>
+          <a href="/travel-tips">Guides</a>
           <a href="/hotels">Hotels</a>
           <a href="/menu">Menu</a>
         </nav>
@@ -94,8 +96,27 @@ export default function DashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="ww-date-btn">📅 Start Date</button>
-          <button className="ww-date-btn">📅 End Date</button>
+          <div className="ww-dates-row">
+            <div className="ww-date-field">
+              <label className="ww-planning-label">Start Date</label>
+              <input
+                type="date"
+                className="ww-date-input"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+
+            <div className="ww-date-field">
+              <label className="ww-planning-label">End Date</label>
+              <input
+                type="date"
+                className="ww-date-input"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
           <div className="ww-buddies-counter">
             <span>Travel Buddies</span>
             <div className="ww-counter-controls">
@@ -108,7 +129,7 @@ export default function DashboardPage() {
           </div>
           <button
             className="ww-search-btn"
-            onClick={() => navigate('/travel-tips', { state: { search: searchQuery } })}
+            onClick={() => navigate('/hotels', { state: { search: searchQuery, startDate, endDate } })}
           >
             Search
           </button>

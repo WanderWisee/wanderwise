@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../App.css";
+import "../../App.css";
 
 export default function TripPlanningPage() {
   const [destination, setDestination] = useState("");
@@ -25,7 +25,7 @@ export default function TripPlanningPage() {
         </div>
         <nav className="ww-nav-links">
           <a href="/dashboard">Home</a>
-          <a href="/guides">Guides</a>
+          <a href="/travel-tips">Guides</a>
           <a href="/hotels">Hotels</a>
           <span className="ww-menu-dropdown">Menu ▾</span>
         </nav>

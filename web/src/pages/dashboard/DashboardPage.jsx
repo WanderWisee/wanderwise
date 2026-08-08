@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "../../App.css";
 
@@ -46,15 +46,22 @@ export default function DashboardPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
-          <a href="/menu">Menu</a>
+          <Link to="/dashboard">Home</Link>
+          <Link to="/travel-tips">Guides</Link>
+          <Link to="/hotels">Hotels</Link>
+          <Link to="/menu">Menu</Link>
         </nav>
         <div className="ww-nav-icons">
-          <span>🔍</span>
-          <span>🔔</span>
-          <span>👤</span>
+          <button
+            type="button"
+            className="ww-nav-icon-btn"
+            onClick={() => navigate('/hotels')}
+            aria-label="Search"
+          >
+            🔍
+          </button>
+          <span className="ww-nav-icon-static" aria-label="Notifications">🔔</span>
+          <span className="ww-nav-icon-static" aria-label="Profile">👤</span>
         </div>
       </header>
 

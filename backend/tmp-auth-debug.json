@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": "usr_1786108059480",
+      "name": "Grace Hopper",
+      "email": "grace@example.com",
+      "password": "c61699ab21e7d99557ad139eb66dd960:8cef497c817da35fb636c65192d5b3867ddeeeded91146d04e616d254e5dd6576cf5f1c6677a9ac03d141edb9783b83c695d7dea148a480d0216d2ee1b0e522d",
+      "createdAt": "2026-08-07T13:07:39.529Z"
+    }
+  ],
+  "trips": []
+}

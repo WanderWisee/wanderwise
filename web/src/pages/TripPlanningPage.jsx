@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../App.css";
 
 export default function TripPlanningPage() {
@@ -6,10 +7,46 @@ export default function TripPlanningPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [people, setPeople] = useState(0);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleLetsGo = () => {
-    // TODO: send trip details to backend / next step
-    console.log({ destination, startDate, endDate, people });
+  const handleLetsGo = async () => {
+    const token = localStorage.getItem('wanderwise_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+    try {
+      const resp = await fetch('/api/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: destination || 'My Trip',
+          destination,
+          startDate,
+          endDate,
+          notes: `Travelers: ${people}`,
+        }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setMessage(data?.error || 'Could not save trip.');
+        return;
+      }
+      setMessage('Trip saved successfully.');
+      navigate('/dashboard');
+    } catch (err) {
+      setMessage('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,8 +123,9 @@ export default function TripPlanningPage() {
             <button onClick={() => setPeople(people + 1)}>+</button>
           </div>
 
-          <button className="ww-lets-go-btn" onClick={handleLetsGo}>
-            Let's go
+          {message && <div style={{ color: '#8b0000', marginTop: 12 }}>{message}</div>}
+          <button className="ww-lets-go-btn" onClick={handleLetsGo} disabled={loading}>
+            {loading ? 'Saving...' : "Let's go"}
           </button>
         </div>
       </main>

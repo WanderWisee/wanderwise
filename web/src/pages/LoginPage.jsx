@@ -6,7 +6,34 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const resp = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: username, password }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setError(data?.error || 'Login failed.');
+        return;
+      }
+      if (data?.token) {
+        localStorage.setItem('wanderwise_token', data.token);
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="wanderwise-login">
@@ -59,7 +86,10 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <button className="ww-login-submit" onClick={() => navigate('/dashboard')}>Log in</button>
+          {error && <div style={{ color: '#8b0000', marginBottom: 12 }}>{error}</div>}
+          <button className="ww-login-submit" onClick={handleLogin} disabled={loading}>
+            {loading ? 'Logging in...' : 'Log in'}
+          </button>
 
           <div className="ww-links-row">
             <a href="/forgot-password" className="ww-bottom-link">

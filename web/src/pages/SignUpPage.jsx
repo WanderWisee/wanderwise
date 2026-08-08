@@ -39,16 +39,26 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      const payload = {
+        name: `${form.studentNumber || 'User'}`,
+        email: `${form.cellphone || 'user'}@wanderwise.local`,
+        password: form.password,
+      };
+
       const resp = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (resp.ok) {
-        navigate('/');
+        const data = await resp.json().catch(() => null);
+        if (data?.token) {
+          localStorage.setItem('wanderwise_token', data.token);
+        }
+        navigate('/login');
       } else {
         const data = await resp.json().catch(() => null);
-        setError(data?.message || 'Registration failed.');
+        setError(data?.error || data?.message || 'Registration failed.');
       }
     } catch (err) {
       setError('Network error. Please try again.');

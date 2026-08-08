@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": "usr_1786107145943",
+      "name": "Grace Murray Hopper",
+      "password": "3e3992a507d31177e19e23a61f6ec405:9d1e3cd431e40c9cd3d91b656282ce260604c9f5f70aa722cebb2385767bee3715ddd2986dc72158004b615d95f6971dbc9203b9b0d2ba3d259b732cc3919d60",
+      "createdAt": "2026-08-07T12:52:26.003Z",
+      "updatedAt": "2026-08-07T12:52:26.027Z"
+    }
+  ],
+  "trips": [
+    {
+      "id": "trip_1786107146035",
+      "title": "Tokyo",
+      "destination": "Japan",
+      "startDate": "2026-10-10",
+      "endDate": "2026-10-18",
+      "userId": null,
+      "createdAt": "2026-08-07T12:52:26.035Z"
+    }
+  ]
+}

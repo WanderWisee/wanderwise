@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": "usr_1786111573355",
+      "name": "Proxy Check",
+      "email": "proxy@example.com",
+      "password": "a1fbcdfa5e73412d03c00dd87d1d7d4c:0f45b2e12e784f2aeda451e32d53849c95bec495dcbace1ad27eec2ba632adf94a3e25f9ffd55efe8f9f0757d106ac82d5df187e5f69f528cd5181105f71e428",
+      "createdAt": "2026-08-07T14:06:13.401Z"
+    }
+  ],
+  "trips": []
+}

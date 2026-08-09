@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": "usr_1786106475422",
+      "name": "Grace Hopper",
+      "email": "grace@example.com",
+      "password": "56ef6573aed9d2a000c8117eb4a74bd2:dcd61ea5cb7e20bd0e17921082706eb3ff9ee4c4d2d102e6b2bf88dc7b5c8ca236234093a9702ae57976d53cb0f42d9747d6dc21cf0e48455dca97ea4e51dbef",
+      "createdAt": "2026-08-07T12:41:15.462Z"
+    }
+  ],
+  "trips": [
+    {
+      "id": "trip_1786106475477",
+      "title": "Tokyo",
+      "destination": "Japan",
+      "startDate": "2026-10-10",
+      "endDate": "2026-10-18",
+      "userId": "usr_1786106475422",
+      "createdAt": "2026-08-07T12:41:15.477Z"
+    }
+  ]
+}

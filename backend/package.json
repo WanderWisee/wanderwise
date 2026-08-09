@@ -1,0 +1,13 @@
+{
+  "name": "wanderwise-backend",
+  "version": "1.0.0",
+  "description": "Backend API and database for WanderWise",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/**/*.test.js"
+  },
+  "dependencies": {
+    "mongodb": "^7.5.0"
+  }
+}

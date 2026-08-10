@@ -6,6 +6,13 @@
       "email": "proxy@example.com",
       "password": "a1fbcdfa5e73412d03c00dd87d1d7d4c:0f45b2e12e784f2aeda451e32d53849c95bec495dcbace1ad27eec2ba632adf94a3e25f9ffd55efe8f9f0757d106ac82d5df187e5f69f528cd5181105f71e428",
       "createdAt": "2026-08-07T14:06:13.401Z"
+    },
+    {
+      "id": "usr_1786347401911",
+      "name": "A23-36972",
+      "email": "09934587160@wanderwise.local",
+      "password": "15a1c8320f60d20701337c373ddaf86f:6dabe74fb5caa947498c04d5395b616c85897bf6931ed80923ea1ced92dcf931aedb82417c70bc9dc1f5118ae6b0fd23517e3c4a2820a45d92569ca0909c39b0",
+      "createdAt": "2026-08-10T07:36:41.947Z"
     }
   ],
   "trips": []

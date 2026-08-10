@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-import "../App.css";
+import '../../App.css';
 
 export default function DashboardPage() {
   const navigate = useNavigate();

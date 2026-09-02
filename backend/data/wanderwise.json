@@ -13,6 +13,13 @@
       "email": "09934587160@wanderwise.local",
       "password": "15a1c8320f60d20701337c373ddaf86f:6dabe74fb5caa947498c04d5395b616c85897bf6931ed80923ea1ced92dcf931aedb82417c70bc9dc1f5118ae6b0fd23517e3c4a2820a45d92569ca0909c39b0",
       "createdAt": "2026-08-10T07:36:41.947Z"
+    },
+    {
+      "id": "usr_1788307206719",
+      "name": "A23-66666",
+      "email": "09935657160@wanderwise.local",
+      "password": "2e3ba993c7fc4d1832bdd397b91fbfb0:b3c062e2db7f022033203d02a76f0246f6d034adf5ffb81e91c972a593e765ce84017f6544b7c080cd4221f8e118cf69c73c0068cf588bf84805a71d159c50ba",
+      "createdAt": "2026-09-02T00:00:06.753Z"
     }
   ],
   "trips": []

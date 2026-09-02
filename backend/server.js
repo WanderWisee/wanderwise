@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -165,8 +167,27 @@ function createServer(options = {}) {
   }
 
   async function findUserByEmail(email) {
+    if (!email || typeof email !== 'string') return null;
     const data = await readStore();
-    return data.users.find((user) => user.email === email);
+    return data.users.find((user) => typeof user.email === 'string' && user.email === email);
+  }
+
+  // Find a user by either email or username (name). Identifier matching is case-insensitive for
+  // both email and name. Prefer an exact email match first, then fall back to a name match.
+  async function findUserByIdentifier(identifier) {
+    if (!identifier || typeof identifier !== 'string') return null;
+    const data = await readStore();
+    const normalized = identifier.toLowerCase();
+
+    // Try email match first
+    const byEmail = data.users.find((u) => typeof u.email === 'string' && u.email.toLowerCase() === normalized);
+    if (byEmail) return byEmail;
+
+    // Fallback to name (username) match
+    const byName = data.users.find((u) => typeof u.name === 'string' && u.name.toLowerCase() === normalized);
+    if (byName) return byName;
+
+    return null;
   }
 
   async function createUser(userInput) {
@@ -351,7 +372,15 @@ function createServer(options = {}) {
     if (req.method === 'POST' && (url.pathname === '/api/auth/login' || url.pathname === '/api/login')) {
       try {
         const body = await parseBody(req);
-        const user = await findUserByEmail(body.email.toLowerCase());
+
+        // Support logging in by email OR by username (name). Prefer the provided email field,
+        // but also accept name or username. Matching is case-insensitive.
+        let identifier = null;
+        if (typeof body.email === 'string' && body.email) identifier = body.email;
+        else if (typeof body.name === 'string' && body.name) identifier = body.name;
+        else if (typeof body.username === 'string' && body.username) identifier = body.username;
+
+        const user = await findUserByIdentifier(identifier);
 
         if (!user || !verifyPassword(body.password, user.password)) {
           res.writeHead(401, { 'Content-Type': 'application/json' });

@@ -12,6 +12,25 @@ function sanitizeUser(user) {
   return rest;
 }
 
+// Accepts either "MM/DD/YYYY" (what the Register form's placeholder shows)
+// or an already-correct "YYYY-MM-DD" (e.g. from an <input type="date">),
+// and always returns "YYYY-MM-DD" for MySQL's DATE column.
+function normalizeDob(rawDob) {
+  if (!rawDob || typeof rawDob !== 'string') return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawDob)) {
+    return rawDob;
+  }
+
+  const match = rawDob.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, month, day, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  return null;
+}
+
 // POST /api/register
 router.post('/register', async (req, res) => {
   try {
@@ -24,6 +43,11 @@ router.post('/register', async (req, res) => {
     }
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    const normalizedDob = normalizeDob(dob);
+    if (!normalizedDob) {
+      return res.status(400).json({ error: 'Date of birth must be in MM/DD/YYYY format' });
     }
 
     const [existing] = await pool.query(
@@ -39,7 +63,7 @@ router.post('/register', async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO users (student_number, date_of_birth, cellphone_number, password_hash)
        VALUES (?, ?, ?, ?)`,
-      [studentNumber.trim(), dob, cellphone, passwordHash]
+      [studentNumber.trim(), normalizedDob, cellphone, passwordHash]
     );
 
     const token = createToken({
@@ -105,8 +129,12 @@ router.put('/me', requireAuth, async (req, res) => {
     const values = [];
 
     if (typeof dob === 'string') {
+      const normalizedDob = normalizeDob(dob);
+      if (!normalizedDob) {
+        return res.status(400).json({ error: 'Date of birth must be in MM/DD/YYYY format' });
+      }
       updates.push('date_of_birth = ?');
-      values.push(dob);
+      values.push(normalizedDob);
     }
     if (typeof cellphone === 'string') {
       updates.push('cellphone_number = ?');

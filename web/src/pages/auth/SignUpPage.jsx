@@ -40,8 +40,9 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const payload = {
-        name: `${form.studentNumber || 'User'}`,
-        email: `${form.cellphone || 'user'}@wanderwise.local`,
+        studentNumber: form.studentNumber,
+        dob: form.dob,
+        cellphone: form.cellphone,
         password: form.password,
       };
 

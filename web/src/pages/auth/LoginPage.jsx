@@ -17,7 +17,7 @@ export default function LoginPage() {
       const resp = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: username, password }),
+        body: JSON.stringify({ studentNumber: username, password }),
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
           <h1 className="ww-login-title">Let's get you in</h1>
 
-          <label className="ww-field-label">Username</label>
+          <label className="ww-field-label">Student Number</label>
           <input
             type="text"
             className="ww-field-input"

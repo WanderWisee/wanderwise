@@ -89,41 +89,21 @@ export default function DashboardPage() {
     <div className="ww-dashboard">
 
       {/* Header */}
-      <header className="ww-header">
-        <div className="ww-logo">
-          WanderWise!
+      <header className="ww-navbar">
+        <div className="ww-brand">
+          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
+          <span className="ww-brand-name">WanderWise!</span>
         </div>
-
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
-          <Link to="/menu">Menu</Link>
+          <a href="/dashboard">Home</a>
+          <a href="/travel-tips">Guides</a>
+          <a href="/hotels">Hotels</a>
+          <span className="ww-menu-dropdown">Menu</span>
         </nav>
-
         <div className="ww-nav-icons">
-          <button
-            type="button"
-            className="ww-nav-icon-btn"
-            onClick={() => navigate("/hotels")}
-            aria-label="Search"
-          >
-            🔍
-          </button>
-
-          <span
-            className="ww-nav-icon-static"
-            aria-label="Notifications"
-          >
-            🔔
-          </span>
-
-          <span
-            className="ww-nav-icon-static"
-            aria-label="Profile"
-          >
-            👤
-          </span>
+          <span>🔍</span>
+          <span>🔔</span>
+          <span>👤</span>
         </div>
       </header>
 

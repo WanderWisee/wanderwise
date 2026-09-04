@@ -20,10 +20,8 @@ export default function RegisterPage() {
     setForm({ ...form, [field]: e.target.value });
   };
 
-  const handleSubmit = async () => {
-    if (loading) return;
-    setError("");
-    // Basic client-side validation
+    const handleSubmit = () => {
+    // TEMPORARY: skip backend call for visual testing.
     if (!form.studentNumber || !form.dob || !form.cellphone || !form.password || !form.confirmPassword) {
       setError("Please fill in all fields.");
       return;
@@ -36,36 +34,7 @@ export default function RegisterPage() {
       setError("Passwords do not match.");
       return;
     }
-
-    setLoading(true);
-    try {
-      const payload = {
-        studentNumber: form.studentNumber,
-        dob: form.dob,
-        cellphone: form.cellphone,
-        password: form.password,
-      };
-
-      const resp = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (resp.ok) {
-        const data = await resp.json().catch(() => null);
-        if (data?.token) {
-          localStorage.setItem('wanderwise_token', data.token);
-        }
-        navigate('/login');
-      } else {
-        const data = await resp.json().catch(() => null);
-        setError(data?.error || data?.message || 'Registration failed.');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    navigate('/login');
   };
 
   return (

@@ -10,30 +10,36 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const resp = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentNumber: username, password }),
-      });
-      const data = await resp.json().catch(() => null);
-      if (!resp.ok) {
-        setError(data?.error || 'Login failed.');
-        return;
-      }
-      if (data?.token) {
-        localStorage.setItem('wanderwise_token', data.token);
-      }
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleLogin = () => {
+    // TEMPORARY: skip backend call for visual testing.
+    // Revert this once backend is ready — see the commented version below.
+    navigate('/dashboard');
   };
+
+  // const handleLogin = async () => {
+  //   setError("");
+  //   setLoading(true);
+  //   try {
+  //     const resp = await fetch('/api/login', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ studentNumber: username, password }),
+  //     });
+  //     const data = await resp.json().catch(() => null);
+  //     if (!resp.ok) {
+  //       setError(data?.error || 'Login failed.');
+  //       return;
+  //     }
+  //     if (data?.token) {
+  //       localStorage.setItem('wanderwise_token', data.token);
+  //     }
+  //     navigate('/dashboard');
+  //   } catch (err) {
+  //     setError('Network error. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="wanderwise-login">

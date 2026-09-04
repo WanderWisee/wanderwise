@@ -8,6 +8,15 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import TripPlanningPage from './pages/trip-planning/TripPlanningPage';
 import TravelTipsPage from './pages/travel-tips/TravelTipsPage';
 import HotelsPage from './pages/hotels/HotelsPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
+import TravelGuidePage from './pages/guides/TravelGuidePage';
+import HotelSearchResultsPage from './pages/hotels/HotelSearchResultsPage';
+import TripPlanBuilderPage from './pages/trip-plan-builder/TripPlanBuilderPage';
+import InviteCrewPage from './pages/trip-plan-builder/InviteCrewPage';
+import BudgetBreakdownPage from './pages/budget/BudgetBreakdownPage';
+import AddExpensePage from './pages/budget/AddExpensePage';
+import DirectionsPage from './pages/directions/DirectionsPage';
+
 
 function App() {
   return (
@@ -21,6 +30,14 @@ function App() {
         <Route path="/trip-planning" element={<TripPlanningPage />} />
         <Route path="/travel-tips" element={<TravelTipsPage />} />
         <Route path="/hotels" element={<HotelsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/guides/:destinationName" element={<TravelGuidePage />} />
+        <Route path="/hotels/results" element={<HotelSearchResultsPage />} />
+        <Route path="/trip-plan" element={<TripPlanBuilderPage />} />
+        <Route path="/trip-plan/invite" element={<InviteCrewPage />} />
+        <Route path="/budget/breakdown" element={<BudgetBreakdownPage />} />
+        <Route path="/budget/add-expense" element={<AddExpensePage />} />
+        <Route path="/directions" element={<DirectionsPage />} />
       </Routes>
     </BrowserRouter>
   );

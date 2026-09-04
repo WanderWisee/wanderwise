@@ -52,10 +52,9 @@ export default function LoginScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Username or Student Number"
             placeholderTextColor={Colors.brown600}
             autoCapitalize="none"
-            keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
           />

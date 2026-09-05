@@ -1550,6 +1550,17 @@
 }
 
 /* Trip Plan Builder Page */
+
+.ww-section-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ww-section-name-row .ww-section-name-input {
+  flex: 1;
+}
+
 .ww-custom-section {
   margin-bottom: 24px;
 }
@@ -2018,6 +2029,7 @@
 .ww-add-expense-main {
   padding: 40px 64px;
   max-width: 700px;
+  margin: 0 auto;
 }
 
 .ww-add-expense-title {

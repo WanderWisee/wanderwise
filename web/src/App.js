@@ -38,6 +38,8 @@ function App() {
         <Route path="/budget/breakdown" element={<BudgetBreakdownPage />} />
         <Route path="/budget/add-expense" element={<AddExpensePage />} />
         <Route path="/directions" element={<DirectionsPage />} />
+        <Route path="/add-expense" element={<AddExpensePage />} />
+        <Route path="/breakdown" element={<BudgetBreakdownPage />} />
       </Routes>
     </BrowserRouter>
   );

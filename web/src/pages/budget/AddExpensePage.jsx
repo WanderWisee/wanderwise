@@ -1,5 +1,8 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../App.css";
+
+let nextExpenseId = 1;
 
 const categories = [
   { icon: "🍽️", label: "Food and Drinks" },
@@ -12,21 +15,65 @@ const categories = [
   { icon: "✈️", label: "Flights" },
 ];
 
-const tripPlanItems = [
-  { icon: "🍽️", label: "Flotsam and Jetsam" },
-  { icon: "🎟️", label: "San Juan" },
-  { icon: "☕", label: "El Union Cafe" },
-];
-
 export default function AddExpensePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Data handed off by TripPlanBuilderPage's "+ Add Expense" button.
+  const {
+    destination = "",
+    startDate = "",
+    endDate = "",
+    people = 0,
+    tripState = { places: [], customSections: [], days: [], budgetTotal: 0, expenses: [] },
+    returnPath = "/trip-plan",
+    tripPlanItems = [], // [{ id, name }] — built from "Where to go?" + custom lists
+  } = location.state || {};
+
   const [amount, setAmount] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null); // holds the tripPlanItems id
   const [description, setDescription] = useState("");
 
   const handleSave = () => {
-    // TEMPORARY: no backend call yet — just log for now.
-    console.log({ amount, selectedCategory, selectedItem, description });
+    // Require at least one choice (category or trip-plan item) before saving.
+    if (!selectedCategory && !selectedItem) return;
+
+    const chosenTripItem = tripPlanItems.find((item) => item.id === selectedItem);
+
+    // If picked "from a trip plan", find which itinerary day that
+    // place belongs to, so the breakdown page can group by day.
+    const matchedDay = chosenTripItem
+      ? (tripState.days || []).find((day) =>
+          day.places.some((p) => p.id === chosenTripItem.id)
+        )
+      : null;
+
+    const newExpense = {
+      id: nextExpenseId++,
+      amount: Number(amount) || 0,
+      label: selectedCategory || chosenTripItem?.name || "Expense",
+      icon: selectedCategory
+        ? categories.find((c) => c.label === selectedCategory)?.icon
+        : "📍",
+      description: description.trim(),
+      dayLabel: matchedDay ? matchedDay.label : null,
+    };
+
+    const updatedTripState = {
+      ...tripState,
+      expenses: [...(tripState.expenses || []), newExpense],
+    };
+
+    navigate(returnPath, {
+      state: {
+        destination,
+        startDate,
+        endDate,
+        people,
+        restoredTripState: updatedTripState,
+      },
+    });
   };
 
   return (
@@ -70,25 +117,35 @@ export default function AddExpensePage() {
             <button
               key={c.label}
               className={`ww-category-btn ${selectedCategory === c.label ? "selected" : ""}`}
-              onClick={() => setSelectedCategory(c.label)}
+              onClick={() => {
+                setSelectedCategory(c.label);
+                setSelectedItem(null);
+              }}
             >
               {c.icon} {c.label}
             </button>
           ))}
         </div>
 
-        <h3 className="ww-choose-subtitle">From a trip plan</h3>
-        <div className="ww-trip-item-list">
-          {tripPlanItems.map((item) => (
-            <button
-              key={item.label}
-              className={`ww-trip-item-btn ${selectedItem === item.label ? "selected" : ""}`}
-              onClick={() => setSelectedItem(item.label)}
-            >
-              {item.icon} {item.label}
-            </button>
-          ))}
-        </div>
+        {tripPlanItems.length > 0 && (
+          <>
+            <h3 className="ww-choose-subtitle">From a trip plan</h3>
+            <div className="ww-trip-item-list">
+              {tripPlanItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={`ww-trip-item-btn ${selectedItem === item.id ? "selected" : ""}`}
+                  onClick={() => {
+                    setSelectedItem(item.id);
+                    setSelectedCategory(null);
+                  }}
+                >
+                  📍 {item.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <input
           className="ww-description-input"

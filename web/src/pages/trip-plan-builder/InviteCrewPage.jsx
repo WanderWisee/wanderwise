@@ -1,12 +1,31 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../App.css";
 
 export default function InviteCrewPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const {
+    destination = "",
+    startDate = "",
+    endDate = "",
+    people = 0,
+    tripState = null,
+    returnPath = "/trip-plan",
+  } = location.state || {};
+
   const [inviteInput, setInviteInput] = useState("");
   const shareLink = "https://wanderwise.com/plan/wdfse2326";
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(shareLink);
+  };
+
+  const handleBack = () => {
+    navigate(returnPath, {
+      state: { destination, startDate, endDate, people, restoredTripState: tripState },
+    });
   };
 
   return (
@@ -30,7 +49,9 @@ export default function InviteCrewPage() {
       </header>
 
       <main className="ww-invite-main">
-        <h1 className="ww-invite-title">Invite your crew</h1>
+        <h1 className="ww-invite-title" onClick={handleBack} style={{ cursor: "pointer" }}>
+          ← Invite your crew
+        </h1>
 
         <div className="ww-invite-link-row">
           <span>🔗 {shareLink}</span>

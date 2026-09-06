@@ -267,23 +267,32 @@ export default function DashboardPage() {
         </h2>
 
         <div className="ww-destinations-grid">
-          {destinations.map((dest) => (
-            <div
-              className="ww-destination-card"
-              key={dest.name}
-            >
-              <img
-                src={dest.img}
-                alt={dest.name}
-              />
-
-              <h3>{dest.name}</h3>
-
-              <button className="ww-itinerary-btn">
-                See Itineraries
-              </button>
-            </div>
-          ))}
+          {destinations.map((dest) => {
+            // Only Boracay has a real guide page for now.
+            const hasGuide = dest.name === "Boracay Islands";
+            return (
+              <div className="ww-destination-card" key={dest.name}>
+                <img src={dest.img} alt={dest.name} />
+                <h3>{dest.name}</h3>
+                <button
+                  className="ww-itinerary-btn"
+                  disabled={!hasGuide}
+                  style={{
+                    opacity: hasGuide ? 1 : 0.5,
+                    cursor: hasGuide ? "pointer" : "not-allowed",
+                  }}
+                  onClick={() =>
+                    hasGuide &&
+                    navigate("/travel-guide", {
+                      state: { destination: dest.name },
+                    })
+                  }
+                >
+                  See Itineraries
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 

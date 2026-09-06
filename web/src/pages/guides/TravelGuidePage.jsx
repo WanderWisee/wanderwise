@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import "../../App.css";
 
 const guideSections = [
@@ -38,6 +39,11 @@ const guideSections = [
 ];
 
 export default function TravelGuidePage() {
+  const location = useLocation();
+  // Falls back to "Boracay Islands" if no destination was passed in
+  // (e.g. someone opens this page directly without clicking a card).
+  const destination = location.state?.destination || "Boracay Islands";
+
   return (
     <div className="ww-guide-page">
       <header className="ww-navbar ww-navbar-compact">
@@ -59,7 +65,7 @@ export default function TravelGuidePage() {
       </header>
 
       <main className="ww-guide-main">
-        <h1 className="ww-guide-title">La Union Travel Journey</h1>
+        <h1 className="ww-guide-title">{destination} Travel Journey</h1>
 
         {guideSections.map((section) => (
           <section className="ww-guide-section" key={section.pinLabel}>

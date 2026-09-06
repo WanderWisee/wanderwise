@@ -342,6 +342,19 @@ export default function TripPlanBuilderPage() {
   });
 };
 
+const handleGoToAddCrew = () => {
+  navigate("/invite-crew", {
+    state: {
+      destination,
+      startDate,
+      endDate,
+      people,
+      tripState,
+      returnPath: "/trip-plan",
+    },
+  });
+};
+
   return (
     <div className="ww-builder-page">
       <header className="ww-builder-topbar">
@@ -589,7 +602,9 @@ export default function TripPlanBuilderPage() {
             <p className="ww-budget-link" onClick={handleGoToBreakdown} style={{ cursor: "pointer" }}>
   📊 View Breakdown
 </p>
-            <p className="ww-budget-link">👤 Add Crew</p>
+            <p className="ww-budget-link" onClick={handleGoToAddCrew} style={{ cursor: "pointer" }}>
+  👤 Add Crew
+</p>
           </div>
 
           <h2 className="ww-builder-section-title">⌄ Expenses</h2>

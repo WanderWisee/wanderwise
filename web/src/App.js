@@ -40,6 +40,8 @@ function App() {
         <Route path="/directions" element={<DirectionsPage />} />
         <Route path="/add-expense" element={<AddExpensePage />} />
         <Route path="/breakdown" element={<BudgetBreakdownPage />} />
+        <Route path="/invite-crew" element={<InviteCrewPage />} />
+        <Route path="/travel-guide" element={<TravelGuidePage />} />
       </Routes>
     </BrowserRouter>
   );

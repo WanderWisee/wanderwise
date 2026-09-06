@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../App.css";
 
 export default function TravelTipsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState(location.state?.search || "");
 
   useEffect(() => {
@@ -65,13 +66,30 @@ export default function TravelTipsPage() {
         <h2 className="ww-tips-subtitle">New Travel Tips</h2>
 
         <div className="ww-tips-grid">
-          {filteredDestinations.map((dest) => (
-            <div className="ww-tips-card" key={dest.name}>
-              <img src={dest.img} alt={dest.name} />
-              <h3>{dest.name}</h3>
-              <button className="ww-itinerary-btn">See Itineraries</button>
-            </div>
-          ))}
+          {filteredDestinations.map((dest) => {
+            // Only Boracay has a real guide page for now.
+            const hasGuide = dest.name === "Boracay, Aklan";
+            return (
+              <div className="ww-tips-card" key={dest.name}>
+                <img src={dest.img} alt={dest.name} />
+                <h3>{dest.name}</h3>
+                <button
+                  className="ww-itinerary-btn"
+                  disabled={!hasGuide}
+                  style={{
+                    opacity: hasGuide ? 1 : 0.5,
+                    cursor: hasGuide ? "pointer" : "not-allowed",
+                  }}
+                  onClick={() =>
+                    hasGuide &&
+                    navigate("/travel-guide", { state: { destination: dest.name } })
+                  }
+                >
+                  See Itineraries
+                </button>
+              </div>
+            );
+          })}
         </div>
       </main>
     </div>

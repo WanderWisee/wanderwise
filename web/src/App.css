@@ -1935,6 +1935,8 @@
 
 .ww-breakdown-main {
   padding: 40px 64px;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 .ww-breakdown-title {
@@ -2153,6 +2155,7 @@
 .ww-invite-main {
   padding: 40px 64px;
   max-width: 700px;
+  margin: 0 auto;
 }
 
 .ww-invite-title {

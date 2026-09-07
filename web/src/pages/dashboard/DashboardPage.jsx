@@ -103,7 +103,7 @@ export default function DashboardPage() {
         <div className="ww-nav-icons">
           <span>🔍</span>
           <span>🔔</span>
-          <span>👤</span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         </div>
       </header>
 

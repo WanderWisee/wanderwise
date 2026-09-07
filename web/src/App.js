@@ -16,6 +16,9 @@ import InviteCrewPage from './pages/trip-plan-builder/InviteCrewPage';
 import BudgetBreakdownPage from './pages/budget/BudgetBreakdownPage';
 import AddExpensePage from './pages/budget/AddExpensePage';
 import DirectionsPage from './pages/directions/DirectionsPage';
+import ProfilePage from './pages/profile/ProfilePage';
+import JournalNewPostPage from './pages/journal/JournalNewPostPage';
+import SettingsPage from './pages/settings/SettingsPage';
 
 
 function App() {
@@ -42,6 +45,9 @@ function App() {
         <Route path="/breakdown" element={<BudgetBreakdownPage />} />
         <Route path="/invite-crew" element={<InviteCrewPage />} />
         <Route path="/travel-guide" element={<TravelGuidePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/journal/new" element={<JournalNewPostPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </BrowserRouter>
   );

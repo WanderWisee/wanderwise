@@ -220,6 +220,61 @@ export default function TripPlanBuilderPage() {
     setDayInputs((prev) => ({ ...prev, [dayIndex]: "" }));
   };
 
+  // --- Reordering places within a day via drag-and-drop ---
+  const [draggingPlaceId, setDraggingPlaceId] = useState(null);
+
+  const handleItemDragStart = (e, dayIndex, placeId) => {
+    setDraggingPlaceId(placeId);
+    e.dataTransfer.setData("text/plain", JSON.stringify({ dayIndex, placeId }));
+  };
+
+  const handleItemDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleItemDrop = (e, dayIndex, targetPlaceId) => {
+    e.preventDefault();
+    setDraggingPlaceId(null);
+    let data;
+    try {
+      data = JSON.parse(e.dataTransfer.getData("text/plain"));
+    } catch {
+      return;
+    }
+    if (!data || data.dayIndex !== dayIndex || data.placeId === targetPlaceId) return;
+
+    applyChange((prev) => ({
+      ...prev,
+      days: prev.days.map((day, i) => {
+        if (i !== dayIndex) return day;
+        const ids = [...day.placeIds];
+        const fromIdx = ids.indexOf(data.placeId);
+        const toIdx = ids.indexOf(targetPlaceId);
+        if (fromIdx === -1 || toIdx === -1) return day;
+        ids.splice(fromIdx, 1);
+        ids.splice(toIdx, 0, data.placeId);
+        return { ...day, placeIds: ids };
+      }),
+    }));
+  };
+
+  // --- Select Time (per place, shown inline when clicked) ---
+  const [editingTimeFor, setEditingTimeFor] = useState(null);
+
+  const updatePlaceTime = (placeId, value) => {
+    setTripState((prev) => ({
+      ...prev,
+      places: prev.places.map((p) => (p.id === placeId ? { ...p, time: value } : p)),
+    }));
+  };
+
+  // --- Add Cost -> scroll down to the "Expenses" list on this same page ---
+  const expensesRef = useRef(null);
+
+  const handleAddCostForPlace = () => {
+    expensesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   // --- Budget edit ---
   const [showEditBudget, setShowEditBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(budgetTotal);
@@ -436,7 +491,17 @@ export default function TripPlanBuilderPage() {
                     <p className="ww-day-header">⌄ {day.label}</p>
                     {dayPlaces.map((p, i) => (
                       <React.Fragment key={p.id}>
-                        <div className="ww-place-card ww-itinerary-place">
+                        <div
+                          className="ww-place-card ww-itinerary-place"
+                          draggable
+                          onDragStart={(e) => handleItemDragStart(e, dayIndex, p.id)}
+                          onDragOver={handleItemDragOver}
+                          onDrop={(e) => handleItemDrop(e, dayIndex, p.id)}
+                          style={{
+                            cursor: "grab",
+                            opacity: draggingPlaceId === p.id ? 0.5 : 1,
+                          }}
+                        >
                           <div className="ww-visited-checkbox">
                             <input
                               type="checkbox"
@@ -448,8 +513,28 @@ export default function TripPlanBuilderPage() {
                             <p className="ww-place-name">📍{i + 1} {p.name}</p>
                             <p className="ww-place-notes">Add notes, etc, here</p>
                             <p className="ww-place-actions">
-                              <span>🕐 Select Time</span>
-                              <span>$ Add Cost</span>
+                              {editingTimeFor === p.id ? (
+                                <input
+                                  type="time"
+                                  autoFocus
+                                  value={p.time || ""}
+                                  onChange={(e) => updatePlaceTime(p.id, e.target.value)}
+                                  onBlur={() => setEditingTimeFor(null)}
+                                />
+                              ) : (
+                                <span
+                                  onClick={() => setEditingTimeFor(p.id)}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  🕐 {p.time || "Select Time"}
+                                </span>
+                              )}
+                              <span
+                                onClick={handleAddCostForPlace}
+                                style={{ cursor: "pointer" }}
+                              >
+                                $ Add Cost
+                              </span>
                             </p>
                             <p className="ww-mark-visited">
                               {p.visited ? "✓ Visited" : "✓ Mark visited"}
@@ -500,7 +585,7 @@ export default function TripPlanBuilderPage() {
             </p>
           </div>
 
-          <h2 className="ww-builder-section-title">⌄ Expenses</h2>
+          <h2 className="ww-builder-section-title" ref={expensesRef}>⌄ Expenses</h2>
           {expenses.length === 0 ? (
             <p className="ww-expense-empty">No expenses yet. Add one to get started.</p>
           ) : (

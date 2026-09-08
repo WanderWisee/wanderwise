@@ -88,6 +88,10 @@ export default function LandingScreen() {
             <Text style={styles.primaryButtonText}>Sign up</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity onPress={() => router.push('/home')} style={{ marginTop: 20 }}>
+          <Text style={styles.footerLink}>Skip to Home (dev only)</Text>
+        </TouchableOpacity>
       </Animated.View>
 
       <View style={styles.footer}>

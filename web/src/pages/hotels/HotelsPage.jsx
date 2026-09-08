@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
 
 export default function HotelsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [buddies, setBuddies] = useState(0);
   const [startDate, setStartDate] = useState("");
@@ -34,12 +37,12 @@ export default function HotelsPage() {
           <a href="/dashboard">Home</a>
           <a href="/travel-tips">Guides</a>
           <a href="/hotels">Hotels</a>
-          <span className="ww-menu-dropdown">Menu</span>
+          <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
           <span>🔍</span>
-          <span>🔔</span>
-          <span>👤</span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         </div>
       </header>
 
@@ -101,15 +104,30 @@ export default function HotelsPage() {
         </h2>
 
         <div className="ww-hotels-grid">
-          {destinations.map((dest) => (
-            <div className="ww-hotel-card" key={dest.name}>
-              <img src={dest.img} alt={dest.name} />
-              <div className="ww-hotel-caption">
-                <h3>{dest.name}</h3>
-                <p>Hotels</p>
+          {destinations.map((dest) => {
+            // Only Boracay has a real guide page for now.
+            const hasGuide = dest.name === "Boracay, Aklan";
+            return (
+              <div
+                className="ww-hotel-card"
+                key={dest.name}
+                onClick={() =>
+                  hasGuide &&
+                  navigate("/travel-guide", { state: { destination: dest.name } })
+                }
+                style={{
+                  opacity: hasGuide ? 1 : 0.5,
+                  cursor: hasGuide ? "pointer" : "not-allowed",
+                }}
+              >
+                <img src={dest.img} alt={dest.name} />
+                <div className="ww-hotel-caption">
+                  <h3>{dest.name}</h3>
+                  <p>Hotels</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>

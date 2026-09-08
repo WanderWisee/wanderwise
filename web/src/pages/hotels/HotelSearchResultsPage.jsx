@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
 
 const results = [
@@ -8,6 +10,7 @@ const results = [
 ];
 
 export default function HotelSearchResultsPage() {
+  const navigate = useNavigate();
   const [buddies, setBuddies] = useState(2);
   const [minPrice, setMinPrice] = useState(1500);
   const [maxPrice, setMaxPrice] = useState(3000);
@@ -26,12 +29,12 @@ export default function HotelSearchResultsPage() {
           <a href="/dashboard">Home</a>
           <a href="/travel-tips">Guides</a>
           <a href="/hotels">Hotels</a>
-          <span className="ww-menu-dropdown">Menu</span>
+          <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
           <span>🔍</span>
-          <span>🔔</span>
-          <span>👤</span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         </div>
       </header>
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
 
 export default function JournalNewPostPage() {
@@ -46,11 +47,11 @@ export default function JournalNewPostPage() {
           <a href="/dashboard">Home</a>
           <a href="/travel-tips">Guides</a>
           <a href="/hotels">Hotels</a>
-          <span className="ww-menu-dropdown">Menu</span>
+          <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
           <span>🔍</span>
-          <span>🔔</span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
             👤
           </span>

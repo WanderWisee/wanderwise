@@ -11,10 +11,11 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    // TEMPORARY: skip backend call for visual testing.
-    // Revert this once backend is ready — see the commented version below.
-    navigate('/dashboard');
-  };
+  // TEMPORARY: skip backend call for visual testing.
+  // Revert this once backend is ready — see the commented version below.
+  localStorage.setItem('wanderwise_token', 'dev-token');
+  navigate('/dashboard');
+};
 
   // const handleLogin = async () => {
   //   setError("");

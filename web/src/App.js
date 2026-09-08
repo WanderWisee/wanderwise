@@ -19,6 +19,7 @@ import DirectionsPage from './pages/directions/DirectionsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import JournalNewPostPage from './pages/journal/JournalNewPostPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import HistoryPage from './pages/history/HistoryPage';
 
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/journal/new" element={<JournalNewPostPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </BrowserRouter>
   );

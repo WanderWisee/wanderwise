@@ -1550,6 +1550,33 @@
 }
 
 /* Trip Plan Builder Page */
+.ww-visited-badge {
+  color: #2f7a4f;
+  font-size: 13px;
+  font-weight: bold;
+  margin-left: 6px;
+}
+
+.ww-section-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ww-section-add-row .ww-add-place-input {
+  flex: 1;
+}
+
+.ww-section-add-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 20px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
 
 .ww-section-name-row {
   display: flex;
@@ -2689,4 +2716,93 @@
   width: 20px;
   height: 20px;
   accent-color: #3a2416;
+}
+
+/* Navbar Menu */
+.ww-menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.ww-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: #f6f3d9;
+  border: 1px solid #d4c9a8;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  min-width: 140px;
+  padding: 8px 0;
+  z-index: 100;
+}
+
+.ww-menu-item {
+  padding: 12px 20px;
+  margin: 0;
+  cursor: pointer;
+  color: #2b1c12;
+}
+
+.ww-menu-item:hover {
+  background-color: #e6dcc0;
+}
+
+/* History Page */
+.ww-history-page {
+  min-height: 100vh;
+  background-color: #f6f3d9;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+.ww-history-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 64px;
+}
+
+.ww-history-title {
+  font-size: 34px;
+  margin-bottom: 30px;
+}
+
+.ww-history-table {
+  width: 100%;
+}
+
+.ww-history-header-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid #2b1c12;
+  font-size: 16px;
+}
+
+.ww-history-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 18px 0;
+  border-bottom: 1px solid #d4c9a8;
+  cursor: pointer;
+  color: #7a6a4f;
+}
+
+.ww-history-row:hover {
+  background-color: #eee7c9;
+}
+
+.ww-history-col-title {
+  color: #2b1c12;
+}
+
+.ww-history-col-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ww-history-empty {
+  padding: 30px 0;
+  color: #5c4a33;
 }

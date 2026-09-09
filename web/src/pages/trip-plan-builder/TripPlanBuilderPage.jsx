@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "../../App.css";
 
 let nextPlaceId = 1;
+let nextSectionId = 1;
 let nextNumber = 1;
 
 function formatDayLabel(date) {
@@ -40,14 +41,15 @@ export default function TripPlanBuilderPage() {
   const [endDate, setEndDate] = useState(tripInfo.endDate || "");
   const [people, setPeople] = useState(tripInfo.people || 0);
 
-  // "Where to go?" (`places`) is a standalone checklist/reference for
-  // the whole trip — it has no link to the itinerary. Each itinerary
-  // day (`days[i].places`) keeps its own independent list, typed in
-  // directly per day.
+  // "Where to go?" (`places`) and each "+ New List" section
+  // (`customSections[].places`) are independent lists, each with
+  // their own places. The itinerary's "Add a new place" (per day)
+  // looks for a name match specifically in "Where to go?" so visited
+  // status can be shared between the itinerary and that list.
   const [tripState, setTripState] = useState(
     tripInfo.restoredTripState || {
       places: [],
-      customSections: [],
+      customSections: [{ id: nextSectionId++, name: "", placeInput: "", places: [] }],
       days: [],
       budgetTotal: 0,
       expenses: [],
@@ -81,7 +83,7 @@ export default function TripPlanBuilderPage() {
     setTripState(next);
   };
 
-  const { places, days, budgetTotal, expenses = [] } = tripState;
+  const { places, customSections, days, budgetTotal, expenses = [] } = tripState;
 
   // --- Edit Trip Info modal ---
   const [showEditTrip, setShowEditTrip] = useState(false);
@@ -103,11 +105,6 @@ export default function TripPlanBuilderPage() {
   const [newPlaceInput, setNewPlaceInput] = useState("");
   const newPlaceInputRef = useRef(null);
 
-  // Single persistent input under "Name this section" — clicking
-  // "+ New List" is what submits it (instead of pressing Enter), then
-  // the input clears itself, ready for the next entry.
-  const [sectionPlaceInput, setSectionPlaceInput] = useState("");
-
   const generatedDays = useMemo(
     () => buildDaysFromRange(startDate, endDate),
     [startDate, endDate]
@@ -127,6 +124,36 @@ export default function TripPlanBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate]);
 
+  // Finds a place wherever it lives (top-level "Where to go?" list or
+  // inside any "Name this section" list) and returns it along with
+  // its display number = its position in whichever list it belongs to.
+  const findPlaceWithOrigin = (state, placeId) => {
+    const mainIdx = state.places.findIndex((p) => p.id === placeId);
+    if (mainIdx !== -1) return { place: state.places[mainIdx], number: mainIdx + 1 };
+    for (const s of state.customSections) {
+      const idx = s.places.findIndex((p) => p.id === placeId);
+      if (idx !== -1) return { place: s.places[idx], number: idx + 1 };
+    }
+    return null;
+  };
+
+  // Updates a place wherever it lives (top-level or inside a section).
+  const updatePlaceEverywhere = (state, placeId, updater) => {
+    if (state.places.some((p) => p.id === placeId)) {
+      return {
+        ...state,
+        places: state.places.map((p) => (p.id === placeId ? updater(p) : p)),
+      };
+    }
+    return {
+      ...state,
+      customSections: state.customSections.map((s) => ({
+        ...s,
+        places: s.places.map((p) => (p.id === placeId ? updater(p) : p)),
+      })),
+    };
+  };
+
   const budgetSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Adds a new place to the "Where to go?" checklist only.
@@ -142,77 +169,171 @@ export default function TripPlanBuilderPage() {
   };
 
   const toggleVisited = (placeId) => {
-    applyChange((prev) => ({
-      ...prev,
-      places: prev.places.map((p) =>
-        p.id === placeId ? { ...p, visited: !p.visited } : p
-      ),
-    }));
+    applyChange((prev) => updatePlaceEverywhere(prev, placeId, (p) => ({ ...p, visited: !p.visited })));
   };
 
-  // "+ New List" click = the submit action for the section input
-  // (replaces pressing Enter). Adds the typed place to "Where to go?"
-  // and clears the input so it's ready for the next one.
-  const handleNewList = () => {
-    if (!sectionPlaceInput.trim()) return;
-    addPlace(sectionPlaceInput.trim());
-    setSectionPlaceInput("");
-  };
-
-  // --- Where to go? list edit mode ---
-  const [editingWhereToGo, setEditingWhereToGo] = useState(false);
-
-  const handleEditPlaceName = (placeId, value) => {
-    setTripState((prev) => ({
-      ...prev,
-      places: prev.places.map((p) => (p.id === placeId ? { ...p, name: value } : p)),
-    }));
-  };
+  // --- Where to go? heading title (editable via pencil, like a section name) ---
+  const [whereToGoTitle, setWhereToGoTitle] = useState("Where to go?");
+  const [editingWhereToGoTitle, setEditingWhereToGoTitle] = useState(false);
 
   const handleDeletePlace = (placeId) => {
     applyChange((prev) => ({
       ...prev,
       places: prev.places.filter((p) => p.id !== placeId),
+      days: prev.days.map((day) => ({
+        ...day,
+        placeIds: day.placeIds.filter((id) => id !== placeId),
+      })),
     }));
   };
 
+  // Delete confirmation modal — replaces window.confirm with a
+  // styled in-app popup. `pendingDelete` holds what's about to be
+  // deleted: { type: "whereToGo" } or { type: "section", id }.
+  const [pendingDelete, setPendingDelete] = useState(null);
+
+  const performDeleteWhereToGoList = () => {
+    applyChange((prev) => {
+      const idsToRemove = new Set(prev.places.map((p) => p.id));
+      return {
+        ...prev,
+        places: [],
+        days: prev.days.map((day) => ({
+          ...day,
+          placeIds: day.placeIds.filter((id) => !idsToRemove.has(id)),
+        })),
+      };
+    });
+  };
+
+  const performDeleteSection = (sectionId) => {
+    applyChange((prev) => {
+      const section = prev.customSections.find((s) => s.id === sectionId);
+      const idsToRemove = new Set((section?.places || []).map((p) => p.id));
+      return {
+        ...prev,
+        customSections: prev.customSections.map((s) =>
+          s.id === sectionId ? { ...s, places: [] } : s
+        ),
+        days: prev.days.map((day) => ({
+          ...day,
+          placeIds: day.placeIds.filter((id) => !idsToRemove.has(id)),
+        })),
+      };
+    });
+  };
+
+  const handleDeleteWhereToGoList = () => setPendingDelete({ type: "whereToGo" });
+
+  const confirmPendingDelete = () => {
+    if (!pendingDelete) return;
+    if (pendingDelete.type === "whereToGo") performDeleteWhereToGoList();
+    if (pendingDelete.type === "section") performDeleteSection(pendingDelete.id);
+    setPendingDelete(null);
+  };
+
+  // --- "+ New List" — commits whatever is currently typed in every
+  // section's own input into that section's list. It no longer
+  // spawns an additional blank section on each click. ---
+  const handleNewList = () => {
+    applyChange((prev) => ({
+      ...prev,
+      customSections: prev.customSections.map((s) => {
+        if (!s.placeInput.trim()) return s;
+        const place = {
+          id: nextPlaceId++,
+          number: nextNumber++,
+          name: s.placeInput.trim(),
+          visited: false,
+        };
+        return { ...s, places: [...s.places, place], placeInput: "" };
+      }),
+    }));
+  };
+
+  const [editingSectionName, setEditingSectionName] = useState({});
+
+  const toggleSectionNameEdit = (sectionId) => {
+    setEditingSectionName((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  };
+
+  const handleSectionNameChange = (sectionId, value) => {
+    setTripState((prev) => ({
+      ...prev,
+      customSections: prev.customSections.map((s) =>
+        s.id === sectionId ? { ...s, name: value } : s
+      ),
+    }));
+  };
+
+  const handleSectionPlaceInputChange = (sectionId, value) => {
+    setTripState((prev) => ({
+      ...prev,
+      customSections: prev.customSections.map((s) =>
+        s.id === sectionId ? { ...s, placeInput: value } : s
+      ),
+    }));
+  };
+
+  const toggleSectionPlaceVisited = (sectionId, placeId) => {
+    applyChange((prev) => ({
+      ...prev,
+      customSections: prev.customSections.map((s) =>
+        s.id !== sectionId
+          ? s
+          : {
+              ...s,
+              places: s.places.map((p) =>
+                p.id === placeId ? { ...p, visited: !p.visited } : p
+              ),
+            }
+      ),
+    }));
+  };
+
+  const handleDeleteSection = (sectionId) => setPendingDelete({ type: "section", id: sectionId });
+
   // --- Itinerary: each day has its own independent "Add a new place"
-  // input, unrelated to the "Where to go?" checklist. ---
+  // input. Typing a place either reuses an existing "Where to go?"
+  // entry with the same name (shared visited status), or creates a
+  // new one there. ---
   const [dayInputs, setDayInputs] = useState({});
 
   const handleDayInputChange = (dayIndex, value) => {
     setDayInputs((prev) => ({ ...prev, [dayIndex]: value }));
   };
 
-  // Typing a place into a day's input either reuses an existing
-  // "Where to go?" entry with the same name, or creates a new one —
-  // either way, the day just stores a reference (id) to it. This is
-  // what makes "visited" shared between the itinerary and "Where to
-  // go?": they're both looking at the same underlying place object.
   const handleAddDayPlace = (dayIndex) => (e) => {
     if (e.key !== "Enter") return;
     const value = (dayInputs[dayIndex] || "").trim();
     if (!value) return;
 
     applyChange((prev) => {
-      const existing = prev.places.find(
-        (p) => p.name.trim().toLowerCase() === value.toLowerCase()
-      );
-      let places = prev.places;
+      const lower = value.toLowerCase();
+      // Search "Where to go?" first, then every "Name this section" list.
+      let existing = prev.places.find((p) => p.name.trim().toLowerCase() === lower);
+      if (!existing) {
+        for (const s of prev.customSections) {
+          existing = s.places.find((p) => p.name.trim().toLowerCase() === lower);
+          if (existing) break;
+        }
+      }
+
+      let updatedState = prev;
       let placeId;
       if (existing) {
         placeId = existing.id;
       } else {
         const newPlace = { id: nextPlaceId++, number: nextNumber++, name: value, visited: false };
-        places = [...places, newPlace];
+        updatedState = { ...prev, places: [...prev.places, newPlace] };
         placeId = newPlace.id;
       }
+
       return {
-        ...prev,
-        places,
-        days: prev.days.map((day, i) => {
+        ...updatedState,
+        days: updatedState.days.map((day, i) => {
           if (i !== dayIndex) return day;
-          if (day.placeIds.includes(placeId)) return day; // already in this day
+          if (day.placeIds.includes(placeId)) return day;
           return { ...day, placeIds: [...day.placeIds, placeId] };
         }),
       };
@@ -262,10 +383,20 @@ export default function TripPlanBuilderPage() {
   const [editingTimeFor, setEditingTimeFor] = useState(null);
 
   const updatePlaceTime = (placeId, value) => {
-    setTripState((prev) => ({
-      ...prev,
-      places: prev.places.map((p) => (p.id === placeId ? { ...p, time: value } : p)),
-    }));
+    setTripState((prev) => updatePlaceEverywhere(prev, placeId, (p) => ({ ...p, time: value })));
+  };
+
+  const updatePlaceNote = (placeId, value) => {
+    setTripState((prev) => updatePlaceEverywhere(prev, placeId, (p) => ({ ...p, note: value })));
+  };
+
+  // --- Sidebar scroll targets ---
+  const whereToGoRef = useRef(null);
+  const itineraryRef = useRef(null);
+  const untitledRef = useRef(null);
+
+  const scrollToRef = (ref) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // --- Add Cost -> scroll down to the "Expenses" list on this same page ---
@@ -291,6 +422,7 @@ export default function TripPlanBuilderPage() {
 
   // --- Navigate to Add Expense page ---
   const handleGoToAddExpense = () => {
+    const tripPlanItems = [...places, ...customSections.flatMap((s) => s.places)];
     navigate("/add-expense", {
       state: {
         destination,
@@ -299,7 +431,7 @@ export default function TripPlanBuilderPage() {
         people,
         tripState,
         returnPath: "/trip-plan",
-        tripPlanItems: places,
+        tripPlanItems,
       },
     });
   };
@@ -363,16 +495,23 @@ export default function TripPlanBuilderPage() {
       <div className="ww-builder-body">
         <aside className="ww-builder-sidebar">
           <p className="ww-sidebar-item active">Overview</p>
-          <p className="ww-sidebar-item">Search</p>
-          <p className="ww-sidebar-item">Where to go?</p>
-          <p className="ww-sidebar-item">Notes</p>
-          <p className="ww-sidebar-item">Untitled</p>
+          <p className="ww-sidebar-item" onClick={() => scrollToRef(whereToGoRef)} style={{ cursor: "pointer" }}>
+            Where to go?
+          </p>
+          <p className="ww-sidebar-item" onClick={() => scrollToRef(itineraryRef)} style={{ cursor: "pointer" }}>
+            Notes
+          </p>
+          <p className="ww-sidebar-item" onClick={() => scrollToRef(untitledRef)} style={{ cursor: "pointer" }}>
+            Untitled
+          </p>
           <p className="ww-sidebar-header">Itinerary</p>
           {days.map((day) => (
             <p className="ww-sidebar-item" key={day.label}>{day.label}</p>
           ))}
           <p className="ww-sidebar-header">Budget</p>
-          <p className="ww-sidebar-item">View</p>
+          <p className="ww-sidebar-item" onClick={() => scrollToRef(expensesRef)} style={{ cursor: "pointer" }}>
+            View
+          </p>
         </aside>
 
         <main className="ww-builder-main">
@@ -390,53 +529,65 @@ export default function TripPlanBuilderPage() {
             <img src="/assets/philippines-map-placeholder.jpg" alt="Trip map" />
           </div>
 
-          <button className="ww-browse-btn">🔍 Browse</button>
-
           <h2 className="ww-builder-section-title">
-            Where to go?{" "}
-            <span
-              className="ww-edit-icon"
-              onClick={() => setEditingWhereToGo((v) => !v)}
-              style={{ cursor: "pointer" }}
-            >
-              ✎
+            <span className="ww-title-with-icon">
+              {editingWhereToGoTitle ? (
+                <input
+                  className="ww-section-name-input-inline"
+                  value={whereToGoTitle}
+                  onChange={(e) => setWhereToGoTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") setEditingWhereToGoTitle(false);
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span>{whereToGoTitle}</span>
+              )}
+              <span
+                className="ww-edit-icon"
+                onClick={() => setEditingWhereToGoTitle((v) => !v)}
+                style={{ cursor: "pointer" }}
+              >
+                ✎
+              </span>
             </span>
-            <span className="ww-more-icon">⋯</span>
+            <span
+              className="ww-more-icon"
+              onClick={handleDeleteWhereToGoList}
+              style={{ cursor: "pointer" }}
+              title="Delete this entire list"
+            >
+              ⋯
+            </span>
           </h2>
+          <div ref={whereToGoRef} />
 
           {places.map((p, i) => (
             <div className="ww-place-card" key={p.id}>
-              {editingWhereToGo ? (
-                <div className="ww-place-edit-row">
-                  <span className="ww-place-number">📍{i + 1}</span>
-                  <input
-                    className="ww-place-edit-input"
-                    value={p.name}
-                    onChange={(e) => handleEditPlaceName(p.id, e.target.value)}
-                  />
-                  <button className="ww-place-delete-btn" onClick={() => handleDeletePlace(p.id)}>
-                    🗑
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <p className="ww-place-name">
-                    📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ Visited</span>}
-                  </p>
-                  <p className="ww-place-notes">Add notes, etc, here</p>
-                  <p className="ww-place-actions">
-                    <span>🕐 Select Time</span>
-                    <span>$ Add Cost</span>
-                  </p>
-                  <p
-                    className="ww-mark-visited"
-                    onClick={() => toggleVisited(p.id)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {p.visited ? "✕ Unmark visited" : "✓ Mark visited"}
-                  </p>
-                </>
-              )}
+              <p className="ww-place-name">
+                📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ Visited</span>}
+              </p>
+              <input
+                className="ww-place-notes-input"
+                placeholder="Add notes, etc, here"
+                value={p.note || ""}
+                onChange={(e) => updatePlaceNote(p.id, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.target.blur();
+                }}
+              />
+              <p className="ww-place-actions">
+                <span>🕐 Select Time</span>
+                <span>$ Add Cost</span>
+              </p>
+              <p
+                className="ww-mark-visited"
+                onClick={() => toggleVisited(p.id)}
+                style={{ cursor: "pointer" }}
+              >
+                {p.visited ? "✕ Unmark visited" : "✓ Mark visited"}
+              </p>
             </div>
           ))}
 
@@ -451,20 +602,82 @@ export default function TripPlanBuilderPage() {
 
           <hr className="ww-builder-divider" />
 
-          {/* Single persistent input. Clicking "+ New List" below
-              submits whatever is typed here into "Where to go?" and
-              clears it — no Enter key needed. */}
-          <h2 className="ww-builder-section-title ww-section-placeholder-title">
-            Name this section (e.g., "Lamon")
-            <span className="ww-edit-icon">✎</span>
-            <span className="ww-more-icon">⋯</span>
-          </h2>
-          <input
-            className="ww-add-place-input"
-            placeholder="📍 Add a new place"
-            value={sectionPlaceInput}
-            onChange={(e) => setSectionPlaceInput(e.target.value)}
-          />
+          {customSections.map((section, sectionIndex) => (
+            <div key={section.id} className="ww-custom-section" ref={sectionIndex === 0 ? untitledRef : null}>
+              <h2
+                className={`ww-builder-section-title ${
+                  section.name ? "" : "ww-section-placeholder-title"
+                }`}
+              >
+                <span className="ww-title-with-icon">
+                  {editingSectionName[section.id] ? (
+                    <input
+                      className="ww-section-name-input-inline"
+                      placeholder='Name this section (e.g., "Lamon")'
+                      value={section.name}
+                      onChange={(e) => handleSectionNameChange(section.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") toggleSectionNameEdit(section.id);
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span>{section.name || 'Name this section (e.g., "Lamon")'}</span>
+                  )}
+                  <span
+                    className="ww-edit-icon"
+                    onClick={() => toggleSectionNameEdit(section.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    ✎
+                  </span>
+                </span>
+                <span
+                  className="ww-more-icon"
+                  onClick={() => handleDeleteSection(section.id)}
+                  style={{ cursor: "pointer" }}
+                  title="Delete this entire list"
+                >
+                  ⋯
+                </span>
+              </h2>
+
+              {section.places.map((p, i) => (
+                <div className="ww-place-card" key={p.id}>
+                  <p className="ww-place-name">
+                    📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ Visited</span>}
+                  </p>
+                  <input
+                    className="ww-place-notes-input"
+                    placeholder="Add notes, etc, here"
+                    value={p.note || ""}
+                    onChange={(e) => updatePlaceNote(p.id, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.target.blur();
+                    }}
+                  />
+                  <p className="ww-place-actions">
+                    <span>🕐 Select Time</span>
+                    <span>$ Add Cost</span>
+                  </p>
+                  <p
+                    className="ww-mark-visited"
+                    onClick={() => toggleSectionPlaceVisited(section.id, p.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {p.visited ? "✕ Unmark visited" : "✓ Mark visited"}
+                  </p>
+                </div>
+              ))}
+
+              <input
+                className="ww-add-place-input"
+                placeholder="📍 Add a new place"
+                value={section.placeInput}
+                onChange={(e) => handleSectionPlaceInputChange(section.id, e.target.value)}
+              />
+            </div>
+          ))}
 
           <button className="ww-new-list-btn" onClick={handleNewList}>
             + New List
@@ -474,7 +687,7 @@ export default function TripPlanBuilderPage() {
 
           {days.length > 0 && (
             <>
-              <h2 className="ww-builder-section-title">
+              <h2 className="ww-builder-section-title" ref={itineraryRef}>
                 Itinerary
                 {startDate && endDate && (
                   <span className="ww-date-pill">📅 {startDate} - {endDate}</span>
@@ -483,13 +696,13 @@ export default function TripPlanBuilderPage() {
 
               {days.map((day, dayIndex) => {
                 const dayPlaces = day.placeIds
-                  .map((id) => places.find((p) => p.id === id))
+                  .map((id) => findPlaceWithOrigin(tripState, id))
                   .filter(Boolean);
 
                 return (
                   <div className="ww-day-block" key={day.label}>
                     <p className="ww-day-header">⌄ {day.label}</p>
-                    {dayPlaces.map((p, i) => (
+                    {dayPlaces.map(({ place: p, number }, i) => (
                       <React.Fragment key={p.id}>
                         <div
                           className="ww-place-card ww-itinerary-place"
@@ -510,8 +723,16 @@ export default function TripPlanBuilderPage() {
                             />
                           </div>
                           <div>
-                            <p className="ww-place-name">📍{i + 1} {p.name}</p>
-                            <p className="ww-place-notes">Add notes, etc, here</p>
+                            <p className="ww-place-name">📍{number} {p.name}</p>
+                            <input
+                              className="ww-place-notes-input"
+                              placeholder="Add notes, etc, here"
+                              value={p.note || ""}
+                              onChange={(e) => updatePlaceNote(p.id, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") e.target.blur();
+                              }}
+                            />
                             <p className="ww-place-actions">
                               {editingTimeFor === p.id ? (
                                 <input
@@ -541,11 +762,9 @@ export default function TripPlanBuilderPage() {
                             </p>
                           </div>
                         </div>
-                        {i < dayPlaces.length - 1 && (
-                          <p className="ww-directions-hint">
-                            🚗 -- mins - -- km &nbsp;|&nbsp; Directions
-                          </p>
-                        )}
+                        <p className="ww-directions-hint">
+                          🚗 -- mins - -- km &nbsp;|&nbsp; Directions
+                        </p>
                       </React.Fragment>
                     ))}
                     <input
@@ -670,6 +889,22 @@ export default function TripPlanBuilderPage() {
                 Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="ww-modal-overlay" onClick={() => setPendingDelete(null)}>
+          <div className="ww-warning-modal-card" onClick={(e) => e.stopPropagation()}>
+            <p className="ww-warning-modal-icon">⚠️</p>
+            <p className="ww-warning-modal-text">Delete section</p>
+            <p className="ww-warning-modal-subtext">
+              This will remove every place in this list. This can't be undone
+              (except with Undo).
+            </p>
+            <button className="ww-warning-modal-ok-btn" onClick={confirmPendingDelete}>
+              OK
+            </button>
           </div>
         </div>
       )}

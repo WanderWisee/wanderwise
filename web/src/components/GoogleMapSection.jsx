@@ -16,6 +16,11 @@ const center = {
 export default function GoogleMapSection() {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
+  // TEMPORARY — for debugging the "For development purposes only"
+  // watermark. Check the browser console (F12) after this renders,
+  // then remove this line once we've confirmed the key is loading.
+  console.log("API KEY:", apiKey);
+
   return (
     <section className="ww-map-section">
       <h2 className="ww-map-title">Explore Nearby Destinations</h2>

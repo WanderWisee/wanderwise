@@ -3,12 +3,37 @@ import { Link, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
 
+// Destinations we have our own curated guide + results page for.
+// Anything else typed into the search bar shows the Agoda/Klook links.
+const DESTINATIONS_WITH_GUIDE = ["boracay"];
+
+// NOTE: verify these URL patterns against a real manual search on
+// agoda.com / klook.com — their query params can change over time.
+function buildAgodaSearchUrl(query, startDate, endDate) {
+  const params = new URLSearchParams({
+    text: query,
+    checkIn: startDate,
+    checkOut: endDate,
+  });
+  return `https://www.agoda.com/search?${params.toString()}`;
+}
+
+function buildKlookSearchUrl(query) {
+  const params = new URLSearchParams({ query });
+  return `https://www.klook.com/search/result/?${params.toString()}`;
+}
+
 export default function HotelsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [buddies, setBuddies] = useState(0);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  // Set when the searched place has no guide of our own — shows a
+  // small panel with real <a> links to Agoda/Klook instead of trying
+  // to window.open() both (which popup blockers only allow one of).
+  const [externalSearch, setExternalSearch] = useState(null);
 
   const destinations = [
   { name: "San Juan, La Union", img: "/assets/la-union.webp" },
@@ -21,6 +46,49 @@ export default function HotelsPage() {
   { name: "Vigan, Ilocos Sur", img: "/assets/vigan.jpg" },
   { name: "Tagaytay, Cavite", img: "/assets/tagaytay.jpg" },
 ];
+
+  const handleSelectDestination = (dest) => {
+    const hasGuide = dest.name === "Boracay, Aklan";
+    if (!hasGuide) return;
+
+    if (!startDate || !endDate) {
+      alert("Please select your start and end dates first.");
+      return;
+    }
+
+    setExternalSearch(null);
+    navigate("/hotels/results", {
+      state: { destination: dest.name, startDate, endDate, buddies },
+    });
+  };
+
+  const handleSearch = () => {
+    if (!startDate || !endDate) {
+      alert("Please select your start and end dates first.");
+      return;
+    }
+    if (!search.trim()) {
+      alert("Please tell us where you want to go.");
+      return;
+    }
+
+    const query = search.trim();
+    const hasOwnGuide = DESTINATIONS_WITH_GUIDE.some((d) =>
+      query.toLowerCase().includes(d)
+    );
+
+    if (hasOwnGuide) {
+      setExternalSearch(null);
+      navigate("/hotels/results", {
+        state: { destination: "Boracay, Aklan", startDate, endDate, buddies },
+      });
+      return;
+    }
+
+    // No guide of our own — show the Agoda/Klook link panel instead
+    // of trying to open both in new tabs at once.
+    setExternalSearch({ query, startDate, endDate });
+  };
 
   return (
     <div className="ww-hotels-page">
@@ -94,8 +162,41 @@ export default function HotelsPage() {
               <button onClick={() => setBuddies(buddies + 1)}>+</button>
             </div>
           </div>
-          <button className="ww-search-btn">Search</button>
+          <button className="ww-search-btn" onClick={handleSearch}>
+            Search
+          </button>
         </div>
+
+        {externalSearch && (
+          <div className="ww-external-recommend-panel">
+            <p>
+              We don't have a guide for "{externalSearch.query}" yet — check
+              these instead:
+            </p>
+            <div className="ww-external-search-row">
+              <a
+                className="ww-external-search-btn"
+                href={buildAgodaSearchUrl(
+                  externalSearch.query,
+                  externalSearch.startDate,
+                  externalSearch.endDate
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🔗 Search on Agoda
+              </a>
+              <a
+                className="ww-external-search-btn"
+                href={buildKlookSearchUrl(externalSearch.query)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🔗 Search on Klook
+              </a>
+            </div>
+          </div>
+        )}
       </main>
 
       <section className="ww-hotels-destinations">
@@ -105,16 +206,13 @@ export default function HotelsPage() {
 
         <div className="ww-hotels-grid">
           {destinations.map((dest) => {
-            // Only Boracay has a real guide page for now.
+            // Only Boracay has real results content for now.
             const hasGuide = dest.name === "Boracay, Aklan";
             return (
               <div
                 className="ww-hotel-card"
                 key={dest.name}
-                onClick={() =>
-                  hasGuide &&
-                  navigate("/travel-guide", { state: { destination: dest.name } })
-                }
+                onClick={() => handleSelectDestination(dest)}
                 style={{
                   opacity: hasGuide ? 1 : 0.5,
                   cursor: hasGuide ? "pointer" : "not-allowed",

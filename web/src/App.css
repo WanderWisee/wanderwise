@@ -828,6 +828,84 @@
 }
 
 /* Trip Planning Page */
+.ww-section-name-input-inline {
+  border: none;
+  border-bottom: 1px solid #2b1c12;
+  background: transparent;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: inherit;
+  color: inherit;
+  outline: none;
+  flex: 1;
+}
+
+.ww-section-placeholder-title {
+  color: #a08c68;
+}
+
+.ww-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ww-warning-modal-card {
+  background-color: #f6f3d9;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ww-warning-modal-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.ww-warning-modal-text {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.ww-warning-modal-subtext {
+  font-size: 14px;
+  color: #5c4a33;
+  margin-bottom: 24px;
+}
+
+.ww-warning-modal-ok-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 32px;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.ww-place-delete-inline {
+  margin-left: 8px;
+  font-size: 13px;
+}
+
+.ww-place-notes-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #b39d6f;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: #5c4a33;
+  padding: 4px 0;
+  margin-bottom: 6px;
+  outline: none;
+}
+
 .ww-planning-page {
   min-height: 100vh;
   background-color: #f6f3d9;
@@ -1415,6 +1493,42 @@
 .ww-results-map img {
   width: 100%;
   display: block;
+}
+
+.ww-external-search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.ww-external-search-btn {
+  background-color: transparent;
+  border: 1.5px solid #2b1c12;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ww-external-recommend-panel {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.ww-external-recommend-panel p {
+  margin-bottom: 12px;
+  color: #5c4a33;
+}
+
+.ww-external-recommend-panel .ww-external-search-row {
+  justify-content: center;
+}
+
+.ww-external-search-btn {
+  text-decoration: none;
+  color: #2b1c12;
+  display: inline-block;
 }
 
 .ww-filters-row {
@@ -2718,7 +2832,7 @@
   accent-color: #3a2416;
 }
 
-/* Navbar Menu */
+/* * Navbar Menu */
 .ww-menu-wrapper {
   position: relative;
   display: inline-block;

@@ -1,6 +1,6 @@
 import { getToken } from './authService';
 
-const BASE_URL = 'http://localhost:3001/api';
+const BASE_URL = 'http://192.168.56.1:3001/api';
 
 async function authHeaders() {
   const token = await getToken();

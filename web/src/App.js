@@ -20,10 +20,12 @@ import ProfilePage from './pages/profile/ProfilePage';
 import JournalNewPostPage from './pages/journal/JournalNewPostPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import HistoryPage from './pages/history/HistoryPage';
-
+import { AppDataProvider } from './context/AppDataContext';
+import JournalViewPage from './pages/journal/JournalViewPage';
 
 function App() {
   return (
+  <AppDataProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -50,8 +52,10 @@ function App() {
         <Route path="/journal/new" element={<JournalNewPostPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/history" element={<HistoryPage />} />
+        <Route path="/journal/view/:id" element={<JournalViewPage />} />
       </Routes>
     </BrowserRouter>
+  </AppDataProvider>
   );
 }
 

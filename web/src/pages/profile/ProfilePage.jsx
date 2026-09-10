@@ -1,16 +1,28 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("trips"); // "trips" | "journal"
+  const { journalEntries, profileName, profileAvatar } = useAppData();
 
-  // Placeholder data — swap these out once trips/journal entries are
-  // actually persisted (e.g. from TripPlanBuilderPage saves).
+  const [activeTab, setActiveTab] = useState("trips");
+
+  // Placeholder data — swap out once trips are actually persisted.
   const trips = [{ id: 1, name: "La Union", img: "/assets/la-union.webp" }];
-  const journalEntries = [{ id: 1, name: "Singapore", img: "/assets/singapore.jpg" }];
+
+  // A default example card, same as the one in Guides — links to the
+  // real Boracay guide content instead of a user-posted journal entry.
+  const defaultJournalEntries = [
+    {
+      id: "default-boracay",
+      title: "Boracay, Aklan",
+      coverImage: "/assets/boracay.jpg",
+      isDefault: true,
+    },
+  ];
 
   return (
     <div className="ww-profile-page">
@@ -20,13 +32,13 @@ export default function ProfilePage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <Link to="/dashboard">Home</Link>
+          <Link to="/travel-tips">Guides</Link>
+          <Link to="/hotels">Hotels</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span>🔍</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
           <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
             👤
@@ -37,8 +49,15 @@ export default function ProfilePage() {
       <div className="ww-profile-cover" />
 
       <div className="ww-profile-info">
-        <div className="ww-profile-avatar" />
-        <h1 className="ww-profile-username">Username_150</h1>
+        <div
+          className="ww-profile-avatar"
+          style={
+            profileAvatar
+              ? { backgroundImage: `url(${profileAvatar})`, backgroundSize: "cover", backgroundPosition: "center" }
+              : undefined
+          }
+        />
+        <h1 className="ww-profile-username">{profileName}</h1>
         <p className="ww-profile-bio">bio</p>
         <p className="ww-profile-location">Location</p>
 
@@ -113,10 +132,19 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="ww-profile-grid">
-              {journalEntries.map((j) => (
-                <div className="ww-profile-card" key={j.id}>
-                  <img src={j.img} alt={j.name} />
-                  <p>{j.name}</p>
+              {[...defaultJournalEntries, ...journalEntries].map((j) => (
+                <div
+                  className="ww-profile-card"
+                  key={j.id}
+                  onClick={() =>
+                    j.isDefault
+                      ? navigate("/travel-guide", { state: { destination: "Boracay Islands" } })
+                      : navigate(`/journal/view/${j.id}`)
+                  }
+                  style={{ cursor: "pointer" }}
+                >
+                  <img src={j.coverImage} alt={j.title} />
+                  <p>{j.title}</p>
                 </div>
               ))}
             </div>

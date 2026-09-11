@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.1.151/api';
+const BASE_URL = 'http://192.168.1.15:3001/api'; // TODO: palitan ng totoong IP ng laptop na may backend
 const TOKEN_KEY = 'wanderwise_token';
 
 async function request(path, body) {
@@ -19,16 +19,16 @@ async function request(path, body) {
   return data;
 }
 
-export async function register({ name, email, password }) {
-  const data = await request('/auth/register', { name, email, password });
+export async function register({ studentNumber, dob, cellphone, password }) {
+  const data = await request('/register', { studentNumber, dob, cellphone, password });
   if (data.token) {
     await AsyncStorage.setItem(TOKEN_KEY, data.token);
   }
   return data;
 }
 
-export async function login({ email, password }) {
-  const data = await request('/auth/login', { email, password });
+export async function login({ studentNumber, password }) {
+  const data = await request('/login', { studentNumber, password });
   await AsyncStorage.setItem(TOKEN_KEY, data.token);
   return data;
 }

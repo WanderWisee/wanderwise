@@ -5,10 +5,10 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Colors } from '../../constants/theme';
 import { fetchTrips } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
-import GradientCard from '../../components/GradientCard';
 import MeshBlobs from '../../components/MeshBlobs';
 
 const TOP_DESTINATIONS = [
@@ -77,14 +77,8 @@ export default function HomeScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
-            {/* Your Travel Stories */}
-            <GradientCard style={styles.storiesCard}>
-              <View style={styles.storiesIconRow}>
-                <View style={styles.storiesIconBadge}>
-                  <Text style={{ fontSize: 20 }}>🗺️</Text>
-                </View>
-                <Text style={styles.storiesTitle}>Your Travel Stories</Text>
-              </View>
+            <View style={styles.storiesCard}>
+              <Text style={styles.storiesTitle}>Your Travel Stories</Text>
               {trips.length === 0 ? (
                 <Text style={styles.storiesSubtitle}>
                   No trips yet. Start planning your next adventure!
@@ -100,16 +94,15 @@ export default function HomeScreen() {
               >
                 <Text style={styles.startButtonText}>+ Start Planning</Text>
               </TouchableOpacity>
-            </GradientCard>
+            </View>
 
-            {/* Start Exploring (Map) */}
             <Text style={styles.sectionTitle}>Start Exploring</Text>
-            <View style={[styles.card, styles.mapPlaceholder]}>
+            <View style={styles.mapPlaceholder}>
               <Text style={styles.mapPlaceholderText}>Map</Text>
             </View>
 
-            {/* Hotel search bar */}
-            <GradientCard style={styles.hotelSearchCard}>
+            {/* Glassmorphism card — now with real curves/blobs behind it to blur */}
+            <BlurView intensity={45} tint="light" style={styles.hotelSearchCard}>
               <Text style={styles.sectionTitle}>Discover your great places to stay!</Text>
               <TextInput
                 style={styles.searchInput}
@@ -147,12 +140,11 @@ export default function HomeScreen() {
                   <Text style={styles.searchButtonText}>Search</Text>
                 </TouchableOpacity>
               </View>
-            </GradientCard>
+            </BlurView>
 
-            {/* Top Destinations */}
             <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Top Destinations</Text>
             {TOP_DESTINATIONS.map((dest) => (
-              <View key={dest.name} style={[styles.card, styles.destinationCard]}>
+              <View key={dest.name} style={styles.destinationCard}>
                 <View style={styles.destinationImagePlaceholder}>
                   <Text style={{ fontSize: 40 }}>{dest.emoji}</Text>
                 </View>
@@ -163,18 +155,17 @@ export default function HomeScreen() {
               </View>
             ))}
 
-            {/* Booking sites */}
             <Text style={[styles.sectionTitle, { marginTop: 6 }]}>
               Book your trip on another booking site!
             </Text>
             <TouchableOpacity
-              style={[styles.bookingCard, { backgroundColor: '#F5751E' }]}
+              style={[styles.bookingCard, { backgroundColor: '#FF5722' }]}
               onPress={() => openBookingSite('https://www.klook.com')}
             >
               <Text style={styles.bookingCardText}>klook</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.bookingCard, { backgroundColor: '#FF5A5F' }]}
+              style={[styles.bookingCard, { backgroundColor: '#FF5A63' }]}
               onPress={() => openBookingSite('https://www.airbnb.com')}
             >
               <Text style={styles.bookingCardText}>airbnb</Text>
@@ -183,7 +174,7 @@ export default function HomeScreen() {
               style={[styles.bookingCard, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line }]}
               onPress={() => openBookingSite('https://www.agoda.com')}
             >
-              <Text style={[styles.bookingCardText, { color: Colors.brown900 }]}>agoda</Text>
+              <Text style={[styles.bookingCardText, { color: '#555' }]}>agoda</Text>
             </TouchableOpacity>
           </ScrollView>
         )}
@@ -197,13 +188,7 @@ const styles = StyleSheet.create({
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14,
-    backgroundColor: 'transparent',
-    shadowColor: Colors.brown900,
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6,
   },
   logoBadge: {
     width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
@@ -214,88 +199,85 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.line,
-    shadowColor: Colors.brown900,
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-
-  storiesCard: { padding: 20, marginTop: 12, marginBottom: 28 },
-  storiesIconRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  storiesIconBadge: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(63,169,138,0.15)',
-    alignItems: 'center', justifyContent: 'center',
+  storiesCard: {
+    backgroundColor: Colors.card, borderRadius: 16, padding: 20,
+    marginTop: 12, marginBottom: 24,
+    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
   storiesTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   storiesSubtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown600,
-    marginBottom: 16,
+    fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown900,
+    marginTop: 6, marginBottom: 16,
   },
   startButton: {
-    backgroundColor: Colors.brown900, borderRadius: 12, height: 46,
+    backgroundColor: Colors.brown900, borderRadius: 20, height: 42,
     alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start',
     paddingHorizontal: 20,
   },
-  startButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  startButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
 
   sectionTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900, marginBottom: 14,
+    fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,
   },
   mapPlaceholder: {
-    height: 180, alignItems: 'center', justifyContent: 'center', marginBottom: 28,
+    height: 180, backgroundColor: '#FFFFFF', borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
   mapPlaceholderText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
 
-  hotelSearchCard: { padding: 18, marginBottom: 34 },
+  hotelSearchCard: {
+    borderRadius: 16, padding: 20, marginBottom: 30, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+  },
   searchInput: {
     fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
-    backgroundColor: Colors.cream, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
+    backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
+    borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
   },
   dateRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   dateInput: {
-    flex: 1, backgroundColor: Colors.cream, borderRadius: 12,
-    borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 14, paddingVertical: 12,
+    flex: 1, backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
+    borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)', paddingHorizontal: 14, paddingVertical: 12,
   },
   dateInputText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
   travelersRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   counterButton: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.cream,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
+    width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.4)',
+    alignItems: 'center', justifyContent: 'center',
   },
   counterButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
   counterValue: {
     fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, minWidth: 20, textAlign: 'center',
   },
   searchButton: {
-    flex: 1, backgroundColor: Colors.brown900, borderRadius: 12, height: 40,
+    flex: 1, backgroundColor: Colors.brown900, borderRadius: 10, height: 40,
     alignItems: 'center', justifyContent: 'center',
   },
   searchButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
 
-  destinationCard: { marginBottom: 22, overflow: 'hidden' },
+  destinationCard: {
+    marginBottom: 22,
+    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+  },
   destinationImagePlaceholder: {
-    height: 160, backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center',
+    height: 160, backgroundColor: '#FFFFFF', borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
-  destinationName: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginTop: 12, marginHorizontal: 14,
-  },
+  destinationName: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 10 },
   itineraryButton: {
-    backgroundColor: Colors.brown900, borderRadius: 12, height: 44,
-    alignItems: 'center', justifyContent: 'center', margin: 14, marginTop: 10,
+    backgroundColor: Colors.brown900, borderRadius: 20, height: 40,
+    alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 20,
   },
-  itineraryButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  itineraryButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
 
   bookingCard: {
-    height: 90, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-    marginBottom: 12,
-    shadowColor: Colors.brown900, shadowOpacity: 0.08, shadowRadius: 8,
+    height: 90, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
   bookingCardText: { fontFamily: 'Lora_600SemiBold', fontSize: 22, color: '#FFFFFF' },

@@ -5,12 +5,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
-import { register } from '../services/authService.js';
+import { register } from '../services/authService';
+import Backdrop from '../components/Backdrop';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
+  const [dob, setDob] = useState('');
+  const [cellphone, setCellphone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,8 +20,12 @@ export default function SignupScreen() {
 
   async function handleRegister() {
     setError(null);
-    if (!name || !email || !password || !confirmPassword) {
+    if (!studentNumber || !dob || !cellphone || !password || !confirmPassword) {
       setError('Please fill in all fields.');
+      return;
+    }
+    if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dob)) {
+      setError('Date of birth must be in MM/DD/YYYY format.');
       return;
     }
     if (password.length < 8) {
@@ -32,7 +38,7 @@ export default function SignupScreen() {
     }
     setLoading(true);
     try {
-      await register({ name, email, password });
+      await register({ studentNumber, dob, cellphone, password });
       router.replace('/login');
     } catch (e) {
       setError(e.message);
@@ -43,6 +49,8 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <Backdrop height={180} style={styles.backdrop} />
+
       <View style={styles.header}>
         <View style={styles.logoBadge}>
           <Text style={{ fontSize: 16 }}>🧭</Text>
@@ -64,17 +72,23 @@ export default function SignupScreen() {
             style={styles.input}
             placeholder="Student Number"
             placeholderTextColor={Colors.brown600}
-            value={name}
-            onChangeText={setName}
+            value={studentNumber}
+            onChangeText={setStudentNumber}
           />
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Date of Birth (MM/DD/YYYY)"
             placeholderTextColor={Colors.brown600}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
+            value={dob}
+            onChangeText={setDob}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Cellphone Number"
+            placeholderTextColor={Colors.brown600}
+            keyboardType="phone-pad"
+            value={cellphone}
+            onChangeText={setCellphone}
           />
           <TextInput
             style={styles.input}
@@ -110,6 +124,7 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 24, paddingTop: 10,

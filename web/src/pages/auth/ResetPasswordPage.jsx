@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
             </button>
           </div>
 
-          <label className="ww-field-label">Re-enter password</label>
+          <label className="ww-field-label">Re-Enter password</label>
           <div className="ww-password-field">
             <input
               type={showConfirmPassword ? "text" : "password"}

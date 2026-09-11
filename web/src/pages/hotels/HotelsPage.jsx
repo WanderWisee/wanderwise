@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
 
@@ -25,10 +25,14 @@ function buildKlookSearchUrl(query) {
 
 export default function HotelsPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [buddies, setBuddies] = useState(0);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const location = useLocation();
+
+  // Pre-fill from whatever was passed in (e.g. the Dashboard's search
+  // bar navigating here with { search, startDate, endDate }).
+  const [search, setSearch] = useState(location.state?.search || "");
+  const [buddies, setBuddies] = useState(location.state?.buddies || 0);
+  const [startDate, setStartDate] = useState(location.state?.startDate || "");
+  const [endDate, setEndDate] = useState(location.state?.endDate || "");
 
   // Set when the searched place has no guide of our own — shows a
   // small panel with real <a> links to Agoda/Klook instead of trying
@@ -36,16 +40,16 @@ export default function HotelsPage() {
   const [externalSearch, setExternalSearch] = useState(null);
 
   const destinations = [
-  { name: "San Juan, La Union", img: "/assets/la-union.webp" },
-  { name: "Boracay, Aklan", img: "/assets/boracay.jpg" },
-  { name: "El Nido, Palawan", img: "/assets/el-nido.jpg" },
-  { name: "Baguio City", img: "/assets/baguio.jpg" },
-  { name: "Siargao Island", img: "/assets/siargao.png" },
-  { name: "Cebu City", img: "/assets/cebu.webp" },
-  { name: "Coron, Palawan", img: "/assets/coron.webp" },
-  { name: "Vigan, Ilocos Sur", img: "/assets/vigan.jpg" },
-  { name: "Tagaytay, Cavite", img: "/assets/tagaytay.jpg" },
-];
+    { name: "San Juan, La Union", img: "/assets/la-union.webp" },
+    { name: "Boracay, Aklan", img: "/assets/boracay.jpg" },
+    { name: "El Nido, Palawan", img: "/assets/el-nido.jpg" },
+    { name: "Baguio City", img: "/assets/baguio.jpg" },
+    { name: "Siargao Island", img: "/assets/siargao.png" },
+    { name: "Cebu City", img: "/assets/cebu.webp" },
+    { name: "Coron, Palawan", img: "/assets/coron.webp" },
+    { name: "Vigan, Ilocos Sur", img: "/assets/vigan.jpg" },
+    { name: "Tagaytay, Cavite", img: "/assets/tagaytay.jpg" },
+  ];
 
   const handleSelectDestination = (dest) => {
     const hasGuide = dest.name === "Boracay, Aklan";
@@ -90,6 +94,16 @@ export default function HotelsPage() {
     setExternalSearch({ query, startDate, endDate });
   };
 
+  // If we arrived here with a search already filled in (e.g. from the
+  // Dashboard's search bar) and dates were also provided, run the
+  // search automatically instead of making the person click again.
+  useEffect(() => {
+    if (location.state?.search && location.state?.startDate && location.state?.endDate) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="ww-hotels-page">
       <header className="ww-navbar">
@@ -108,7 +122,7 @@ export default function HotelsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span>🔍</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
           <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         </div>

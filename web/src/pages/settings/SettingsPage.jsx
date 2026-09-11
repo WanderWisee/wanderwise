@@ -1,21 +1,39 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useRef } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const {
+    profileName,
+    setProfileName,
+    profileEmail,
+    setProfileEmail,
+    profileAvatar,
+    setProfileAvatar,
+  } = useAppData();
+  const avatarInputRef = useRef(null);
 
-const [activeSection, setActiveSection] = useState(
-  location.state?.section || "account"
-);
-  const [name, setName] = useState("Rolando Hamburger");
-  const [username, setUsername] = useState("User 150");
-  const [email, setEmail] = useState("User150@gmail.com");
+  const handleAvatarClick = () => avatarInputRef.current?.click();
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Applies right away — no need to click "Save" separately for
+    // the photo, it shows up in Profile immediately.
+    setProfileAvatar(URL.createObjectURL(file));
+  };
+
+  const [activeSection, setActiveSection] = useState(
+    location.state?.section || "account"
+  );
+  const [name, setName] = useState(profileName);
+  const [email, setEmail] = useState(profileEmail);
 
   const [language, setLanguage] = useState("English");
-  const [plannerMode, setPlannerMode] = useState("");
   const [dateFormat, setDateFormat] = useState("");
   const [timeFormat, setTimeFormat] = useState("");
   const [distanceFormat, setDistanceFormat] = useState("");
@@ -43,7 +61,8 @@ const [activeSection, setActiveSection] = useState(
 
   const handleSaveAccount = () => {
     // TEMPORARY: no backend call yet.
-    console.log({ name, username, email });
+    setProfileName(name);
+    setProfileEmail(email);
   };
 
   return (
@@ -54,13 +73,13 @@ const [activeSection, setActiveSection] = useState(
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <Link to="/dashboard">Home</Link>
+          <Link to="/travel-tips">Guides</Link>
+          <Link to="/hotels">Hotels</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span>🔍</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
           <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
             👤
@@ -107,18 +126,33 @@ const [activeSection, setActiveSection] = useState(
           {activeSection === "account" && (
             <div className="ww-settings-account">
               <div className="ww-settings-avatar-wrapper">
-                <div className="ww-settings-avatar" />
-                <span className="ww-settings-avatar-edit">✎</span>
+                <div
+                  className="ww-settings-avatar"
+                  style={
+                    profileAvatar
+                      ? { backgroundImage: `url(${profileAvatar})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : undefined
+                  }
+                />
+                <span
+                  className="ww-settings-avatar-edit"
+                  onClick={handleAvatarClick}
+                  style={{ cursor: "pointer" }}
+                >
+                  ✎
+                </span>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  style={{ display: "none" }}
+                />
               </div>
 
               <label className="ww-settings-field">
                 <span>Name</span>
                 <input value={name} onChange={(e) => setName(e.target.value)} />
-              </label>
-
-              <label className="ww-settings-field">
-                <span>Username</span>
-                <input value={username} onChange={(e) => setUsername(e.target.value)} />
               </label>
 
               <label className="ww-settings-field">
@@ -142,18 +176,6 @@ const [activeSection, setActiveSection] = useState(
                   <option>Filipino</option>
                 </select>
               </div>
-
-              <h2>Trip and Journal Planner</h2>
-              <p className="ww-settings-subtext">Plan trips offline, sync when connected.</p>
-              <select
-                className="ww-settings-plain-select"
-                value={plannerMode}
-                onChange={(e) => setPlannerMode(e.target.value)}
-              >
-                <option value="">Select</option>
-                <option value="offline">Offline first</option>
-                <option value="online">Always online</option>
-              </select>
 
               <h2>Formatting</h2>
 

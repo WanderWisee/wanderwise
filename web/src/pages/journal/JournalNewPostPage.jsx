@@ -1,28 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
+
+let nextHotelId = 1;
 
 export default function JournalNewPostPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { addJournalEntry } = useAppData();
 
-  // Defaults to a PH destination — pass a different one via
-  // navigate("/journal/new", { state: { destination: "El Nido" } })
-  const destination = location.state?.destination || "Boracay Islands";
+  const [storyTitle, setStoryTitle] = useState(
+    location.state?.destination
+      ? `${location.state.destination} Travel Story`
+      : "Enter your destination story"
+  );
+  const [editingTitle, setEditingTitle] = useState(false);
 
-  const [entries, setEntries] = useState([
-    {
-      id: 1,
-      place: "Boracay White Beach",
-      img: "/assets/boracay.jpg",
-      rating: 5,
-      tips: "",
-      hotel: "",
-    },
-    { id: 2, place: "", img: "/assets/el-nido.jpg", rating: 4, tips: "", hotel: "" },
-    { id: 3, place: "", img: "/assets/baguio.jpg", rating: 4, tips: "", hotel: "" },
-  ]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [hasUploadedPhoto, setHasUploadedPhoto] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleChooseFile = (e) => {
+    setSelectedFile(e.target.files?.[0] || null);
+  };
+
+  const [entries, setEntries] = useState([]);
+  const nextEntryIdRef = useRef(1);
+
+  // Once true, this page switches from the editing form to a
+  // read-only summary — so posting gives immediate visible feedback
+  // instead of silently navigating somewhere else.
+  const [posted, setPosted] = useState(false);
+
+  const handleUploadPhoto = () => {
+    if (!selectedFile) {
+      alert("Please choose a photo first.");
+      return;
+    }
+    const imageUrl = URL.createObjectURL(selectedFile);
+    const newEntry = {
+      id: nextEntryIdRef.current++,
+      place: "",
+      img: imageUrl,
+      rating: 0,
+      description: "",
+      pros: [],
+      cons: [],
+      hotels: [],
+      proInput: "",
+      conInput: "",
+      hotelNameInput: "",
+      hotelDescInput: "",
+    };
+    setEntries((prev) => [...prev, newEntry]);
+    setHasUploadedPhoto(true);
+    setSelectedFile(null);
+  };
 
   const updateEntry = (id, field, value) => {
     setEntries((prev) =>
@@ -30,10 +65,71 @@ export default function JournalNewPostPage() {
     );
   };
 
+  const addPro = (id) => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.id !== id || !e.proInput.trim()) return e;
+        return { ...e, pros: [...e.pros, e.proInput.trim()], proInput: "" };
+      })
+    );
+  };
+
+  const removePro = (id, index) => {
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id !== id ? e : { ...e, pros: e.pros.filter((_, i) => i !== index) }
+      )
+    );
+  };
+
+  const addCon = (id) => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.id !== id || !e.conInput.trim()) return e;
+        return { ...e, cons: [...e.cons, e.conInput.trim()], conInput: "" };
+      })
+    );
+  };
+
+  const removeCon = (id, index) => {
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id !== id ? e : { ...e, cons: e.cons.filter((_, i) => i !== index) }
+      )
+    );
+  };
+
+  const addHotel = (id) => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.id !== id || !e.hotelNameInput.trim()) return e;
+        const hotel = {
+          id: nextHotelId++,
+          name: e.hotelNameInput.trim(),
+          description: e.hotelDescInput.trim(),
+        };
+        return { ...e, hotels: [...e.hotels, hotel], hotelNameInput: "", hotelDescInput: "" };
+      })
+    );
+  };
+
+  const removeHotel = (id, hotelId) => {
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id !== id ? e : { ...e, hotels: e.hotels.filter((h) => h.id !== hotelId) }
+      )
+    );
+  };
+
   const handlePost = () => {
-    // TEMPORARY: no backend call yet.
-    console.log({ destination, entries });
-    navigate("/profile");
+    const newJournalEntry = {
+      id: Date.now(),
+      title: storyTitle,
+      coverImage: entries[0]?.img || "/assets/placeholder.jpg",
+      entries,
+    };
+    addJournalEntry(newJournalEntry);
+    setPosted(true);
   };
 
   return (
@@ -50,82 +146,253 @@ export default function JournalNewPostPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span>🔍</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
           <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
-            👤
-          </span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         </div>
       </header>
 
-      <main className="ww-journal-main">
-        <h1 className="ww-journal-title">{destination} Travel Story ✎</h1>
+      {posted ? (
+        // --- Read-only summary, shown right after posting ---
+        <main className="ww-guide-main">
+          <p className="ww-journal-posted-banner">✅ Posted! Here's your story:</p>
+          <h1 className="ww-guide-title">{storyTitle}</h1>
 
-        <div className="ww-journal-upload-card">
-          <h2>Upload a Photo!</h2>
-          <button className="ww-journal-gallery-btn">🖼 From Gallery</button>
-          <p className="ww-journal-upload-note">
-            Note: Choose a clear and high-quality image that represents the tour destination.
-          </p>
-          <div className="ww-journal-file-row">
-            <button className="ww-journal-choose-file-btn">📁 Choose File</button>
-            <span>No file chosen</span>
-          </div>
-          <button className="ww-journal-upload-btn">Upload Photo</button>
-        </div>
+          {entries.map((entry) => (
+            <section className="ww-guide-section" key={entry.id}>
+              <div className="ww-guide-intro">
+                <div className="ww-guide-text">
+                  <p className="ww-guide-pin">
+                    📍{entry.place || "Unnamed place"}{" "}
+                    {"★".repeat(entry.rating)}
+                    {"☆".repeat(5 - entry.rating)}
+                  </p>
+                  {entry.description && (
+                    <p className="ww-guide-description">{entry.description}</p>
+                  )}
 
-        <hr className="ww-journal-divider" />
+                  {entry.pros.length > 0 && (
+                    <>
+                      <p className="ww-guide-list-title">
+                        Pros of Visiting {entry.place || "this place"}:
+                      </p>
+                      <ul className="ww-guide-list">
+                        {entry.pros.map((p, i) => <li key={i}>{p}</li>)}
+                      </ul>
+                    </>
+                  )}
 
-        <h2 className="ww-journal-rate-title">Rate your experience!</h2>
-
-        {entries.map((entry) => (
-          <div className="ww-journal-entry" key={entry.id}>
-            <img src={entry.img} alt={entry.place || "destination"} className="ww-journal-entry-img" />
-            <div className="ww-journal-entry-fields">
-              {entry.place ? (
-                <p className="ww-journal-entry-place">📍{entry.place}</p>
-              ) : (
-                <input
-                  className="ww-journal-place-input"
-                  placeholder="📍 Add a place"
-                  value={entry.place}
-                  onChange={(e) => updateEntry(entry.id, "place", e.target.value)}
-                />
-              )}
-
-              <div className="ww-journal-stars">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <span
-                    key={n}
-                    onClick={() => updateEntry(entry.id, "rating", n)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {n <= entry.rating ? "★" : "☆"}
-                  </span>
-                ))}
+                  {entry.cons.length > 0 && (
+                    <>
+                      <p className="ww-guide-list-title">
+                        Cons of Visiting {entry.place || "this place"}:
+                      </p>
+                      <ul className="ww-guide-list">
+                        {entry.cons.map((c, i) => <li key={i}>{c}</li>)}
+                      </ul>
+                    </>
+                  )}
+                </div>
+                <img src={entry.img} alt={entry.place || "place"} className="ww-guide-image" />
               </div>
 
-              <textarea
-                className="ww-journal-tips-input"
-                placeholder="Write your tips"
-                value={entry.tips}
-                onChange={(e) => updateEntry(entry.id, "tips", e.target.value)}
-              />
+              {entry.hotels.length > 0 && (
+                <>
+                  <h3 className="ww-guide-hotel-heading">Hotel Option</h3>
+                  <div className="ww-guide-hotels-grid">
+                    {entry.hotels.map((h) => (
+                      <div className="ww-guide-hotel-card" key={h.id}>
+                        <p className="ww-guide-hotel-name">🏨 {h.name}</p>
+                        {h.description && <p className="ww-guide-hotel-desc">{h.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          ))}
 
+          <button className="ww-lets-go-btn" onClick={() => navigate("/profile")}>
+            Go to Profile
+          </button>
+        </main>
+      ) : (
+        // --- Editing form ---
+        <main className="ww-journal-main">
+          <h1 className="ww-journal-title">
+            {editingTitle ? (
               <input
-                className="ww-journal-hotel-input"
-                placeholder="🛏 Add hotel"
-                value={entry.hotel}
-                onChange={(e) => updateEntry(entry.id, "hotel", e.target.value)}
+                className="ww-section-name-input-inline"
+                value={storyTitle}
+                onChange={(e) => setStoryTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setEditingTitle(false);
+                }}
+                autoFocus
+              />
+            ) : (
+              <span>{storyTitle}</span>
+            )}{" "}
+            <span
+              className="ww-edit-icon"
+              onClick={() =>
+                setEditingTitle((v) => {
+                  const next = !v;
+                  if (next) setStoryTitle("");
+                  return next;
+                })
+              }
+              style={{ cursor: "pointer" }}
+            >
+              ✎
+            </span>
+          </h1>
+
+          <div className="ww-journal-upload-card">
+            <h2>Upload a Photo!</h2>
+            <p className="ww-journal-upload-note">
+              Note: Choose a clear and high-quality image that represents the tour destination.
+            </p>
+            <div className="ww-journal-file-row">
+              <button
+                className="ww-journal-choose-file-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                📁 Choose File
+              </button>
+              <span>{selectedFile ? selectedFile.name : "No file chosen"}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleChooseFile}
+                style={{ display: "none" }}
               />
             </div>
+            <button className="ww-journal-upload-btn" onClick={handleUploadPhoto}>
+              Upload Photo
+            </button>
           </div>
-        ))}
 
-        <button className="ww-journal-post-btn" onClick={handlePost}>
-          Post
-        </button>
-      </main>
+          {hasUploadedPhoto && (
+            <>
+              <hr className="ww-journal-divider" />
+              <h2 className="ww-journal-rate-title">Rate your experience!</h2>
+
+              {entries.map((entry) => (
+                <div className="ww-journal-entry-block" key={entry.id}>
+                  <div className="ww-journal-entry">
+                    <img src={entry.img} alt={entry.place || "destination"} className="ww-journal-entry-img" />
+                    <div className="ww-journal-entry-fields">
+                      <input
+                        className="ww-journal-place-input"
+                        placeholder="📍 Add a place"
+                        value={entry.place}
+                        onChange={(e) => updateEntry(entry.id, "place", e.target.value)}
+                      />
+
+                      <div className="ww-journal-stars">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <span
+                            key={n}
+                            onClick={() => updateEntry(entry.id, "rating", n)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {n <= entry.rating ? "★" : "☆"}
+                          </span>
+                        ))}
+                      </div>
+
+                      <textarea
+                        className="ww-journal-tips-input"
+                        placeholder="Write a short description"
+                        value={entry.description}
+                        onChange={(e) => updateEntry(entry.id, "description", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="ww-journal-tag-section">
+                    <p className="ww-journal-list-label">Pros</p>
+                    <div className="ww-journal-tag-row">
+                      {entry.pros.map((pro, i) => (
+                        <span className="ww-journal-tag ww-journal-tag-pro" key={i}>
+                          {pro}
+                          <span onClick={() => removePro(entry.id, i)}>✕</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="ww-journal-tag-add-row">
+                      <input
+                        className="ww-journal-tag-input"
+                        placeholder="Add a pro and press +"
+                        value={entry.proInput}
+                        onChange={(e) => updateEntry(entry.id, "proInput", e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addPro(entry.id)}
+                      />
+                      <button className="ww-journal-tag-add-btn" onClick={() => addPro(entry.id)}>+</button>
+                    </div>
+                  </div>
+
+                  <div className="ww-journal-tag-section">
+                    <p className="ww-journal-list-label">Cons</p>
+                    <div className="ww-journal-tag-row">
+                      {entry.cons.map((con, i) => (
+                        <span className="ww-journal-tag ww-journal-tag-con" key={i}>
+                          {con}
+                          <span onClick={() => removeCon(entry.id, i)}>✕</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="ww-journal-tag-add-row">
+                      <input
+                        className="ww-journal-tag-input"
+                        placeholder="Add a con and press +"
+                        value={entry.conInput}
+                        onChange={(e) => updateEntry(entry.id, "conInput", e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addCon(entry.id)}
+                      />
+                      <button className="ww-journal-tag-add-btn" onClick={() => addCon(entry.id)}>+</button>
+                    </div>
+                  </div>
+
+                  <div className="ww-journal-tag-section">
+                    <p className="ww-journal-list-label">Hotel Options</p>
+                    {entry.hotels.map((hotel) => (
+                      <div className="ww-journal-hotel-chip" key={hotel.id}>
+                        <div>
+                          <strong>{hotel.name}</strong>
+                          {hotel.description && <p>{hotel.description}</p>}
+                        </div>
+                        <span onClick={() => removeHotel(entry.id, hotel.id)}>✕</span>
+                      </div>
+                    ))}
+                    <div className="ww-journal-hotel-fields-row">
+                      <input
+                        className="ww-journal-tag-input"
+                        placeholder="🛏 Hotel name"
+                        value={entry.hotelNameInput}
+                        onChange={(e) => updateEntry(entry.id, "hotelNameInput", e.target.value)}
+                      />
+                      <textarea
+                        className="ww-journal-tag-input"
+                        placeholder="Short hotel description"
+                        value={entry.hotelDescInput}
+                        onChange={(e) => updateEntry(entry.id, "hotelDescInput", e.target.value)}
+                      />
+                      <button className="ww-journal-tag-add-btn" onClick={() => addHotel(entry.id)}>+</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button className="ww-journal-post-btn" onClick={handlePost}>
+                Post
+              </button>
+            </>
+          )}
+        </main>
+      )}
     </div>
   );
 }

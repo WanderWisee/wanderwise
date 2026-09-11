@@ -79,7 +79,7 @@ export default function HotelSearchResultsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span>🔍</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
           <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         </div>

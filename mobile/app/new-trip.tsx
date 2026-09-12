@@ -8,15 +8,16 @@ import { Colors } from '../constants/theme';
 import { createTrip } from '../services/tripService';
 import Backdrop from '../components/Backdrop';
 import IconBadge from '../components/IconBadge';
+import CalendarPicker, { formatDate } from '../components/CalendarPicker';
 
 export default function NewTripScreen() {
   const router = useRouter();
   const [destination, setDestination] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [dateRange, setDateRange] = useState(null);
   const [travelers, setTravelers] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   async function handleCreateTrip() {
     setError(null);
@@ -29,8 +30,8 @@ export default function NewTripScreen() {
       const trip = await createTrip({
         name: `Trip to ${destination}`,
         destination,
-        startDate,
-        endDate,
+        startDate: dateRange ? formatDate(dateRange.start) : null,
+        endDate: dateRange ? formatDate(dateRange.end) : null,
         travelers,
       });
       router.replace(`/trip/${trip.id}`);
@@ -71,20 +72,13 @@ export default function NewTripScreen() {
         />
 
         <Text style={styles.label}>Dates</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="mm/dd/yyyy"
-          placeholderTextColor={Colors.brown600}
-          value={startDate}
-          onChangeText={setStartDate}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="mm/dd/yyyy"
-          placeholderTextColor={Colors.brown600}
-          value={endDate}
-          onChangeText={setEndDate}
-        />
+        <TouchableOpacity style={styles.dateField} onPress={() => setPickerOpen(true)}>
+          <Text style={dateRange ? styles.dateFieldText : styles.dateFieldPlaceholder}>
+            {dateRange
+              ? `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`
+              : 'Select start and end date'}
+          </Text>
+        </TouchableOpacity>
 
         <Text style={styles.label}>How many people?</Text>
         <View style={styles.counterRow}>
@@ -117,13 +111,20 @@ export default function NewTripScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <CalendarPicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={setDateRange}
+        initialRange={dateRange}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
@@ -148,6 +149,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16,
   },
+  dateField: {
+    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
+    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16,
+  },
+  dateFieldText: { fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown900 },
+  dateFieldPlaceholder: { fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown600 },
   counterRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,

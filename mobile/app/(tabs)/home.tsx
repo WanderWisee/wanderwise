@@ -10,6 +10,7 @@ import { Colors } from '../../constants/theme';
 import { fetchTrips } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
+import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
 
 const TOP_DESTINATIONS = [
   { name: 'Tokyo, Japan', emoji: '🗼' },
@@ -24,6 +25,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [travelers, setTravelers] = useState(0);
   const [destination, setDestination] = useState('');
+  const [dateRange, setDateRange] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   async function loadTrips() {
     try {
@@ -101,8 +104,8 @@ export default function HomeScreen() {
               <Text style={styles.mapPlaceholderText}>Map</Text>
             </View>
 
-            {/* Glassmorphism card — now with real curves/blobs behind it to blur */}
-            <BlurView intensity={45} tint="light" style={styles.hotelSearchCard}>
+            <View style={styles.hotelSearchCard}>
+              <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
               <Text style={styles.sectionTitle}>Discover your great places to stay!</Text>
               <TextInput
                 style={styles.searchInput}
@@ -111,14 +114,13 @@ export default function HomeScreen() {
                 value={destination}
                 onChangeText={setDestination}
               />
-              <View style={styles.dateRow}>
-                <View style={styles.dateInput}>
-                  <Text style={styles.dateInputText}>Start Date</Text>
-                </View>
-                <View style={styles.dateInput}>
-                  <Text style={styles.dateInputText}>End Date</Text>
-                </View>
-              </View>
+              <TouchableOpacity style={styles.dateRangeField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
+                <Text style={dateRange ? styles.dateRangeText : styles.dateRangePlaceholder}>
+                  {dateRange
+                    ? `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`
+                    : 'Select start and end date'}
+                </Text>
+              </TouchableOpacity>
               <View style={styles.travelersRow}>
                 <TouchableOpacity
                   style={styles.counterButton}
@@ -140,7 +142,7 @@ export default function HomeScreen() {
                   <Text style={styles.searchButtonText}>Search</Text>
                 </TouchableOpacity>
               </View>
-            </BlurView>
+            </View>
 
             <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Top Destinations</Text>
             {TOP_DESTINATIONS.map((dest) => (
@@ -178,6 +180,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </ScrollView>
         )}
+
+        <CalendarPicker
+          visible={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onConfirm={setDateRange}
+          initialRange={dateRange}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -238,12 +247,13 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
   },
-  dateRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  dateInput: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)', paddingHorizontal: 14, paddingVertical: 12,
+  dateRangeField: {
+    backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
+    borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
+    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
   },
-  dateInputText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
+  dateRangeText: { fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown900 },
+  dateRangePlaceholder: { fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown600 },
   travelersRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   counterButton: {
     width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.4)',

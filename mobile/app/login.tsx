@@ -5,25 +5,26 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
-import { login } from '../services/authService.js';
+import { login } from '../services/authService';
+import Backdrop from '../components/Backdrop';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   async function handleLogin() {
     setError(null);
-    if (!email || !password) {
+    if (!studentNumber || !password) {
       setError('Please fill in both fields.');
       return;
     }
     setLoading(true);
     try {
-      await login({ email, password });
-      router.replace('/home'); // TODO: palitan papuntang Home screen kapag meron na
+      await login({ studentNumber, password });
+      router.replace('/(tabs)/home');
     } catch (e) {
       setError(e.message);
     } finally {
@@ -33,6 +34,8 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <Backdrop height={180} style={styles.backdrop} />
+
       <View style={styles.header}>
         <View style={styles.logoBadge}>
           <Text style={{ fontSize: 16 }}>🧭</Text>
@@ -52,11 +55,11 @@ export default function LoginScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Username or Student Number"
+            placeholder="Student Number"
             placeholderTextColor={Colors.brown600}
             autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
+            value={studentNumber}
+            onChangeText={setStudentNumber}
           />
           <TextInput
             style={styles.input}
@@ -93,6 +96,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 24, paddingTop: 10,

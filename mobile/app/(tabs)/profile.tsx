@@ -4,15 +4,24 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
+import MenuSheet from '../../components/MenuSheet';
 
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState('trips');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <LinearGradient colors={['#F6F1DC', '#E6D9AE']} style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }}>
         <MeshBlobs height={900} style={styles.backdrop} />
         <Backdrop height={220} style={styles.backdrop} />
+
+        <View style={styles.header}>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.menuButton}>
+            <Text style={{ fontSize: 18 }}>☰</Text>
+          </TouchableOpacity>
+        </View>
 
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.identitySection}>
@@ -98,6 +107,8 @@ export default function ProfileScreen() {
             )}
           </View>
         </ScrollView>
+
+        <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -106,7 +117,15 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
+  header: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4,
+  },
+  menuButton: {
+    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
+    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
+  },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
 
   identitySection: { alignItems: 'center', marginBottom: 24 },
   avatar: {

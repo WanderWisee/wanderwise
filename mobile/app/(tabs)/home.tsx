@@ -11,6 +11,7 @@ import { fetchTrips } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
 import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
+import MenuSheet from '../../components/MenuSheet';
 
 const TOP_DESTINATIONS = [
   { name: 'Tokyo, Japan', emoji: '🗼' },
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const [destination, setDestination] = useState('');
   const [dateRange, setDateRange] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function loadTrips() {
     try {
@@ -67,6 +69,10 @@ export default function HomeScreen() {
           <Text style={styles.wordmark}>
             Wander<Text style={styles.wordmarkLight}>Wise</Text>
           </Text>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.menuButton}>
+            <Text style={{ fontSize: 18 }}>☰</Text>
+          </TouchableOpacity>
         </View>
 
         {loading ? (
@@ -187,6 +193,7 @@ export default function HomeScreen() {
           onConfirm={setDateRange}
           initialRange={dateRange}
         />
+        <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -205,6 +212,10 @@ const styles = StyleSheet.create({
   },
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
+  menuButton: {
+    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
+    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 

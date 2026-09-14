@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useJsApiLoader } from "@react-google-maps/api";
+import TripMap from "../../components/TripMap";
 import "../../App.css";
 
 let nextPlaceId = 1;
@@ -37,6 +39,35 @@ export default function TripPlanBuilderPage() {
   const tripInfo = location.state || {};
 
   const [destination, setDestination] = useState(tripInfo.destination || "");
+  const [destinationCoords, setDestinationCoords] = useState(null);
+
+  // Geocode the overall trip destination (e.g. "La Union") whenever
+  // it changes — shown as a distinct red pin on the map, separate
+  // from the individual "Where to go?" place pins.
+  useEffect(() => {
+    if (!destination.trim()) {
+      setDestinationCoords(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const query = encodeURIComponent(`${destination}, Philippines`);
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`
+        );
+        const data = await res.json();
+        if (!cancelled && data && data[0]) {
+          setDestinationCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        }
+      } catch (err) {
+        console.warn("Geocoding failed for destination", destination, err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [destination]);
   const [startDate, setStartDate] = useState(tripInfo.startDate || "");
   const [endDate, setEndDate] = useState(tripInfo.endDate || "");
   const [people, setPeople] = useState(tripInfo.people || 0);
@@ -154,12 +185,128 @@ export default function TripPlanBuilderPage() {
     };
   };
 
+  // --- Directions: opens Google Maps from your current location to
+  // a specific place, and shows the real estimated travel time (no
+  // distance/km — just minutes) next to it. ---
+  const { isLoaded: mapsLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+  });
+
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation not supported by this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        console.log("Got user location:", pos.coords.latitude, pos.coords.longitude);
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      (err) => {
+        console.warn("Geolocation failed:", err.message);
+        setUserLocation(null);
+      }
+    );
+  }, []);
+
+  const [travelTimes, setTravelTimes] = useState({}); // { [placeId]: "12 mins" }
+
+  const fetchTravelTime = (place) => {
+    if (!mapsLoaded) {
+      console.log("Maps script not loaded yet.");
+      return;
+    }
+    if (!userLocation) {
+      console.log("No user location yet — can't compute travel time.");
+      return;
+    }
+    if (travelTimes[place.id]) return; // already fetched
+    if (!window.google) {
+      console.warn("window.google is not available — Maps script may have failed to load.");
+      return;
+    }
+    const service = new window.google.maps.DistanceMatrixService();
+    service.getDistanceMatrix(
+      {
+        origins: [userLocation],
+        destinations: [`${place.name}, ${destination}`],
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (response, status) => {
+        console.log("DistanceMatrix status:", status, response);
+        if (status !== "OK") {
+          console.warn(`DistanceMatrix request failed for "${place.name}":`, status);
+          return;
+        }
+        const result = response.rows?.[0]?.elements?.[0];
+        if (result?.status === "OK") {
+          setTravelTimes((prev) => ({ ...prev, [place.id]: result.duration.text }));
+        } else {
+          console.warn(`No route found for "${place.name}":`, result?.status);
+        }
+      }
+    );
+  };
+
+  const openDirections = (place) => {
+    const destParam = encodeURIComponent(`${place.name}, ${destination}`);
+    const originParam = userLocation ? `&origin=${userLocation.lat},${userLocation.lng}` : "";
+    window.open(
+      `https://www.google.com/maps/dir/?api=1${originParam}&destination=${destParam}&travelmode=driving`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  // Auto-fetch travel time for every place currently in the
+  // itinerary, once we have the user's location and Maps is loaded.
+  useEffect(() => {
+    if (!mapsLoaded || !userLocation) return;
+    days.forEach((day) => {
+      day.placeIds.forEach((id) => {
+        const found = findPlaceWithOrigin(tripState, id);
+        if (found) fetchTravelTime(found.place);
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapsLoaded, userLocation, days]);
+
   const budgetSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  // Looks up a place's coordinates via OpenStreetMap's free Nominatim
+  // geocoding service — no API key needed. Runs quietly in the
+  // background; if it fails, the place just won't show a pin yet.
+  const geocodePlace = async (place) => {
+    const query = encodeURIComponent(
+      destination ? `${place.name}, ${destination}, Philippines` : `${place.name}, Philippines`
+    );
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`;
+    console.log("Geocoding:", place.name, "→", url);
+    try {
+      const res = await fetch(url);
+      console.log("Nominatim response status:", res.status);
+      const data = await res.json();
+      console.log("Nominatim data:", data);
+      if (data && data[0]) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        console.log("Got coordinates for", place.name, ":", lat, lng);
+        setTripState((prev) => updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, lat, lng })));
+      } else {
+        console.warn("No results found for", place.name);
+      }
+    } catch (err) {
+      console.warn("Geocoding failed for", place.name, err);
+    }
+  };
 
   // Adds a new place to the "Where to go?" checklist only.
   const addPlace = (name) => {
     const place = { id: nextPlaceId++, number: nextNumber++, name, visited: false };
     applyChange((prev) => ({ ...prev, places: [...prev.places, place] }));
+    geocodePlace(place);
   };
 
   const handleAddPlace = (e) => {
@@ -236,6 +383,7 @@ export default function TripPlanBuilderPage() {
   // section's own input into that section's list. It no longer
   // spawns an additional blank section on each click. ---
   const handleNewList = () => {
+    const newlyCreated = [];
     applyChange((prev) => ({
       ...prev,
       customSections: prev.customSections.map((s) => {
@@ -246,9 +394,11 @@ export default function TripPlanBuilderPage() {
           name: s.placeInput.trim(),
           visited: false,
         };
+        newlyCreated.push(place);
         return { ...s, places: [...s.places, place], placeInput: "" };
       }),
     }));
+    newlyCreated.forEach(geocodePlace);
   };
 
   const [editingSectionName, setEditingSectionName] = useState({});
@@ -308,6 +458,8 @@ export default function TripPlanBuilderPage() {
     const value = (dayInputs[dayIndex] || "").trim();
     if (!value) return;
 
+    let createdPlace = null;
+
     applyChange((prev) => {
       const lower = value.toLowerCase();
       // Search "Where to go?" first, then every "Name this section" list.
@@ -325,6 +477,7 @@ export default function TripPlanBuilderPage() {
         placeId = existing.id;
       } else {
         const newPlace = { id: nextPlaceId++, number: nextNumber++, name: value, visited: false };
+        createdPlace = newPlace;
         updatedState = { ...prev, places: [...prev.places, newPlace] };
         placeId = newPlace.id;
       }
@@ -338,6 +491,7 @@ export default function TripPlanBuilderPage() {
         }),
       };
     });
+    if (createdPlace) geocodePlace(createdPlace);
     setDayInputs((prev) => ({ ...prev, [dayIndex]: "" }));
   };
 
@@ -399,12 +553,52 @@ export default function TripPlanBuilderPage() {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // --- Add Cost -> scroll down to the "Expenses" list on this same page ---
-  const expensesRef = useRef(null);
+  // --- Add Cost -> inline mini form per place, instead of jumping to
+  // the generic Expenses list. Each place can have several cost line
+  // items (Transportation, Entrance Fee, Food, etc.) that roll up
+  // into an "Expected cost" total for that place, and into the
+  // overall trip Budget.
+  const COST_CATEGORIES = ["Transportation", "Entrance Fee", "Food", "Hotel", "Other"];
+  const [addingCostFor, setAddingCostFor] = useState(null);
+  const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
+  const [customCostCategory, setCustomCostCategory] = useState("");
+  const [costAmount, setCostAmount] = useState("");
 
-  const handleAddCostForPlace = () => {
-    expensesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const openAddCost = (placeId) => {
+    setAddingCostFor(placeId);
+    setCostCategory(COST_CATEGORIES[0]);
+    setCustomCostCategory("");
+    setCostAmount("");
   };
+
+  const confirmAddCost = (placeId) => {
+    const amount = Number(costAmount);
+    if (!amount || amount <= 0) return;
+    const category =
+      costCategory === "Other" && customCostCategory.trim()
+        ? customCostCategory.trim()
+        : costCategory;
+    applyChange((prev) =>
+      updatePlaceEverywhere(prev, placeId, (p) => ({
+        ...p,
+        costs: [...(p.costs || []), { id: Date.now(), category, amount }],
+      }))
+    );
+    setAddingCostFor(null);
+    setCostAmount("");
+    setCustomCostCategory("");
+  };
+
+  const removeCost = (placeId, costId) => {
+    applyChange((prev) =>
+      updatePlaceEverywhere(prev, placeId, (p) => ({
+        ...p,
+        costs: (p.costs || []).filter((c) => c.id !== costId),
+      }))
+    );
+  };
+
+  const expensesRef = useRef(null);
 
   // --- Budget edit ---
   const [showEditBudget, setShowEditBudget] = useState(false);
@@ -526,8 +720,23 @@ export default function TripPlanBuilderPage() {
           )}
 
           <div className="ww-builder-map">
-            <img src="/assets/philippines-map-placeholder.jpg" alt="Trip map" />
+            <TripMap
+              places={places}
+              destinationMarker={destinationCoords}
+              destinationLabel={destination}
+            />
           </div>
+
+          <button
+            className="ww-browse-btn"
+            onClick={() =>
+              navigate("/hotels/results", {
+                state: { destination, startDate, endDate, buddies: people },
+              })
+            }
+          >
+            🏨 Book a Hotel
+          </button>
 
           <h2 className="ww-builder-section-title">
             <span className="ww-title-with-icon">
@@ -581,6 +790,11 @@ export default function TripPlanBuilderPage() {
                 <span>🕐 Select Time</span>
                 <span>$ Add Cost</span>
               </p>
+              {(p.costs || []).length > 0 && (
+                <p className="ww-cost-total-inline">
+                  Expected cost: ₱{p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
+                </p>
+              )}
               <p
                 className="ww-mark-visited"
                 onClick={() => toggleVisited(p.id)}
@@ -751,19 +965,80 @@ export default function TripPlanBuilderPage() {
                                 </span>
                               )}
                               <span
-                                onClick={handleAddCostForPlace}
+                                onClick={() => openAddCost(p.id)}
                                 style={{ cursor: "pointer" }}
                               >
                                 $ Add Cost
                               </span>
                             </p>
+
+                            {addingCostFor === p.id && (
+                              <div className="ww-cost-add-row">
+                                <select
+                                  value={costCategory}
+                                  onChange={(e) => setCostCategory(e.target.value)}
+                                >
+                                  {COST_CATEGORIES.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                                {costCategory === "Other" && (
+                                  <input
+                                    type="text"
+                                    placeholder="Type category"
+                                    value={customCostCategory}
+                                    onChange={(e) => setCustomCostCategory(e.target.value)}
+                                  />
+                                )}
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="₱ Amount"
+                                  value={costAmount}
+                                  onChange={(e) => setCostAmount(e.target.value)}
+                                />
+                                <button onClick={() => confirmAddCost(p.id)}>Add</button>
+                              </div>
+                            )}
+
+                            {(p.costs || []).length > 0 && (
+                              <div className="ww-cost-breakdown">
+                                {p.costs.map((c) => (
+                                  <div className="ww-cost-line" key={c.id}>
+                                    <span>{c.category}</span>
+                                    <span>
+                                      ₱{c.amount.toLocaleString()}
+                                      <span
+                                        className="ww-cost-remove"
+                                        onClick={() => removeCost(p.id, c.id)}
+                                      >
+                                        ✕
+                                      </span>
+                                    </span>
+                                  </div>
+                                ))}
+                                <div className="ww-cost-total">
+                                  Expected cost: ₱
+                                  {p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
+                                </div>
+                              </div>
+                            )}
+
                             <p className="ww-mark-visited">
                               {p.visited ? "✓ Visited" : "✓ Mark visited"}
                             </p>
                           </div>
                         </div>
                         <p className="ww-directions-hint">
-                          🚗 -- mins - -- km &nbsp;|&nbsp; Directions
+                          🚗 {travelTimes[p.id] || "-- mins"}
+                          {" "}
+                          <span
+                            className="ww-directions-link"
+                            onClick={() => openDirections(p)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            | Directions
+                          </span>
                         </p>
                       </React.Fragment>
                     ))}

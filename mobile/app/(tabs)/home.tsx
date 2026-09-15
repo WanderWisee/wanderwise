@@ -69,10 +69,6 @@ export default function HomeScreen() {
           <Text style={styles.wordmark}>
             Wander<Text style={styles.wordmarkLight}>Wise</Text>
           </Text>
-          <View style={{ flex: 1 }} />
-          <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.menuButton}>
-            <Text style={{ fontSize: 18 }}>☰</Text>
-          </TouchableOpacity>
         </View>
 
         {loading ? (

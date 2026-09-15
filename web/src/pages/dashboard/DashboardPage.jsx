@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { MapContainer, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import '../../App.css';
 
 export default function DashboardPage() {
@@ -17,28 +18,7 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Google Maps
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-  });
-
-  const mapCenter = {
-    lat: 14.5995,
-    lng: 120.9842,
-  };
-
-  const mapContainerStyle = {
-    width: "100%",
-    height: "420px",
-    borderRadius: "12px",
-  };
-
-  const mapOptions = {
-    zoomControl: true,
-    streetViewControl: false,
-    mapTypeControl: false,
-    fullscreenControl: false,
-  };
+  const PH_CENTER = [12.8797, 121.7740];
 
   const destinations = [
     {
@@ -146,21 +126,18 @@ export default function DashboardPage() {
           Start Exploring
         </h2>
 
-        <div className="ww-map-card">
-          {isLoaded ? (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={11}
-              options={mapOptions}
-            >
-              <Marker position={mapCenter} />
-            </GoogleMap>
-          ) : (
-            <div className="ww-map-loading">
-              Loading map...
-            </div>
-          )}
+        <div className="ww-dashboard-map-wrapper">
+          <MapContainer
+            center={PH_CENTER}
+            zoom={6}
+            style={{ width: "100%", height: "420px", borderRadius: "12px" }}
+            scrollWheelZoom={false}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </MapContainer>
         </div>
       </section>
 

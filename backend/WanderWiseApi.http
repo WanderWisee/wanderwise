@@ -1,0 +1,6 @@
+@WanderWiseApi_HostAddress = http://localhost:5269
+
+GET {{WanderWiseApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -67,7 +67,7 @@ export default function LoginPage() {
 
           <h1 className="ww-login-title">Let's get you in</h1>
 
-          <label className="ww-field-label">Student Number</label>
+          <label className="ww-field-label">Student Email</label>
           <input
             type="text"
             className="ww-field-input"

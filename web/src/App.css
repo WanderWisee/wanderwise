@@ -1664,6 +1664,106 @@
 }
 
 /* Trip Plan Builder Page */
+.ww-directions-link {
+  color: #2f6f5f;
+  font-weight: 600;
+}
+
+.ww-itinerary-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ww-itinerary-hotel-btn {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ww-cost-add-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.ww-cost-add-row select,
+.ww-cost-add-row input {
+  border: 1.5px solid #2b1c12;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  background: transparent;
+}
+
+.ww-cost-add-row input {
+  flex: 1;
+}
+
+.ww-cost-add-row button {
+  background-color: #3a2416;
+  color: #a9e4dc;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ww-cost-breakdown {
+  background-color: #f0e6c9;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 8px 0;
+}
+
+.ww-cost-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.ww-cost-line span:first-child {
+  flex: 1;
+}
+
+.ww-cost-line span:last-child {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ww-cost-remove {
+  cursor: pointer;
+  margin-left: 8px;
+  opacity: 0.6;
+}
+
+.ww-cost-total {
+  font-weight: bold;
+  font-size: 13px;
+  border-top: 1px solid #b39d6f;
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+.ww-cost-total-inline {
+  font-size: 13px;
+  color: #5c4a33;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
 .ww-visited-badge {
   color: #2f7a4f;
   font-size: 13px;
@@ -1709,18 +1809,39 @@
 .ww-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .ww-modal-card {
   max-width: 480px;
   width: 90%;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  background-color: #f6f3d9;
+  padding: 44px 48px;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.ww-modal-card .ww-planning-title {
+  margin-bottom: 32px;
+}
+
+.ww-modal-card .ww-planning-input,
+.ww-modal-card .ww-date-input {
+  background-color: #fdfbef;
+}
+
+.ww-modal-card .ww-people-counter {
+  background-color: #fdfbef;
 }
 
 .ww-modal-actions {

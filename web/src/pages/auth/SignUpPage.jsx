@@ -4,6 +4,8 @@ import "../../App.css";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
     studentNumber: "",
     dob: "",
     cellphone: "",
@@ -22,7 +24,15 @@ export default function RegisterPage() {
 
     const handleSubmit = () => {
     // TEMPORARY: skip backend call for visual testing.
-    if (!form.studentNumber || !form.dob || !form.cellphone || !form.password || !form.confirmPassword) {
+    if (
+      !form.firstName ||
+      !form.lastName ||
+      !form.studentNumber ||
+      !form.dob ||
+      !form.cellphone ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError("Please fill in all fields.");
       return;
     }
@@ -63,7 +73,23 @@ export default function RegisterPage() {
 
           <h1 className="ww-register-title">Register Your Account</h1>
 
-          <label className="ww-field-label">Student Number</label>
+          <label className="ww-field-label">First Name</label>
+          <input
+            type="text"
+            className="ww-field-input"
+            value={form.firstName}
+            onChange={handleChange("firstName")}
+          />
+
+          <label className="ww-field-label">Last Name</label>
+          <input
+            type="text"
+            className="ww-field-input"
+            value={form.lastName}
+            onChange={handleChange("lastName")}
+          />
+
+          <label className="ww-field-label">Student Email</label>
           <input
             type="text"
             className="ww-field-input"

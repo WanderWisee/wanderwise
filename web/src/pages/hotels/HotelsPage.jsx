@@ -3,41 +3,22 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
 
-// Destinations we have our own curated guide + results page for.
-// Anything else typed into the search bar shows the Agoda/Klook links.
-const DESTINATIONS_WITH_GUIDE = ["boracay"];
-
-// NOTE: verify these URL patterns against a real manual search on
-// agoda.com / klook.com — their query params can change over time.
-function buildAgodaSearchUrl(query, startDate, endDate) {
-  const params = new URLSearchParams({
-    text: query,
-    checkIn: startDate,
-    checkOut: endDate,
-  });
-  return `https://www.agoda.com/search?${params.toString()}`;
-}
-
-function buildKlookSearchUrl(query) {
-  const params = new URLSearchParams({ query });
-  return `https://www.klook.com/search/result/?${params.toString()}`;
+// Google Maps can't carry check-in/check-out dates in the URL, so this
+// just opens a live map search for "hotels in <destination>" — real
+// results straight from Google, not stored/fake data.
+function buildGoogleMapsHotelUrl(destination) {
+  const query = `hotels in ${destination}`;
+  return `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
 }
 
 export default function HotelsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Pre-fill from whatever was passed in (e.g. the Dashboard's search
-  // bar navigating here with { search, startDate, endDate }).
   const [search, setSearch] = useState(location.state?.search || "");
   const [buddies, setBuddies] = useState(location.state?.buddies || 0);
   const [startDate, setStartDate] = useState(location.state?.startDate || "");
   const [endDate, setEndDate] = useState(location.state?.endDate || "");
-
-  // Set when the searched place has no guide of our own — shows a
-  // small panel with real <a> links to Agoda/Klook instead of trying
-  // to window.open() both (which popup blockers only allow one of).
-  const [externalSearch, setExternalSearch] = useState(null);
 
   const destinations = [
     { name: "San Juan, La Union", img: "/assets/la-union.webp" },
@@ -51,47 +32,22 @@ export default function HotelsPage() {
     { name: "Tagaytay, Cavite", img: "/assets/tagaytay.jpg" },
   ];
 
-  const handleSelectDestination = (dest) => {
-    const hasGuide = dest.name === "Boracay, Aklan";
-    if (!hasGuide) return;
-
+  const openGoogleMaps = (destinationName) => {
     if (!startDate || !endDate) {
       alert("Please select your start and end dates first.");
       return;
     }
-
-    setExternalSearch(null);
-    navigate("/hotels/results", {
-      state: { destination: dest.name, startDate, endDate, buddies },
-    });
+    window.open(buildGoogleMapsHotelUrl(destinationName), "_blank", "noopener,noreferrer");
   };
 
+  const handleSelectDestination = (dest) => openGoogleMaps(dest.name);
+
   const handleSearch = () => {
-    if (!startDate || !endDate) {
-      alert("Please select your start and end dates first.");
-      return;
-    }
     if (!search.trim()) {
       alert("Please tell us where you want to go.");
       return;
     }
-
-    const query = search.trim();
-    const hasOwnGuide = DESTINATIONS_WITH_GUIDE.some((d) =>
-      query.toLowerCase().includes(d)
-    );
-
-    if (hasOwnGuide) {
-      setExternalSearch(null);
-      navigate("/hotels/results", {
-        state: { destination: "Boracay, Aklan", startDate, endDate, buddies },
-      });
-      return;
-    }
-
-    // No guide of our own — show the Agoda/Klook link panel instead
-    // of trying to open both in new tabs at once.
-    setExternalSearch({ query, startDate, endDate });
+    openGoogleMaps(search.trim());
   };
 
   // If we arrived here with a search already filled in (e.g. from the
@@ -108,17 +64,13 @@ export default function HotelsPage() {
     <div className="ww-hotels-page">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <img
-            src="/assets/logo.jpg"
-            alt="WanderWise logo"
-            className="ww-logo"
-          />
+          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <Link to="/dashboard">Home</Link>
+          <Link to="/travel-tips">Guides</Link>
+          <Link to="/hotels">Hotels</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -180,37 +132,6 @@ export default function HotelsPage() {
             Search
           </button>
         </div>
-
-        {externalSearch && (
-          <div className="ww-external-recommend-panel">
-            <p>
-              We don't have a guide for "{externalSearch.query}" yet — check
-              these instead:
-            </p>
-            <div className="ww-external-search-row">
-              <a
-                className="ww-external-search-btn"
-                href={buildAgodaSearchUrl(
-                  externalSearch.query,
-                  externalSearch.startDate,
-                  externalSearch.endDate
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                🔗 Search on Agoda
-              </a>
-              <a
-                className="ww-external-search-btn"
-                href={buildKlookSearchUrl(externalSearch.query)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                🔗 Search on Klook
-              </a>
-            </div>
-          </div>
-        )}
       </main>
 
       <section className="ww-hotels-destinations">
@@ -219,27 +140,20 @@ export default function HotelsPage() {
         </h2>
 
         <div className="ww-hotels-grid">
-          {destinations.map((dest) => {
-            // Only Boracay has real results content for now.
-            const hasGuide = dest.name === "Boracay, Aklan";
-            return (
-              <div
-                className="ww-hotel-card"
-                key={dest.name}
-                onClick={() => handleSelectDestination(dest)}
-                style={{
-                  opacity: hasGuide ? 1 : 0.5,
-                  cursor: hasGuide ? "pointer" : "not-allowed",
-                }}
-              >
-                <img src={dest.img} alt={dest.name} />
-                <div className="ww-hotel-caption">
-                  <h3>{dest.name}</h3>
-                  <p>Hotels</p>
-                </div>
+          {destinations.map((dest) => (
+            <div
+              className="ww-hotel-card"
+              key={dest.name}
+              onClick={() => handleSelectDestination(dest)}
+              style={{ cursor: "pointer" }}
+            >
+              <img src={dest.img} alt={dest.name} />
+              <div className="ww-hotel-caption">
+                <h3>{dest.name}</h3>
+                <p>Hotels</p>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
     </div>

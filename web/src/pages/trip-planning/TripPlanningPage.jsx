@@ -46,7 +46,7 @@ export default function TripPlanningPage() {
           <input
             type="text"
             className="ww-planning-input"
-            placeholder="Thailand"
+            placeholder="Where are you headed?"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
           />

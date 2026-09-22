@@ -6,7 +6,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    studentNumber: "",
+    schoolEmail: "",
+    recoveryEmail: "",
     dob: "",
     cellphone: "",
     password: "",
@@ -22,18 +23,24 @@ export default function RegisterPage() {
     setForm({ ...form, [field]: e.target.value });
   };
 
-    const handleSubmit = () => {
-    // TEMPORARY: skip backend call for visual testing.
+  const handleSubmit = async () => {
+    setError("");
+
     if (
       !form.firstName ||
       !form.lastName ||
-      !form.studentNumber ||
+      !form.schoolEmail ||
+      !form.recoveryEmail ||
       !form.dob ||
       !form.cellphone ||
       !form.password ||
       !form.confirmPassword
     ) {
       setError("Please fill in all fields.");
+      return;
+    }
+    if (!/^[^@\s]+@student\.mseuf\.edu\.ph$/i.test(form.schoolEmail.trim())) {
+      setError("Please use your official @student.mseuf.edu.ph email.");
       return;
     }
     if (form.password.length < 8) {
@@ -44,7 +51,30 @@ export default function RegisterPage() {
       setError("Passwords do not match.");
       return;
     }
-    navigate('/login');
+
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/register/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          schoolEmail: form.schoolEmail.trim(),
+          recoveryEmail: form.recoveryEmail.trim(),
+        }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setError(data?.error || "Failed to send verification code.");
+        return;
+      }
+      // Carry the whole form forward — the account is only created after
+      // the OTP is confirmed on the next page.
+      navigate("/register/verify-otp", { state: { ...form } });
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,12 +119,24 @@ export default function RegisterPage() {
             onChange={handleChange("lastName")}
           />
 
-          <label className="ww-field-label">Student Email</label>
+          <label className="ww-field-label">School Email (@student.mseuf.edu.ph)</label>
           <input
             type="text"
             className="ww-field-input"
-            value={form.studentNumber}
-            onChange={handleChange("studentNumber")}
+            placeholder="Enter Email"
+            value={form.schoolEmail}
+            onChange={handleChange("schoolEmail")}
+          />
+
+          <label className="ww-field-label">
+            Personal/Recovery Gmail (used only if you need to reset your password)
+          </label>
+          <input
+            type="email"
+            className="ww-field-input"
+            placeholder="you@gmail.com"
+            value={form.recoveryEmail}
+            onChange={handleChange("recoveryEmail")}
           />
 
           <label className="ww-field-label">Date of Birth (MM/DD/YYYY)</label>
@@ -158,7 +200,7 @@ export default function RegisterPage() {
             onClick={handleSubmit}
             disabled={loading}
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'Sending code...' : 'Register'}
           </button>
         </div>
       </main>

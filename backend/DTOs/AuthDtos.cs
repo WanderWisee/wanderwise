@@ -1,20 +1,17 @@
 namespace WanderWiseApi.DTOs;
 
-// Step 1 of registration: just the school email, so we can send the OTP
-// before collecting the rest of the form.
 public class RegisterSendOtpRequest
 {
     public string SchoolEmail { get; set; } = string.Empty;
+    public string RecoveryEmail { get; set; } = string.Empty;
 }
 
-// Step 2: everything, plus the OTP the student received.
 public class RegisterCompleteRequest
 {
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string SchoolEmail { get; set; } = string.Empty;
     public string RecoveryEmail { get; set; } = string.Empty;
-    // Accepts "MM/DD/YYYY" (what the Register page currently sends) or "YYYY-MM-DD".
     public string Dob { get; set; } = string.Empty;
     public string Cellphone { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
@@ -46,4 +43,21 @@ public class AuthResponse
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Email { get; set; }
+}
+
+public class MeResponse
+{
+    public int UserId { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? Email { get; set; }
+    public string? RecoveryEmail { get; set; }
+    public string? AvatarUrl { get; set; }
+}
+
+// Sent as a base64 data URL (e.g. "data:image/png;base64,....") — the
+// browser reads the picked file into this before uploading it.
+public class UpdateAvatarRequest
+{
+    public string AvatarBase64 { get; set; } = string.Empty;
 }

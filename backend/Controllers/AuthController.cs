@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WanderWiseApi.Data;
@@ -12,7 +15,6 @@ namespace WanderWiseApi.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    // Strict: only official school emails may register/log in.
     private static readonly Regex SchoolEmailRegex = new(
         @"^[^@\s]+@student\.mseuf\.edu\.ph$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -29,15 +31,17 @@ public class AuthController : ControllerBase
 
     // ---------------- Registration ----------------
 
-    // Step 1: validate the school email, generate an OTP, email it.
-    // Called before the account actually exists.
     [HttpPost("/api/register/send-otp")]
     public async Task<IActionResult> SendRegisterOtp([FromBody] RegisterSendOtpRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
+        var recoveryEmail = request.RecoveryEmail?.Trim() ?? "";
 
         if (!SchoolEmailRegex.IsMatch(schoolEmail))
             return BadRequest(new { error = "Please use your official @student.mseuf.edu.ph email." });
+
+        if (string.IsNullOrWhiteSpace(recoveryEmail))
+            return BadRequest(new { error = "A personal/recovery email is required." });
 
         var alreadyRegistered = await _db.Users.AnyAsync(u => u.Email == schoolEmail);
         if (alreadyRegistered)
@@ -54,12 +58,11 @@ public class AuthController : ControllerBase
         });
         await _db.SaveChangesAsync();
 
-        await _email.SendOtpEmailAsync(schoolEmail, code, "register");
+        await _email.SendOtpEmailAsync(recoveryEmail, code, "register");
 
-        return Ok(new { message = "Verification code sent to your school email." });
+        return Ok(new { message = "Verification code sent to your personal email." });
     }
 
-    // Step 2: create the account, but only if the OTP checks out.
     [HttpPost("/api/register")]
     public async Task<IActionResult> Register([FromBody] RegisterCompleteRequest request)
     {
@@ -85,7 +88,6 @@ public class AuthController : ControllerBase
         if (!TryParseDob(request.Dob, out var dob))
             return BadRequest(new { error = "Invalid date of birth." });
 
-        // The student number lives in the email's local part (e.g. "A23-37217").
         var studentNumber = schoolEmail.Split('@')[0].ToUpperInvariant();
 
         var user = new User
@@ -137,10 +139,46 @@ public class AuthController : ControllerBase
         });
     }
 
+    // ---------------- Current user ----------------
+
+    [Authorize]
+    [HttpGet("/api/me")]
+    public async Task<IActionResult> Me()
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        return Ok(new MeResponse
+        {
+            UserId = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            RecoveryEmail = user.RecoveryEmail,
+            AvatarUrl = user.AvatarUrl,
+        });
+    }
+
+    // Saves the profile picture as a base64 data URL — simplest option
+    // for a capstone project without needing separate file storage.
+    [Authorize]
+    [HttpPut("/api/me/avatar")]
+    public async Task<IActionResult> UpdateAvatar([FromBody] UpdateAvatarRequest request)
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        user.AvatarUrl = request.AvatarBase64;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { avatarUrl = user.AvatarUrl });
+    }
+
     // ---------------- Forgot password ----------------
 
-    // Step 1: look up the account by school email, send the OTP to the
-    // RECOVERY Gmail on file (not the school email itself).
     [HttpPost("/api/forgot-password/send-otp")]
     public async Task<IActionResult> SendResetOtp([FromBody] ForgotPasswordSendOtpRequest request)
     {
@@ -168,7 +206,6 @@ public class AuthController : ControllerBase
         return Ok(new { message = "A verification code was sent to your recovery email." });
     }
 
-    // Step 2: verify the OTP and set the new password in one call.
     [HttpPost("/api/forgot-password/reset")]
     public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordResetRequest request)
     {

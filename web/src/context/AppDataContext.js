@@ -1,24 +1,39 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
-  // Single source of truth for journal entries, shared across every
-  // page (Profile, Guides, the journal detail view) — no more relying
-  // on navigation state, which gets lost the moment you go anywhere
-  // that didn't explicitly pass it along.
   const [journalEntries, setJournalEntries] = useState([]);
 
   const addJournalEntry = (entry) => {
     setJournalEntries((prev) => [entry, ...prev]);
   };
 
-  // Shared profile name + email — so Settings' fields and the
-  // Profile page's display always match, no matter which page you
-  // edited them from.
-  const [profileName, setProfileName] = useState("Rolando Hamburger");
-  const [profileEmail, setProfileEmail] = useState("User150@gmail.com");
+  const [profileName, setProfileName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
   const [profileAvatar, setProfileAvatar] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) return;
+
+    fetch("/api/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((resp) => {
+        if (!resp.ok) throw new Error("Failed to load profile");
+        return resp.json();
+      })
+      .then((data) => {
+        const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
+        setProfileName(fullName || data.email || "");
+        setProfileEmail(data.email || "");
+        setProfileAvatar(data.avatarUrl || null);
+      })
+      .catch(() => {
+        // Token missing/expired — leave fields blank.
+      });
+  }, []);
 
   return (
     <AppDataContext.Provider

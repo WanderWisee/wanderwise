@@ -3,44 +3,41 @@ import { useNavigate } from "react-router-dom";
 import "../../App.css";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-  // TEMPORARY: skip backend call for visual testing.
-  // Revert this once backend is ready — see the commented version below.
-  localStorage.setItem('wanderwise_token', 'dev-token');
-  navigate('/dashboard');
-};
-
-  // const handleLogin = async () => {
-  //   setError("");
-  //   setLoading(true);
-  //   try {
-  //     const resp = await fetch('/api/login', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ studentNumber: username, password }),
-  //     });
-  //     const data = await resp.json().catch(() => null);
-  //     if (!resp.ok) {
-  //       setError(data?.error || 'Login failed.');
-  //       return;
-  //     }
-  //     if (data?.token) {
-  //       localStorage.setItem('wanderwise_token', data.token);
-  //     }
-  //     navigate('/dashboard');
-  //   } catch (err) {
-  //     setError('Network error. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleLogin = async () => {
+    setError("");
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setError(data?.error || "Login failed.");
+        return;
+      }
+      if (data?.token) {
+        localStorage.setItem("wanderwise_token", data.token);
+      }
+      navigate("/dashboard");
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="wanderwise-login">
@@ -71,8 +68,9 @@ export default function LoginPage() {
           <input
             type="text"
             className="ww-field-input"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter Student Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
 
           <label className="ww-field-label">Password</label>

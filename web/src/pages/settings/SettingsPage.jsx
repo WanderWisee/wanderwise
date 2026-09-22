@@ -22,9 +22,30 @@ export default function SettingsPage() {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Applies right away — no need to click "Save" separately for
-    // the photo, it shows up in Profile immediately.
-    setProfileAvatar(URL.createObjectURL(file));
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result; // "data:image/png;base64,...."
+      setProfileAvatar(base64); // shows up immediately in the UI
+
+      const token = localStorage.getItem("wanderwise_token");
+      if (!token) return;
+
+      try {
+        await fetch("/api/me/avatar", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ avatarBase64: base64 }),
+        });
+      } catch (err) {
+        // Network error — picture still shows for now, but won't
+        // survive a reload until this call succeeds.
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const [activeSection, setActiveSection] = useState(
@@ -60,7 +81,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveAccount = () => {
-    // TEMPORARY: no backend call yet.
+    // Still local-only — Name/Email aren't wired to the backend yet.
     setProfileName(name);
     setProfileEmail(email);
   };

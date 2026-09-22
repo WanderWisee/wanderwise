@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import Backdrop from '../../components/Backdrop';
@@ -7,6 +8,7 @@ import MeshBlobs from '../../components/MeshBlobs';
 import MenuSheet from '../../components/MenuSheet';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('trips');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -51,7 +53,7 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.editButton}>
+              <TouchableOpacity style={styles.editButton} onPress={() => router.push('/settings/account')}>
                 <Text style={styles.editButtonText}>✎ Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.shareButton}>
@@ -88,7 +90,7 @@ export default function ProfileScreen() {
               <>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Your Travels</Text>
-                  <TouchableOpacity style={styles.addButton}>
+                  <TouchableOpacity style={styles.addButton} onPress={() => router.push('/new-trip')}>
                     <Text style={styles.addButtonText}>+ Add new plan</Text>
                   </TouchableOpacity>
                 </View>
@@ -98,7 +100,7 @@ export default function ProfileScreen() {
               <>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Your Travel Stories</Text>
-                  <TouchableOpacity style={styles.addButton}>
+                  <TouchableOpacity style={styles.addButton} onPress={() => router.push('/new-post')}>
                     <Text style={styles.addButtonText}>+ New post</Text>
                   </TouchableOpacity>
                 </View>

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.1.15:3001/api'; // TODO: palitan ng totoong IP ng laptop na may backend
+const BASE_URL = 'http://192.168.1.151:3001/api'; // TODO: palitan ng totoong IP
 const TOKEN_KEY = 'wanderwise_token';
 
 async function request(path, body) {

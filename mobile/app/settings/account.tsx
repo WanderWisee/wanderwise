@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
 
@@ -8,6 +8,8 @@ export default function AccountScreen() {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -19,7 +21,7 @@ export default function AccountScreen() {
         <View style={{ width: 34 }} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
             <Text style={{ fontSize: 36 }}>👤</Text>
@@ -38,10 +40,30 @@ export default function AccountScreen() {
         <Text style={styles.label}>Email</Text>
         <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
 
+        <Text style={styles.label}>Bio</Text>
+        <TextInput
+          style={[styles.input, styles.bioInput]}
+          value={bio}
+          onChangeText={setBio}
+          placeholder="Tell others a bit about yourself"
+          placeholderTextColor={Colors.brown600}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Text style={styles.label}>Location</Text>
+        <TextInput
+          style={styles.input}
+          value={location}
+          onChangeText={setLocation}
+          placeholder="Where are you based?"
+          placeholderTextColor={Colors.brown600}
+        />
+
         <TouchableOpacity style={styles.saveButton}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -58,7 +80,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  content: { paddingHorizontal: 24, alignItems: 'center' },
+  content: { paddingHorizontal: 24, paddingBottom: 40, alignItems: 'center' },
   avatarWrap: { marginBottom: 24 },
   avatar: {
     width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.cream2,
@@ -79,6 +101,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 18,
   },
+  bioInput: { minHeight: 80, textAlignVertical: 'top' },
   saveButton: {
     width: '100%', height: 48, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', marginTop: 8,

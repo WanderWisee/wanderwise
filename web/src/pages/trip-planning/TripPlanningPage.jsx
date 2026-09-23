@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import "../../App.css";
@@ -8,11 +8,34 @@ export default function TripPlanningPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [people, setPeople] = useState(0);
+  const [destinationOptions, setDestinationOptions] = useState([]);
 
   const navigate = useNavigate();
 
-  const handleLetsGo = () => {
-    // TEMPORARY: no backend call yet — just navigate with the trip info
+  useEffect(() => {
+    fetch("/api/destinations")
+      .then((resp) => resp.json())
+      .then((data) => setDestinationOptions(Array.isArray(data) ? data : []))
+      .catch(() => setDestinationOptions([]));
+  }, []);
+
+  const handleLetsGo = async () => {
+    const trimmed = destination.trim();
+    if (trimmed) {
+      try {
+        // If it's not in the list yet, this adds it — so the database
+        // keeps growing with whatever people actually search for.
+        await fetch("/api/destinations/ensure", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        });
+      } catch (err) {
+        // Non-blocking — still let the user continue planning even if
+        // this couldn't be saved.
+      }
+    }
+
     navigate("/trip-plan", {
       state: { destination, startDate, endDate, people },
     });
@@ -49,7 +72,13 @@ export default function TripPlanningPage() {
             placeholder="Where are you headed?"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
+            list="destination-options"
           />
+          <datalist id="destination-options">
+            {destinationOptions.map((d) => (
+              <option key={d.id} value={d.name} />
+            ))}
+          </datalist>
 
           <hr className="ww-planning-divider" />
 

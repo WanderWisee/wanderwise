@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import PlaceMap from "../../components/PlaceMap";
 import "../../App.css";
 
 const guideSections = [
@@ -16,7 +17,6 @@ const guideSections = [
     ],
     cons: ["Can get very crowded at sunset", "Pricier than other parts of the island"],
     image: "/assets/boracay-white-beach.jpg",
-    mapImage: "/assets/boracay-white-beach-map.jpg",
     hotels: [
       { name: "Discovery Shores Boracay", description: "All-suite beachfront resort right on White Beach, known for its minimalist rooms and quiet pool area." },
       { name: "Henann Regency Resort & Spa", description: "Large family-friendly resort near Station 2, close to the busiest strip of restaurants and bars." },
@@ -31,7 +31,6 @@ const guideSections = [
     pros: ["Best spot on the island for kite and windsurfing lessons", "Fewer crowds than White Beach", "More budget-friendly hostels and guesthouses"],
     cons: ["Water can be too shallow or seaweedy for regular swimming", "Fewer dining options after dark"],
     image: "/assets/boracay-bulabog.jpg",
-    mapImage: "/assets/boracay-bulabog-map.jpg",
     hotels: [
       { name: "Angol Point Beachfront Cottages", description: "Simple beachfront cottages popular with kitesurfers, steps away from the launch area." },
       { name: "Boracay Kite Resort", description: "Budget-friendly rooms run by a kitesurf school, with board storage and lesson packages on-site." },
@@ -102,7 +101,9 @@ export default function TravelGuidePage() {
             </div>
 
             <h3 className="ww-guide-location-heading">Location</h3>
-            <img src={section.mapImage} alt={`${section.pinLabel} map`} className="ww-guide-map" />
+            <div className="ww-guide-map">
+              <PlaceMap placeName={section.pinLabel} context={destination} height={260} />
+            </div>
           </section>
         ))}
       </main>

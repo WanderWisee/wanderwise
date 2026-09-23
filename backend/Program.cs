@@ -36,6 +36,9 @@ builder.Services.AddSingleton<EmailService>();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Lets the Overpass/Nominatim calls in PlacesController actually work.
+builder.Services.AddHttpClient();
+
 // Allows the React dev server (localhost:3000) to call this API.
 builder.Services.AddCors(options =>
 {

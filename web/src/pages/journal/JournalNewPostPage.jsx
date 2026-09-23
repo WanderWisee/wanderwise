@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 
@@ -209,6 +210,15 @@ export default function JournalNewPostPage() {
                   </div>
                 </>
               )}
+
+              {entry.place && entry.place.trim() && (
+                <>
+                  <h3 className="ww-guide-location-heading">Location</h3>
+                  <div className="ww-guide-map">
+                    <PlaceMap placeName={entry.place} height={220} />
+                  </div>
+                </>
+              )}
             </section>
           ))}
 
@@ -311,6 +321,15 @@ export default function JournalNewPostPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Live preview — as soon as a place name is typed above,
+                      it gets geocoded and pinned here, same idea as the
+                      Trip Plan Builder's map. */}
+                  {entry.place.trim() && (
+                    <div className="ww-journal-entry-map" style={{ margin: "12px 0" }}>
+                      <PlaceMap placeName={entry.place} height={180} />
+                    </div>
+                  )}
 
                   <div className="ww-journal-tag-section">
                     <p className="ww-journal-list-label">Pros</p>

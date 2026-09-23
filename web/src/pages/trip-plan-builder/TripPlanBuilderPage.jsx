@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useJsApiLoader } from "@react-google-maps/api";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import TripMap from "../../components/TripMap";
 import "../../App.css";
 
@@ -33,17 +32,193 @@ function buildDaysFromRange(startDate, endDate) {
   return days;
 }
 
+function addDaysIso(startDateStr, daysToAdd) {
+  if (!startDateStr) return null;
+  const d = new Date(startDateStr + "T00:00:00");
+  d.setDate(d.getDate() + daysToAdd);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function buildItineraryDateMap(days, startDate) {
+  const map = {};
+  days.forEach((day, i) => {
+    const iso = addDaysIso(startDate, i);
+    day.placeIds.forEach((id) => {
+      map[id] = iso;
+    });
+  });
+  return map;
+}
+
+function serializePlace(p, itineraryDateMap, sortOrder) {
+  return {
+    name: p.name,
+    itineraryDate: itineraryDateMap[p.id] || null,
+    latitude: typeof p.lat === "number" ? p.lat : null,
+    longitude: typeof p.lng === "number" ? p.lng : null,
+    notes: p.note || null,
+    scheduledTime: p.time || null,
+    visited: !!p.visited,
+    sortOrder,
+    costs: (p.costs || []).map((c) => ({ category: c.category, amount: Number(c.amount) || 0 })),
+  };
+}
+
+function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState }) {
+  const itineraryDateMap = buildItineraryDateMap(tripState.days, startDate);
+
+  const sections = [
+    {
+      isDefault: true,
+      name: whereToGoTitle,
+      sortOrder: 0,
+      places: tripState.places.map((p, i) => serializePlace(p, itineraryDateMap, i)),
+    },
+    ...tripState.customSections.map((s, idx) => ({
+      isDefault: false,
+      name: s.name || null,
+      sortOrder: idx + 1,
+      places: s.places.map((p, i) => serializePlace(p, itineraryDateMap, i)),
+    })),
+  ];
+
+  return {
+    title: whereToGoTitle,
+    destination,
+    startDate: startDate || null,
+    endDate: endDate || null,
+    travelBuddiesCount: people,
+    budgetTotal: Number(tripState.budgetTotal) || 0,
+    sections,
+  };
+}
+
+function hydratePlace(p) {
+  return {
+    id: p.id,
+    number: 0,
+    name: p.name,
+    visited: !!p.visited,
+    note: p.notes || "",
+    time: p.scheduledTime || "",
+    lat: p.latitude,
+    lng: p.longitude,
+    costs: (p.costs || []).map((c) => ({ id: c.id, category: c.category, amount: c.amount })),
+    _itineraryDate: p.itineraryDate,
+  };
+}
+
+function hydrateTripState(tripResponse) {
+  const defaultSection = tripResponse.sections.find((s) => s.isDefault);
+  const customSectionsResp = tripResponse.sections.filter((s) => !s.isDefault);
+
+  const places = (defaultSection?.places || []).map(hydratePlace);
+
+  const customSections =
+    customSectionsResp.length > 0
+      ? customSectionsResp.map((s) => ({
+          id: nextSectionId++,
+          name: s.name || "",
+          placeInput: "",
+          places: s.places.map(hydratePlace),
+        }))
+      : [{ id: nextSectionId++, name: "", placeInput: "", places: [] }];
+
+  places.forEach((p, i) => (p.number = i + 1));
+  customSections.forEach((s) => s.places.forEach((p, i) => (p.number = i + 1)));
+
+  let maxId = 0;
+  let maxNumber = 0;
+  [...places, ...customSections.flatMap((s) => s.places)].forEach((p) => {
+    if (p.id > maxId) maxId = p.id;
+    if (p.number > maxNumber) maxNumber = p.number;
+  });
+  nextPlaceId = Math.max(nextPlaceId, maxId + 1);
+  nextNumber = Math.max(nextNumber, maxNumber + 1);
+
+  const days = buildDaysFromRange(tripResponse.startDate, tripResponse.endDate);
+  const allPlaces = [...places, ...customSections.flatMap((s) => s.places)];
+  days.forEach((day, i) => {
+    const iso = addDaysIso(tripResponse.startDate, i);
+    day.placeIds = allPlaces.filter((p) => p._itineraryDate === iso).map((p) => p.id);
+  });
+
+  return {
+    places,
+    customSections,
+    days,
+    budgetTotal: tripResponse.budgetTotal || 0,
+    expenses: [],
+  };
+}
+
+// Standalone "Add Expense" entries are a separate concept from the small
+// per-place cost breakdown — they live in their own `expenses` table on the
+// backend, keyed by category and/or a specific place. This turns a raw
+// backend expense record into the shape the UI already expects
+// (label/icon/dayLabel), same look as before but now actually persisted.
+const EXPENSE_CATEGORIES = [
+  { icon: "🍽️", label: "Food and Drinks" },
+  { icon: "🚌", label: "Transit" },
+  { icon: "🎟️", label: "Activities" },
+  { icon: "🛍️", label: "Shopping" },
+  { icon: "🚗", label: "Car Rental" },
+  { icon: "🛏️", label: "Lodging" },
+  { icon: "⛽", label: "Gas" },
+  { icon: "✈️", label: "Flights" },
+];
+
+function findPlaceNameById(tripStateLike, placeId) {
+  const all = [...tripStateLike.places, ...tripStateLike.customSections.flatMap((s) => s.places)];
+  const found = all.find((p) => p.id === placeId);
+  return found ? found.name : null;
+}
+
+function findDayLabelForPlace(tripStateLike, placeId) {
+  const day = tripStateLike.days.find((d) => d.placeIds.includes(placeId));
+  return day ? day.label : null;
+}
+
+function mapExpenseFromApi(e, tripStateLike) {
+  const placeName = e.placeId ? findPlaceNameById(tripStateLike, e.placeId) : null;
+  const categoryMatch = EXPENSE_CATEGORIES.find((c) => c.label === e.category);
+  return {
+    id: e.id,
+    amount: e.amount,
+    label: placeName || e.category || "Expense",
+    icon: categoryMatch ? categoryMatch.icon : placeName ? "📍" : "💰",
+    description: e.description || "",
+    dayLabel: e.placeId ? findDayLabelForPlace(tripStateLike, e.placeId) : null,
+    placeId: e.placeId || null,
+    category: e.category,
+  };
+}
+
 export default function TripPlanBuilderPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const tripInfo = location.state || {};
 
+  // The tripId is kept in the URL query string (?tripId=123), NOT only in
+  // location.state, because a browser refresh (F5) can lose/never had the
+  // tripId in location.state (it's only set here AFTER the trip is created,
+  // and the original navigation from Trip Planning never included it).
+  // Keeping it in the URL means a refresh always knows which trip to load.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTripId = searchParams.get("tripId");
+
+  const [tripId, setTripId] = useState(
+    urlTripId ? Number(urlTripId) : tripInfo.tripId || null
+  );
+  const [saveStatus, setSaveStatus] = useState("Saved");
+  const hasLoadedRef = useRef(false);
+
   const [destination, setDestination] = useState(tripInfo.destination || "");
   const [destinationCoords, setDestinationCoords] = useState(null);
 
-  // Geocode the overall trip destination (e.g. "La Union") whenever
-  // it changes — shown as a distinct red pin on the map, separate
-  // from the individual "Where to go?" place pins.
   useEffect(() => {
     if (!destination.trim()) {
       setDestinationCoords(null);
@@ -68,15 +243,14 @@ export default function TripPlanBuilderPage() {
       cancelled = true;
     };
   }, [destination]);
+
   const [startDate, setStartDate] = useState(tripInfo.startDate || "");
   const [endDate, setEndDate] = useState(tripInfo.endDate || "");
   const [people, setPeople] = useState(tripInfo.people || 0);
 
-  // "Where to go?" (`places`) and each "+ New List" section
-  // (`customSections[].places`) are independent lists, each with
-  // their own places. The itinerary's "Add a new place" (per day)
-  // looks for a name match specifically in "Where to go?" so visited
-  // status can be shared between the itinerary and that list.
+  const [whereToGoTitle, setWhereToGoTitle] = useState("Where to go?");
+  const [editingWhereToGoTitle, setEditingWhereToGoTitle] = useState(false);
+
   const [tripState, setTripState] = useState(
     tripInfo.restoredTripState || {
       places: [],
@@ -116,25 +290,237 @@ export default function TripPlanBuilderPage() {
 
   const { places, customSections, days, budgetTotal, expenses = [] } = tripState;
 
-  // --- Edit Trip Info modal ---
+  // Load (existing trip) or create (fresh trip) exactly once on mount.
+  // Whichever tripId we end up with is written back into the URL so a
+  // refresh always re-loads the SAME trip instead of creating a new one.
+  //
+  // mountEffectStartedRef guards against React StrictMode's dev-mode
+  // double-invoke of effects — without it, a single "Let's go" ends up
+  // firing the create-trip POST twice, creating two duplicate trips.
+  const mountEffectStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (mountEffectStartedRef.current) return;
+    mountEffectStartedRef.current = true;
+
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) {
+      hasLoadedRef.current = true;
+      return;
+    }
+
+    const authHeaders = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    const effectiveTripId = urlTripId ? Number(urlTripId) : tripInfo.tripId;
+
+    (async () => {
+      try {
+        if (effectiveTripId) {
+          const resp = await fetch(`/api/trips/${effectiveTripId}`, { headers: authHeaders });
+          if (resp.ok) {
+            const data = await resp.json();
+            setTripId(data.id);
+            setDestination(data.destination || "");
+            setStartDate(data.startDate || "");
+            setEndDate(data.endDate || "");
+            setPeople(data.travelBuddiesCount || 0);
+            setWhereToGoTitle(data.title || "Where to go?");
+            const hydrated = hydrateTripState(data);
+            setTripState(hydrated);
+
+            if (!urlTripId) {
+              setSearchParams({ tripId: String(data.id) }, { replace: true });
+            }
+
+            // Standalone "Add Expense" entries live in their own table —
+            // load them separately and merge them in.
+            try {
+              const expResp = await fetch(`/api/trips/${data.id}/expenses`, { headers: authHeaders });
+              if (expResp.ok) {
+                const expData = await expResp.json();
+                // Rows with a placeId are per-place "expected cost" entries
+                // (from "$ Add Cost" on an itinerary item) — the backend
+                // stores those in this same Expenses table so GetTrip can
+                // rebuild each place's cost breakdown, but they already
+                // show up on the place itself, so they're excluded here to
+                // avoid showing them twice.
+                const mappedExpenses = (Array.isArray(expData) ? expData : [])
+                  .filter((e) => !e.placeId)
+                  .map((e) => mapExpenseFromApi(e, hydrated));
+                setTripState((prev) => ({ ...prev, expenses: mappedExpenses }));
+              }
+            } catch (err) {
+              console.warn("Failed to load expenses:", err);
+            }
+          } else {
+            // Trip not found / not owned by this user — nothing to hydrate.
+            hasLoadedRef.current = true;
+          }
+        } else if (destination.trim()) {
+          const resp = await fetch("/api/trips", {
+            method: "POST",
+            headers: authHeaders,
+            body: JSON.stringify({
+              title: whereToGoTitle,
+              destination,
+              startDate: startDate || null,
+              endDate: endDate || null,
+              travelBuddiesCount: people,
+              budgetTotal: 0,
+              sections: [],
+            }),
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            setTripId(data.tripId);
+            setSearchParams({ tripId: String(data.tripId) }, { replace: true });
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load/create trip:", err);
+      } finally {
+        hasLoadedRef.current = true;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (!hasLoadedRef.current || !tripId) return;
+
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) return;
+
+    setSaveStatus("Saving...");
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const body = buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState });
+        const resp = await fetch(`/api/trips/${tripId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+        setSaveStatus(resp.ok ? "Saved" : "Save failed");
+      } catch (err) {
+        setSaveStatus("Save failed");
+      }
+    }, 1200);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripState, destination, startDate, endDate, people, whereToGoTitle, tripId]);
+
   const [showEditTrip, setShowEditTrip] = useState(false);
   const [editForm, setEditForm] = useState({ destination, startDate, endDate, people });
+
+  // Same Philippine destination autocomplete data as the Trip Planning page.
+  const [destinationOptions, setDestinationOptions] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/destinations")
+      .then((resp) => resp.json())
+      .then((data) => setDestinationOptions(Array.isArray(data) ? data : []))
+      .catch(() => setDestinationOptions([]));
+  }, []);
 
   const openEditTrip = () => {
     setEditForm({ destination, startDate, endDate, people });
     setShowEditTrip(true);
   };
 
-  const handleSaveTripInfo = () => {
+  const handleSaveTripInfo = async () => {
+    const destinationChanged =
+      editForm.destination.trim().toLowerCase() !== destination.trim().toLowerCase();
+
+    const hasExistingItinerary =
+      places.length > 0 ||
+      customSections.some((s) => s.places.length > 0) ||
+      days.some((d) => d.placeIds.length > 0);
+
+    if (destinationChanged && hasExistingItinerary) {
+      const confirmed = window.confirm(
+        "Changing the destination will clear your current itinerary (places, days, and suggestions) since they belong to the old destination. Continue?"
+      );
+      if (!confirmed) return;
+    }
+
     setDestination(editForm.destination);
     setStartDate(editForm.startDate);
     setEndDate(editForm.endDate);
     setPeople(editForm.people);
     setShowEditTrip(false);
+
+    if (destinationChanged) {
+      // Make sure the new destination exists in the destinations table too,
+      // same as Trip Planning does when a brand-new place is typed in.
+      if (editForm.destination.trim()) {
+        const token = localStorage.getItem("wanderwise_token");
+        try {
+          await fetch("/api/destinations/ensure", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ name: editForm.destination.trim() }),
+          });
+        } catch (err) {
+          console.warn("Failed to ensure destination:", err);
+        }
+      }
+
+      // Clear the old itinerary — it belonged to the old destination.
+      // The "Where to go?" suggestions will auto-refresh on their own
+      // since they're already wired to re-fetch whenever `destination` changes.
+      applyChange((prev) => ({
+        ...prev,
+        places: [],
+        customSections: [{ id: nextSectionId++, name: "", placeInput: "", places: [] }],
+        days: prev.days.map((day) => ({ ...day, placeIds: [] })),
+      }));
+    }
   };
 
   const [newPlaceInput, setNewPlaceInput] = useState("");
   const newPlaceInputRef = useRef(null);
+
+  const [suggestedPlaces, setSuggestedPlaces] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (!destination.trim()) {
+      setSuggestedPlaces([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingSuggestions(true);
+    fetch(`/api/places?destination=${encodeURIComponent(destination)}`)
+      .then((resp) => resp.json())
+      .then((data) => {
+        if (!cancelled) setSuggestedPlaces(Array.isArray(data.places) ? data.places : []);
+      })
+      .catch(() => {
+        if (!cancelled) setSuggestedPlaces([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSuggestions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [destination]);
 
   const generatedDays = useMemo(
     () => buildDaysFromRange(startDate, endDate),
@@ -155,9 +541,6 @@ export default function TripPlanBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate]);
 
-  // Finds a place wherever it lives (top-level "Where to go?" list or
-  // inside any "Name this section" list) and returns it along with
-  // its display number = its position in whichever list it belongs to.
   const findPlaceWithOrigin = (state, placeId) => {
     const mainIdx = state.places.findIndex((p) => p.id === placeId);
     if (mainIdx !== -1) return { place: state.places[mainIdx], number: mainIdx + 1 };
@@ -168,7 +551,6 @@ export default function TripPlanBuilderPage() {
     return null;
   };
 
-  // Updates a place wherever it lives (top-level or inside a section).
   const updatePlaceEverywhere = (state, placeId, updater) => {
     if (state.places.some((p) => p.id === placeId)) {
       return {
@@ -185,13 +567,6 @@ export default function TripPlanBuilderPage() {
     };
   };
 
-  // --- Directions: opens Google Maps from your current location to
-  // a specific place, and shows the real estimated travel time (no
-  // distance/km — just minutes) next to it. ---
-  const { isLoaded: mapsLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-  });
-
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -201,7 +576,6 @@ export default function TripPlanBuilderPage() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        console.log("Got user location:", pos.coords.latitude, pos.coords.longitude);
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       (err) => {
@@ -211,98 +585,26 @@ export default function TripPlanBuilderPage() {
     );
   }, []);
 
-  const [travelTimes, setTravelTimes] = useState({}); // { [placeId]: "12 mins" }
-
-  const fetchTravelTime = (place) => {
-    if (!mapsLoaded) {
-      console.log("Maps script not loaded yet.");
-      return;
-    }
-    if (!userLocation) {
-      console.log("No user location yet — can't compute travel time.");
-      return;
-    }
-    if (travelTimes[place.id]) return; // already fetched
-    if (!window.google) {
-      console.warn("window.google is not available — Maps script may have failed to load.");
-      return;
-    }
-    const service = new window.google.maps.DistanceMatrixService();
-    service.getDistanceMatrix(
-      {
-        origins: [userLocation],
-        destinations: [`${place.name}, ${destination}`],
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (response, status) => {
-        console.log("DistanceMatrix status:", status, response);
-        if (status !== "OK") {
-          console.warn(`DistanceMatrix request failed for "${place.name}":`, status);
-          return;
-        }
-        const result = response.rows?.[0]?.elements?.[0];
-        if (result?.status === "OK") {
-          setTravelTimes((prev) => ({ ...prev, [place.id]: result.duration.text }));
-        } else {
-          console.warn(`No route found for "${place.name}":`, result?.status);
-        }
-      }
-    );
-  };
-
-  const openDirections = (place) => {
-    const destParam = encodeURIComponent(`${place.name}, ${destination}`);
-    const originParam = userLocation ? `&origin=${userLocation.lat},${userLocation.lng}` : "";
-    window.open(
-      `https://www.google.com/maps/dir/?api=1${originParam}&destination=${destParam}&travelmode=driving`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
-
-  // Auto-fetch travel time for every place currently in the
-  // itinerary, once we have the user's location and Maps is loaded.
-  useEffect(() => {
-    if (!mapsLoaded || !userLocation) return;
-    days.forEach((day) => {
-      day.placeIds.forEach((id) => {
-        const found = findPlaceWithOrigin(tripState, id);
-        if (found) fetchTravelTime(found.place);
-      });
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapsLoaded, userLocation, days]);
-
   const budgetSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  // Looks up a place's coordinates via OpenStreetMap's free Nominatim
-  // geocoding service — no API key needed. Runs quietly in the
-  // background; if it fails, the place just won't show a pin yet.
   const geocodePlace = async (place) => {
     const query = encodeURIComponent(
       destination ? `${place.name}, ${destination}, Philippines` : `${place.name}, Philippines`
     );
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`;
-    console.log("Geocoding:", place.name, "→", url);
     try {
       const res = await fetch(url);
-      console.log("Nominatim response status:", res.status);
       const data = await res.json();
-      console.log("Nominatim data:", data);
       if (data && data[0]) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
-        console.log("Got coordinates for", place.name, ":", lat, lng);
         setTripState((prev) => updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, lat, lng })));
-      } else {
-        console.warn("No results found for", place.name);
       }
     } catch (err) {
       console.warn("Geocoding failed for", place.name, err);
     }
   };
 
-  // Adds a new place to the "Where to go?" checklist only.
   const addPlace = (name) => {
     const place = { id: nextPlaceId++, number: nextNumber++, name, visited: false };
     applyChange((prev) => ({ ...prev, places: [...prev.places, place] }));
@@ -319,10 +621,6 @@ export default function TripPlanBuilderPage() {
     applyChange((prev) => updatePlaceEverywhere(prev, placeId, (p) => ({ ...p, visited: !p.visited })));
   };
 
-  // --- Where to go? heading title (editable via pencil, like a section name) ---
-  const [whereToGoTitle, setWhereToGoTitle] = useState("Where to go?");
-  const [editingWhereToGoTitle, setEditingWhereToGoTitle] = useState(false);
-
   const handleDeletePlace = (placeId) => {
     applyChange((prev) => ({
       ...prev,
@@ -334,9 +632,6 @@ export default function TripPlanBuilderPage() {
     }));
   };
 
-  // Delete confirmation modal — replaces window.confirm with a
-  // styled in-app popup. `pendingDelete` holds what's about to be
-  // deleted: { type: "whereToGo" } or { type: "section", id }.
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const performDeleteWhereToGoList = () => {
@@ -379,9 +674,6 @@ export default function TripPlanBuilderPage() {
     setPendingDelete(null);
   };
 
-  // --- "+ New List" — commits whatever is currently typed in every
-  // section's own input into that section's list. It no longer
-  // spawns an additional blank section on each click. ---
   const handleNewList = () => {
     const newlyCreated = [];
     applyChange((prev) => ({
@@ -443,10 +735,6 @@ export default function TripPlanBuilderPage() {
 
   const handleDeleteSection = (sectionId) => setPendingDelete({ type: "section", id: sectionId });
 
-  // --- Itinerary: each day has its own independent "Add a new place"
-  // input. Typing a place either reuses an existing "Where to go?"
-  // entry with the same name (shared visited status), or creates a
-  // new one there. ---
   const [dayInputs, setDayInputs] = useState({});
 
   const handleDayInputChange = (dayIndex, value) => {
@@ -462,7 +750,6 @@ export default function TripPlanBuilderPage() {
 
     applyChange((prev) => {
       const lower = value.toLowerCase();
-      // Search "Where to go?" first, then every "Name this section" list.
       let existing = prev.places.find((p) => p.name.trim().toLowerCase() === lower);
       if (!existing) {
         for (const s of prev.customSections) {
@@ -495,7 +782,6 @@ export default function TripPlanBuilderPage() {
     setDayInputs((prev) => ({ ...prev, [dayIndex]: "" }));
   };
 
-  // --- Reordering places within a day via drag-and-drop ---
   const [draggingPlaceId, setDraggingPlaceId] = useState(null);
 
   const handleItemDragStart = (e, dayIndex, placeId) => {
@@ -533,7 +819,6 @@ export default function TripPlanBuilderPage() {
     }));
   };
 
-  // --- Select Time (per place, shown inline when clicked) ---
   const [editingTimeFor, setEditingTimeFor] = useState(null);
 
   const updatePlaceTime = (placeId, value) => {
@@ -544,7 +829,6 @@ export default function TripPlanBuilderPage() {
     setTripState((prev) => updatePlaceEverywhere(prev, placeId, (p) => ({ ...p, note: value })));
   };
 
-  // --- Sidebar scroll targets ---
   const whereToGoRef = useRef(null);
   const itineraryRef = useRef(null);
   const untitledRef = useRef(null);
@@ -553,11 +837,16 @@ export default function TripPlanBuilderPage() {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // --- Add Cost -> inline mini form per place, instead of jumping to
-  // the generic Expenses list. Each place can have several cost line
-  // items (Transportation, Entrance Fee, Food, etc.) that roll up
-  // into an "Expected cost" total for that place, and into the
-  // overall trip Budget.
+  const openDirections = (place) => {
+    const destParam = encodeURIComponent(`${place.name}, ${destination}`);
+    const originParam = userLocation ? `&origin=${userLocation.lat},${userLocation.lng}` : "";
+    window.open(
+      `https://www.google.com/maps/dir/?api=1${originParam}&destination=${destParam}&travelmode=driving`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
   const COST_CATEGORIES = ["Transportation", "Entrance Fee", "Food", "Hotel", "Other"];
   const [addingCostFor, setAddingCostFor] = useState(null);
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
@@ -600,7 +889,6 @@ export default function TripPlanBuilderPage() {
 
   const expensesRef = useRef(null);
 
-  // --- Budget edit ---
   const [showEditBudget, setShowEditBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(budgetTotal);
 
@@ -614,7 +902,25 @@ export default function TripPlanBuilderPage() {
     setShowEditBudget(false);
   };
 
-  // --- Navigate to Add Expense page ---
+  const handleDeleteExpense = async (expenseId) => {
+    if (!window.confirm("Delete this expense?")) return;
+    const token = localStorage.getItem("wanderwise_token");
+    if (tripId && token) {
+      try {
+        await fetch(`/api/trips/${tripId}/expenses/${expenseId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.warn("Failed to delete expense:", err);
+      }
+    }
+    setTripState((prev) => ({
+      ...prev,
+      expenses: (prev.expenses || []).filter((e) => e.id !== expenseId),
+    }));
+  };
+
   const handleGoToAddExpense = () => {
     const tripPlanItems = [...places, ...customSections.flatMap((s) => s.places)];
     navigate("/add-expense", {
@@ -624,8 +930,9 @@ export default function TripPlanBuilderPage() {
         endDate,
         people,
         tripState,
-        returnPath: "/trip-plan",
+        returnPath: `/trip-plan${tripId ? `?tripId=${tripId}` : ""}`,
         tripPlanItems,
+        tripId,
       },
     });
   };
@@ -638,7 +945,7 @@ export default function TripPlanBuilderPage() {
         endDate,
         people,
         tripState,
-        returnPath: "/trip-plan",
+        returnPath: `/trip-plan${tripId ? `?tripId=${tripId}` : ""}`,
         expenses,
         days,
       },
@@ -653,7 +960,7 @@ export default function TripPlanBuilderPage() {
         endDate,
         people,
         tripState,
-        returnPath: "/trip-plan",
+        returnPath: `/trip-plan${tripId ? `?tripId=${tripId}` : ""}`,
       },
     });
   };
@@ -673,7 +980,7 @@ export default function TripPlanBuilderPage() {
           >
             ↩ Undo
           </span>
-          <span className="ww-builder-saved">Saved</span>
+          <span className="ww-builder-saved">{saveStatus}</span>
           <span
             className="ww-undo-redo"
             onClick={handleRedo}
@@ -771,6 +1078,39 @@ export default function TripPlanBuilderPage() {
             </span>
           </h2>
           <div ref={whereToGoRef} />
+
+          {loadingSuggestions && (
+            <p className="ww-field-label" style={{ marginBottom: 8 }}>
+              Loading suggested places...
+            </p>
+          )}
+
+          {suggestedPlaces.length > 0 && (
+            <div className="ww-suggested-places" style={{ marginBottom: 16 }}>
+              <p className="ww-field-label" style={{ marginBottom: 8 }}>
+                Suggested places in {destination}:
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {suggestedPlaces.slice(0, 12).map((sp) => (
+                  <button
+                    key={sp.name}
+                    type="button"
+                    onClick={() => addPlace(sp.name)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: 16,
+                      border: "1px solid #dbeceb",
+                      background: "#f2f6f5",
+                      cursor: "pointer",
+                      fontSize: 13,
+                    }}
+                  >
+                    + {sp.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {places.map((p, i) => (
             <div className="ww-place-card" key={p.id}>
@@ -1030,14 +1370,12 @@ export default function TripPlanBuilderPage() {
                           </div>
                         </div>
                         <p className="ww-directions-hint">
-                          🚗 {travelTimes[p.id] || "-- mins"}
-                          {" "}
                           <span
                             className="ww-directions-link"
                             onClick={() => openDirections(p)}
                             style={{ cursor: "pointer" }}
                           >
-                            | Directions
+                            🚗 Directions
                           </span>
                         </p>
                       </React.Fragment>
@@ -1086,7 +1424,17 @@ export default function TripPlanBuilderPage() {
             expenses.map((e) => (
               <div className="ww-expense-row" key={e.id}>
                 <span>{e.icon} {e.description || e.label}</span>
-                <span>₱{e.amount.toLocaleString()}</span>
+                <span>
+                  ₱{e.amount.toLocaleString()}
+                  <span
+                    className="ww-cost-remove"
+                    onClick={() => handleDeleteExpense(e.id)}
+                    style={{ cursor: "pointer", marginLeft: 8 }}
+                    title="Delete this expense"
+                  >
+                    ✕
+                  </span>
+                </span>
               </div>
             ))
           )}
@@ -1101,10 +1449,16 @@ export default function TripPlanBuilderPage() {
             <input
               type="text"
               className="ww-planning-input"
-              placeholder="Thailand"
+              placeholder="Boracay"
+              list="ww-edit-destination-options"
               value={editForm.destination}
               onChange={(e) => setEditForm({ ...editForm, destination: e.target.value })}
             />
+            <datalist id="ww-edit-destination-options">
+              {destinationOptions.map((d) => (
+                <option key={d.id} value={d.name} />
+              ))}
+            </datalist>
             <hr className="ww-planning-divider" />
             <label className="ww-planning-label">Dates</label>
             <div className="ww-dates-row">

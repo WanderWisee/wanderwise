@@ -1,6 +1,7 @@
 import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 
@@ -99,6 +100,15 @@ export default function JournalViewPage() {
                             )}
                           </div>
                         ))}
+                      </div>
+                    </>
+                  )}
+
+                  {entry.place && entry.place.trim() && (
+                    <>
+                      <h3 className="ww-guide-location-heading">Location</h3>
+                      <div className="ww-guide-map">
+                        <PlaceMap placeName={entry.place} height={220} />
                       </div>
                     </>
                   )}

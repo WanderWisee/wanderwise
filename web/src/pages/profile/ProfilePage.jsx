@@ -1,8 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
+
+// Wikipedia's free REST API (no key needed) is used to grab a real photo
+// for a destination by name. If nothing is found, we fall back to a plain
+// placeholder card instead of a broken image. Cached module-level so we
+// don't re-fetch the same destination's photo over and over.
+const destinationImageCache = {};
+
+async function fetchDestinationImage(destination) {
+  if (!destination) return null;
+  if (destinationImageCache[destination] !== undefined) {
+    return destinationImageCache[destination];
+  }
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(destination)}`
+    );
+    if (!res.ok) {
+      destinationImageCache[destination] = null;
+      return null;
+    }
+    const data = await res.json();
+    const url = (data && data.thumbnail && data.thumbnail.source) || null;
+    destinationImageCache[destination] = url;
+    return url;
+  } catch {
+    destinationImageCache[destination] = null;
+    return null;
+  }
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -10,8 +39,48 @@ export default function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState("trips");
 
-  // Placeholder data — swap out once trips are actually persisted.
-  const trips = [{ id: 1, name: "La Union", img: "/assets/la-union.webp" }];
+  const [trips, setTrips] = useState([]);
+  const [tripImages, setTripImages] = useState({});
+  const [loadingTrips, setLoadingTrips] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) {
+      setLoadingTrips(false);
+      return;
+    }
+    fetch("/api/trips", { headers: { Authorization: `Bearer ${token}` } })
+      .then((resp) => (resp.ok ? resp.json() : []))
+      .then((data) => setTrips(Array.isArray(data) ? data : []))
+      .catch(() => setTrips([]))
+      .finally(() => setLoadingTrips(false));
+  }, []);
+
+  useEffect(() => {
+    const uniqueDestinations = [...new Set(trips.map((t) => t.destination).filter(Boolean))];
+    uniqueDestinations.forEach((dest) => {
+      fetchDestinationImage(dest).then((url) => {
+        if (url) setTripImages((prev) => ({ ...prev, [dest]: url }));
+      });
+    });
+  }, [trips]);
+
+  const handleDeleteTrip = async (e, tripId) => {
+    e.stopPropagation();
+    if (!window.confirm("Delete this trip? This can't be undone.")) return;
+    const token = localStorage.getItem("wanderwise_token");
+    try {
+      const resp = await fetch(`/api/trips/${tripId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        setTrips((prev) => prev.filter((t) => t.id !== tripId));
+      }
+    } catch (err) {
+      console.warn("Failed to delete trip:", err);
+    }
+  };
 
   // A default example card, same as the one in Guides — links to the
   // real Boracay guide content instead of a user-posted journal entry.
@@ -111,14 +180,67 @@ export default function ProfilePage() {
                 + Add new plan
               </button>
             </div>
-            <div className="ww-profile-grid">
-              {trips.map((t) => (
-                <div className="ww-profile-card" key={t.id}>
-                  <img src={t.img} alt={t.name} />
-                  <p>{t.name}</p>
-                </div>
-              ))}
-            </div>
+            {loadingTrips ? (
+              <p className="ww-profile-empty-text">Loading your trips...</p>
+            ) : trips.length === 0 ? (
+              <p className="ww-profile-empty-text">
+                No trips yet — plan one to see it here.
+              </p>
+            ) : (
+              <div className="ww-profile-grid">
+                {trips.map((t) => {
+                  const imgUrl = tripImages[t.destination];
+                  return (
+                    <div
+                      className="ww-profile-card"
+                      key={t.id}
+                      onClick={() => navigate(`/trip-plan?tripId=${t.id}`)}
+                      style={{ cursor: "pointer", position: "relative" }}
+                    >
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={t.destination} />
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: 140,
+                            background: "linear-gradient(135deg, #cfe8e5, #9fd0cb)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 32,
+                          }}
+                        >
+                          📍
+                        </div>
+                      )}
+                      <p>{t.destination || t.title || "Untitled trip"}</p>
+                      <span
+                        onClick={(e) => handleDeleteTrip(e, t.id)}
+                        title="Delete this trip"
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          background: "rgba(0,0,0,0.55)",
+                          color: "#fff",
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          fontSize: 13,
+                        }}
+                      >
+                        🗑
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         ) : (
           <>

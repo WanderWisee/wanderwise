@@ -29,36 +29,96 @@ export default function AddExpensePage() {
     tripState = { places: [], customSections: [], days: [], budgetTotal: 0, expenses: [] },
     returnPath = "/trip-plan",
     tripPlanItems = [], // [{ id, name }] — built from "Where to go?" + custom lists
+    tripId = null,
   } = location.state || {};
 
   const [amount, setAmount] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null); // holds the tripPlanItems id
   const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  // Finds a place by id in either "Where to go?" or a custom list, and
+  // returns an updated copy of tripState with a new cost pushed onto it —
+  // same shape as the "$ Add Cost" button already uses per place.
+  const addEstimatedCostToPlace = (state, placeId, category, amount) => {
+    const updater = (p) => ({
+      ...p,
+      costs: [...(p.costs || []), { id: Date.now(), category, amount }],
+    });
+    if (state.places.some((p) => p.id === placeId)) {
+      return { ...state, places: state.places.map((p) => (p.id === placeId ? updater(p) : p)) };
+    }
+    return {
+      ...state,
+      customSections: state.customSections.map((s) => ({
+        ...s,
+        places: s.places.map((p) => (p.id === placeId ? updater(p) : p)),
+      })),
+    };
+  };
+
+  const handleSave = async () => {
     // Require at least one choice (category or trip-plan item) before saving.
     if (!selectedCategory && !selectedItem) return;
+    if (saving) return;
 
-    const chosenTripItem = tripPlanItems.find((item) => item.id === selectedItem);
+    const numericAmount = Number(amount) || 0;
+    setSaving(true);
 
-    // If picked "from a trip plan", find which itinerary day that
-    // place belongs to, so the breakdown page can group by day.
-    const matchedDay = chosenTripItem
-      ? (tripState.days || []).find((day) =>
-          day.places.some((p) => p.id === chosenTripItem.id)
-        )
-      : null;
+    // "From a trip plan" (picking a specific place) is just an ESTIMATED
+    // cost for that place — the same idea as the "$ Add Cost" button on
+    // each itinerary item — so it belongs on that place's own cost
+    // breakdown, NOT in the standalone Expenses list. It's saved the same
+    // way place edits normally save: through the builder page's own
+    // auto-save once we navigate back with the updated tripState.
+    if (selectedItem) {
+      const updatedTripState = addEstimatedCostToPlace(tripState, selectedItem, "Other", numericAmount);
+      setSaving(false);
+      navigate(returnPath, {
+        state: { destination, startDate, endDate, people, restoredTripState: updatedTripState },
+      });
+      return;
+    }
+
+    // "From a category" is an actual recorded expense — this one really
+    // does get saved to the backend's Expenses table.
+    let savedExpense = null;
+    const token = localStorage.getItem("wanderwise_token");
+    if (tripId && token) {
+      try {
+        const resp = await fetch(`/api/trips/${tripId}/expenses`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            placeId: null,
+            category: selectedCategory,
+            amount: numericAmount,
+            description: description.trim() || null,
+          }),
+        });
+        if (resp.ok) {
+          savedExpense = await resp.json();
+        } else {
+          console.warn("Failed to save expense: server responded with", resp.status);
+        }
+      } catch (err) {
+        console.warn("Failed to save expense:", err);
+      }
+    } else {
+      console.warn("No tripId/token available — expense will not be saved to the server.");
+    }
 
     const newExpense = {
-      id: nextExpenseId++,
-      amount: Number(amount) || 0,
-      label: selectedCategory || chosenTripItem?.name || "Expense",
-      icon: selectedCategory
-        ? categories.find((c) => c.label === selectedCategory)?.icon
-        : "📍",
+      id: savedExpense?.id ?? nextExpenseId++,
+      amount: numericAmount,
+      label: selectedCategory,
+      icon: categories.find((c) => c.label === selectedCategory)?.icon,
       description: description.trim(),
-      dayLabel: matchedDay ? matchedDay.label : null,
+      dayLabel: null,
     };
 
     const updatedTripState = {
@@ -155,8 +215,8 @@ export default function AddExpensePage() {
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        <button className="ww-save-expense-btn" onClick={handleSave}>
-          Save
+        <button className="ww-save-expense-btn" onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : "Save"}
         </button>
       </main>
     </div>

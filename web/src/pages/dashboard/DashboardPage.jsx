@@ -89,36 +89,44 @@ export default function DashboardPage() {
       </header>
 
       {/* Travel Stories */}
-      <section className="ww-stories-card">
-        <h2>Your Travel Stories</h2>
+      <div className="ww-stories-row">
+        <section className="ww-stories-card">
+          <h2>Your Travel Stories</h2>
 
-        {loadingTrips ? (
-          <p>Loading your trips...</p>
-        ) : trips.length === 0 ? (
           <p>
             No trips yet. Start planning your next adventure!
           </p>
-        ) : (
-          <ul>
-            {trips.map((trip) => (
-              <li key={trip.id}>
-                <strong>
-                  {trip.destination || trip.title}
-                </strong>{" "}
-                — {trip.startDate || "TBD"} to{" "}
-                {trip.endDate || "TBD"}
-              </li>
-            ))}
-          </ul>
-        )}
 
-        <button
-          className="ww-start-planning-btn"
-          onClick={() => navigate("/trip-planning")}
-        >
-          + Start Planning
-        </button>
-      </section>
+          <button
+            className="ww-start-planning-btn"
+            onClick={() => navigate("/trip-planning")}
+          >
+            + Start Planning
+          </button>
+        </section>
+
+        <section className="ww-stories-card">
+          <h2>Your Itineraries</h2>
+
+          {loadingTrips ? (
+            <p>Loading your trips...</p>
+          ) : trips.length === 0 ? (
+            <p>No itineraries yet.</p>
+          ) : (
+            <div className="ww-stories-list">
+              {trips.map((trip) => (
+                <div
+                  key={trip.id}
+                  className="ww-story-item"
+                  onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
+                >
+                  📍 {trip.destination || trip.title || "Untitled trip"}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Explore */}
       <section className="ww-explore-section">

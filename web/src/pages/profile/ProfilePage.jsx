@@ -10,6 +10,20 @@ import "../../App.css";
 // don't re-fetch the same destination's photo over and over.
 const destinationImageCache = {};
 
+// Wikipedia's summary endpoint hands back a small thumbnail by default
+// (usually ~320px wide) — fine for a search result, but blurry/low-quality
+// when stretched to fill a profile card. Thumbnail URLs encode their width
+// right in the path (".../320px-File.jpg"), so bumping that number up gets
+// a noticeably sharper image from the same file without needing the full
+// (often multi-MB) original.
+function upscaleWikiThumbnail(url, targetWidth = 800) {
+  if (!url) return url;
+  if (/\/\d+px-/.test(url)) {
+    return url.replace(/\/\d+px-/, `/${targetWidth}px-`);
+  }
+  return url;
+}
+
 async function fetchDestinationImage(destination) {
   if (!destination) return null;
   if (destinationImageCache[destination] !== undefined) {
@@ -24,7 +38,11 @@ async function fetchDestinationImage(destination) {
       return null;
     }
     const data = await res.json();
-    const url = (data && data.thumbnail && data.thumbnail.source) || null;
+    const rawUrl =
+      (data && data.thumbnail && data.thumbnail.source) ||
+      (data && data.originalimage && data.originalimage.source) ||
+      null;
+    const url = rawUrl ? upscaleWikiThumbnail(rawUrl) : null;
     destinationImageCache[destination] = url;
     return url;
   } catch {
@@ -198,7 +216,16 @@ export default function ProfilePage() {
                       style={{ cursor: "pointer", position: "relative" }}
                     >
                       {imgUrl ? (
-                        <img src={imgUrl} alt={t.destination} />
+                        <img
+                          src={imgUrl}
+                          alt={t.destination}
+                          style={{
+                            width: "100%",
+                            height: 140,
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
                       ) : (
                         <div
                           style={{
@@ -265,7 +292,16 @@ export default function ProfilePage() {
                   }
                   style={{ cursor: "pointer" }}
                 >
-                  <img src={j.coverImage} alt={j.title} />
+                  <img
+                    src={j.coverImage}
+                    alt={j.title}
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
                   <p>{j.title}</p>
                 </div>
               ))}

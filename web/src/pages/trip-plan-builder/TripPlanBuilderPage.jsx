@@ -422,6 +422,27 @@ export default function TripPlanBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripState, destination, startDate, endDate, people, whereToGoTitle, tripId]);
 
+  // --- Top-right "⋯" menu (Home / Guides / Profile) ---
+  // The "Book a Hotel" button lower on the page already covers Hotels,
+  // so it's intentionally left out of this menu.
+  const [topMenuOpen, setTopMenuOpen] = useState(false);
+  const topMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (topMenuRef.current && !topMenuRef.current.contains(e.target)) {
+        setTopMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const goToTopMenu = (path) => {
+    setTopMenuOpen(false);
+    navigate(path);
+  };
+
   const [showEditTrip, setShowEditTrip] = useState(false);
   const [editForm, setEditForm] = useState({ destination, startDate, endDate, people });
 
@@ -989,7 +1010,28 @@ export default function TripPlanBuilderPage() {
             ↪ Redo
           </span>
           <button className="ww-trip-plan-btn">Trip Plan</button>
-          <span>⋯</span>
+          <div className="ww-menu-wrapper" ref={topMenuRef}>
+            <span
+              className="ww-menu-dropdown"
+              onClick={() => setTopMenuOpen((v) => !v)}
+              style={{ cursor: "pointer" }}
+            >
+              ⋯
+            </span>
+            {topMenuOpen && (
+              <div className="ww-menu-panel">
+                <p className="ww-menu-item" onClick={() => goToTopMenu("/dashboard")}>
+                  Home
+                </p>
+                <p className="ww-menu-item" onClick={() => goToTopMenu("/travel-tips")}>
+                  Guides
+                </p>
+                <p className="ww-menu-item" onClick={() => goToTopMenu("/profile")}>
+                  Profile
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

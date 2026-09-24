@@ -4,25 +4,16 @@ import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 
-// Wikipedia's free REST API (no key needed) is used to grab a real photo
-// for a destination by name. If nothing is found, we fall back to a plain
-// placeholder card instead of a broken image. Cached module-level so we
-// don't re-fetch the same destination's photo over and over.
+// A photo for each destination is fetched through our own backend
+// (/api/destination-image, which itself calls Wikipedia server-side) rather
+// than calling Wikipedia directly from the browser. A direct browser fetch
+// to a free public API like this can get intermittently rate-limited or
+// blocked — especially when several destinations' photos are all
+// requested at once on a fresh page load — which is why the picture
+// sometimes just never shows up. Going through the backend avoids that.
+// Cached module-level so we don't re-fetch the same destination's photo
+// over and over within the same browser tab.
 const destinationImageCache = {};
-
-// Wikipedia's summary endpoint hands back a small thumbnail by default
-// (usually ~320px wide) — fine for a search result, but blurry/low-quality
-// when stretched to fill a profile card. Thumbnail URLs encode their width
-// right in the path (".../320px-File.jpg"), so bumping that number up gets
-// a noticeably sharper image from the same file without needing the full
-// (often multi-MB) original.
-function upscaleWikiThumbnail(url, targetWidth = 800) {
-  if (!url) return url;
-  if (/\/\d+px-/.test(url)) {
-    return url.replace(/\/\d+px-/, `/${targetWidth}px-`);
-  }
-  return url;
-}
 
 async function fetchDestinationImage(destination) {
   if (!destination) return null;
@@ -30,19 +21,13 @@ async function fetchDestinationImage(destination) {
     return destinationImageCache[destination];
   }
   try {
-    const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(destination)}`
-    );
+    const res = await fetch(`/api/destination-image?name=${encodeURIComponent(destination)}`);
     if (!res.ok) {
       destinationImageCache[destination] = null;
       return null;
     }
     const data = await res.json();
-    const rawUrl =
-      (data && data.thumbnail && data.thumbnail.source) ||
-      (data && data.originalimage && data.originalimage.source) ||
-      null;
-    const url = rawUrl ? upscaleWikiThumbnail(rawUrl) : null;
+    const url = data && data.found && data.url ? data.url : null;
     destinationImageCache[destination] = url;
     return url;
   } catch {
@@ -110,6 +95,13 @@ export default function ProfilePage() {
       isDefault: true,
     },
   ];
+
+  // In Profile, we only want to show the destination — not the full story
+  // title ("Coron, Palawan Travel Story") and not a specific spot inside
+  // it ("Kayangan Lake, Coron"). Strip any trailing "Travel <word>" —
+  // Story, Journal, Journey, Diary, whatever the user typed — so this
+  // works no matter which word follows "Travel".
+  const displayPlaceName = (j) => j.title.replace(/ Travel \w+$/i, "");
 
   return (
     <div className="ww-profile-page">
@@ -294,7 +286,7 @@ export default function ProfilePage() {
                 >
                   <img
                     src={j.coverImage}
-                    alt={j.title}
+                    alt={displayPlaceName(j)}
                     style={{
                       width: "100%",
                       height: 140,
@@ -302,7 +294,7 @@ export default function ProfilePage() {
                       display: "block",
                     }}
                   />
-                  <p>{j.title}</p>
+                  <p>{displayPlaceName(j)}</p>
                 </div>
               ))}
             </div>

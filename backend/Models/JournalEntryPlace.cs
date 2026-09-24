@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WanderWiseApi.Models;
 
@@ -16,7 +17,7 @@ public class JournalEntryPlace
     [Column("place_name")]
     public string? PlaceName { get; set; }
 
-    [Column("image_url")]
+    [Column("image_url", TypeName = "LONGTEXT")]
     public string? ImageUrl { get; set; }
 
     [Column("rating")]
@@ -29,6 +30,7 @@ public class JournalEntryPlace
     public int SortOrder { get; set; }
 
     [ForeignKey(nameof(JournalEntryId))]
+    [JsonIgnore]
     public JournalEntry? JournalEntry { get; set; }
 
     public ICollection<JournalEntryPro> Pros { get; set; } = new List<JournalEntryPro>();

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WanderWiseApi.Models;
 
@@ -16,13 +17,14 @@ public class JournalEntry
     [Column("title")]
     public string? Title { get; set; }
 
-    [Column("cover_image")]
+    [Column("cover_image", TypeName = "LONGTEXT")]
     public string? CoverImage { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
     [ForeignKey(nameof(UserId))]
+    [JsonIgnore]
     public User? User { get; set; }
 
     public ICollection<JournalEntryPlace> Places { get; set; } = new List<JournalEntryPlace>();

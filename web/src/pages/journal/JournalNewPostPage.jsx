@@ -7,6 +7,21 @@ import "../../App.css";
 
 let nextHotelId = 1;
 
+// Reads a File as a base64 data URL. We use this instead of
+// URL.createObjectURL() because a blob URL only stays valid inside the
+// current browser tab — it breaks on refresh, on other devices, and once
+// saved+reloaded from the database. A base64 data URL is a plain string,
+// so it can be sent to the backend and stored (in the CoverImage/ImageUrl
+// text columns) and will keep working anywhere it's loaded.
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function JournalNewPostPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,6 +36,7 @@ export default function JournalNewPostPage() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [hasUploadedPhoto, setHasUploadedPhoto] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleChooseFile = (e) => {
@@ -34,30 +50,38 @@ export default function JournalNewPostPage() {
   // read-only summary — so posting gives immediate visible feedback
   // instead of silently navigating somewhere else.
   const [posted, setPosted] = useState(false);
+  const [posting, setPosting] = useState(false);
 
-  const handleUploadPhoto = () => {
+  const handleUploadPhoto = async () => {
     if (!selectedFile) {
       alert("Please choose a photo first.");
       return;
     }
-    const imageUrl = URL.createObjectURL(selectedFile);
-    const newEntry = {
-      id: nextEntryIdRef.current++,
-      place: "",
-      img: imageUrl,
-      rating: 0,
-      description: "",
-      pros: [],
-      cons: [],
-      hotels: [],
-      proInput: "",
-      conInput: "",
-      hotelNameInput: "",
-      hotelDescInput: "",
-    };
-    setEntries((prev) => [...prev, newEntry]);
-    setHasUploadedPhoto(true);
-    setSelectedFile(null);
+    setUploading(true);
+    try {
+      const imageUrl = await readFileAsDataUrl(selectedFile);
+      const newEntry = {
+        id: nextEntryIdRef.current++,
+        place: "",
+        img: imageUrl,
+        rating: 0,
+        description: "",
+        pros: [],
+        cons: [],
+        hotels: [],
+        proInput: "",
+        conInput: "",
+        hotelNameInput: "",
+        hotelDescInput: "",
+      };
+      setEntries((prev) => [...prev, newEntry]);
+      setHasUploadedPhoto(true);
+      setSelectedFile(null);
+    } catch (err) {
+      alert("Couldn't read that photo. Please try a different file.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const updateEntry = (id, field, value) => {
@@ -122,15 +146,31 @@ export default function JournalNewPostPage() {
     );
   };
 
-  const handlePost = () => {
-    const newJournalEntry = {
-      id: Date.now(),
-      title: storyTitle,
-      coverImage: entries[0]?.img || "/assets/placeholder.jpg",
-      entries,
-    };
-    addJournalEntry(newJournalEntry);
-    setPosted(true);
+  const handlePost = async () => {
+    setPosting(true);
+    try {
+      const payload = {
+        title: storyTitle,
+        coverImage: entries[0]?.img || null,
+        places: entries.map((e, idx) => ({
+          placeName: e.place,
+          imageUrl: e.img,
+          rating: e.rating,
+          description: e.description,
+          sortOrder: idx,
+          pros: e.pros,
+          cons: e.cons,
+          hotels: e.hotels.map((h) => ({ name: h.name, description: h.description })),
+        })),
+      };
+
+      await addJournalEntry(payload);
+      setPosted(true);
+    } catch (err) {
+      alert("Sorry, something went wrong saving your journal post. Please try again.");
+    } finally {
+      setPosting(false);
+    }
   };
 
   return (
@@ -279,8 +319,12 @@ export default function JournalNewPostPage() {
                 style={{ display: "none" }}
               />
             </div>
-            <button className="ww-journal-upload-btn" onClick={handleUploadPhoto}>
-              Upload Photo
+            <button
+              className="ww-journal-upload-btn"
+              onClick={handleUploadPhoto}
+              disabled={uploading}
+            >
+              {uploading ? "Uploading..." : "Upload Photo"}
             </button>
           </div>
 
@@ -405,8 +449,8 @@ export default function JournalNewPostPage() {
                 </div>
               ))}
 
-              <button className="ww-journal-post-btn" onClick={handlePost}>
-                Post
+              <button className="ww-journal-post-btn" onClick={handlePost} disabled={posting}>
+                {posting ? "Posting..." : "Post"}
               </button>
             </>
           )}

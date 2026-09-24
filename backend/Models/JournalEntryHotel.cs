@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WanderWiseApi.Models;
 
@@ -20,5 +21,6 @@ public class JournalEntryHotel
     public string? Description { get; set; }
 
     [ForeignKey(nameof(PlaceId))]
+    [JsonIgnore]
     public JournalEntryPlace? Place { get; set; }
 }

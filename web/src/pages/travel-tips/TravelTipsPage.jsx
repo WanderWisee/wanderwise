@@ -29,6 +29,16 @@ export default function TravelTipsPage() {
     dest.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // The title stored on a journal entry might just be the bare place
+  // ("El Nido, Palawan") or already have any "Travel <word>" suffix on
+  // it. Either way, Guides should always show a consistent
+  // "<Place> Travel Story" heading — strip whatever single word follows
+  // "Travel" at the end (if any), then add "Travel Story" back.
+  const getDisplayTitle = (title) => {
+    const bare = title.replace(/ Travel \w+$/i, "").trim();
+    return `${bare} Travel Story`;
+  };
+
   // Case-insensitive match: does a journal post's title mention this
   // destination's name? (e.g. "El Nido, Palawan Travel Story" matches
   // the "El Nido, Palawan" destination card.)
@@ -87,12 +97,20 @@ export default function TravelTipsPage() {
 
         <div className="ww-tips-grid">
           {unmatchedJournalEntries.map((j) => (
-            <div className="ww-tips-card" key={`journal-${j.id}`}>
+            <div
+              className="ww-tips-card"
+              key={`journal-${j.id}`}
+              onClick={() => navigate(`/journal/view/${j.id}`)}
+              style={{ cursor: "pointer" }}
+            >
               <img src={j.coverImage} alt={j.title} />
-              <h3>{j.title}</h3>
+              <h3>{getDisplayTitle(j.title)}</h3>
               <button
                 className="ww-itinerary-btn"
-                onClick={() => navigate(`/journal/view/${j.id}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/journal/view/${j.id}`);
+                }}
               >
                 See Itineraries
               </button>
@@ -105,8 +123,23 @@ export default function TravelTipsPage() {
             // destination becomes enabled once you've posted a
             // matching journal entry for it.
             const hasGuide = dest.name === "Boracay, Aklan" || !!matchedJournal;
+
+            const goToGuide = () => {
+              if (!hasGuide) return;
+              if (matchedJournal) {
+                navigate(`/journal/view/${matchedJournal.id}`);
+              } else {
+                navigate("/travel-guide", { state: { destination: dest.name } });
+              }
+            };
+
             return (
-              <div className="ww-tips-card" key={dest.name}>
+              <div
+                className="ww-tips-card"
+                key={dest.name}
+                onClick={hasGuide ? goToGuide : undefined}
+                style={{ cursor: hasGuide ? "pointer" : "default" }}
+              >
                 <img src={dest.img} alt={dest.name} />
                 <h3>{dest.name}</h3>
                 <button
@@ -116,13 +149,9 @@ export default function TravelTipsPage() {
                     opacity: hasGuide ? 1 : 0.5,
                     cursor: hasGuide ? "pointer" : "not-allowed",
                   }}
-                  onClick={() => {
-                    if (!hasGuide) return;
-                    if (matchedJournal) {
-                      navigate(`/journal/view/${matchedJournal.id}`);
-                    } else {
-                      navigate("/travel-guide", { state: { destination: dest.name } });
-                    }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToGuide();
                   }}
                 >
                   See Itineraries

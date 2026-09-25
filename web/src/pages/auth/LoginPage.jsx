@@ -78,6 +78,7 @@ export default function LoginPage() {
             <input
               type={showPassword ? "text" : "password"}
               className="ww-field-input"
+              placeholder="Enter Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />

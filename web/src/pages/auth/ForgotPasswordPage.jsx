@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
 
           <h1 className="ww-reset-title">Forgot Password</h1>
           <p className="ww-field-label" style={{ marginBottom: 16, fontWeight: 400 }}>
-            Enter your school email — we'll send a verification code to the
+            Enter your school email we'll send a verification code to the
             recovery Gmail you registered with.
           </p>
 
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
           <input
             type="text"
             className="ww-field-input"
-            placeholder="A23-37217@student.mseuf.edu.ph"
+            placeholder="Enter Student Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />

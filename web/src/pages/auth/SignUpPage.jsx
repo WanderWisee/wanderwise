@@ -107,6 +107,7 @@ export default function RegisterPage() {
           <input
             type="text"
             className="ww-field-input"
+            placeholder="Enter First Name"
             value={form.firstName}
             onChange={handleChange("firstName")}
           />
@@ -115,26 +116,27 @@ export default function RegisterPage() {
           <input
             type="text"
             className="ww-field-input"
+            placeholder="Enter Last Name"
             value={form.lastName}
             onChange={handleChange("lastName")}
           />
 
-          <label className="ww-field-label">School Email (@student.mseuf.edu.ph)</label>
+          <label className="ww-field-label">School Email</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Email"
+            placeholder="Enter Student Email"
             value={form.schoolEmail}
             onChange={handleChange("schoolEmail")}
           />
 
           <label className="ww-field-label">
-            Personal/Recovery Gmail (used only if you need to reset your password)
+            Personal/Recovery Gmail 
           </label>
           <input
             type="email"
             className="ww-field-input"
-            placeholder="you@gmail.com"
+            placeholder="Enter Gmail Account"
             value={form.recoveryEmail}
             onChange={handleChange("recoveryEmail")}
           />
@@ -143,6 +145,7 @@ export default function RegisterPage() {
           <input
             type="text"
             className="ww-field-input"
+            placeholder="Enter Date of Birth"
             value={form.dob}
             onChange={handleChange("dob")}
           />
@@ -151,6 +154,7 @@ export default function RegisterPage() {
           <input
             type="text"
             className="ww-field-input"
+            placeholder="Enter Cellphone Number"
             value={form.cellphone}
             onChange={handleChange("cellphone")}
           />
@@ -162,6 +166,7 @@ export default function RegisterPage() {
             <input
               type={showPassword ? "text" : "password"}
               className="ww-field-input"
+              placeholder="Enter Password"
               value={form.password}
               onChange={handleChange("password")}
             />
@@ -180,6 +185,7 @@ export default function RegisterPage() {
             <input
               type={showConfirmPassword ? "text" : "password"}
               className="ww-field-input"
+              placeholder="Confirm Password"
               value={form.confirmPassword}
               onChange={handleChange("confirmPassword")}
             />

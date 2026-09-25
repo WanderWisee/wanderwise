@@ -24,7 +24,7 @@ public class WanderWiseDbContext : DbContext
     public DbSet<JournalEntryCon> JournalEntryCons => Set<JournalEntryCon>();
     public DbSet<JournalEntryHotel> JournalEntryHotels => Set<JournalEntryHotel>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
-
+    public DbSet<JournalComment> JournalComments => Set<JournalComment>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.StudentNumber).IsUnique();

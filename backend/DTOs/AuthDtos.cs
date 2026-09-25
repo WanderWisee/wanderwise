@@ -53,6 +53,8 @@ public class MeResponse
     public string? Email { get; set; }
     public string? RecoveryEmail { get; set; }
     public string? AvatarUrl { get; set; }
+    public string? Bio { get; set; }
+    public string? Location { get; set; }
 }
 
 // Sent as a base64 data URL (e.g. "data:image/png;base64,....") — the
@@ -60,4 +62,11 @@ public class MeResponse
 public class UpdateAvatarRequest
 {
     public string AvatarBase64 { get; set; } = string.Empty;
+}
+
+// Used by Settings to save bio/location (public profile info).
+public class UpdateProfileRequest
+{
+    public string? Bio { get; set; }
+    public string? Location { get; set; }
 }

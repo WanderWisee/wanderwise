@@ -80,9 +80,12 @@ export function AppDataProvider({ children }) {
     return normalized;
   };
 
+  const [profileUserId, setProfileUserId] = useState(null);
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
   const [profileAvatar, setProfileAvatar] = useState(null);
+  const [profileBio, setProfileBio] = useState("");
+  const [profileLocation, setProfileLocation] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("wanderwise_token");
@@ -97,9 +100,12 @@ export function AppDataProvider({ children }) {
       })
       .then((data) => {
         const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
+        setProfileUserId(data.userId ?? null);
         setProfileName(fullName || data.email || "");
         setProfileEmail(data.email || "");
         setProfileAvatar(data.avatarUrl || null);
+        setProfileBio(data.bio || "");
+        setProfileLocation(data.location || "");
       })
       .catch(() => {
         // Token missing/expired — leave fields blank.
@@ -111,12 +117,17 @@ export function AppDataProvider({ children }) {
       value={{
         journalEntries,
         addJournalEntry,
+        profileUserId,
         profileName,
         setProfileName,
         profileEmail,
         setProfileEmail,
         profileAvatar,
         setProfileAvatar,
+        profileBio,
+        setProfileBio,
+        profileLocation,
+        setProfileLocation,
       }}
     >
       {children}

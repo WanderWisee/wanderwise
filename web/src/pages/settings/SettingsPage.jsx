@@ -14,6 +14,10 @@ export default function SettingsPage() {
     setProfileEmail,
     profileAvatar,
     setProfileAvatar,
+    profileBio,
+    setProfileBio,
+    profileLocation,
+    setProfileLocation,
   } = useAppData();
   const avatarInputRef = useRef(null);
 
@@ -53,6 +57,9 @@ export default function SettingsPage() {
   );
   const [name, setName] = useState(profileName);
   const [email, setEmail] = useState(profileEmail);
+  const [bio, setBio] = useState(profileBio);
+  const [profileLocationInput, setProfileLocationInput] = useState(profileLocation);
+  const [savingAccount, setSavingAccount] = useState(false);
 
   const [language, setLanguage] = useState("English");
   const [dateFormat, setDateFormat] = useState("");
@@ -80,10 +87,34 @@ export default function SettingsPage() {
     );
   };
 
-  const handleSaveAccount = () => {
-    // Still local-only — Name/Email aren't wired to the backend yet.
+  const handleSaveAccount = async () => {
+    // Name/Email are still local-only — not wired to the backend yet.
     setProfileName(name);
     setProfileEmail(email);
+
+    // Bio/Location ARE wired to the backend — this is what shows up on
+    // your public profile when another student searches for you.
+    setProfileBio(bio);
+    setProfileLocation(profileLocationInput);
+
+    setSavingAccount(true);
+    const token = localStorage.getItem("wanderwise_token");
+    if (token) {
+      try {
+        await fetch("/api/me/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ bio, location: profileLocationInput }),
+        });
+      } catch (err) {
+        // Network error — the fields still show locally for now, but
+        // won't survive a reload until this call succeeds.
+      }
+    }
+    setSavingAccount(false);
   };
 
   return (
@@ -181,8 +212,28 @@ export default function SettingsPage() {
                 <input value={email} onChange={(e) => setEmail(e.target.value)} />
               </label>
 
-              <button className="ww-settings-save-btn" onClick={handleSaveAccount}>
-                Save
+              <label className="ww-settings-field">
+                <span>Bio</span>
+                <input
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell other students a bit about yourself"
+                  maxLength={300}
+                />
+              </label>
+
+              <label className="ww-settings-field">
+                <span>Location</span>
+                <input
+                  value={profileLocationInput}
+                  onChange={(e) => setProfileLocationInput(e.target.value)}
+                  placeholder="e.g. Lucena City, Quezon"
+                  maxLength={150}
+                />
+              </label>
+
+              <button className="ww-settings-save-btn" onClick={handleSaveAccount} disabled={savingAccount}>
+                {savingAccount ? "Saving..." : "Save"}
               </button>
             </div>
           )}

@@ -20,6 +20,7 @@ import BudgetBreakdownPage from './pages/budget/BudgetBreakdownPage';
 import AddExpensePage from './pages/budget/AddExpensePage';
 import DirectionsPage from './pages/directions/DirectionsPage';
 import ProfilePage from './pages/profile/ProfilePage';
+import PublicProfilePage from './pages/profile/PublicProfilePage';
 import JournalNewPostPage from './pages/journal/JournalNewPostPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import HistoryPage from './pages/history/HistoryPage';
@@ -55,6 +56,7 @@ function App() {
         <Route path="/invite-crew" element={<InviteCrewPage />} />
         <Route path="/travel-guide" element={<TravelGuidePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/view/:userId" element={<PublicProfilePage />} />
         <Route path="/journal/new" element={<JournalNewPostPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/history" element={<HistoryPage />} />

@@ -40,6 +40,13 @@ public class User
     [Column("avatar_url")]
     public string? AvatarUrl { get; set; }
 
+    // Shown on the public profile (search feature) — editable in Settings.
+    [Column("bio")]
+    public string? Bio { get; set; }
+
+    [Column("location")]
+    public string? Location { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 

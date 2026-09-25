@@ -157,6 +157,8 @@ public class AuthController : ControllerBase
             Email = user.Email,
             RecoveryEmail = user.RecoveryEmail,
             AvatarUrl = user.AvatarUrl,
+            Bio = user.Bio,
+            Location = user.Location,
         });
     }
 
@@ -175,6 +177,23 @@ public class AuthController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(new { avatarUrl = user.AvatarUrl });
+    }
+
+    // Saves the bio/location shown on the public profile (search feature).
+    [Authorize]
+    [HttpPut("/api/me/profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        user.Bio = request.Bio;
+        user.Location = request.Location;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { bio = user.Bio, location = user.Location });
     }
 
     // ---------------- Forgot password ----------------

@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 
-// A photo for each destination is fetched through our own backend
-// (/api/destination-image, which itself calls Wikipedia server-side) rather
-// than calling Wikipedia directly from the browser. A direct browser fetch
-// to a free public API like this can get intermittently rate-limited or
-// blocked — especially when several destinations' photos are all
-// requested at once on a fresh page load — which is why the picture
-// sometimes just never shows up. Going through the backend avoids that.
-// Cached module-level so we don't re-fetch the same destination's photo
-// over and over within the same browser tab.
 const destinationImageCache = {};
 
 async function fetchDestinationImage(destination) {
@@ -38,13 +29,87 @@ async function fetchDestinationImage(destination) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { journalEntries, profileName, profileAvatar } = useAppData();
+  const {
+    journalEntries,
+    profileName,
+    profileAvatar,
+    profileUserId,
+    profileBio,
+    profileLocation,
+  } = useAppData();
 
   const [activeTab, setActiveTab] = useState("trips");
 
   const [trips, setTrips] = useState([]);
   const [tripImages, setTripImages] = useState({});
   const [loadingTrips, setLoadingTrips] = useState(true);
+
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // --- Student search: hidden by default. Clicking the 🔍 icon opens a
+  // small floating search popover right under the icon (like Facebook's
+  // search) — it does NOT touch or replace Home/Guides/Hotels/Menu. ---
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const searchBoxRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  const openSearch = () => {
+    setSearchOpen(true);
+    setTimeout(() => searchInputRef.current?.focus(), 0);
+  };
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowDropdown(false);
+  };
+
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      const token = localStorage.getItem("wanderwise_token");
+      try {
+        const resp = await fetch(`/api/users/search?q=${encodeURIComponent(term)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = resp.ok ? await resp.json() : [];
+        setSearchResults(Array.isArray(data) ? data : []);
+        setShowDropdown(true);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handleClickOutside = (e) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
+        closeSearch();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchOpen]);
+
+  const goToStudentProfile = (userId) => {
+    closeSearch();
+    navigate(`/profile/view/${userId}`);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("wanderwise_token");
@@ -85,8 +150,6 @@ export default function ProfilePage() {
     }
   };
 
-  // A default example card, same as the one in Guides — links to the
-  // real Boracay guide content instead of a user-posted journal entry.
   const defaultJournalEntries = [
     {
       id: "default-boracay",
@@ -96,12 +159,22 @@ export default function ProfilePage() {
     },
   ];
 
-  // In Profile, we only want to show the destination — not the full story
-  // title ("Coron, Palawan Travel Story") and not a specific spot inside
-  // it ("Kayangan Lake, Coron"). Strip any trailing "Travel <word>" —
-  // Story, Journal, Journey, Diary, whatever the user typed — so this
-  // works no matter which word follows "Travel".
   const displayPlaceName = (j) => j.title.replace(/ Travel \w+$/i, "");
+
+  const placesVisitedCount = new Set(
+    trips.map((t) => t.destination).filter(Boolean).map((d) => d.trim().toLowerCase())
+  ).size;
+
+  const handleShare = async () => {
+    const link = `${window.location.origin}/profile/view/${profileUserId}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      window.alert(`Copy this link:\n${link}`);
+    }
+  };
 
   return (
     <div className="ww-profile-page">
@@ -110,14 +183,63 @@ export default function ProfilePage() {
           <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
           <span className="ww-brand-name">WanderWise!</span>
         </div>
+
         <nav className="ww-nav-links">
           <Link to="/dashboard">Home</Link>
           <Link to="/travel-tips">Guides</Link>
           <Link to="/hotels">Hotels</Link>
           <NavbarMenu />
         </nav>
+
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
+          <div className="ww-navbar-search-anchor" ref={searchBoxRef}>
+            <span onClick={openSearch} style={{ cursor: "pointer" }}>🔍</span>
+
+            {searchOpen && (
+              <div className="ww-navbar-search-popover">
+                <div className="ww-navbar-search-inputrow">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className="ww-navbar-search-input"
+                    placeholder="Search for a student"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                  />
+                  <span className="ww-navbar-search-close" onClick={closeSearch}>✕</span>
+                </div>
+                {showDropdown && (
+                  <div className="ww-navbar-search-dropdown">
+                    {searching ? (
+                      <p className="ww-navbar-search-empty">Searching...</p>
+                    ) : searchResults.length === 0 ? (
+                      <p className="ww-navbar-search-empty">No students found.</p>
+                    ) : (
+                      searchResults.map((r) => (
+                        <div
+                          key={r.id}
+                          className="ww-navbar-search-result"
+                          onClick={() => goToStudentProfile(r.id)}
+                        >
+                          <div
+                            className="ww-navbar-search-result-avatar"
+                            style={
+                              r.avatarUrl
+                                ? { backgroundImage: `url(${r.avatarUrl})` }
+                                : undefined
+                            }
+                          />
+                          <span>{r.firstName} {r.lastName}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
             👤
@@ -137,21 +259,21 @@ export default function ProfilePage() {
           }
         />
         <h1 className="ww-profile-username">{profileName}</h1>
-        <p className="ww-profile-bio">bio</p>
-        <p className="ww-profile-location">Location</p>
+        <p className="ww-profile-bio">{profileBio || "No bio yet."}</p>
+        <p className="ww-profile-location">{profileLocation || "Location not set"}</p>
 
         <div className="ww-profile-stats">
           <div>
-            <strong>0</strong>
-            <span>followers</span>
+            <strong>{trips.length}</strong>
+            <span>trips</span>
           </div>
           <div>
-            <strong>0</strong>
-            <span>following</span>
+            <strong>{journalEntries.length}</strong>
+            <span>journal posts</span>
           </div>
           <div>
-            <strong>0</strong>
-            <span>likes</span>
+            <strong>{placesVisitedCount}</strong>
+            <span>places visited</span>
           </div>
         </div>
 
@@ -159,7 +281,9 @@ export default function ProfilePage() {
           <button className="ww-profile-edit-btn" onClick={() => navigate("/settings")}>
             Edit
           </button>
-          <button className="ww-profile-share-btn">Share</button>
+          <button className="ww-profile-share-btn" onClick={handleShare}>
+            {shareCopied ? "Link copied!" : "Share"}
+          </button>
         </div>
       </div>
 

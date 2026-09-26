@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 // NOTE: verify these URL patterns against a real manual search on
@@ -30,6 +31,7 @@ function buildGoogleMapsHotelUrl(destination) {
 export default function HotelSearchResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
   const destination = location.state?.destination || "";
   const startDate = location.state?.startDate || "";
@@ -57,13 +59,13 @@ export default function HotelSearchResultsPage() {
           <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
           <div>
             <span className="ww-brand-name">WanderWise!</span>
-            <p className="ww-brand-subtitle">Hotels and Lodging</p>
+            <p className="ww-brand-subtitle">{t("hotelsAndLodging")}</p>
           </div>
         </div>
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("navHome")}</Link>
+          <Link to="/travel-tips">{t("navGuides")}</Link>
+          <Link to="/hotels">{t("navHotels")}</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -78,7 +80,7 @@ export default function HotelSearchResultsPage() {
           <h1 className="ww-results-title">{destination}</h1>
           <div className="ww-results-controls">
             <div className="ww-buddies-counter">
-              <span>Travel Buddies</span>
+              <span>{t("travelBuddies")}</span>
               <div className="ww-counter-controls">
                 <button onClick={() => setBuddies(Math.max(0, buddies - 1))}>-</button>
                 <span>{buddies}</span>
@@ -86,25 +88,25 @@ export default function HotelSearchResultsPage() {
               </div>
             </div>
             <button className="ww-date-btn">
-              📅 {startDate && endDate ? `${startDate} - ${endDate}` : "Select dates"}
+              📅 {startDate && endDate ? `${startDate} - ${endDate}` : t("selectDates")}
             </button>
           </div>
         </div>
 
         <div className="ww-maps-cta">
-          <p>See real, live hotel availability and prices near {destination}:</p>
+          <p>{t("seeLiveHotelsNear")} {destination}:</p>
           <button className="ww-search-btn" onClick={handleOpenGoogleMaps}>
-            🗺️ View Hotels on Google Maps
+            🗺️ {t("viewHotelsOnGoogleMaps")}
           </button>
         </div>
 
         <div className="ww-external-search-row">
-          <span>Want more options?</span>
+          <span>{t("wantMoreOptions")}</span>
           <button className="ww-external-search-btn" onClick={handleSearchOnAgoda}>
-            🔗 Search on Agoda
+            🔗 {t("searchOnAgoda")}
           </button>
           <button className="ww-external-search-btn" onClick={handleSearchOnKlook}>
-            🔗 Search on Klook
+            🔗 {t("searchOnKlook")}
           </button>
         </div>
       </main>

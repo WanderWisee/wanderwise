@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
-
-// Same "strip trailing Travel <word>, then reappend Travel Story" trick
-// used in Profile/Guides, so journal titles look consistent everywhere.
-const getDisplayTitle = (title) => {
-  const bare = title.replace(/ Travel \w+$/i, "").trim();
-  return `${bare} Travel Story`;
-};
 
 // Same destination-photo lookup used in ProfilePage.jsx — goes through our
 // own backend (/api/destination-image) instead of calling Wikipedia
@@ -40,6 +34,14 @@ async function fetchDestinationImage(destination) {
 export default function PublicProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  // Same "strip trailing Travel <word>, then reappend Travel Story" trick
+  // used in Profile/Guides, so journal titles look consistent everywhere.
+  const getDisplayTitle = (title) => {
+    const bare = title.replace(/ Travel \w+$/i, "").trim();
+    return `${bare} ${t("travelStorySuffix")}`;
+  };
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ export default function PublicProfilePage() {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {
-      alert(`Copy this link to share this profile:\n${link}`);
+      alert(`${t("copyThisLinkToShare")}\n${link}`);
     }
   };
 
@@ -102,9 +104,9 @@ export default function PublicProfilePage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("navHome")}</Link>
+          <Link to="/travel-tips">{t("navGuides")}</Link>
+          <Link to="/hotels">{t("navHotels")}</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -116,11 +118,11 @@ export default function PublicProfilePage() {
 
       {loading ? (
         <p className="ww-profile-empty-text" style={{ textAlign: "center", marginTop: 40 }}>
-          Loading profile...
+          {t("loadingProfile")}
         </p>
       ) : notFound || !profile ? (
         <p className="ww-profile-empty-text" style={{ textAlign: "center", marginTop: 40 }}>
-          Student not found.
+          {t("studentNotFound")}
         </p>
       ) : (
         <>
@@ -136,29 +138,29 @@ export default function PublicProfilePage() {
               }
             />
             <h1 className="ww-profile-username">
-              {[profile.firstName, profile.lastName].filter(Boolean).join(" ") || "Unnamed student"}
+              {[profile.firstName, profile.lastName].filter(Boolean).join(" ") || t("unnamedStudent")}
             </h1>
-            <p className="ww-profile-bio">{profile.bio || "No bio yet."}</p>
-            <p className="ww-profile-location">{profile.location || "Location not set"}</p>
+            <p className="ww-profile-bio">{profile.bio || t("noBioYet")}</p>
+            <p className="ww-profile-location">{profile.location || t("locationNotSet")}</p>
 
             <div className="ww-profile-stats">
               <div>
                 <strong>{profile.tripsCount}</strong>
-                <span>trips</span>
+                <span>{t("trips")}</span>
               </div>
               <div>
                 <strong>{profile.journalPostsCount}</strong>
-                <span>journal posts</span>
+                <span>{t("journalPosts")}</span>
               </div>
               <div>
                 <strong>{profile.placesVisitedCount}</strong>
-                <span>places visited</span>
+                <span>{t("placesVisited")}</span>
               </div>
             </div>
 
             <div className="ww-profile-actions">
               <button className="ww-profile-share-btn" onClick={handleShare}>
-                {shareCopied ? "Link copied!" : "Share"}
+                {shareCopied ? t("linkCopied") : t("share")}
               </button>
             </div>
           </div>
@@ -168,13 +170,13 @@ export default function PublicProfilePage() {
               className={`ww-profile-tab ${activeTab === "trips" ? "active" : ""}`}
               onClick={() => setActiveTab("trips")}
             >
-              🧳 Trips
+              🧳 {t("trips")}
             </span>
             <span
               className={`ww-profile-tab ${activeTab === "journal" ? "active" : ""}`}
               onClick={() => setActiveTab("journal")}
             >
-              📔 Journal
+              📔 {t("journal")}
             </span>
           </div>
 
@@ -182,20 +184,20 @@ export default function PublicProfilePage() {
             {activeTab === "trips" ? (
               <>
                 <div className="ww-profile-section-header">
-                  <h2>Their Travels</h2>
+                  <h2>{t("theirTravels")}</h2>
                 </div>
                 {profile.trips.length === 0 ? (
-                  <p className="ww-profile-empty-text">No trips yet.</p>
+                  <p className="ww-profile-empty-text">{t("noTripsYet")}</p>
                 ) : (
                   <div className="ww-profile-grid">
-                    {profile.trips.map((t) => {
-                      const imgUrl = tripImages[t.destination];
+                    {profile.trips.map((t3) => {
+                      const imgUrl = tripImages[t3.destination];
                       return (
-                        <div className="ww-profile-card" key={t.id} style={{ cursor: "default" }}>
+                        <div className="ww-profile-card" key={t3.id} style={{ cursor: "default" }}>
                           {imgUrl ? (
                             <img
                               src={imgUrl}
-                              alt={t.destination}
+                              alt={t3.destination}
                               style={{
                                 width: "100%",
                                 height: 140,
@@ -218,7 +220,7 @@ export default function PublicProfilePage() {
                               📍
                             </div>
                           )}
-                          <p>{t.destination || t.title || "Untitled trip"}</p>
+                          <p>{t3.destination || t3.title || t("untitledTrip")}</p>
                         </div>
                       );
                     })}
@@ -228,10 +230,10 @@ export default function PublicProfilePage() {
             ) : (
               <>
                 <div className="ww-profile-section-header">
-                  <h2>Their Travel Stories</h2>
+                  <h2>{t("theirTravelStories")}</h2>
                 </div>
                 {profile.journalEntries.length === 0 ? (
-                  <p className="ww-profile-empty-text">No journal posts yet.</p>
+                  <p className="ww-profile-empty-text">{t("noJournalPostsYet")}</p>
                 ) : (
                   <div className="ww-profile-grid">
                     {profile.journalEntries.map((j) => (

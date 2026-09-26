@@ -5,6 +5,7 @@ import L from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { useLanguage } from "../context/LanguageContext";
 
 // Leaflet's default marker icon points at image paths that Create React
 // App doesn't resolve automatically — importing them explicitly and
@@ -65,6 +66,7 @@ async function geocodePlace(placeName, context) {
 export default function PlaceMap({ placeName, context, height = 220 }) {
   const [coords, setCoords] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!placeName || !placeName.trim()) {
@@ -102,11 +104,11 @@ export default function PlaceMap({ placeName, context, height = 220 }) {
   };
 
   if (notFound) {
-    return <div style={placeholderStyle}>📍 Location not found for "{placeName}"</div>;
+    return <div style={placeholderStyle}>📍 {t("locationNotFoundFor")} "{placeName}"</div>;
   }
 
   if (!coords) {
-    return <div style={placeholderStyle}>Loading map...</div>;
+    return <div style={placeholderStyle}>{t("loadingMap")}</div>;
   }
 
   return (

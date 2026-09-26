@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 let nextHotelId = 1;
@@ -26,11 +27,12 @@ export default function JournalNewPostPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { addJournalEntry } = useAppData();
+  const { t } = useLanguage();
 
   const [storyTitle, setStoryTitle] = useState(
     location.state?.destination
-      ? `${location.state.destination} Travel Story`
-      : "Enter your destination story"
+      ? `${location.state.destination} ${t("travelStorySuffix")}`
+      : t("enterDestinationStory")
   );
   const [editingTitle, setEditingTitle] = useState(false);
 
@@ -54,7 +56,7 @@ export default function JournalNewPostPage() {
 
   const handleUploadPhoto = async () => {
     if (!selectedFile) {
-      alert("Please choose a photo first.");
+      alert(t("chooseAPhotoFirst"));
       return;
     }
     setUploading(true);
@@ -78,7 +80,7 @@ export default function JournalNewPostPage() {
       setHasUploadedPhoto(true);
       setSelectedFile(null);
     } catch (err) {
-      alert("Couldn't read that photo. Please try a different file.");
+      alert(t("couldntReadPhoto"));
     } finally {
       setUploading(false);
     }
@@ -167,7 +169,7 @@ export default function JournalNewPostPage() {
       await addJournalEntry(payload);
       setPosted(true);
     } catch (err) {
-      alert("Sorry, something went wrong saving your journal post. Please try again.");
+      alert(t("journalSaveError"));
     } finally {
       setPosting(false);
     }
@@ -181,9 +183,9 @@ export default function JournalNewPostPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -196,7 +198,7 @@ export default function JournalNewPostPage() {
       {posted ? (
         // --- Read-only summary, shown right after posting ---
         <main className="ww-guide-main">
-          <p className="ww-journal-posted-banner">✅ Posted! Here's your story:</p>
+          <p className="ww-journal-posted-banner">✅ {t("postedBanner")}</p>
           <h1 className="ww-guide-title">{storyTitle}</h1>
 
           {entries.map((entry) => (
@@ -204,7 +206,7 @@ export default function JournalNewPostPage() {
               <div className="ww-guide-intro">
                 <div className="ww-guide-text">
                   <p className="ww-guide-pin">
-                    📍{entry.place || "Unnamed place"}{" "}
+                    📍{entry.place || t("unnamedPlace")}{" "}
                     {"★".repeat(entry.rating)}
                     {"☆".repeat(5 - entry.rating)}
                   </p>
@@ -215,7 +217,7 @@ export default function JournalNewPostPage() {
                   {entry.pros.length > 0 && (
                     <>
                       <p className="ww-guide-list-title">
-                        Pros of Visiting {entry.place || "this place"}:
+                        {t("prosOfVisiting")} {entry.place || t("thisPlace")}:
                       </p>
                       <ul className="ww-guide-list">
                         {entry.pros.map((p, i) => <li key={i}>{p}</li>)}
@@ -226,7 +228,7 @@ export default function JournalNewPostPage() {
                   {entry.cons.length > 0 && (
                     <>
                       <p className="ww-guide-list-title">
-                        Cons of Visiting {entry.place || "this place"}:
+                        {t("consOfVisiting")} {entry.place || t("thisPlace")}:
                       </p>
                       <ul className="ww-guide-list">
                         {entry.cons.map((c, i) => <li key={i}>{c}</li>)}
@@ -239,7 +241,7 @@ export default function JournalNewPostPage() {
 
               {entry.hotels.length > 0 && (
                 <>
-                  <h3 className="ww-guide-hotel-heading">Hotel Option</h3>
+                  <h3 className="ww-guide-hotel-heading">{t("hotelOption")}</h3>
                   <div className="ww-guide-hotels-grid">
                     {entry.hotels.map((h) => (
                       <div className="ww-guide-hotel-card" key={h.id}>
@@ -253,7 +255,7 @@ export default function JournalNewPostPage() {
 
               {entry.place && entry.place.trim() && (
                 <>
-                  <h3 className="ww-guide-location-heading">Location</h3>
+                  <h3 className="ww-guide-location-heading">{t("location")}</h3>
                   <div className="ww-guide-map">
                     <PlaceMap placeName={entry.place} height={220} />
                   </div>
@@ -263,7 +265,7 @@ export default function JournalNewPostPage() {
           ))}
 
           <button className="ww-lets-go-btn" onClick={() => navigate("/profile")}>
-            Go to Profile
+            {t("goToProfile")}
           </button>
         </main>
       ) : (
@@ -299,18 +301,18 @@ export default function JournalNewPostPage() {
           </h1>
 
           <div className="ww-journal-upload-card">
-            <h2>Upload a Photo!</h2>
+            <h2>{t("uploadAPhoto")}</h2>
             <p className="ww-journal-upload-note">
-              Note: Choose a clear and high-quality image that represents the tour destination.
+              {t("uploadPhotoNote")}
             </p>
             <div className="ww-journal-file-row">
               <button
                 className="ww-journal-choose-file-btn"
                 onClick={() => fileInputRef.current?.click()}
               >
-                📁 Choose File
+                📁 {t("chooseFile")}
               </button>
-              <span>{selectedFile ? selectedFile.name : "No file chosen"}</span>
+              <span>{selectedFile ? selectedFile.name : t("noFileChosen")}</span>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -324,14 +326,14 @@ export default function JournalNewPostPage() {
               onClick={handleUploadPhoto}
               disabled={uploading}
             >
-              {uploading ? "Uploading..." : "Upload Photo"}
+              {uploading ? t("uploading") : t("uploadPhoto")}
             </button>
           </div>
 
           {hasUploadedPhoto && (
             <>
               <hr className="ww-journal-divider" />
-              <h2 className="ww-journal-rate-title">Rate your experience!</h2>
+              <h2 className="ww-journal-rate-title">{t("rateYourExperience")}</h2>
 
               {entries.map((entry) => (
                 <div className="ww-journal-entry-block" key={entry.id}>
@@ -340,7 +342,7 @@ export default function JournalNewPostPage() {
                     <div className="ww-journal-entry-fields">
                       <input
                         className="ww-journal-place-input"
-                        placeholder="📍 Add a place"
+                        placeholder={`📍 ${t("addAPlace")}`}
                         value={entry.place}
                         onChange={(e) => updateEntry(entry.id, "place", e.target.value)}
                       />
@@ -359,7 +361,7 @@ export default function JournalNewPostPage() {
 
                       <textarea
                         className="ww-journal-tips-input"
-                        placeholder="Write a short description"
+                        placeholder={t("writeShortDescription")}
                         value={entry.description}
                         onChange={(e) => updateEntry(entry.id, "description", e.target.value)}
                       />
@@ -376,7 +378,7 @@ export default function JournalNewPostPage() {
                   )}
 
                   <div className="ww-journal-tag-section">
-                    <p className="ww-journal-list-label">Pros</p>
+                    <p className="ww-journal-list-label">{t("pros")}</p>
                     <div className="ww-journal-tag-row">
                       {entry.pros.map((pro, i) => (
                         <span className="ww-journal-tag ww-journal-tag-pro" key={i}>
@@ -388,7 +390,7 @@ export default function JournalNewPostPage() {
                     <div className="ww-journal-tag-add-row">
                       <input
                         className="ww-journal-tag-input"
-                        placeholder="Add a pro and press +"
+                        placeholder={t("addAProPlaceholder")}
                         value={entry.proInput}
                         onChange={(e) => updateEntry(entry.id, "proInput", e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addPro(entry.id)}
@@ -398,7 +400,7 @@ export default function JournalNewPostPage() {
                   </div>
 
                   <div className="ww-journal-tag-section">
-                    <p className="ww-journal-list-label">Cons</p>
+                    <p className="ww-journal-list-label">{t("cons")}</p>
                     <div className="ww-journal-tag-row">
                       {entry.cons.map((con, i) => (
                         <span className="ww-journal-tag ww-journal-tag-con" key={i}>
@@ -410,7 +412,7 @@ export default function JournalNewPostPage() {
                     <div className="ww-journal-tag-add-row">
                       <input
                         className="ww-journal-tag-input"
-                        placeholder="Add a con and press +"
+                        placeholder={t("addAConPlaceholder")}
                         value={entry.conInput}
                         onChange={(e) => updateEntry(entry.id, "conInput", e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addCon(entry.id)}
@@ -420,7 +422,7 @@ export default function JournalNewPostPage() {
                   </div>
 
                   <div className="ww-journal-tag-section">
-                    <p className="ww-journal-list-label">Hotel Options</p>
+                    <p className="ww-journal-list-label">{t("hotelOptions")}</p>
                     {entry.hotels.map((hotel) => (
                       <div className="ww-journal-hotel-chip" key={hotel.id}>
                         <div>
@@ -433,13 +435,13 @@ export default function JournalNewPostPage() {
                     <div className="ww-journal-hotel-fields-row">
                       <input
                         className="ww-journal-tag-input"
-                        placeholder="🛏 Hotel name"
+                        placeholder={`🛏 ${t("hotelName")}`}
                         value={entry.hotelNameInput}
                         onChange={(e) => updateEntry(entry.id, "hotelNameInput", e.target.value)}
                       />
                       <textarea
                         className="ww-journal-tag-input"
-                        placeholder="Short hotel description"
+                        placeholder={t("shortHotelDescription")}
                         value={entry.hotelDescInput}
                         onChange={(e) => updateEntry(entry.id, "hotelDescInput", e.target.value)}
                       />
@@ -450,7 +452,7 @@ export default function JournalNewPostPage() {
               ))}
 
               <button className="ww-journal-post-btn" onClick={handlePost} disabled={posting}>
-                {posting ? "Posting..." : "Post"}
+                {posting ? t("posting") : t("post")}
               </button>
             </>
           )}

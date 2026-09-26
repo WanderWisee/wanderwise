@@ -1,24 +1,26 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 let nextExpenseId = 1;
 
-const categories = [
-  { icon: "🍽️", label: "Food and Drinks" },
-  { icon: "🚌", label: "Transit" },
-  { icon: "🎟️", label: "Activities" },
-  { icon: "🛍️", label: "Shopping" },
-  { icon: "🚗", label: "Car Rental" },
-  { icon: "🛏️", label: "Lodging" },
-  { icon: "⛽", label: "Gas" },
-  { icon: "✈️", label: "Flights" },
-];
-
 export default function AddExpensePage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const categories = [
+    { icon: "🍽️", label: "Food and Drinks", key: "catFood" },
+    { icon: "🚌", label: "Transit", key: "catTransit" },
+    { icon: "🎟️", label: "Activities", key: "catActivities" },
+    { icon: "🛍️", label: "Shopping", key: "catShopping" },
+    { icon: "🚗", label: "Car Rental", key: "catCarRental" },
+    { icon: "🛏️", label: "Lodging", key: "catLodging" },
+    { icon: "⛽", label: "Gas", key: "catGas" },
+    { icon: "✈️", label: "Flights", key: "catFlights" },
+  ];
 
   // Data handed off by TripPlanBuilderPage's "+ Add Expense" button.
   const {
@@ -145,9 +147,9 @@ export default function AddExpensePage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -158,7 +160,7 @@ export default function AddExpensePage() {
       </header>
 
       <main className="ww-add-expense-main">
-        <h1 className="ww-add-expense-title">Add Expense</h1>
+        <h1 className="ww-add-expense-title">{t("addExpenseTitle")}</h1>
 
         <div className="ww-amount-input">
           <span className="ww-amount-caret">⌄</span>
@@ -170,9 +172,9 @@ export default function AddExpensePage() {
           />
         </div>
 
-        <h2 className="ww-choose-item-title">Choose an Item</h2>
+        <h2 className="ww-choose-item-title">{t("chooseAnItem")}</h2>
 
-        <h3 className="ww-choose-subtitle">From a category</h3>
+        <h3 className="ww-choose-subtitle">{t("fromACategory")}</h3>
         <div className="ww-category-grid">
           {categories.map((c) => (
             <button
@@ -183,14 +185,14 @@ export default function AddExpensePage() {
                 setSelectedItem(null);
               }}
             >
-              {c.icon} {c.label}
+              {c.icon} {t(c.key)}
             </button>
           ))}
         </div>
 
         {tripPlanItems.length > 0 && (
           <>
-            <h3 className="ww-choose-subtitle">From a trip plan</h3>
+            <h3 className="ww-choose-subtitle">{t("fromATripPlan")}</h3>
             <div className="ww-trip-item-list">
               {tripPlanItems.map((item) => (
                 <button
@@ -210,13 +212,13 @@ export default function AddExpensePage() {
 
         <input
           className="ww-description-input"
-          placeholder="Write description"
+          placeholder={t("writeDescription")}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
 
         <button className="ww-save-expense-btn" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save"}
+          {saving ? t("saving") : t("save")}
         </button>
       </main>
     </div>

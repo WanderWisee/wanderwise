@@ -193,6 +193,21 @@ public class TripsController : ControllerBase
         return Ok(trips);
     }
 
+    // Marks this trip as viewed, for the History page's "Last viewed"
+    // column. Called whenever the Trip Plan Builder finishes loading an
+    // existing trip — separate from SaveTrip's UpdatedAt, which only
+    // reflects the last edit/autosave, not the last time it was opened.
+    [HttpPost("/api/trips/{id}/view")]
+    public async Task<IActionResult> MarkViewed(int id)
+    {
+        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.UserId == CurrentUserId);
+        if (trip is null) return NotFound();
+
+        trip.LastViewedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     // Deletes a trip and everything that belongs to it — used by the
     // Profile page's "🗑" button on each trip card (also handy for
     // clearing out test/duplicate trips without touching the database

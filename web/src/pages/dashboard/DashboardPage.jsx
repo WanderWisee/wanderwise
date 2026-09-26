@@ -3,10 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { useLanguage } from "../../context/LanguageContext";
 import '../../App.css';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Travel trips
   const [trips, setTrips] = useState([]);
@@ -76,9 +78,9 @@ export default function DashboardPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -91,27 +93,27 @@ export default function DashboardPage() {
       {/* Travel Stories */}
       <div className="ww-stories-row">
         <section className="ww-stories-card">
-          <h2>Your Travel Stories</h2>
+          <h2>{t("yourTravelStories")}</h2>
 
           <p>
-            No trips yet. Start planning your next adventure!
+            {t("noTripsYetStartPlanning")}
           </p>
 
           <button
             className="ww-start-planning-btn"
             onClick={() => navigate("/trip-planning")}
           >
-            + Start Planning
+            + {t("startPlanning")}
           </button>
         </section>
 
         <section className="ww-stories-card">
-          <h2>Your Itineraries</h2>
+          <h2>{t("yourItineraries")}</h2>
 
           {loadingTrips ? (
-            <p>Loading your trips...</p>
+            <p>{t("loadingYourTrips")}</p>
           ) : trips.length === 0 ? (
-            <p>No itineraries yet.</p>
+            <p>{t("noItinerariesYet")}</p>
           ) : (
             <div className="ww-stories-list">
               {trips.map((trip) => (
@@ -120,7 +122,7 @@ export default function DashboardPage() {
                   className="ww-story-item"
                   onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
                 >
-                  📍 {trip.destination || trip.title || "Untitled trip"}
+                  📍 {trip.destination || trip.title || t("untitledTrip")}
                 </div>
               ))}
             </div>
@@ -131,7 +133,7 @@ export default function DashboardPage() {
       {/* Explore */}
       <section className="ww-explore-section">
         <h2 className="ww-section-title">
-          Start Exploring
+          {t("startExploring")}
         </h2>
 
         <div className="ww-dashboard-map-wrapper">
@@ -152,17 +154,17 @@ export default function DashboardPage() {
       {/* Search */}
       <section className="ww-search-bar-section">
         <h2 className="ww-search-title">
-          Discover your great places to stay!
+          {t("discoverGreatPlaces")}
         </h2>
 
         <div className="ww-search-bar">
 
           <div className="ww-search-input-group">
-            <label>Search Places</label>
+            <label>{t("searchPlaces")}</label>
 
             <input
               type="text"
-              placeholder="Where do you want to go?"
+              placeholder={t("whereDoYouWantToGo")}
               value={searchQuery}
               onChange={(e) =>
                 setSearchQuery(e.target.value)
@@ -173,7 +175,7 @@ export default function DashboardPage() {
           <div className="ww-dates-row">
             <div className="ww-date-field">
               <label className="ww-planning-label">
-                Start Date
+                {t("startDate")}
               </label>
 
               <input
@@ -188,7 +190,7 @@ export default function DashboardPage() {
 
             <div className="ww-date-field">
               <label className="ww-planning-label">
-                End Date
+                {t("endDate")}
               </label>
 
               <input
@@ -203,7 +205,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="ww-buddies-counter">
-            <span>Travel Buddies</span>
+            <span>{t("travelBuddies")}</span>
 
             <div className="ww-counter-controls">
               <button
@@ -240,7 +242,7 @@ export default function DashboardPage() {
               })
             }
           >
-            Search
+            {t("search")}
           </button>
 
         </div>
@@ -249,7 +251,7 @@ export default function DashboardPage() {
       {/* Destinations */}
       <section className="ww-destinations-section">
         <h2 className="ww-section-title">
-          Top Destinations
+          {t("topDestinations")}
         </h2>
 
         <div className="ww-destinations-grid">
@@ -274,7 +276,7 @@ export default function DashboardPage() {
                     })
                   }
                 >
-                  See Itineraries
+                  {t("seeItineraries")}
                 </button>
               </div>
             );
@@ -285,7 +287,7 @@ export default function DashboardPage() {
       {/* Booking */}
       <section className="ww-booking-section">
         <h2 className="ww-section-title">
-          Book your trip on another booking site!
+          {t("bookOnAnotherSite")}
         </h2>
 
         <div className="ww-booking-grid">

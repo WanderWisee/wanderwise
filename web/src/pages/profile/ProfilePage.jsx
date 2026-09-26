@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 const destinationImageCache = {};
@@ -29,6 +30,7 @@ async function fetchDestinationImage(destination) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const {
     journalEntries,
     profileName,
@@ -135,7 +137,7 @@ export default function ProfilePage() {
 
   const handleDeleteTrip = async (e, tripId) => {
     e.stopPropagation();
-    if (!window.confirm("Delete this trip? This can't be undone.")) return;
+    if (!window.confirm(t("confirmDeleteTrip"))) return;
     const token = localStorage.getItem("wanderwise_token");
     try {
       const resp = await fetch(`/api/trips/${tripId}`, {
@@ -172,7 +174,7 @@ export default function ProfilePage() {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {
-      window.alert(`Copy this link:\n${link}`);
+      window.alert(`${t("copyThisLink")}\n${link}`);
     }
   };
 
@@ -185,9 +187,9 @@ export default function ProfilePage() {
         </div>
 
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("navHome")}</Link>
+          <Link to="/travel-tips">{t("navGuides")}</Link>
+          <Link to="/hotels">{t("navHotels")}</Link>
           <NavbarMenu />
         </nav>
 
@@ -202,7 +204,7 @@ export default function ProfilePage() {
                     ref={searchInputRef}
                     type="text"
                     className="ww-navbar-search-input"
-                    placeholder="Search for a student"
+                    placeholder={t("searchForAStudent")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
@@ -212,9 +214,9 @@ export default function ProfilePage() {
                 {showDropdown && (
                   <div className="ww-navbar-search-dropdown">
                     {searching ? (
-                      <p className="ww-navbar-search-empty">Searching...</p>
+                      <p className="ww-navbar-search-empty">{t("searching")}</p>
                     ) : searchResults.length === 0 ? (
-                      <p className="ww-navbar-search-empty">No students found.</p>
+                      <p className="ww-navbar-search-empty">{t("noStudentsFound")}</p>
                     ) : (
                       searchResults.map((r) => (
                         <div
@@ -259,30 +261,30 @@ export default function ProfilePage() {
           }
         />
         <h1 className="ww-profile-username">{profileName}</h1>
-        <p className="ww-profile-bio">{profileBio || "No bio yet."}</p>
-        <p className="ww-profile-location">{profileLocation || "Location not set"}</p>
+        <p className="ww-profile-bio">{profileBio || t("noBioYet")}</p>
+        <p className="ww-profile-location">{profileLocation || t("locationNotSet")}</p>
 
         <div className="ww-profile-stats">
           <div>
             <strong>{trips.length}</strong>
-            <span>trips</span>
+            <span>{t("trips")}</span>
           </div>
           <div>
             <strong>{journalEntries.length}</strong>
-            <span>journal posts</span>
+            <span>{t("journalPosts")}</span>
           </div>
           <div>
             <strong>{placesVisitedCount}</strong>
-            <span>places visited</span>
+            <span>{t("placesVisited")}</span>
           </div>
         </div>
 
         <div className="ww-profile-actions">
           <button className="ww-profile-edit-btn" onClick={() => navigate("/settings")}>
-            Edit
+            {t("edit")}
           </button>
           <button className="ww-profile-share-btn" onClick={handleShare}>
-            {shareCopied ? "Link copied!" : "Share"}
+            {shareCopied ? t("linkCopied") : t("share")}
           </button>
         </div>
       </div>
@@ -292,13 +294,13 @@ export default function ProfilePage() {
           className={`ww-profile-tab ${activeTab === "trips" ? "active" : ""}`}
           onClick={() => setActiveTab("trips")}
         >
-          🧳 Trips
+          🧳 {t("trips")}
         </span>
         <span
           className={`ww-profile-tab ${activeTab === "journal" ? "active" : ""}`}
           onClick={() => setActiveTab("journal")}
         >
-          📔 Journal
+          📔 {t("journal")}
         </span>
       </div>
 
@@ -306,35 +308,35 @@ export default function ProfilePage() {
         {activeTab === "trips" ? (
           <>
             <div className="ww-profile-section-header">
-              <h2>Your Travels</h2>
+              <h2>{t("yourTravels")}</h2>
               <button
                 className="ww-profile-new-btn"
                 onClick={() => navigate("/trip-planning")}
               >
-                + Add new plan
+                + {t("addNewPlan")}
               </button>
             </div>
             {loadingTrips ? (
-              <p className="ww-profile-empty-text">Loading your trips...</p>
+              <p className="ww-profile-empty-text">{t("loadingYourTrips")}</p>
             ) : trips.length === 0 ? (
               <p className="ww-profile-empty-text">
-                No trips yet — plan one to see it here.
+                {t("noTripsYetPlanOne")}
               </p>
             ) : (
               <div className="ww-profile-grid">
-                {trips.map((t) => {
-                  const imgUrl = tripImages[t.destination];
+                {trips.map((t2) => {
+                  const imgUrl = tripImages[t2.destination];
                   return (
                     <div
                       className="ww-profile-card"
-                      key={t.id}
-                      onClick={() => navigate(`/trip-plan?tripId=${t.id}`)}
+                      key={t2.id}
+                      onClick={() => navigate(`/trip-plan?tripId=${t2.id}`)}
                       style={{ cursor: "pointer", position: "relative" }}
                     >
                       {imgUrl ? (
                         <img
                           src={imgUrl}
-                          alt={t.destination}
+                          alt={t2.destination}
                           style={{
                             width: "100%",
                             height: 140,
@@ -357,9 +359,9 @@ export default function ProfilePage() {
                           📍
                         </div>
                       )}
-                      <p>{t.destination || t.title || "Untitled trip"}</p>
+                      <p>{t2.destination || t2.title || t("untitledTrip")}</p>
                       <span
-                        onClick={(e) => handleDeleteTrip(e, t.id)}
+                        onClick={(e) => handleDeleteTrip(e, t2.id)}
                         title="Delete this trip"
                         style={{
                           position: "absolute",
@@ -388,12 +390,12 @@ export default function ProfilePage() {
         ) : (
           <>
             <div className="ww-profile-section-header">
-              <h2>Your Travel Stories</h2>
+              <h2>{t("yourTravelStories")}</h2>
               <button
                 className="ww-profile-new-btn"
                 onClick={() => navigate("/journal/new")}
               >
-                + New post
+                + {t("newPost")}
               </button>
             </div>
             <div className="ww-profile-grid">

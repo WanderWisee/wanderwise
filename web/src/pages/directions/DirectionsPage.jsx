@@ -1,10 +1,12 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function DirectionsPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div className="ww-directions-page">
@@ -14,9 +16,9 @@ export default function DirectionsPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -27,7 +29,7 @@ export default function DirectionsPage() {
       </header>
 
       <main className="ww-directions-main">
-        <h1 className="ww-directions-title">Directions</h1>
+        <h1 className="ww-directions-title">{t("directionsTitle")}</h1>
         <div className="ww-directions-map">
           {/* TODO: replace with live Google Maps Directions embed once
               @react-google-maps/api DirectionsService is wired up */}

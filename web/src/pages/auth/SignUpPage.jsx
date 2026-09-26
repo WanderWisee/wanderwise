@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function RegisterPage() {
@@ -14,6 +15,7 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
@@ -36,19 +38,19 @@ export default function RegisterPage() {
       !form.password ||
       !form.confirmPassword
     ) {
-      setError("Please fill in all fields.");
+      setError(t("registerErrFillAll"));
       return;
     }
     if (!/^[^@\s]+@student\.mseuf\.edu\.ph$/i.test(form.schoolEmail.trim())) {
-      setError("Please use your official @student.mseuf.edu.ph email.");
+      setError(t("registerErrSchoolEmail"));
       return;
     }
     if (form.password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t("registerErrPasswordLength"));
       return;
     }
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("registerErrPasswordMismatch"));
       return;
     }
 
@@ -64,14 +66,14 @@ export default function RegisterPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Failed to send verification code.");
+        setError(data?.error || t("registerErrSendOtp"));
         return;
       }
       // Carry the whole form forward — the account is only created after
       // the OTP is confirmed on the next page.
       navigate("/register/verify-otp", { state: { ...form } });
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -101,72 +103,72 @@ export default function RegisterPage() {
             ←
           </button>
 
-          <h1 className="ww-register-title">Register Your Account</h1>
+          <h1 className="ww-register-title">{t("registerTitle")}</h1>
 
-          <label className="ww-field-label">First Name</label>
+          <label className="ww-field-label">{t("firstName")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter First Name"
+            placeholder={t("enterFirstName")}
             value={form.firstName}
             onChange={handleChange("firstName")}
           />
 
-          <label className="ww-field-label">Last Name</label>
+          <label className="ww-field-label">{t("lastName")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Last Name"
+            placeholder={t("enterLastName")}
             value={form.lastName}
             onChange={handleChange("lastName")}
           />
 
-          <label className="ww-field-label">School Email</label>
+          <label className="ww-field-label">{t("schoolEmail")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Student Email"
+            placeholder={t("enterStudentEmail")}
             value={form.schoolEmail}
             onChange={handleChange("schoolEmail")}
           />
 
           <label className="ww-field-label">
-            Personal/Recovery Gmail 
+            {t("recoveryEmailLabel")}
           </label>
           <input
             type="email"
             className="ww-field-input"
-            placeholder="Enter Gmail Account"
+            placeholder={t("enterGmailAccount")}
             value={form.recoveryEmail}
             onChange={handleChange("recoveryEmail")}
           />
 
-          <label className="ww-field-label">Date of Birth (MM/DD/YYYY)</label>
+          <label className="ww-field-label">{t("dobLabel")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Date of Birth"
+            placeholder={t("enterDob")}
             value={form.dob}
             onChange={handleChange("dob")}
           />
 
-          <label className="ww-field-label">Cellphone Number</label>
+          <label className="ww-field-label">{t("cellphoneNumber")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Cellphone Number"
+            placeholder={t("enterCellphoneNumber")}
             value={form.cellphone}
             onChange={handleChange("cellphone")}
           />
 
           <label className="ww-field-label">
-            Create a Password (at least 8 characters)
+            {t("createPasswordLabel")}
           </label>
           <div className="ww-password-field">
             <input
               type={showPassword ? "text" : "password"}
               className="ww-field-input"
-              placeholder="Enter Password"
+              placeholder={t("enterPassword")}
               value={form.password}
               onChange={handleChange("password")}
             />
@@ -180,12 +182,12 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          <label className="ww-field-label">Confirm Password</label>
+          <label className="ww-field-label">{t("confirmPassword")}</label>
           <div className="ww-password-field">
             <input
               type={showConfirmPassword ? "text" : "password"}
               className="ww-field-input"
-              placeholder="Confirm Password"
+              placeholder={t("confirmPasswordPlaceholder")}
               value={form.confirmPassword}
               onChange={handleChange("confirmPassword")}
             />
@@ -206,7 +208,7 @@ export default function RegisterPage() {
             onClick={handleSubmit}
             disabled={loading}
           >
-            {loading ? 'Sending code...' : 'Register'}
+            {loading ? t("sendingCode") : t("register")}
           </button>
         </div>
       </main>

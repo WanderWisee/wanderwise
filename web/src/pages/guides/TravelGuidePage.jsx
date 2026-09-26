@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 const guideSections = [
@@ -41,6 +42,7 @@ const guideSections = [
 export default function TravelGuidePage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   // Falls back to "Boracay Islands" if no destination was passed in
   // (e.g. someone opens this page directly without clicking a card).
   const destination = location.state?.destination || "Boracay Islands";
@@ -53,9 +55,9 @@ export default function TravelGuidePage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -66,7 +68,7 @@ export default function TravelGuidePage() {
       </header>
 
       <main className="ww-guide-main">
-        <h1 className="ww-guide-title">{destination} Travel Journey</h1>
+        <h1 className="ww-guide-title">{destination} {t("travelJourneySuffix")}</h1>
 
         {guideSections.map((section) => (
           <section className="ww-guide-section" key={section.pinLabel}>
@@ -76,12 +78,12 @@ export default function TravelGuidePage() {
                 <p className="ww-guide-subtitle">{section.subtitle}</p>
                 <p className="ww-guide-description">{section.description}</p>
 
-                <p className="ww-guide-list-title">Pros of Staying in {section.pinLabel}:</p>
+                <p className="ww-guide-list-title">{t("prosOfStayingIn")} {section.pinLabel}:</p>
                 <ul className="ww-guide-list">
                   {section.pros.map((p) => <li key={p}>{p}</li>)}
                 </ul>
 
-                <p className="ww-guide-list-title">Cons of Staying in {section.pinLabel}:</p>
+                <p className="ww-guide-list-title">{t("consOfStayingIn")} {section.pinLabel}:</p>
                 <ul className="ww-guide-list">
                   {section.cons.map((c) => <li key={c}>{c}</li>)}
                 </ul>
@@ -89,18 +91,18 @@ export default function TravelGuidePage() {
               <img src={section.image} alt={section.pinLabel} className="ww-guide-image" />
             </div>
 
-            <h3 className="ww-guide-hotel-heading">Hotel Option</h3>
+            <h3 className="ww-guide-hotel-heading">{t("hotelOption")}</h3>
             <div className="ww-guide-hotels-grid">
               {section.hotels.map((h) => (
                 <div className="ww-guide-hotel-card" key={h.name}>
                   <p className="ww-guide-hotel-name">🏨 {h.name}</p>
                   <p className="ww-guide-hotel-desc">{h.description}</p>
-                  <button className="ww-guide-details-btn">Details</button>
+                  <button className="ww-guide-details-btn">{t("details")}</button>
                 </div>
               ))}
             </div>
 
-            <h3 className="ww-guide-location-heading">Location</h3>
+            <h3 className="ww-guide-location-heading">{t("location")}</h3>
             <div className="ww-guide-map">
               <PlaceMap placeName={section.pinLabel} context={destination} height={260} />
             </div>

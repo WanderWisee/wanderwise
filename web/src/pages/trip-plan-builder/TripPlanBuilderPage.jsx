@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import TripMap from "../../components/TripMap";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 let nextPlaceId = 1;
@@ -111,7 +112,7 @@ function hydratePlace(p) {
   };
 }
 
-function hydrateTripState(tripResponse) {
+function hydrateTripState(tripResponse, defaultTitle) {
   const defaultSection = tripResponse.sections.find((s) => s.isDefault);
   const customSectionsResp = tripResponse.sections.filter((s) => !s.isDefault);
 
@@ -197,10 +198,20 @@ function mapExpenseFromApi(e, tripStateLike) {
   };
 }
 
+const COST_CATEGORIES = ["Transportation", "Entrance Fee", "Food", "Hotel", "Other"];
+const COST_CATEGORY_KEYS = {
+  "Transportation": "costCatTransportation",
+  "Entrance Fee": "costCatEntranceFee",
+  "Food": "costCatFood",
+  "Hotel": "costCatHotel",
+  "Other": "costCatOther",
+};
+
 export default function TripPlanBuilderPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const tripInfo = location.state || {};
+  const { t } = useLanguage();
 
   // The tripId is kept in the URL query string (?tripId=123), NOT only in
   // location.state, because a browser refresh (F5) can lose/never had the
@@ -214,6 +225,10 @@ export default function TripPlanBuilderPage() {
     urlTripId ? Number(urlTripId) : tripInfo.tripId || null
   );
   const [saveStatus, setSaveStatus] = useState("Saved");
+  const saveStatusLabel =
+    saveStatus === "Saving..." ? t("savingEllipsis")
+    : saveStatus === "Save failed" ? t("saveFailed")
+    : t("savedLabel");
   const hasLoadedRef = useRef(false);
 
   const [destination, setDestination] = useState(tripInfo.destination || "");
@@ -248,7 +263,7 @@ export default function TripPlanBuilderPage() {
   const [endDate, setEndDate] = useState(tripInfo.endDate || "");
   const [people, setPeople] = useState(tripInfo.people || 0);
 
-  const [whereToGoTitle, setWhereToGoTitle] = useState("Where to go?");
+  const [whereToGoTitle, setWhereToGoTitle] = useState(t("whereToGoDefault"));
   const [editingWhereToGoTitle, setEditingWhereToGoTitle] = useState(false);
 
   const [tripState, setTripState] = useState(
@@ -327,13 +342,20 @@ export default function TripPlanBuilderPage() {
             setStartDate(data.startDate || "");
             setEndDate(data.endDate || "");
             setPeople(data.travelBuddiesCount || 0);
-            setWhereToGoTitle(data.title || "Where to go?");
+            setWhereToGoTitle(data.title || t("whereToGoDefault"));
             const hydrated = hydrateTripState(data);
             setTripState(hydrated);
 
             if (!urlTripId) {
               setSearchParams({ tripId: String(data.id) }, { replace: true });
             }
+
+            // Mark this trip as viewed for the History page's "Last viewed"
+            // column — fire-and-forget, doesn't block the rest of loading.
+            fetch(`/api/trips/${data.id}/view`, {
+              method: "POST",
+              headers: authHeaders,
+            }).catch((err) => console.warn("Failed to mark trip as viewed:", err));
 
             // Standalone "Add Expense" entries live in their own table —
             // load them separately and merge them in.
@@ -471,9 +493,7 @@ export default function TripPlanBuilderPage() {
       days.some((d) => d.placeIds.length > 0);
 
     if (destinationChanged && hasExistingItinerary) {
-      const confirmed = window.confirm(
-        "Changing the destination will clear your current itinerary (places, days, and suggestions) since they belong to the old destination. Continue?"
-      );
+      const confirmed = window.confirm(t("confirmChangeDestination"));
       if (!confirmed) return;
     }
 
@@ -868,7 +888,6 @@ export default function TripPlanBuilderPage() {
     );
   };
 
-  const COST_CATEGORIES = ["Transportation", "Entrance Fee", "Food", "Hotel", "Other"];
   const [addingCostFor, setAddingCostFor] = useState(null);
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
   const [customCostCategory, setCustomCostCategory] = useState("");
@@ -924,7 +943,7 @@ export default function TripPlanBuilderPage() {
   };
 
   const handleDeleteExpense = async (expenseId) => {
-    if (!window.confirm("Delete this expense?")) return;
+    if (!window.confirm(t("confirmDeleteExpense"))) return;
     const token = localStorage.getItem("wanderwise_token");
     if (tripId && token) {
       try {
@@ -999,17 +1018,17 @@ export default function TripPlanBuilderPage() {
             onClick={handleUndo}
             style={{ cursor: past.length === 0 ? "default" : "pointer", opacity: past.length === 0 ? 0.4 : 1 }}
           >
-            ↩ Undo
+            ↩ {t("undo")}
           </span>
-          <span className="ww-builder-saved">{saveStatus}</span>
+          <span className="ww-builder-saved">{saveStatusLabel}</span>
           <span
             className="ww-undo-redo"
             onClick={handleRedo}
             style={{ cursor: future.length === 0 ? "default" : "pointer", opacity: future.length === 0 ? 0.4 : 1 }}
           >
-            ↪ Redo
+            ↪ {t("redo")}
           </span>
-          <button className="ww-trip-plan-btn">Trip Plan</button>
+          <button className="ww-trip-plan-btn">{t("tripPlanBtn")}</button>
           <div className="ww-menu-wrapper" ref={topMenuRef}>
             <span
               className="ww-menu-dropdown"
@@ -1021,13 +1040,13 @@ export default function TripPlanBuilderPage() {
             {topMenuOpen && (
               <div className="ww-menu-panel">
                 <p className="ww-menu-item" onClick={() => goToTopMenu("/dashboard")}>
-                  Home
+                  {t("navHome")}
                 </p>
                 <p className="ww-menu-item" onClick={() => goToTopMenu("/travel-tips")}>
-                  Guides
+                  {t("navGuides")}
                 </p>
                 <p className="ww-menu-item" onClick={() => goToTopMenu("/profile")}>
-                  Profile
+                  {t("navProfile")}
                 </p>
               </div>
             )}
@@ -1037,29 +1056,29 @@ export default function TripPlanBuilderPage() {
 
       <div className="ww-builder-body">
         <aside className="ww-builder-sidebar">
-          <p className="ww-sidebar-item active">Overview</p>
+          <p className="ww-sidebar-item active">{t("overview")}</p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(whereToGoRef)} style={{ cursor: "pointer" }}>
-            Where to go?
+            {t("whereToGoDefault")}
           </p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(itineraryRef)} style={{ cursor: "pointer" }}>
-            Notes
+            {t("notes")}
           </p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(untitledRef)} style={{ cursor: "pointer" }}>
-            Untitled
+            {t("untitled")}
           </p>
-          <p className="ww-sidebar-header">Itinerary</p>
+          <p className="ww-sidebar-header">{t("itinerary")}</p>
           {days.map((day) => (
             <p className="ww-sidebar-item" key={day.label}>{day.label}</p>
           ))}
-          <p className="ww-sidebar-header">Budget</p>
+          <p className="ww-sidebar-header">{t("budget")}</p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(expensesRef)} style={{ cursor: "pointer" }}>
-            View
+            {t("view")}
           </p>
         </aside>
 
         <main className="ww-builder-main">
           <h1 className="ww-builder-trip-title">
-            Trip to {destination || "your next destination"}{" "}
+            {t("tripToPrefix")} {destination || t("yourNextDestination")}{" "}
             <span className="ww-edit-icon" onClick={openEditTrip} style={{ cursor: "pointer" }}>
               ✎
             </span>
@@ -1084,7 +1103,7 @@ export default function TripPlanBuilderPage() {
               })
             }
           >
-            🏨 Book a Hotel
+            🏨 {t("bookAHotel")}
           </button>
 
           <h2 className="ww-builder-section-title">
@@ -1114,7 +1133,7 @@ export default function TripPlanBuilderPage() {
               className="ww-more-icon"
               onClick={handleDeleteWhereToGoList}
               style={{ cursor: "pointer" }}
-              title="Delete this entire list"
+              title={t("deleteThisListTitle")}
             >
               ⋯
             </span>
@@ -1123,14 +1142,14 @@ export default function TripPlanBuilderPage() {
 
           {loadingSuggestions && (
             <p className="ww-field-label" style={{ marginBottom: 8 }}>
-              Loading suggested places...
+              {t("loadingSuggestedPlaces")}
             </p>
           )}
 
           {suggestedPlaces.length > 0 && (
             <div className="ww-suggested-places" style={{ marginBottom: 16 }}>
               <p className="ww-field-label" style={{ marginBottom: 8 }}>
-                Suggested places in {destination}:
+                {t("suggestedPlacesIn")} {destination}:
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {suggestedPlaces.slice(0, 12).map((sp) => (
@@ -1157,11 +1176,11 @@ export default function TripPlanBuilderPage() {
           {places.map((p, i) => (
             <div className="ww-place-card" key={p.id}>
               <p className="ww-place-name">
-                📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ Visited</span>}
+                📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
               </p>
               <input
                 className="ww-place-notes-input"
-                placeholder="Add notes, etc, here"
+                placeholder={t("addNotesPlaceholder")}
                 value={p.note || ""}
                 onChange={(e) => updatePlaceNote(p.id, e.target.value)}
                 onKeyDown={(e) => {
@@ -1169,12 +1188,12 @@ export default function TripPlanBuilderPage() {
                 }}
               />
               <p className="ww-place-actions">
-                <span>🕐 Select Time</span>
-                <span>$ Add Cost</span>
+                <span>🕐 {t("selectTime")}</span>
+                <span>$ {t("addCost")}</span>
               </p>
               {(p.costs || []).length > 0 && (
                 <p className="ww-cost-total-inline">
-                  Expected cost: ₱{p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
+                  {t("expectedCost")}: ₱{p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
                 </p>
               )}
               <p
@@ -1182,7 +1201,7 @@ export default function TripPlanBuilderPage() {
                 onClick={() => toggleVisited(p.id)}
                 style={{ cursor: "pointer" }}
               >
-                {p.visited ? "✕ Unmark visited" : "✓ Mark visited"}
+                {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
               </p>
             </div>
           ))}
@@ -1190,7 +1209,7 @@ export default function TripPlanBuilderPage() {
           <input
             ref={newPlaceInputRef}
             className="ww-add-place-input"
-            placeholder="📍 Add a new place"
+            placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
             value={newPlaceInput}
             onChange={(e) => setNewPlaceInput(e.target.value)}
             onKeyDown={handleAddPlace}
@@ -1209,7 +1228,7 @@ export default function TripPlanBuilderPage() {
                   {editingSectionName[section.id] ? (
                     <input
                       className="ww-section-name-input-inline"
-                      placeholder='Name this section (e.g., "Lamon")'
+                      placeholder={t("nameThisSectionPlaceholder")}
                       value={section.name}
                       onChange={(e) => handleSectionNameChange(section.id, e.target.value)}
                       onKeyDown={(e) => {
@@ -1218,7 +1237,7 @@ export default function TripPlanBuilderPage() {
                       autoFocus
                     />
                   ) : (
-                    <span>{section.name || 'Name this section (e.g., "Lamon")'}</span>
+                    <span>{section.name || t("nameThisSectionPlaceholder")}</span>
                   )}
                   <span
                     className="ww-edit-icon"
@@ -1232,7 +1251,7 @@ export default function TripPlanBuilderPage() {
                   className="ww-more-icon"
                   onClick={() => handleDeleteSection(section.id)}
                   style={{ cursor: "pointer" }}
-                  title="Delete this entire list"
+                  title={t("deleteThisListTitle")}
                 >
                   ⋯
                 </span>
@@ -1241,11 +1260,11 @@ export default function TripPlanBuilderPage() {
               {section.places.map((p, i) => (
                 <div className="ww-place-card" key={p.id}>
                   <p className="ww-place-name">
-                    📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ Visited</span>}
+                    📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
                   </p>
                   <input
                     className="ww-place-notes-input"
-                    placeholder="Add notes, etc, here"
+                    placeholder={t("addNotesPlaceholder")}
                     value={p.note || ""}
                     onChange={(e) => updatePlaceNote(p.id, e.target.value)}
                     onKeyDown={(e) => {
@@ -1253,22 +1272,22 @@ export default function TripPlanBuilderPage() {
                     }}
                   />
                   <p className="ww-place-actions">
-                    <span>🕐 Select Time</span>
-                    <span>$ Add Cost</span>
+                    <span>🕐 {t("selectTime")}</span>
+                    <span>$ {t("addCost")}</span>
                   </p>
                   <p
                     className="ww-mark-visited"
                     onClick={() => toggleSectionPlaceVisited(section.id, p.id)}
                     style={{ cursor: "pointer" }}
                   >
-                    {p.visited ? "✕ Unmark visited" : "✓ Mark visited"}
+                    {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
                   </p>
                 </div>
               ))}
 
               <input
                 className="ww-add-place-input"
-                placeholder="📍 Add a new place"
+                placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
                 value={section.placeInput}
                 onChange={(e) => handleSectionPlaceInputChange(section.id, e.target.value)}
               />
@@ -1276,7 +1295,7 @@ export default function TripPlanBuilderPage() {
           ))}
 
           <button className="ww-new-list-btn" onClick={handleNewList}>
-            + New List
+            + {t("newListBtn")}
           </button>
 
           <hr className="ww-builder-thick-divider" />
@@ -1284,7 +1303,7 @@ export default function TripPlanBuilderPage() {
           {days.length > 0 && (
             <>
               <h2 className="ww-builder-section-title" ref={itineraryRef}>
-                Itinerary
+                {t("itinerary")}
                 {startDate && endDate && (
                   <span className="ww-date-pill">📅 {startDate} - {endDate}</span>
                 )}
@@ -1322,7 +1341,7 @@ export default function TripPlanBuilderPage() {
                             <p className="ww-place-name">📍{number} {p.name}</p>
                             <input
                               className="ww-place-notes-input"
-                              placeholder="Add notes, etc, here"
+                              placeholder={t("addNotesPlaceholder")}
                               value={p.note || ""}
                               onChange={(e) => updatePlaceNote(p.id, e.target.value)}
                               onKeyDown={(e) => {
@@ -1343,14 +1362,14 @@ export default function TripPlanBuilderPage() {
                                   onClick={() => setEditingTimeFor(p.id)}
                                   style={{ cursor: "pointer" }}
                                 >
-                                  🕐 {p.time || "Select Time"}
+                                  🕐 {p.time || t("selectTime")}
                                 </span>
                               )}
                               <span
                                 onClick={() => openAddCost(p.id)}
                                 style={{ cursor: "pointer" }}
                               >
-                                $ Add Cost
+                                $ {t("addCost")}
                               </span>
                             </p>
 
@@ -1361,13 +1380,13 @@ export default function TripPlanBuilderPage() {
                                   onChange={(e) => setCostCategory(e.target.value)}
                                 >
                                   {COST_CATEGORIES.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
+                                    <option key={c} value={c}>{t(COST_CATEGORY_KEYS[c])}</option>
                                   ))}
                                 </select>
                                 {costCategory === "Other" && (
                                   <input
                                     type="text"
-                                    placeholder="Type category"
+                                    placeholder={t("typeCategory")}
                                     value={customCostCategory}
                                     onChange={(e) => setCustomCostCategory(e.target.value)}
                                   />
@@ -1375,11 +1394,11 @@ export default function TripPlanBuilderPage() {
                                 <input
                                   type="number"
                                   min="0"
-                                  placeholder="₱ Amount"
+                                  placeholder={`₱ ${t("amount")}`}
                                   value={costAmount}
                                   onChange={(e) => setCostAmount(e.target.value)}
                                 />
-                                <button onClick={() => confirmAddCost(p.id)}>Add</button>
+                                <button onClick={() => confirmAddCost(p.id)}>{t("add")}</button>
                               </div>
                             )}
 
@@ -1400,14 +1419,14 @@ export default function TripPlanBuilderPage() {
                                   </div>
                                 ))}
                                 <div className="ww-cost-total">
-                                  Expected cost: ₱
+                                  {t("expectedCost")}: ₱
                                   {p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
                                 </div>
                               </div>
                             )}
 
                             <p className="ww-mark-visited">
-                              {p.visited ? "✓ Visited" : "✓ Mark visited"}
+                              {p.visited ? `✓ ${t("visited")}` : `✓ ${t("markVisited")}`}
                             </p>
                           </div>
                         </div>
@@ -1417,14 +1436,14 @@ export default function TripPlanBuilderPage() {
                             onClick={() => openDirections(p)}
                             style={{ cursor: "pointer" }}
                           >
-                            🚗 Directions
+                            🚗 {t("directions")}
                           </span>
                         </p>
                       </React.Fragment>
                     ))}
                     <input
                       className="ww-add-place-input"
-                      placeholder="📍 Add a new place"
+                      placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
                       value={dayInputs[dayIndex] || ""}
                       onChange={(e) => handleDayInputChange(dayIndex, e.target.value)}
                       onKeyDown={handleAddDayPlace(dayIndex)}
@@ -1437,31 +1456,31 @@ export default function TripPlanBuilderPage() {
             </>
           )}
 
-          <h2 className="ww-builder-section-title">Budget</h2>
+          <h2 className="ww-builder-section-title">{t("budget")}</h2>
           <div className="ww-budget-card">
             <p className="ww-budget-amount">₱{budgetSpent.toLocaleString()}.00</p>
             <p className="ww-budget-total">
-              Budget: ₱{budgetTotal.toLocaleString()}.00{" "}
+              {t("budgetLabel")}: ₱{budgetTotal.toLocaleString()}.00{" "}
               <span className="ww-edit-icon" onClick={openEditBudget} style={{ cursor: "pointer" }}>
                 ✎
               </span>
             </p>
             <div className="ww-budget-buttons">
               <button className="ww-add-expense-btn" onClick={handleGoToAddExpense}>
-                + Add Expense
+                + {t("addExpenseBtn")}
               </button>
             </div>
             <p className="ww-budget-link" onClick={handleGoToBreakdown} style={{ cursor: "pointer" }}>
-              📊 View Breakdown
+              📊 {t("viewBreakdown")}
             </p>
             <p className="ww-budget-link" onClick={handleGoToAddCrew} style={{ cursor: "pointer" }}>
-              👤 Add Crew
+              👤 {t("addCrew")}
             </p>
           </div>
 
-          <h2 className="ww-builder-section-title" ref={expensesRef}>⌄ Expenses</h2>
+          <h2 className="ww-builder-section-title" ref={expensesRef}>⌄ {t("expensesHeader")}</h2>
           {expenses.length === 0 ? (
-            <p className="ww-expense-empty">No expenses yet. Add one to get started.</p>
+            <p className="ww-expense-empty">{t("noExpensesYetAddOne")}</p>
           ) : (
             expenses.map((e) => (
               <div className="ww-expense-row" key={e.id}>
@@ -1472,7 +1491,7 @@ export default function TripPlanBuilderPage() {
                     className="ww-cost-remove"
                     onClick={() => handleDeleteExpense(e.id)}
                     style={{ cursor: "pointer", marginLeft: 8 }}
-                    title="Delete this expense"
+                    title={t("deleteThisExpenseTitle")}
                   >
                     ✕
                   </span>
@@ -1486,8 +1505,8 @@ export default function TripPlanBuilderPage() {
       {showEditTrip && (
         <div className="ww-modal-overlay" onClick={() => setShowEditTrip(false)}>
           <div className="ww-planning-form ww-modal-card" onClick={(e) => e.stopPropagation()}>
-            <h1 className="ww-planning-title">Edit your trip</h1>
-            <label className="ww-planning-label">Destination?</label>
+            <h1 className="ww-planning-title">{t("editYourTrip")}</h1>
+            <label className="ww-planning-label">{t("destinationQuestion")}</label>
             <input
               type="text"
               className="ww-planning-input"
@@ -1502,7 +1521,7 @@ export default function TripPlanBuilderPage() {
               ))}
             </datalist>
             <hr className="ww-planning-divider" />
-            <label className="ww-planning-label">Dates</label>
+            <label className="ww-planning-label">{t("dates")}</label>
             <div className="ww-dates-row">
               <input
                 type="date"
@@ -1518,7 +1537,7 @@ export default function TripPlanBuilderPage() {
               />
             </div>
             <hr className="ww-planning-divider" />
-            <label className="ww-planning-label ww-center-label">How many people?</label>
+            <label className="ww-planning-label ww-center-label">{t("howManyPeople")}</label>
             <div className="ww-people-counter">
               <button onClick={() => setEditForm({ ...editForm, people: Math.max(0, editForm.people - 1) })}>
                 −
@@ -1530,10 +1549,10 @@ export default function TripPlanBuilderPage() {
             </div>
             <div className="ww-modal-actions">
               <button className="ww-modal-cancel-btn" onClick={() => setShowEditTrip(false)}>
-                Cancel
+                {t("cancel")}
               </button>
               <button className="ww-lets-go-btn" onClick={handleSaveTripInfo}>
-                Save
+                {t("save")}
               </button>
             </div>
           </div>
@@ -1543,8 +1562,8 @@ export default function TripPlanBuilderPage() {
       {showEditBudget && (
         <div className="ww-modal-overlay" onClick={() => setShowEditBudget(false)}>
           <div className="ww-planning-form ww-modal-card" onClick={(e) => e.stopPropagation()}>
-            <h1 className="ww-planning-title">Edit budget</h1>
-            <label className="ww-planning-label">Total budget (₱)</label>
+            <h1 className="ww-planning-title">{t("editBudget")}</h1>
+            <label className="ww-planning-label">{t("totalBudgetLabel")}</label>
             <input
               type="number"
               min="0"
@@ -1554,10 +1573,10 @@ export default function TripPlanBuilderPage() {
             />
             <div className="ww-modal-actions">
               <button className="ww-modal-cancel-btn" onClick={() => setShowEditBudget(false)}>
-                Cancel
+                {t("cancel")}
               </button>
               <button className="ww-lets-go-btn" onClick={handleSaveBudget}>
-                Save
+                {t("save")}
               </button>
             </div>
           </div>
@@ -1568,13 +1587,12 @@ export default function TripPlanBuilderPage() {
         <div className="ww-modal-overlay" onClick={() => setPendingDelete(null)}>
           <div className="ww-warning-modal-card" onClick={(e) => e.stopPropagation()}>
             <p className="ww-warning-modal-icon">⚠️</p>
-            <p className="ww-warning-modal-text">Delete section</p>
+            <p className="ww-warning-modal-text">{t("deleteSectionTitle")}</p>
             <p className="ww-warning-modal-subtext">
-              This will remove every place in this list. This can't be undone
-              (except with Undo).
+              {t("deleteSectionWarning")}
             </p>
             <button className="ww-warning-modal-ok-btn" onClick={confirmPendingDelete}>
-              OK
+              {t("ok")}
             </button>
           </div>
         </div>

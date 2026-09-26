@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
 
   // TODO: replace with real fetch('/api/notifications') once backend is ready
@@ -20,9 +22,9 @@ export default function NotificationsPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -33,9 +35,9 @@ export default function NotificationsPage() {
       </header>
 
       <main className="ww-notifications-main">
-        <h1 className="ww-notifications-title">Notifications</h1>
+        <h1 className="ww-notifications-title">{t("notificationsTitle")}</h1>
         {notifications.length === 0 ? (
-          <p className="ww-notifications-empty">No updates at the moment.</p>
+          <p className="ww-notifications-empty">{t("noUpdatesRightNow")}</p>
         ) : (
           <ul className="ww-notifications-list">
             {notifications.map((n) => (

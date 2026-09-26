@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 function groupByLabel(expenses) {
@@ -35,12 +36,12 @@ function niceMax(values) {
   return magnitude * 10;
 }
 
-function BarChart({ title, data }) {
+function BarChart({ title, emptyLabel, data }) {
   if (data.length === 0) {
     return (
       <div className="ww-chart-card">
         <h2 className="ww-chart-title">{title}</h2>
-        <p className="ww-expense-empty">No expenses yet for this view.</p>
+        <p className="ww-expense-empty">{emptyLabel}</p>
       </div>
     );
   }
@@ -77,6 +78,7 @@ function BarChart({ title, data }) {
 export default function BudgetBreakdownPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const {
     expenses = [],
@@ -108,9 +110,9 @@ export default function BudgetBreakdownPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -122,10 +124,10 @@ export default function BudgetBreakdownPage() {
 
       <main className="ww-breakdown-main">
         <h1 className="ww-breakdown-title" onClick={handleBack} style={{ cursor: "pointer" }}>
-          ← Breakdown
+          ← {t("breakdown")}
         </h1>
-        <BarChart title="Category" data={categoryData} />
-        <BarChart title="Day-by-day" data={dayData} />
+        <BarChart title={t("category")} emptyLabel={t("noExpensesYet")} data={categoryData} />
+        <BarChart title={t("dayByDay")} emptyLabel={t("noExpensesYet")} data={dayData} />
       </main>
     </div>
   );

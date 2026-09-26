@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function VerifyRegisterOtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const form = location.state || null;
 
   const [otp, setOtp] = useState("");
@@ -23,12 +25,12 @@ export default function VerifyRegisterOtpPage() {
         </header>
         <main className="ww-register-wrapper">
           <div className="ww-register-card">
-            <h1 className="ww-register-title">Session expired</h1>
+            <h1 className="ww-register-title">{t("sessionExpiredTitle")}</h1>
             <p className="ww-field-label" style={{ fontWeight: 400 }}>
-              Please start registration again.
+              {t("registerAgainPrompt")}
             </p>
             <button className="ww-register-submit" onClick={() => navigate("/register")}>
-              Back to Register
+              {t("backToRegister")}
             </button>
           </div>
         </main>
@@ -39,7 +41,7 @@ export default function VerifyRegisterOtpPage() {
   const handleVerify = async () => {
     setError("");
     if (!otp.trim()) {
-      setError("Please enter the verification code.");
+      setError(t("otpErrEmpty"));
       return;
     }
 
@@ -61,7 +63,7 @@ export default function VerifyRegisterOtpPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Verification failed.");
+        setError(data?.error || t("otpErrVerifyFailed"));
         return;
       }
       if (data?.token) {
@@ -69,7 +71,7 @@ export default function VerifyRegisterOtpPage() {
       }
       navigate("/dashboard");
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -88,12 +90,12 @@ export default function VerifyRegisterOtpPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Failed to resend code.");
+        setError(data?.error || t("otpErrResendFailed"));
         return;
       }
-      setError("A new code was sent to your personal email.");
+      setError(t("otpResendSuccess"));
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     }
   };
 
@@ -116,14 +118,14 @@ export default function VerifyRegisterOtpPage() {
             ←
           </button>
 
-          <h1 className="ww-register-title">Verify Your Email</h1>
+          <h1 className="ww-register-title">{t("verifyEmailTitle")}</h1>
           <p className="ww-field-label" style={{ marginBottom: 16, fontWeight: 400 }}>
-            We sent a 6-digit code to your personal email,{" "}
-            <strong>{form.recoveryEmail}</strong>. Enter it below to finish
-            creating your account for <strong>{form.schoolEmail}</strong>.
+            {t("verifyRegisterSubtitleBefore")}{" "}
+            <strong>{form.recoveryEmail}</strong>{t("verifyRegisterSubtitleMiddle")}{" "}
+            <strong>{form.schoolEmail}</strong>.
           </p>
 
-          <label className="ww-field-label">Verification Code</label>
+          <label className="ww-field-label">{t("verificationCode")}</label>
           <input
             type="text"
             className="ww-field-input"
@@ -141,7 +143,7 @@ export default function VerifyRegisterOtpPage() {
             disabled={loading}
             style={{ marginTop: 16 }}
           >
-            {loading ? "Verifying..." : "Verify & Create Account"}
+            {loading ? t("verifying") : t("verifyAndCreate")}
           </button>
 
           <button
@@ -150,7 +152,7 @@ export default function VerifyRegisterOtpPage() {
             onClick={handleResend}
             style={{ marginTop: 12, background: "none", border: "none", cursor: "pointer" }}
           >
-            Resend code
+            {t("resendCode")}
           </button>
         </div>
       </main>

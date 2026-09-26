@@ -1,9 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div className="wanderwise-home">
@@ -17,25 +19,23 @@ export default function HomePage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav>
-          <a href="#about" className="ww-nav-link">About Us</a>
+          <a href="#about" className="ww-nav-link">{t("aboutUs")}</a>
         </nav>
       </header>
 
       <main className="ww-hero">
-        <h1 className="ww-hero-title">
-          Tourism Students, Welcome to your travel companion! ✈️
-        </h1>
+        <h1 className="ww-hero-title">{t("homeHeroTitle")}</h1>
         <p className="ww-hero-subtitle">
-          Plan smarter, explore further, and create trips you'll
+          {t("homeHeroSubtitleLine1")}
           <br />
-          never forget. Your next adventure starts here!
+          {t("homeHeroSubtitleLine2")}
         </p>
 
         <hr className="ww-divider" />
 
         <div className="ww-actions">
-          <button className="ww-login-btn" onClick={() => navigate("/login")}>Log in</button>
-          <button className="ww-signup-btn" onClick={() => navigate("/register")}>Sign up</button>
+          <button className="ww-login-btn" onClick={() => navigate("/login")}>{t("logIn")}</button>
+          <button className="ww-signup-btn" onClick={() => navigate("/register")}>{t("signUp")}</button>
         </div>
       </main>
     </div>

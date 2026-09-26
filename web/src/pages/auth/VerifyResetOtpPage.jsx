@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function VerifyResetOtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const email = location.state?.email || "";
 
   const [otp, setOtp] = useState("");
@@ -21,12 +23,12 @@ export default function VerifyResetOtpPage() {
         </header>
         <main className="ww-reset-wrapper">
           <div className="ww-reset-card">
-            <h1 className="ww-reset-title">Session expired</h1>
+            <h1 className="ww-reset-title">{t("sessionExpiredTitle")}</h1>
             <p className="ww-field-label" style={{ fontWeight: 400 }}>
-              Please start the Forgot Password flow again.
+              {t("resetAgainPrompt")}
             </p>
             <button className="ww-reset-submit" onClick={() => navigate("/forgot-password")}>
-              Back
+              {t("back")}
             </button>
           </div>
         </main>
@@ -37,7 +39,7 @@ export default function VerifyResetOtpPage() {
   const handleContinue = () => {
     setError("");
     if (!otp.trim()) {
-      setError("Please enter the verification code.");
+      setError(t("otpErrEmpty"));
       return;
     }
     // The actual OTP check happens together with the new password on the
@@ -55,12 +57,12 @@ export default function VerifyResetOtpPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Failed to resend code.");
+        setError(data?.error || t("otpErrResendFailed"));
         return;
       }
-      setError("A new code was sent to your recovery email.");
+      setError(t("otpResendRecoverySuccess"));
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     }
   };
 
@@ -83,13 +85,12 @@ export default function VerifyResetOtpPage() {
             ←
           </button>
 
-          <h1 className="ww-reset-title">Enter Verification Code</h1>
+          <h1 className="ww-reset-title">{t("enterVerificationCodeTitle")}</h1>
           <p className="ww-field-label" style={{ marginBottom: 16, fontWeight: 400 }}>
-            We sent a 6-digit code to the recovery Gmail on file for{" "}
-            <strong>{email}</strong>.
+            {t("verifyResetSubtitle")} <strong>{email}</strong>.
           </p>
 
-          <label className="ww-field-label">Verification Code</label>
+          <label className="ww-field-label">{t("verificationCode")}</label>
           <input
             type="text"
             className="ww-field-input"
@@ -106,7 +107,7 @@ export default function VerifyResetOtpPage() {
             onClick={handleContinue}
             style={{ marginTop: 16 }}
           >
-            Continue
+            {t("continueBtn")}
           </button>
 
           <button
@@ -115,7 +116,7 @@ export default function VerifyResetOtpPage() {
             onClick={handleResend}
             style={{ marginTop: 12, background: "none", border: "none", cursor: "pointer" }}
           >
-            Resend code
+            {t("resendCode")}
           </button>
         </div>
       </main>

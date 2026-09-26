@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 function normalizeJournalEntry(serverEntry) {
@@ -27,21 +28,22 @@ function normalizeJournalEntry(serverEntry) {
   };
 }
 
-function timeAgo(dateString) {
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 export default function JournalViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { journalEntries } = useAppData();
+  const { t, language } = useLanguage();
+
+  const timeAgo = (dateString) => {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 60) return t("timeJustNow");
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}${t("timeMinutesAgoSuffix")}`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}${t("timeHoursAgoSuffix")}`;
+    const days = Math.floor(hours / 24);
+    return `${days}${t("timeDaysAgoSuffix")}`;
+  };
 
   const [remoteJournal, setRemoteJournal] = useState(null);
   const [loadingRemote, setLoadingRemote] = useState(false);
@@ -88,6 +90,18 @@ export default function JournalViewPage() {
       .finally(() => setLoadingComments(false));
   }, [id]);
 
+  // Mark this journal entry as viewed for the History page's "Last viewed"
+  // column. Harmless no-op if this isn't the current user's own entry —
+  // the backend's ownership check silently 404s in that case.
+  useEffect(() => {
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) return;
+    fetch(`/api/journal/${id}/view`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch((err) => console.warn("Failed to mark journal as viewed:", err));
+  }, [id]);
+
   const handlePostComment = async () => {
     const text = newComment.trim();
     if (!text || posting) return;
@@ -125,9 +139,9 @@ export default function JournalViewPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("navHome")}</Link>
+          <Link to="/travel-tips">{t("navGuides")}</Link>
+          <Link to="/hotels">{t("navHotels")}</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -139,22 +153,22 @@ export default function JournalViewPage() {
 
       <main className="ww-guide-main">
         {loadingRemote && !journal ? (
-          <p className="ww-expense-empty">Loading...</p>
+          <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
         ) : !journal ? (
-          <p className="ww-expense-empty">Journal entry not found.</p>
+          <p className="ww-expense-empty">{t("journalNotFound")}</p>
         ) : (
           <>
             <h1 className="ww-guide-title">{journal.title}</h1>
 
             {journal.entries.length === 0 ? (
-              <p className="ww-expense-empty">No places were added to this story.</p>
+              <p className="ww-expense-empty">{t("noPlacesAddedToStory")}</p>
             ) : (
               journal.entries.map((entry) => (
                 <section className="ww-guide-section" key={entry.id}>
                   <div className="ww-guide-intro">
                     <div className="ww-guide-text">
                       <p className="ww-guide-pin">
-                        📍{entry.place || "Unnamed place"}{" "}
+                        📍{entry.place || t("unnamedPlace")}{" "}
                         {"★".repeat(entry.rating)}
                         {"☆".repeat(5 - entry.rating)}
                       </p>
@@ -165,7 +179,7 @@ export default function JournalViewPage() {
                       {entry.pros?.length > 0 && (
                         <>
                           <p className="ww-guide-list-title">
-                            Pros of Visiting {entry.place || "this place"}:
+                            {t("prosOfVisiting")} {entry.place || t("thisPlace")}:
                           </p>
                           <ul className="ww-guide-list">
                             {entry.pros.map((p, i) => (
@@ -178,7 +192,7 @@ export default function JournalViewPage() {
                       {entry.cons?.length > 0 && (
                         <>
                           <p className="ww-guide-list-title">
-                            Cons of Visiting {entry.place || "this place"}:
+                            {t("consOfVisiting")} {entry.place || t("thisPlace")}:
                           </p>
                           <ul className="ww-guide-list">
                             {entry.cons.map((c, i) => (
@@ -197,7 +211,7 @@ export default function JournalViewPage() {
 
                   {entry.hotels?.length > 0 && (
                     <>
-                      <h3 className="ww-guide-hotel-heading">Hotel Option</h3>
+                      <h3 className="ww-guide-hotel-heading">{t("hotelOption")}</h3>
                       <div className="ww-guide-hotels-grid">
                         {entry.hotels.map((h) => (
                           <div className="ww-guide-hotel-card" key={h.id}>
@@ -213,7 +227,7 @@ export default function JournalViewPage() {
 
                   {entry.place && entry.place.trim() && (
                     <>
-                      <h3 className="ww-guide-location-heading">Location</h3>
+                      <h3 className="ww-guide-location-heading">{t("location")}</h3>
                       <div className="ww-guide-map">
                         <PlaceMap placeName={entry.place} height={220} />
                       </div>
@@ -226,13 +240,13 @@ export default function JournalViewPage() {
             {/* Comments belong to the WHOLE journal story, not a specific place */}
             <section className="ww-journal-comments">
               <h3 className="ww-guide-location-heading">
-                Comments {comments.length > 0 && `(${comments.length})`}
+                {t("comments")} {comments.length > 0 && `(${comments.length})`}
               </h3>
 
               {loadingComments ? (
-                <p className="ww-expense-empty">Loading comments...</p>
+                <p className="ww-expense-empty">{t("loadingComments")}</p>
               ) : comments.length === 0 ? (
-                <p className="ww-expense-empty">No comments yet. Be the first!</p>
+                <p className="ww-expense-empty">{t("noCommentsBeFirst")}</p>
               ) : (
                 <div className="ww-journal-comments-list">
                   {comments.map((c) => (
@@ -248,7 +262,7 @@ export default function JournalViewPage() {
                       <div className="ww-journal-comment-body">
                         <p className="ww-journal-comment-header">
                           <span className="ww-journal-comment-name">
-                            {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Student"}
+                            {[c.firstName, c.lastName].filter(Boolean).join(" ") || t("student")}
                           </span>
                           <span className="ww-journal-comment-time">{timeAgo(c.createdAt)}</span>
                         </p>
@@ -262,7 +276,7 @@ export default function JournalViewPage() {
               <div className="ww-journal-comment-form">
                 <textarea
                   className="ww-journal-comment-input"
-                  placeholder="Write a comment..."
+                  placeholder={t("writeAComment")}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={2}
@@ -272,7 +286,7 @@ export default function JournalViewPage() {
                   onClick={handlePostComment}
                   disabled={!newComment.trim() || posting}
                 >
-                  {posting ? "Posting..." : "Post"}
+                  {posting ? t("posting") : t("post")}
                 </button>
               </div>
             </section>

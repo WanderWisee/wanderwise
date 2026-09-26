@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import "../App.css";
 
 export default function NavbarMenu() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -32,25 +34,25 @@ export default function NavbarMenu() {
   return (
     <div className="ww-menu-wrapper" ref={wrapperRef}>
       <span className="ww-menu-dropdown" onClick={() => setOpen((v) => !v)}>
-        Menu
+        {t("menu")}
       </span>
 
       {open && (
         <div className="ww-menu-panel">
           <p className="ww-menu-item" onClick={() => goTo("/settings")}>
-            Settings
+            {t("settingsTitle")}
           </p>
           <p className="ww-menu-item" onClick={() => goTo("/history")}>
-            History
+            {t("history")}
           </p>
           <p
             className="ww-menu-item"
             onClick={() => goTo("/settings", { section: "preferences" })}
           >
-            Language
+            {t("language")}
           </p>
           <p className="ww-menu-item" onClick={handleLogout}>
-            Log out
+            {t("logout")}
           </p>
         </div>
       )}

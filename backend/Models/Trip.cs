@@ -40,6 +40,9 @@ public class Trip
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
+    [Column("last_viewed_at")]
+    public DateTime? LastViewedAt { get; set; }
+
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 

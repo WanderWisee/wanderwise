@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function TripPlanningPage() {
@@ -11,6 +12,7 @@ export default function TripPlanningPage() {
   const [destinationOptions, setDestinationOptions] = useState([]);
 
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetch("/api/destinations")
@@ -49,9 +51,9 @@ export default function TripPlanningPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <a href="/dashboard">Home</a>
-          <a href="/travel-tips">Guides</a>
-          <a href="/hotels">Hotels</a>
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -62,14 +64,14 @@ export default function TripPlanningPage() {
       </header>
 
       <main className="ww-planning-main">
-        <h1 className="ww-planning-title">Begin your journey</h1>
+        <h1 className="ww-planning-title">{t("beginYourJourney")}</h1>
 
         <div className="ww-planning-form">
-          <label className="ww-planning-label">Destination?</label>
+          <label className="ww-planning-label">{t("destinationQuestion")}</label>
           <input
             type="text"
             className="ww-planning-input"
-            placeholder="Where are you headed?"
+            placeholder={t("whereAreYouHeaded")}
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
             list="destination-options"
@@ -82,7 +84,7 @@ export default function TripPlanningPage() {
 
           <hr className="ww-planning-divider" />
 
-          <label className="ww-planning-label">Dates</label>
+          <label className="ww-planning-label">{t("dates")}</label>
           <div className="ww-dates-row">
             <input
               type="date"
@@ -101,7 +103,7 @@ export default function TripPlanningPage() {
           <hr className="ww-planning-divider" />
 
           <label className="ww-planning-label ww-center-label">
-            How many people?
+            {t("howManyPeople")}
           </label>
           <div className="ww-people-counter">
             <button onClick={() => setPeople(Math.max(0, people - 1))}>
@@ -112,7 +114,7 @@ export default function TripPlanningPage() {
           </div>
 
           <button className="ww-lets-go-btn" onClick={handleLetsGo}>
-            Let's go
+            {t("letsGo")}
           </button>
         </div>
       </main>

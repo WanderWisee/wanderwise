@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function TravelTipsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { journalEntries } = useAppData();
+  const { t } = useLanguage();
   const [search, setSearch] = useState(location.state?.search || "");
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function TravelTipsPage() {
   // "Travel" at the end (if any), then add "Travel Story" back.
   const getDisplayTitle = (title) => {
     const bare = title.replace(/ Travel \w+$/i, "").trim();
-    return `${bare} Travel Story`;
+    return `${bare} ${t("travelStorySuffix")}`;
   };
 
   // Case-insensitive match: does a journal post's title mention this
@@ -68,9 +70,9 @@ export default function TravelTipsPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("navHome")}</Link>
+          <Link to="/travel-tips">{t("navGuides")}</Link>
+          <Link to="/hotels">{t("navHotels")}</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -81,19 +83,19 @@ export default function TravelTipsPage() {
       </header>
 
       <main className="ww-tips-main">
-        <h1 className="ww-tips-title">Discover Travel Tips</h1>
+        <h1 className="ww-tips-title">{t("discoverTravelTips")}</h1>
 
         <div className="ww-search-wrapper">
           <input
             type="text"
             className="ww-tips-search"
-            placeholder="🔍  Discover where to go"
+            placeholder={`🔍  ${t("discoverWhereToGo")}`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <h2 className="ww-tips-subtitle">New Travel Tips</h2>
+        <h2 className="ww-tips-subtitle">{t("newTravelTips")}</h2>
 
         <div className="ww-tips-grid">
           {unmatchedJournalEntries.map((j) => (
@@ -112,7 +114,7 @@ export default function TravelTipsPage() {
                   navigate(`/journal/view/${j.id}`);
                 }}
               >
-                See Itineraries
+                {t("seeItineraries")}
               </button>
             </div>
           ))}
@@ -154,7 +156,7 @@ export default function TravelTipsPage() {
                     goToGuide();
                   }}
                 >
-                  See Itineraries
+                  {t("seeItineraries")}
                 </button>
               </div>
             );

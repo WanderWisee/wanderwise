@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function LoginPage() {
@@ -9,11 +10,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleLogin = async () => {
     setError("");
     if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
+      setError(t("loginErrEmpty"));
       return;
     }
     setLoading(true);
@@ -25,7 +27,7 @@ export default function LoginPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Login failed.");
+        setError(data?.error || t("loginErrFailed"));
         return;
       }
       if (data?.token) {
@@ -33,7 +35,7 @@ export default function LoginPage() {
       }
       navigate("/dashboard");
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -62,23 +64,23 @@ export default function LoginPage() {
             ←
           </button>
 
-          <h1 className="ww-login-title">Let's get you in</h1>
+          <h1 className="ww-login-title">{t("loginTitle")}</h1>
 
-          <label className="ww-field-label">Student Email</label>
+          <label className="ww-field-label">{t("studentEmail")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Student Email"
+            placeholder={t("enterStudentEmail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <label className="ww-field-label">Password</label>
+          <label className="ww-field-label">{t("password")}</label>
           <div className="ww-password-field">
             <input
               type={showPassword ? "text" : "password"}
               className="ww-field-input"
-              placeholder="Enter Password"
+              placeholder={t("enterPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -94,15 +96,15 @@ export default function LoginPage() {
 
           {error && <div style={{ color: '#8b0000', marginBottom: 12 }}>{error}</div>}
           <button className="ww-login-submit" onClick={handleLogin} disabled={loading}>
-            {loading ? 'Logging in...' : 'Log in'}
+            {loading ? t("loggingIn") : t("logIn")}
           </button>
 
           <div className="ww-links-row">
             <a href="/forgot-password" className="ww-bottom-link">
-              Forgot Password
+              {t("forgotPassword")}
             </a>
             <a href="/register" className="ww-bottom-link">
-              Register Account
+              {t("registerAccount")}
             </a>
           </div>
         </div>

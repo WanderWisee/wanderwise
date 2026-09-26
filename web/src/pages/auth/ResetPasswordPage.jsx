@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function ResetPasswordPage() {
@@ -11,6 +12,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const email = location.state?.email || "";
   const otp = location.state?.otp || "";
 
@@ -18,15 +20,15 @@ export default function ResetPasswordPage() {
     setError("");
 
     if (!email || !otp) {
-      setError("Session expired. Please start the Forgot Password flow again.");
+      setError(t("resetErrSessionExpired"));
       return;
     }
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t("registerErrPasswordLength"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("registerErrPasswordMismatch"));
       return;
     }
 
@@ -43,12 +45,12 @@ export default function ResetPasswordPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Failed to reset password.");
+        setError(data?.error || t("resetErrFailed"));
         return;
       }
       navigate("/login");
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -77,15 +79,15 @@ export default function ResetPasswordPage() {
             ←
           </button>
 
-          <h1 className="ww-reset-title">Reset Password</h1>
+          <h1 className="ww-reset-title">{t("resetPasswordTitle")}</h1>
 
           {email && (
             <p className="ww-field-label" style={{ marginBottom: 16, fontWeight: 400 }}>
-              Resetting password for <strong>{email}</strong>
+              {t("resetPasswordForLabel")} <strong>{email}</strong>
             </p>
           )}
 
-          <label className="ww-field-label">New Password</label>
+          <label className="ww-field-label">{t("newPassword")}</label>
           <div className="ww-password-field">
             <input
               type={showNewPassword ? "text" : "password"}
@@ -103,7 +105,7 @@ export default function ResetPasswordPage() {
             </button>
           </div>
 
-          <label className="ww-field-label">Re-Enter password</label>
+          <label className="ww-field-label">{t("reenterPassword")}</label>
           <div className="ww-password-field">
             <input
               type={showConfirmPassword ? "text" : "password"}
@@ -124,7 +126,7 @@ export default function ResetPasswordPage() {
           {error && <div style={{ color: "#8b0000", marginTop: 8 }}>{error}</div>}
 
           <button className="ww-reset-submit" onClick={handleSubmit} disabled={loading}>
-            {loading ? "Saving..." : "Log in"}
+            {loading ? t("saving") : t("logIn")}
           </button>
         </div>
       </main>

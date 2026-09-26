@@ -2,11 +2,13 @@ import React, { useState, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { language, setLanguage, t } = useLanguage();
   const {
     profileName,
     setProfileName,
@@ -61,24 +63,25 @@ export default function SettingsPage() {
   const [profileLocationInput, setProfileLocationInput] = useState(profileLocation);
   const [savingAccount, setSavingAccount] = useState(false);
 
-  const [language, setLanguage] = useState("English");
   const [dateFormat, setDateFormat] = useState("");
   const [timeFormat, setTimeFormat] = useState("");
   const [distanceFormat, setDistanceFormat] = useState("");
 
-  const notificationLabels = [
-    "Trip reminders",
-    "Price drops",
-    "New followers",
-    "Journal likes",
-    "Comments",
-    "Trip invites",
-    "Weekly digest",
-    "Promotions",
-    "App updates",
+  // Labels stay as stable keys internally — only the on-screen text
+  // (via t()) changes with the language.
+  const notificationKeys = [
+    "notifTripReminders",
+    "notifPriceDrops",
+    "notifNewFollowers",
+    "notifJournalLikes",
+    "notifComments",
+    "notifTripInvites",
+    "notifWeeklyDigest",
+    "notifPromotions",
+    "notifAppUpdates",
   ];
   const [notifications, setNotifications] = useState(
-    notificationLabels.map(() => true)
+    notificationKeys.map(() => true)
   );
 
   const toggleNotification = (index) => {
@@ -125,9 +128,9 @@ export default function SettingsPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("home")}</Link>
+          <Link to="/travel-tips">{t("guides")}</Link>
+          <Link to="/hotels">{t("hotels")}</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -142,7 +145,7 @@ export default function SettingsPage() {
       <div className="ww-settings-body">
         <aside className="ww-settings-sidebar">
           <div className="ww-settings-heading-row">
-            <h1>Settings</h1>
+            <h1>{t("settingsTitle")}</h1>
             {activeSection !== "account" && (
               <span
                 className="ww-settings-back-arrow"
@@ -158,19 +161,19 @@ export default function SettingsPage() {
             className={`ww-settings-nav-item ${activeSection === "account" ? "active" : ""}`}
             onClick={() => setActiveSection("account")}
           >
-            Account
+            {t("settingsAccount")}
           </p>
           <p
             className={`ww-settings-nav-item ${activeSection === "preferences" ? "active" : ""}`}
             onClick={() => setActiveSection("preferences")}
           >
-            User preferences
+            {t("settingsPreferences")}
           </p>
           <p
             className={`ww-settings-nav-item ${activeSection === "notifications" ? "active" : ""}`}
             onClick={() => setActiveSection("notifications")}
           >
-            Notifications
+            {t("settingsNotifications")}
           </p>
         </aside>
 
@@ -203,17 +206,17 @@ export default function SettingsPage() {
               </div>
 
               <label className="ww-settings-field">
-                <span>Name</span>
+                <span>{t("accountName")}</span>
                 <input value={name} onChange={(e) => setName(e.target.value)} />
               </label>
 
               <label className="ww-settings-field">
-                <span>Email</span>
+                <span>{t("accountEmail")}</span>
                 <input value={email} onChange={(e) => setEmail(e.target.value)} />
               </label>
 
               <label className="ww-settings-field">
-                <span>Bio</span>
+                <span>{t("accountBio")}</span>
                 <input
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
@@ -223,7 +226,7 @@ export default function SettingsPage() {
               </label>
 
               <label className="ww-settings-field">
-                <span>Location</span>
+                <span>{t("accountLocation")}</span>
                 <input
                   value={profileLocationInput}
                   onChange={(e) => setProfileLocationInput(e.target.value)}
@@ -233,53 +236,53 @@ export default function SettingsPage() {
               </label>
 
               <button className="ww-settings-save-btn" onClick={handleSaveAccount} disabled={savingAccount}>
-                {savingAccount ? "Saving..." : "Save"}
+                {savingAccount ? t("saving") : t("save")}
               </button>
             </div>
           )}
 
           {activeSection === "preferences" && (
             <div className="ww-settings-preferences">
-              <h2>🌐 Language</h2>
+              <h2>🌐 {t("changeLanguage")}</h2>
               <div className="ww-settings-select-box">
-                <span className="ww-settings-select-label">Change language</span>
+                <span className="ww-settings-select-label">{t("changeLanguage")}</span>
                 <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                  <option>English</option>
-                  <option>Filipino</option>
+                  <option value="en">English</option>
+                  <option value="fil">Filipino</option>
                 </select>
               </div>
 
-              <h2>Formatting</h2>
+              <h2>{t("formatting")}</h2>
 
-              <p className="ww-settings-field-label">Date Format</p>
+              <p className="ww-settings-field-label">{t("dateFormat")}</p>
               <select
                 className="ww-settings-plain-select"
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
               >
-                <option value="">Select</option>
+                <option value="">{t("select")}</option>
                 <option value="mdy">MM/DD/YYYY</option>
                 <option value="dmy">DD/MM/YYYY</option>
               </select>
 
-              <p className="ww-settings-field-label">Time Format</p>
+              <p className="ww-settings-field-label">{t("timeFormat")}</p>
               <select
                 className="ww-settings-plain-select"
                 value={timeFormat}
                 onChange={(e) => setTimeFormat(e.target.value)}
               >
-                <option value="">Select</option>
+                <option value="">{t("select")}</option>
                 <option value="12h">12-hour</option>
                 <option value="24h">24-hour</option>
               </select>
 
-              <p className="ww-settings-field-label">Distance Format</p>
+              <p className="ww-settings-field-label">{t("distanceFormat")}</p>
               <select
                 className="ww-settings-plain-select"
                 value={distanceFormat}
                 onChange={(e) => setDistanceFormat(e.target.value)}
               >
-                <option value="">Select</option>
+                <option value="">{t("select")}</option>
                 <option value="km">Kilometers</option>
                 <option value="mi">Miles</option>
               </select>
@@ -288,15 +291,15 @@ export default function SettingsPage() {
 
           {activeSection === "notifications" && (
             <div className="ww-settings-notifications">
-              <h2>Push Notification</h2>
-              {notificationLabels.map((label, i) => (
-                <label className="ww-settings-notification-row" key={label}>
+              <h2>{t("pushNotification")}</h2>
+              {notificationKeys.map((key, i) => (
+                <label className="ww-settings-notification-row" key={key}>
                   <input
                     type="checkbox"
                     checked={notifications[i]}
                     onChange={() => toggleNotification(i)}
                   />
-                  <span>{label}</span>
+                  <span>{t(key)}</span>
                 </label>
               ))}
             </div>

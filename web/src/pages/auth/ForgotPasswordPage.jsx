@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 export default function ForgotPasswordPage() {
@@ -7,11 +8,12 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleContinue = async () => {
     setError("");
     if (!email.trim()) {
-      setError("Please enter your school email.");
+      setError(t("forgotErrEmpty"));
       return;
     }
 
@@ -24,12 +26,12 @@ export default function ForgotPasswordPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || "Failed to send verification code.");
+        setError(data?.error || t("forgotErrSendFailed"));
         return;
       }
       navigate("/reset-password/verify-otp", { state: { email: email.trim() } });
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -58,17 +60,16 @@ export default function ForgotPasswordPage() {
             ←
           </button>
 
-          <h1 className="ww-reset-title">Forgot Password</h1>
+          <h1 className="ww-reset-title">{t("forgotPasswordTitle")}</h1>
           <p className="ww-field-label" style={{ marginBottom: 16, fontWeight: 400 }}>
-            Enter your school email we'll send a verification code to the
-            recovery Gmail you registered with.
+            {t("forgotPasswordSubtitle")}
           </p>
 
-          <label className="ww-field-label">School Email</label>
+          <label className="ww-field-label">{t("schoolEmail")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="Enter Student Email"
+            placeholder={t("enterStudentEmail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -81,7 +82,7 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             style={{ marginTop: 16 }}
           >
-            {loading ? "Sending code..." : "Continue"}
+            {loading ? t("sendingCode") : t("continueBtn")}
           </button>
         </div>
       </main>

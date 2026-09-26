@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
 // Google Maps can't carry check-in/check-out dates in the URL, so this
@@ -14,6 +15,7 @@ function buildGoogleMapsHotelUrl(destination) {
 export default function HotelsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
   const [search, setSearch] = useState(location.state?.search || "");
   const [buddies, setBuddies] = useState(location.state?.buddies || 0);
@@ -34,7 +36,7 @@ export default function HotelsPage() {
 
   const openGoogleMaps = (destinationName) => {
     if (!startDate || !endDate) {
-      alert("Please select your start and end dates first.");
+      alert(t("hotelsSelectDatesFirst"));
       return;
     }
     window.open(buildGoogleMapsHotelUrl(destinationName), "_blank", "noopener,noreferrer");
@@ -44,7 +46,7 @@ export default function HotelsPage() {
 
   const handleSearch = () => {
     if (!search.trim()) {
-      alert("Please tell us where you want to go.");
+      alert(t("hotelsTellUsWhereToGo"));
       return;
     }
     openGoogleMaps(search.trim());
@@ -68,9 +70,9 @@ export default function HotelsPage() {
           <span className="ww-brand-name">WanderWise!</span>
         </div>
         <nav className="ww-nav-links">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/travel-tips">Guides</Link>
-          <Link to="/hotels">Hotels</Link>
+          <Link to="/dashboard">{t("navHome")}</Link>
+          <Link to="/travel-tips">{t("navGuides")}</Link>
+          <Link to="/hotels">{t("navHotels")}</Link>
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
@@ -81,25 +83,22 @@ export default function HotelsPage() {
       </header>
 
       <main className="ww-hotels-hero">
-        <h1 className="ww-hotels-title">All your stays in one place!</h1>
-        <p className="ww-hotels-subtitle">
-          A smarter way to find the perfect accommodation—built around your
-          preferences.
-        </p>
+        <h1 className="ww-hotels-title">{t("hotelsHeroTitle")}</h1>
+        <p className="ww-hotels-subtitle">{t("hotelsHeroSubtitle")}</p>
 
         <div className="ww-hotels-search-bar">
           <div className="ww-hotels-search-input">
             <span>🔍</span>
             <input
               type="text"
-              placeholder="Discover where to go"
+              placeholder={t("hotelsSearchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="ww-dates-row">
             <div className="ww-date-field">
-              <label className="ww-planning-label">Start Date</label>
+              <label className="ww-planning-label">{t("startDate")}</label>
               <input
                 type="date"
                 className="ww-date-input"
@@ -109,7 +108,7 @@ export default function HotelsPage() {
             </div>
 
             <div className="ww-date-field">
-              <label className="ww-planning-label">End Date</label>
+              <label className="ww-planning-label">{t("endDate")}</label>
               <input
                 type="date"
                 className="ww-date-input"
@@ -119,7 +118,7 @@ export default function HotelsPage() {
             </div>
           </div>
           <div className="ww-buddies-counter">
-            <span>Travel Buddies</span>
+            <span>{t("travelBuddies")}</span>
             <div className="ww-counter-controls">
               <button onClick={() => setBuddies(Math.max(0, buddies - 1))}>
                 -
@@ -129,15 +128,13 @@ export default function HotelsPage() {
             </div>
           </div>
           <button className="ww-search-btn" onClick={handleSearch}>
-            Search
+            {t("search")}
           </button>
         </div>
       </main>
 
       <section className="ww-hotels-destinations">
-        <h2 className="ww-hotels-section-title">
-          Discover Hotels at Top Destinations!
-        </h2>
+        <h2 className="ww-hotels-section-title">{t("hotelsDestinationsTitle")}</h2>
 
         <div className="ww-hotels-grid">
           {destinations.map((dest) => (
@@ -150,7 +147,7 @@ export default function HotelsPage() {
               <img src={dest.img} alt={dest.name} />
               <div className="ww-hotel-caption">
                 <h3>{dest.name}</h3>
-                <p>Hotels</p>
+                <p>{t("hotelsCaption")}</p>
               </div>
             </div>
           ))}

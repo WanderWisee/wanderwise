@@ -11,7 +11,6 @@ import { fetchTrips } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
 import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
-import MenuSheet from '../../components/MenuSheet';
 
 const TOP_DESTINATIONS = [
   { name: 'Tokyo, Japan', emoji: '🗼' },
@@ -28,7 +27,6 @@ export default function HomeScreen() {
   const [destination, setDestination] = useState('');
   const [dateRange, setDateRange] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   async function loadTrips() {
     try {
@@ -82,25 +80,6 @@ export default function HomeScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
-            <View style={styles.storiesCard}>
-              <Text style={styles.storiesTitle}>Your Travel Stories</Text>
-              {trips.length === 0 ? (
-                <Text style={styles.storiesSubtitle}>
-                  No trips yet. Start planning your next adventure!
-                </Text>
-              ) : (
-                <Text style={styles.storiesSubtitle}>
-                  You have {trips.length} trip{trips.length > 1 ? 's' : ''} planned.
-                </Text>
-              )}
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={() => router.push('/new-trip')}
-              >
-                <Text style={styles.startButtonText}>+ Start Planning</Text>
-              </TouchableOpacity>
-            </View>
-
             <Text style={styles.sectionTitle}>Start Exploring</Text>
             <View style={styles.mapPlaceholder}>
               <Text style={styles.mapPlaceholderText}>Map</Text>
@@ -147,39 +126,52 @@ export default function HomeScreen() {
             </View>
 
             <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Top Destinations</Text>
-            {TOP_DESTINATIONS.map((dest) => (
-              <View key={dest.name} style={styles.destinationCard}>
-                <View style={styles.destinationImagePlaceholder}>
-                  <Text style={{ fontSize: 40 }}>{dest.emoji}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalListContent}
+              style={{ marginBottom: 24 }}
+            >
+              {TOP_DESTINATIONS.map((dest) => (
+                <View key={dest.name} style={styles.destinationCardHorizontal}>
+                  <View style={styles.destinationImagePlaceholder}>
+                    <Text style={{ fontSize: 40 }}>{dest.emoji}</Text>
+                  </View>
+                  <Text style={styles.destinationName}>{dest.name}</Text>
+                  <TouchableOpacity style={styles.itineraryButton}>
+                    <Text style={styles.itineraryButtonText}>See Itineraries</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.destinationName}>{dest.name}</Text>
-                <TouchableOpacity style={styles.itineraryButton}>
-                  <Text style={styles.itineraryButtonText}>See Itineraries</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+              ))}
+            </ScrollView>
 
-            <Text style={[styles.sectionTitle, { marginTop: 6 }]}>
+            <Text style={styles.sectionTitle}>
               Book your trip on another booking site!
             </Text>
-            <TouchableOpacity
-              style={[styles.bookingCard, { backgroundColor: '#FF5722' }]}
-              onPress={() => openBookingSite('https://www.klook.com')}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalListContent}
             >
-              <Text style={styles.bookingCardText}>klook</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.bookingCard, { backgroundColor: '#FF5A63' }]}
-              onPress={() => openBookingSite('https://www.airbnb.com')}
-            >
-              <Text style={styles.bookingCardText}>airbnb</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.bookingCard, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line }]}
-              onPress={() => openBookingSite('https://www.agoda.com')}
-            >
-              <Text style={[styles.bookingCardText, { color: '#555' }]}>agoda</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bookingCardHorizontal, { backgroundColor: '#FF5722' }]}
+                onPress={() => openBookingSite('https://www.klook.com')}
+              >
+                <Text style={styles.bookingCardText}>klook</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bookingCardHorizontal, { backgroundColor: '#FF5A63' }]}
+                onPress={() => openBookingSite('https://www.airbnb.com')}
+              >
+                <Text style={styles.bookingCardText}>airbnb</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bookingCardHorizontal, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line }]}
+                onPress={() => openBookingSite('https://www.agoda.com')}
+              >
+                <Text style={[styles.bookingCardText, { color: '#555' }]}>agoda</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </ScrollView>
         )}
 
@@ -189,7 +181,6 @@ export default function HomeScreen() {
           onConfirm={setDateRange}
           initialRange={dateRange}
         />
-        <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -208,30 +199,8 @@ const styles = StyleSheet.create({
   },
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
-  menuButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-
-  storiesCard: {
-    backgroundColor: Colors.card, borderRadius: 16, padding: 20,
-    marginTop: 12, marginBottom: 24,
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
-  storiesTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
-  storiesSubtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown900,
-    marginTop: 6, marginBottom: 16,
-  },
-  startButton: {
-    backgroundColor: Colors.brown900, borderRadius: 20, height: 42,
-    alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start',
-    paddingHorizontal: 20,
-  },
-  startButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
 
   sectionTitle: {
     fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,
@@ -276,8 +245,9 @@ const styles = StyleSheet.create({
   },
   searchButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
 
-  destinationCard: {
-    marginBottom: 22,
+  horizontalListContent: { gap: 14, paddingRight: 6 },
+  destinationCardHorizontal: {
+    width: 200,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
@@ -292,8 +262,8 @@ const styles = StyleSheet.create({
   },
   itineraryButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
 
-  bookingCard: {
-    height: 90, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  bookingCardHorizontal: {
+    width: 160, height: 90, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },

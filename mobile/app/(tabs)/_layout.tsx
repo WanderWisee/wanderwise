@@ -1,6 +1,38 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { View, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
+
+function AddTabButton(props) {
+  const router = useRouter();
+  return (
+    <TouchableOpacity
+      {...props}
+      onPress={() => router.push('/new-trip')}
+      activeOpacity={0.85}
+      style={{
+        top: -20,
+        alignSelf: 'center',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: Colors.card,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: Colors.cream,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 6,
+      }}
+    >
+      <Ionicons name="add" size={30} color={Colors.brown900} />
+    </TouchableOpacity>
+  );
+}
 
 export default function TabsLayout() {
   return (
@@ -39,6 +71,20 @@ export default function TabsLayout() {
             <Ionicons name="map-outline" size={size} color={color} />
           ),
         }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: '',
+          tabBarIcon: () => <AddTabButton />,
+          tabBarButton: (props) => <AddTabButton {...props} />,
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            // Ang aktwal na navigation ay hawak na ng AddTabButton mismo
+          },
+        })}
       />
       <Tabs.Screen
         name="hotels"

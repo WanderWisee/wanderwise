@@ -38,6 +38,33 @@ export default function VerifyRegisterOtpPage() {
     );
   }
 
+  // Same "finish the pending invite" logic as LoginPage — if this account
+  // was created from a shared trip's "Sign Up to join" button, complete
+  // that join right after the account is actually created.
+  const continuePendingInvite = async () => {
+    const pendingToken = localStorage.getItem("wanderwise_pending_invite_token");
+    if (!pendingToken) {
+      navigate("/dashboard");
+      return;
+    }
+    localStorage.removeItem("wanderwise_pending_invite_token");
+    try {
+      const token = localStorage.getItem("wanderwise_token");
+      const resp = await fetch(`/api/trips/join/${pendingToken}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json().catch(() => null);
+      if (data?.tripId) {
+        navigate(`/trip-plan?tripId=${data.tripId}`);
+        return;
+      }
+    } catch (err) {
+      console.warn("Failed to auto-join pending invite:", err);
+    }
+    navigate("/dashboard");
+  };
+
   const handleVerify = async () => {
     setError("");
     if (!otp.trim()) {
@@ -69,7 +96,7 @@ export default function VerifyRegisterOtpPage() {
       if (data?.token) {
         localStorage.setItem("wanderwise_token", data.token);
       }
-      navigate("/dashboard");
+      await continuePendingInvite();
     } catch (err) {
       setError(t("networkError"));
     } finally {

@@ -27,6 +27,8 @@ import HistoryPage from './pages/history/HistoryPage';
 import { AppDataProvider } from './context/AppDataContext';
 import { LanguageProvider } from './context/LanguageContext';
 import JournalViewPage from './pages/journal/JournalViewPage';
+import JoinTripPage from "./pages/trip-plan-builder/JoinTripPage";
+import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
 
 function App() {
   return (
@@ -63,6 +65,8 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/journal/view/:id" element={<JournalViewPage />} />
+          <Route path="/trip-plan/join/:shareToken" element={<JoinTripPage />} />
+          <Route path="/trip-plan/shared/:shareToken" element={<SharedTripViewPage />} />
         </Routes>
       </BrowserRouter>
     </AppDataProvider>

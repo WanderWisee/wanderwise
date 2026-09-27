@@ -12,6 +12,34 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
+  // If the person got here from a shared trip's "Log In to join" button,
+  // SharedTripViewPage saved the invite's shareToken before redirecting.
+  // Once logged in, finish that join automatically instead of sending
+  // them to the plain Dashboard and making them re-find the link.
+  const continuePendingInvite = async () => {
+    const pendingToken = localStorage.getItem("wanderwise_pending_invite_token");
+    if (!pendingToken) {
+      navigate("/dashboard");
+      return;
+    }
+    localStorage.removeItem("wanderwise_pending_invite_token");
+    try {
+      const token = localStorage.getItem("wanderwise_token");
+      const resp = await fetch(`/api/trips/join/${pendingToken}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json().catch(() => null);
+      if (data?.tripId) {
+        navigate(`/trip-plan?tripId=${data.tripId}`);
+        return;
+      }
+    } catch (err) {
+      console.warn("Failed to auto-join pending invite:", err);
+    }
+    navigate("/dashboard");
+  };
+
   const handleLogin = async () => {
     setError("");
     if (!email.trim() || !password) {
@@ -33,7 +61,7 @@ export default function LoginPage() {
       if (data?.token) {
         localStorage.setItem("wanderwise_token", data.token);
       }
-      navigate("/dashboard");
+      await continuePendingInvite();
     } catch (err) {
       setError(t("networkError"));
     } finally {

@@ -3,10 +3,12 @@ using WanderWiseApi.Models;
 
 namespace WanderWiseApi.Data;
 
+
+
 public class WanderWiseDbContext : DbContext
 {
     public WanderWiseDbContext(DbContextOptions<WanderWiseDbContext> options) : base(options) { }
-
+    public DbSet<TripView> TripViews { get; set; }
     public DbSet<User> Users => Set<User>();
     public DbSet<Trip> Trips => Set<Trip>();
     public DbSet<TripSection> TripSections => Set<TripSection>();

@@ -3176,19 +3176,28 @@
   width: 100%;
 }
 
+/* 5 columns now: Title, Type, Travel Date, Last Viewed, Author
+   (used to be 4 — Travel Date is the new one, added between Type and
+   Last Viewed). Title stays widest since it holds the longest text. */
 .ww-history-header-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 0.8fr 1.3fr 1fr 1.4fr;
   padding-bottom: 12px;
   border-bottom: 1.5px solid #2b1c12;
   font-size: 16px;
 }
 
+/* Groups a trip's main row with its crew sub-rows so the divider line
+   below only appears once, at the end of the whole group — not once
+   after the main row and again after each sub-row. */
+.ww-history-group {
+  border-bottom: 1px solid #d4c9a8;
+}
+
 .ww-history-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 0.8fr 1.3fr 1fr 1.4fr;
   padding: 18px 0;
-  border-bottom: 1px solid #d4c9a8;
   cursor: pointer;
   color: #7a6a4f;
 }
@@ -3197,8 +3206,30 @@
   background-color: #eee7c9;
 }
 
+/* One per crew member who's viewed the trip — same column grid as the
+   row above it, but Title/Type/Travel Date are left blank (those only
+   describe the trip itself), so this lines up under Last Viewed and
+   Author specifically. Lighter/smaller than the main row so it reads as
+   a detail of the row above, not a separate trip. */
+.ww-history-subrow {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1.3fr 1fr 1.4fr;
+  padding: 0 0 10px;
+  cursor: default;
+  color: #9a8a6f;
+  font-size: 12px;
+}
+
 .ww-history-col-title {
   color: #2b1c12;
+}
+
+.ww-history-col-viewed {
+  font-size: 13px;
+}
+
+.ww-history-col-traveldate {
+  font-size: 13px;
 }
 
 .ww-history-col-author {

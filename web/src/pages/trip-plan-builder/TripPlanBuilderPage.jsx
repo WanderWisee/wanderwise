@@ -992,7 +992,7 @@ export default function TripPlanBuilderPage() {
     });
   };
 
-  const handleGoToAddCrew = () => {
+    const handleGoToAddCrew = () => {
     navigate("/invite-crew", {
       state: {
         destination,
@@ -1001,6 +1001,7 @@ export default function TripPlanBuilderPage() {
         people,
         tripState,
         returnPath: `/trip-plan${tripId ? `?tripId=${tripId}` : ""}`,
+        tripId,
       },
     });
   };

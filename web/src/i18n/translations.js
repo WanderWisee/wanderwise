@@ -413,7 +413,7 @@ export const translations = {
     freeEntry: "Free",
     optimizeRoute: "Optimize route",
     optimizingRoute: "Optimizing…",
-    optimizeRouteHint: "Reorder this day's places into the shortest driving route. The first place stays first.",
+    optimizeRouteHint: "Reorder this day's places so the total travel time is shortest. The first place stays first.",
     routeOptimized: "Route optimized:",
     routeAlreadyShortest: "This day's order is already the shortest route.",
     routeOptimizeFailed: "Couldn't optimize the route right now. Please try again later.",
@@ -435,6 +435,8 @@ export const translations = {
     yourBookings: "Your bookings",
     noBookingsAnywhere: "No bookings yet. Open a trip and tap Book a Hotel to record one.",
     bookingsRecordedCount: "booking(s) recorded for this trip",
+    routeSkippedPlaces: "Not included (no location):",
+    noLocationTag: "No location",
   },
 
   fil: {
@@ -850,7 +852,7 @@ export const translations = {
     freeEntry: "Libre",
     optimizeRoute: "Ayusin ang ruta",
     optimizingRoute: "Inaayos…",
-    optimizeRouteHint: "Aayusin ang pagkakasunod-sunod ng mga lugar sa araw na ito para pinakamaikli ang byahe. Mananatiling una ang unang lugar.",
+    optimizeRouteHint: "Aayusin ang pagkakasunod-sunod ng mga lugar sa araw na ito para pinakamaikli ang kabuuang oras ng byahe. Mananatiling una ang unang lugar.",
     routeOptimized: "Naayos ang ruta:",
     routeAlreadyShortest: "Pinakamaikli na ang ruta ng araw na ito.",
     routeOptimizeFailed: "Hindi maayos ang ruta ngayon. Subukan ulit mamaya.",
@@ -872,5 +874,7 @@ export const translations = {
     yourBookings: "Mga booking mo",
     noBookingsAnywhere: "Wala ka pang booking. Buksan ang isang trip at pindutin ang Book a Hotel para magtala.",
     bookingsRecordedCount: "booking ang naitala para sa trip na ito",
+    routeSkippedPlaces: "Hindi naisama (walang location):",
+    noLocationTag: "Walang location",
   },
 };

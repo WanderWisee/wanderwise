@@ -132,10 +132,25 @@ function buildItineraryDateMap(days, startDate) {
   return map;
 }
 
-function serializePlace(p, itineraryDateMap, sortOrder) {
+// Position of each place WITHIN its itinerary day (0, 1, 2…). Saved as
+// itineraryOrder so a drag-and-drop or "Optimize route" reorder survives
+// a refresh — before this, only the date was saved, and the day's order
+// was rebuilt from the "Where to go?" list order on every load.
+function buildItineraryOrderMap(days) {
+  const map = {};
+  days.forEach((day) => {
+    day.placeIds.forEach((id, idx) => {
+      map[id] = idx;
+    });
+  });
+  return map;
+}
+
+function serializePlace(p, itineraryDateMap, sortOrder, itineraryOrderMap = {}) {
   return {
     name: p.name,
     itineraryDate: itineraryDateMap[p.id] || null,
+    itineraryOrder: itineraryDateMap[p.id] && p.id in itineraryOrderMap ? itineraryOrderMap[p.id] : null,
     latitude: typeof p.lat === "number" ? p.lat : null,
     longitude: typeof p.lng === "number" ? p.lng : null,
     notes: p.note || null,
@@ -148,19 +163,20 @@ function serializePlace(p, itineraryDateMap, sortOrder) {
 
 function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState }) {
   const itineraryDateMap = buildItineraryDateMap(tripState.days, startDate);
+  const itineraryOrderMap = buildItineraryOrderMap(tripState.days);
 
   const sections = [
     {
       isDefault: true,
       name: whereToGoTitle,
       sortOrder: 0,
-      places: tripState.places.map((p, i) => serializePlace(p, itineraryDateMap, i)),
+      places: tripState.places.map((p, i) => serializePlace(p, itineraryDateMap, i, itineraryOrderMap)),
     },
     ...tripState.customSections.map((s, idx) => ({
       isDefault: false,
       name: s.name || null,
       sortOrder: idx + 1,
-      places: s.places.map((p, i) => serializePlace(p, itineraryDateMap, i)),
+      places: s.places.map((p, i) => serializePlace(p, itineraryDateMap, i, itineraryOrderMap)),
     })),
   ];
 
@@ -187,6 +203,7 @@ function hydratePlace(p) {
     lng: p.longitude,
     costs: (p.costs || []).map((c) => ({ id: c.id, category: c.category, amount: c.amount })),
     _itineraryDate: p.itineraryDate,
+    _itineraryOrder: p.itineraryOrder ?? null,
   };
 }
 
@@ -222,7 +239,17 @@ function hydrateTripState(tripResponse, defaultTitle) {
   const allPlaces = [...places, ...customSections.flatMap((s) => s.places)];
   days.forEach((day, i) => {
     const iso = addDaysIso(tripResponse.startDate, i);
-    day.placeIds = allPlaces.filter((p) => p._itineraryDate === iso).map((p) => p.id);
+    // Restore the saved within-day order. Places saved before this
+    // column existed (null) keep their old list order, after the rest.
+    day.placeIds = allPlaces
+      .filter((p) => p._itineraryDate === iso)
+      .map((p, listIdx) => ({ p, listIdx }))
+      .sort((a, b) => {
+        const ao = a.p._itineraryOrder ?? Number.MAX_SAFE_INTEGER;
+        const bo = b.p._itineraryOrder ?? Number.MAX_SAFE_INTEGER;
+        return ao !== bo ? ao - bo : a.listIdx - b.listIdx;
+      })
+      .map(({ p }) => p.id);
   });
 
   return {
@@ -1088,7 +1115,8 @@ export default function TripPlanBuilderPage() {
   // service for real road distances between every pair of places, then
   // picks the best order locally. Goes through applyChange, so Undo works
   // and it saves like a normal drag-reorder.
-  // optimizeInfo[dayIndex] = { status, beforeM, afterM, forIds } — forIds
+  // optimizeInfo[dayIndex] = { status, beforeS/afterS (seconds), beforeM/
+  // afterM (meters), skippedNames, forIds } — forIds
   // lets the message disappear by itself once the day is changed again.
   const [optimizeInfo, setOptimizeInfo] = useState({});
 
@@ -1104,31 +1132,39 @@ export default function TripPlanBuilderPage() {
     if (withCoords.length < 3) return;
 
     setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "loading" } }));
+    // Places with no confirmed location can't be measured, so they're left
+    // out of the calculation — named in the result so the student knows.
+    const skippedNames = withoutCoords.map((p) => p.name);
     try {
       const coords = withCoords.map((p) => `${p.lng},${p.lat}`).join(";");
       const res = await fetch(
-        `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`
+        `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=duration,distance`
       );
       const data = await res.json();
-      if (data.code !== "Ok" || !data.distances) throw new Error(data.code || "No distances");
+      if (data.code !== "Ok" || !data.durations) throw new Error(data.code || "No durations");
 
-      const matrix = data.distances;
+      // Optimize on TRAVEL TIME (seconds), not km — a longer highway can be
+      // faster than a short road through town. Distance is only shown.
+      const timeMatrix = data.durations;
+      const distMatrix = data.distances;
       const currentOrder = withCoords.map((_, i) => i);
-      const bestOrder = bestOpenPath(matrix);
-      const beforeM = pathLength(currentOrder, matrix);
-      const afterM = pathLength(bestOrder, matrix);
+      const bestOrder = bestOpenPath(timeMatrix);
+      const beforeS = pathLength(currentOrder, timeMatrix);
+      const afterS = pathLength(bestOrder, timeMatrix);
+      const beforeM = distMatrix ? pathLength(currentOrder, distMatrix) : null;
+      const afterM = distMatrix ? pathLength(bestOrder, distMatrix) : null;
 
-      // Less than ~50 m saved isn't worth reshuffling the student's list.
-      if (afterM >= beforeM - 50) {
+      // Less than a minute saved isn't worth reshuffling the student's list.
+      if (afterS >= beforeS - 60) {
         setOptimizeInfo((prev) => ({
           ...prev,
-          [dayIndex]: { status: "already", beforeM, forIds: day.placeIds.join(",") },
+          [dayIndex]: { status: "already", skippedNames, forIds: day.placeIds.join(",") },
         }));
         return;
       }
 
-      // Places without a confirmed location can't be routed, so they keep
-      // their relative order at the end of the day instead of vanishing.
+      // Places without a confirmed location keep their relative order at
+      // the end of the day instead of vanishing.
       const newIds = [
         ...bestOrder.map((i) => withCoords[i].id),
         ...withoutCoords.map((p) => p.id),
@@ -1140,7 +1176,15 @@ export default function TripPlanBuilderPage() {
       }));
       setOptimizeInfo((prev) => ({
         ...prev,
-        [dayIndex]: { status: "done", beforeM, afterM, forIds: newIds.join(",") },
+        [dayIndex]: {
+          status: "done",
+          beforeS,
+          afterS,
+          beforeM,
+          afterM,
+          skippedNames,
+          forIds: newIds.join(","),
+        },
       }));
     } catch (err) {
       console.warn("Route optimization failed:", err);
@@ -1811,13 +1855,23 @@ export default function TripPlanBuilderPage() {
                     </div>
                     {showInfo && info.status === "done" && (
                       <p className="ww-optimize-result">
-                        ✓ {t("routeOptimized")} {formatTravelDistance(info.beforeM)} →{" "}
-                        <strong>{formatTravelDistance(info.afterM)}</strong>
+                        ✓ {t("routeOptimized")} {formatTravelDuration(info.beforeS)} →{" "}
+                        <strong>{formatTravelDuration(info.afterS)}</strong>
+                        {info.beforeM != null && info.afterM != null && (
+                          <> ({formatTravelDistance(info.beforeM)} → {formatTravelDistance(info.afterM)})</>
+                        )}
                       </p>
                     )}
                     {showInfo && info.status === "already" && (
                       <p className="ww-optimize-result">✓ {t("routeAlreadyShortest")}</p>
                     )}
+                    {showInfo &&
+                      (info.status === "done" || info.status === "already") &&
+                      info.skippedNames?.length > 0 && (
+                        <p className="ww-optimize-result ww-optimize-error">
+                          ⚠️ {t("routeSkippedPlaces")} {info.skippedNames.join(", ")}
+                        </p>
+                      )}
                     {showInfo && info.status === "error" && (
                       <p className="ww-optimize-result ww-optimize-error">⚠️ {t("routeOptimizeFailed")}</p>
                     )}
@@ -1856,7 +1910,18 @@ export default function TripPlanBuilderPage() {
                             />
                           </div>
                           <div>
-                            <p className="ww-place-name">📍{number} {p.name}</p>
+                            <p className="ww-place-name">
+                              📍{number} {p.name}
+                              {/* Tells the student up front which places
+                                  have no confirmed location, so they know
+                                  why a place is skipped by "Optimize route"
+                                  and has no travel time. */}
+                              {(p.lat == null || p.lng == null) && (
+                                <span className="ww-no-location-tag" title={t("locationUnverifiedWarning")}>
+                                  ⚠️ {t("noLocationTag")}
+                                </span>
+                              )}
+                            </p>
                             <input
                               className="ww-place-notes-input"
                               placeholder={t("addNotesPlaceholder")}

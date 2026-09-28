@@ -204,12 +204,23 @@ namespace WanderWise.Controllers
                                 type = typeProp.GetString();
                             }
 
+                            // OSM's "fee" tag says whether entry costs money.
+                            // Only an explicit "no" counts as free — a missing
+                            // tag means unknown, not free, so we never label a
+                            // paid place "Libre" by guessing.
+                            bool isFree = false;
+                            if (el.TryGetProperty("tags", out var tags3) && tags3.TryGetProperty("fee", out var feeProp))
+                            {
+                                isFree = string.Equals(feeProp.GetString(), "no", StringComparison.OrdinalIgnoreCase);
+                            }
+
                             places.Add(new
                             {
                                 name,
                                 type = type ?? "attraction",
                                 lat = pLat.Value,
-                                lon = pLon.Value
+                                lon = pLon.Value,
+                                isFree
                             });
 
                             if (places.Count >= 20) break;

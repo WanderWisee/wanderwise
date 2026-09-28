@@ -43,6 +43,84 @@ function addDaysIso(startDateStr, daysToAdd) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// ===== Smart Route Optimization helpers =====
+// Total length of visiting the points in `order`, one after another,
+// using a distance matrix (meters) from OSRM's /table service. An
+// unreachable pair (null) counts as huge so it's never picked.
+function pathLength(order, matrix) {
+  let total = 0;
+  for (let i = 0; i < order.length - 1; i++) {
+    const d = matrix[order[i]][order[i + 1]];
+    total += d == null ? 1e9 : d;
+  }
+  return total;
+}
+
+// Shortest one-way path that starts at point 0 (the day's first place
+// stays first — usually where the students start, e.g. their hotel) and
+// visits every other point once. Tries every order when there are few
+// places (exact answer); for bigger days, uses nearest-neighbour then
+// 2-opt swaps, which is close to optimal and still instant.
+function bestOpenPath(matrix) {
+  const n = matrix.length;
+  const rest = Array.from({ length: n - 1 }, (_, i) => i + 1);
+
+  if (n <= 8) {
+    let best = null;
+    let bestLen = Infinity;
+    const permute = (arr, l) => {
+      if (l === arr.length) {
+        const order = [0, ...arr];
+        const len = pathLength(order, matrix);
+        if (len < bestLen) {
+          bestLen = len;
+          best = order;
+        }
+        return;
+      }
+      for (let i = l; i < arr.length; i++) {
+        [arr[l], arr[i]] = [arr[i], arr[l]];
+        permute(arr, l + 1);
+        [arr[l], arr[i]] = [arr[i], arr[l]];
+      }
+    };
+    permute(rest, 0);
+    return best;
+  }
+
+  const order = [0];
+  const left = new Set(rest);
+  while (left.size > 0) {
+    const last = order[order.length - 1];
+    let next = null;
+    let nextDist = Infinity;
+    left.forEach((j) => {
+      const d = matrix[last][j] == null ? 1e9 : matrix[last][j];
+      if (d < nextDist) {
+        nextDist = d;
+        next = j;
+      }
+    });
+    order.push(next);
+    left.delete(next);
+  }
+
+  let improved = true;
+  while (improved) {
+    improved = false;
+    for (let i = 1; i < order.length - 1; i++) {
+      for (let k = i + 1; k < order.length; k++) {
+        const candidate = [...order.slice(0, i), ...order.slice(i, k + 1).reverse(), ...order.slice(k + 1)];
+        if (pathLength(candidate, matrix) < pathLength(order, matrix)) {
+          order.splice(0, order.length, ...candidate);
+          improved = true;
+        }
+      }
+    }
+  }
+  return order;
+}
+
 function buildItineraryDateMap(days, startDate) {
   const map = {};
   days.forEach((day, i) => {
@@ -234,6 +312,11 @@ export default function TripPlanBuilderPage() {
   const [destination, setDestination] = useState(tripInfo.destination || "");
   const [destinationCoords, setDestinationCoords] = useState(null);
 
+  // Bookings recorded on the Hotels page for this trip (Booking
+  // Synchronization). Only read here, to show them on the matching
+  // itinerary days — adding/deleting happens on the Hotels page.
+  const [bookings, setBookings] = useState([]);
+
   useEffect(() => {
     if (!destination.trim()) {
       setDestinationCoords(null);
@@ -376,6 +459,18 @@ export default function TripPlanBuilderPage() {
               }
             } catch (err) {
               console.warn("Failed to load expenses:", err);
+            }
+
+            // Bookings the students made on Agoda/Klook/etc. and recorded
+            // here ("Add my booking") — their own table, like expenses.
+            try {
+              const bookResp = await fetch(`/api/trips/${data.id}/bookings`, { headers: authHeaders });
+              if (bookResp.ok) {
+                const bookData = await bookResp.json();
+                setBookings(Array.isArray(bookData) ? bookData : []);
+              }
+            } catch (err) {
+              console.warn("Failed to load bookings:", err);
             }
           } else {
             // Trip not found / not owned by this user — nothing to hydrate.
@@ -988,6 +1083,73 @@ export default function TripPlanBuilderPage() {
     }));
   };
 
+  // Smart Route Optimization: reorders ONE day's places into the shortest
+  // driving order (first place stays first). Uses OSRM's free /table
+  // service for real road distances between every pair of places, then
+  // picks the best order locally. Goes through applyChange, so Undo works
+  // and it saves like a normal drag-reorder.
+  // optimizeInfo[dayIndex] = { status, beforeM, afterM, forIds } — forIds
+  // lets the message disappear by itself once the day is changed again.
+  const [optimizeInfo, setOptimizeInfo] = useState({});
+
+  const optimizeDay = async (dayIndex) => {
+    const day = days[dayIndex];
+    const entries = day.placeIds
+      .map((id) => findPlaceWithOrigin(tripState, id))
+      .filter(Boolean)
+      .map(({ place }) => place);
+    const withCoords = entries.filter((p) => p.lat != null && p.lng != null);
+    const withoutCoords = entries.filter((p) => p.lat == null || p.lng == null);
+    const unknownIds = day.placeIds.filter((id) => !entries.some((p) => p.id === id));
+    if (withCoords.length < 3) return;
+
+    setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "loading" } }));
+    try {
+      const coords = withCoords.map((p) => `${p.lng},${p.lat}`).join(";");
+      const res = await fetch(
+        `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`
+      );
+      const data = await res.json();
+      if (data.code !== "Ok" || !data.distances) throw new Error(data.code || "No distances");
+
+      const matrix = data.distances;
+      const currentOrder = withCoords.map((_, i) => i);
+      const bestOrder = bestOpenPath(matrix);
+      const beforeM = pathLength(currentOrder, matrix);
+      const afterM = pathLength(bestOrder, matrix);
+
+      // Less than ~50 m saved isn't worth reshuffling the student's list.
+      if (afterM >= beforeM - 50) {
+        setOptimizeInfo((prev) => ({
+          ...prev,
+          [dayIndex]: { status: "already", beforeM, forIds: day.placeIds.join(",") },
+        }));
+        return;
+      }
+
+      // Places without a confirmed location can't be routed, so they keep
+      // their relative order at the end of the day instead of vanishing.
+      const newIds = [
+        ...bestOrder.map((i) => withCoords[i].id),
+        ...withoutCoords.map((p) => p.id),
+        ...unknownIds,
+      ];
+      applyChange((prev) => ({
+        ...prev,
+        days: prev.days.map((d, i) => (i === dayIndex ? { ...d, placeIds: newIds } : d)),
+      }));
+      setOptimizeInfo((prev) => ({
+        ...prev,
+        [dayIndex]: { status: "done", beforeM, afterM, forIds: newIds.join(",") },
+      }));
+    } catch (err) {
+      console.warn("Route optimization failed:", err);
+      setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "error" } }));
+    }
+  };
+
+  // Dates come back as "2026-04-17T00:00:00" — only the date part matters.
+  const bookingDate = (value) => (value ? String(value).slice(0, 10) : "");
   const [editingTimeFor, setEditingTimeFor] = useState(null);
 
   const updatePlaceTime = (placeId, value) => {
@@ -1293,13 +1455,21 @@ export default function TripPlanBuilderPage() {
           <button
             className="ww-browse-btn"
             onClick={() =>
-              navigate("/hotels/results", {
-                state: { destination, startDate, endDate, buddies: people },
+              // Opens the Hotels page in "trip mode": destination and dates
+              // pre-filled, plus the form to record the booking on this trip.
+              navigate("/hotels", {
+                state: { tripId, destination, startDate, endDate, buddies: people },
               })
             }
           >
             🏨 {t("bookAHotel")}
           </button>
+
+          {bookings.length > 0 && (
+            <p className="ww-bookings-count">
+              ✓ {bookings.length} {t("bookingsRecordedCount")}
+            </p>
+          )}
 
           <h2 className="ww-builder-section-title">
             <span className="ww-title-with-icon">
@@ -1359,6 +1529,10 @@ export default function TripPlanBuilderPage() {
                     onClick={() => addPlace(sp.name, { lat: sp.lat, lng: sp.lon })}
                   >
                     <span className="ww-suggested-chip-plus">+</span> {sp.name}
+                    {/* Only shown when OpenStreetMap explicitly says entry
+                        is free (fee=no) — helps students pick places that
+                        fit their budget (FR 14). */}
+                    {sp.isFree && <span className="ww-free-badge">{t("freeEntry")}</span>}
                   </button>
                 ))}
               </div>
@@ -1607,9 +1781,60 @@ export default function TripPlanBuilderPage() {
                   .map((id) => findPlaceWithOrigin(tripState, id))
                   .filter(Boolean);
 
+                const routablePlaces = dayPlaces.filter(
+                  ({ place }) => place.lat != null && place.lng != null
+                ).length;
+                const info = optimizeInfo[dayIndex];
+                // Hide the result once the day's list changes again (drag,
+                // add, remove) so it never describes an order that's gone.
+                const showInfo =
+                  info &&
+                  (info.status === "loading" ||
+                    info.status === "error" ||
+                    info.forIds === day.placeIds.join(","));
+
                 return (
                   <div className="ww-day-block" key={day.label}>
-                    <p className="ww-day-header">⌄ {day.label}</p>
+                    <div className="ww-day-header-row">
+                      <p className="ww-day-header">⌄ {day.label}</p>
+                      {routablePlaces >= 3 && (
+                        <button
+                          type="button"
+                          className="ww-optimize-btn"
+                          onClick={() => optimizeDay(dayIndex)}
+                          disabled={info?.status === "loading"}
+                          title={t("optimizeRouteHint")}
+                        >
+                          {info?.status === "loading" ? t("optimizingRoute") : `⇅ ${t("optimizeRoute")}`}
+                        </button>
+                      )}
+                    </div>
+                    {showInfo && info.status === "done" && (
+                      <p className="ww-optimize-result">
+                        ✓ {t("routeOptimized")} {formatTravelDistance(info.beforeM)} →{" "}
+                        <strong>{formatTravelDistance(info.afterM)}</strong>
+                      </p>
+                    )}
+                    {showInfo && info.status === "already" && (
+                      <p className="ww-optimize-result">✓ {t("routeAlreadyShortest")}</p>
+                    )}
+                    {showInfo && info.status === "error" && (
+                      <p className="ww-optimize-result ww-optimize-error">⚠️ {t("routeOptimizeFailed")}</p>
+                    )}
+                    {/* Recorded bookings land on the day they start/end. */}
+                    {(() => {
+                      const dayIso = addDaysIso(startDate, dayIndex);
+                      if (!dayIso) return null;
+                      return bookings
+                        .filter((b) => bookingDate(b.checkIn) === dayIso || bookingDate(b.checkOut) === dayIso)
+                        .map((b) => (
+                          <p className="ww-day-booking" key={`bk-${b.id}-${dayIso}`}>
+                            🏨 {bookingDate(b.checkIn) === dayIso ? t("bookingCheckIn") : t("bookingCheckOut")}:{" "}
+                            <strong>{b.placeName}</strong>
+                            {b.confirmationNumber && <> · #{b.confirmationNumber}</>}
+                          </p>
+                        ));
+                    })()}
                     {dayPlaces.map(({ place: p, number }, i) => (
                       <React.Fragment key={p.id}>
                         <div

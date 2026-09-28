@@ -539,6 +539,53 @@ export default function TripPlanBuilderPage() {
 
   const [suggestedPlaces, setSuggestedPlaces] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  // Whether to reveal every fetched suggestion instead of just the first
+  // 12 — clicking a chip is the accurate, no-typing way to add a place, so
+  // showing more of them means the student is less likely to fall back to
+  // typing (and less likely to end up at the wrong place).
+  const [showAllSuggestedPlaces, setShowAllSuggestedPlaces] = useState(false);
+
+  // Autocomplete candidates for the "Add new place" input — instead of
+  // silently geocoding whatever the user typed and trusting Nominatim's
+  // first (sometimes wrong/fuzzy) match, we show a few real candidates
+  // with their full address so the user can confirm which actual place
+  // they mean before it gets added, e.g. typing "Hotel Dolores" no longer
+  // auto-picks an unrelated "Villa Dolores Resort" somewhere else.
+  const [placeSuggestions, setPlaceSuggestions] = useState([]);
+  const [loadingPlaceSuggestions, setLoadingPlaceSuggestions] = useState(false);
+
+  useEffect(() => {
+    const query = newPlaceInput.trim();
+    if (query.length < 3) {
+      setPlaceSuggestions([]);
+      setLoadingPlaceSuggestions(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPlaceSuggestions(true);
+    // Debounced so we don't fire a request on every keystroke.
+    const timer = setTimeout(async () => {
+      try {
+        const q = encodeURIComponent(
+          destination ? `${query}, ${destination}, Philippines` : `${query}, Philippines`
+        );
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5&countrycodes=ph`
+        );
+        const data = await res.json();
+        if (!cancelled) setPlaceSuggestions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.warn("Place suggestion lookup failed", err);
+        if (!cancelled) setPlaceSuggestions([]);
+      } finally {
+        if (!cancelled) setLoadingPlaceSuggestions(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [newPlaceInput, destination]);
 
   useEffect(() => {
     if (!destination.trim()) {
@@ -628,6 +675,37 @@ export default function TripPlanBuilderPage() {
 
   const budgetSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
+  // A "match" here just means the words in what the user typed actually
+  // show up in the name OSM returned — catches the "Hotel Dolores" typed
+  // in, "Villa Dolores Resort" returned case, where Nominatim DID return
+  // a result (so it isn't a plain "no result" miss), but it's clearly a
+  // different, same-ish-sounding place, not the one asked for.
+  function namesLikelyMatch(typedName, resultDisplayName) {
+    if (!resultDisplayName) return false;
+    const normalize = (s) =>
+      s
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .split(/\s+/)
+        .filter(Boolean);
+    const typedWords = normalize(typedName);
+    const resultWords = new Set(normalize(resultDisplayName));
+    // Only judge on "significant" words (3+ letters) — skip short filler
+    // words like "the", "sa", "ng" that don't actually identify the place.
+    const significant = typedWords.filter((w) => w.length >= 3);
+    if (significant.length === 0) return true; // nothing meaningful to compare, don't block
+    const matchedCount = significant.filter((w) => resultWords.has(w)).length;
+    return matchedCount / significant.length >= 0.5;
+  }
+
+  // geocodeStatus lets the UI tell the user, honestly, when we could NOT
+  // confirm a place's real location against our free (OpenStreetMap) data
+  // — instead of silently adding it with no coordinates, or guessing
+  // wrong. "verified" = OSM returned a result AND its name actually
+  // matches what was typed. "unverified" = either nothing came back, or
+  // something came back under a clearly different name — either way, the
+  // user should double-check it themselves on Google Maps before
+  // trusting the directions (or before it feeds into route optimization).
   const geocodePlace = async (place) => {
     const query = encodeURIComponent(
       destination ? `${place.name}, ${destination}, Philippines` : `${place.name}, Philippines`
@@ -639,21 +717,64 @@ export default function TripPlanBuilderPage() {
       if (data && data[0]) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
-        setTripState((prev) => updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, lat, lng })));
+        const matches = namesLikelyMatch(place.name, data[0].display_name);
+        setTripState((prev) =>
+          updatePlaceEverywhere(prev, place.id, (p) => ({
+            ...p,
+            lat,
+            lng,
+            geocodeStatus: matches ? "verified" : "unverified",
+          }))
+        );
+      } else {
+        setTripState((prev) =>
+          updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, geocodeStatus: "unverified" }))
+        );
       }
     } catch (err) {
       console.warn("Geocoding failed for", place.name, err);
+      setTripState((prev) =>
+        updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, geocodeStatus: "unverified" }))
+      );
     }
   };
 
-  const addPlace = (name) => {
-    const place = { id: nextPlaceId++, number: nextNumber++, name, visited: false };
+  const addPlace = (name, coords) => {
+    const place = {
+      id: nextPlaceId++,
+      number: nextNumber++,
+      name,
+      visited: false,
+      // coords means it came from a suggestion chip or a picked
+      // autocomplete result — already confirmed, no need to re-check.
+      geocodeStatus: coords ? "verified" : "pending",
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
+    };
     applyChange((prev) => ({ ...prev, places: [...prev.places, place] }));
-    geocodePlace(place);
+    // Only geocode blind (auto-pick first match) when we don't already have
+    // confirmed coordinates from a suggestion the user themselves picked.
+    if (!coords) geocodePlace(place);
+  };
+
+  // Called when the user clicks one of the autocomplete suggestions —
+  // we already know exactly which place they mean and its real
+  // coordinates, so no further (fuzzy) geocoding is needed.
+  const handleSelectPlaceSuggestion = (suggestion) => {
+    const label = (suggestion.display_name || "").split(",")[0].trim() || newPlaceInput.trim();
+    addPlace(label, { lat: parseFloat(suggestion.lat), lng: parseFloat(suggestion.lon) });
+    setNewPlaceInput("");
+    setPlaceSuggestions([]);
   };
 
   const handleAddPlace = (e) => {
     if (e.key !== "Enter" || !newPlaceInput.trim()) return;
+    // If suggestions are showing, treat Enter as "confirm the top match"
+    // instead of blindly re-geocoding the raw typed text — same accuracy
+    // benefit as clicking a suggestion.
+    if (placeSuggestions.length > 0) {
+      handleSelectPlaceSuggestion(placeSuggestions[0]);
+      return;
+    }
     addPlace(newPlaceInput.trim());
     setNewPlaceInput("");
   };
@@ -726,6 +847,7 @@ export default function TripPlanBuilderPage() {
           number: nextNumber++,
           name: s.placeInput.trim(),
           visited: false,
+          geocodeStatus: "pending",
         };
         newlyCreated.push(place);
         return { ...s, places: [...s.places, place], placeInput: "" };
@@ -804,7 +926,13 @@ export default function TripPlanBuilderPage() {
       if (existing) {
         placeId = existing.id;
       } else {
-        const newPlace = { id: nextPlaceId++, number: nextNumber++, name: value, visited: false };
+        const newPlace = {
+          id: nextPlaceId++,
+          number: nextNumber++,
+          name: value,
+          visited: false,
+          geocodeStatus: "pending",
+        };
         createdPlace = newPlace;
         updatedState = { ...prev, places: [...prev.places, newPlace] };
         placeId = newPlace.id;
@@ -878,15 +1006,81 @@ export default function TripPlanBuilderPage() {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // "Directions" now opens the dedicated /directions page (its own route,
+  // its own map) instead of drawing the route inline here — same OSRM/OSM
+  // data underneath, just shown on a separate screen like Google Maps'
+  // own Directions view.
   const openDirections = (place) => {
-    const destParam = encodeURIComponent(`${place.name}, ${destination}`);
-    const originParam = userLocation ? `&origin=${userLocation.lat},${userLocation.lng}` : "";
-    window.open(
-      `https://www.google.com/maps/dir/?api=1${originParam}&destination=${destParam}&travelmode=driving`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    if (!place.lat || !place.lng) {
+      // No confirmed coordinates for this place at all — nowhere real to
+      // route to, so fall back to a Google Maps search the student can
+      // check manually (same as the "unverified" warning's own link).
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, ${destination}`)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+    navigate("/directions", {
+      state: { placeName: place.name, lat: place.lat, lng: place.lng, origin: userLocation },
+    });
   };
+
+  // Quick "X min - Y km" summary shown next to each itinerary place's
+  // Directions link — computed the same way (OSRM, from the student's
+  // current location) as the dedicated Directions page, just condensed.
+  const [placeTravelInfo, setPlaceTravelInfo] = useState({});
+
+  useEffect(() => {
+    if (!userLocation) return;
+    const targets = days
+      .flatMap((day) => day.placeIds.map((id) => findPlaceWithOrigin(tripState, id)))
+      .filter(Boolean)
+      .map(({ place }) => place)
+      .filter((p) => p.lat != null && p.lng != null && !placeTravelInfo[p.id]);
+
+    if (targets.length === 0) return;
+    let cancelled = false;
+
+    targets.forEach((p) => {
+      setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: true } }));
+      const url = `https://router.project-osrm.org/route/v1/driving/${userLocation.lng},${userLocation.lat};${p.lng},${p.lat}?overview=false`;
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (data.code === "Ok" && data.routes && data.routes[0]) {
+            const route = data.routes[0];
+            setPlaceTravelInfo((prev) => ({
+              ...prev,
+              [p.id]: { loading: false, distanceM: route.distance, durationS: route.duration },
+            }));
+          } else {
+            setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: false, error: true } }));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: false, error: true } }));
+          }
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLocation, days, tripState]);
+
+  const formatTravelDuration = (seconds) => {
+    const totalMinutes = Math.round(seconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
+  };
+  const formatTravelDistance = (meters) => `${(meters / 1000).toFixed(1)} km`;
 
   const [addingCostFor, setAddingCostFor] = useState(null);
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
@@ -1059,13 +1253,13 @@ export default function TripPlanBuilderPage() {
         <aside className="ww-builder-sidebar">
           <p className="ww-sidebar-item active">{t("overview")}</p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(whereToGoRef)} style={{ cursor: "pointer" }}>
-            {t("whereToGoDefault")}
+            {whereToGoTitle || t("whereToGoDefault")}
           </p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(itineraryRef)} style={{ cursor: "pointer" }}>
             {t("notes")}
           </p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(untitledRef)} style={{ cursor: "pointer" }}>
-            {t("untitled")}
+            {customSections[0]?.name?.trim() || t("untitled")}
           </p>
           <p className="ww-sidebar-header">{t("itinerary")}</p>
           {days.map((day) => (
@@ -1148,29 +1342,42 @@ export default function TripPlanBuilderPage() {
           )}
 
           {suggestedPlaces.length > 0 && (
-            <div className="ww-suggested-places" style={{ marginBottom: 16 }}>
-              <p className="ww-field-label" style={{ marginBottom: 8 }}>
+            <div className="ww-suggested-places-panel">
+              <p className="ww-suggested-places-label">
                 {t("suggestedPlacesIn")} {destination}:
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {suggestedPlaces.slice(0, 12).map((sp) => (
+              <div className="ww-suggested-chips">
+                {suggestedPlaces.slice(0, showAllSuggestedPlaces ? suggestedPlaces.length : 12).map((sp) => (
                   <button
                     key={sp.name}
                     type="button"
-                    onClick={() => addPlace(sp.name)}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: 16,
-                      border: "1px solid #dbeceb",
-                      background: "#f2f6f5",
-                      cursor: "pointer",
-                      fontSize: 13,
-                    }}
+                    className="ww-suggested-chip"
+                    // sp already carries real coordinates from the Overpass
+                    // lookup (see PlacesController) — pass them straight
+                    // through instead of re-geocoding the name by text,
+                    // which is what let a fuzzy/wrong match sneak in before.
+                    onClick={() => addPlace(sp.name, { lat: sp.lat, lng: sp.lon })}
                   >
-                    + {sp.name}
+                    <span className="ww-suggested-chip-plus">+</span> {sp.name}
                   </button>
                 ))}
               </div>
+              {/* Clicking a chip is the safest way to add a place (real,
+                  verified OSM coordinates, no typing/fuzzy-matching
+                  involved), so we let the user reveal every suggestion we
+                  fetched instead of hiding most of them behind the
+                  12-item cap. */}
+              {suggestedPlaces.length > 12 && (
+                <button
+                  type="button"
+                  className="ww-show-more-btn"
+                  onClick={() => setShowAllSuggestedPlaces((v) => !v)}
+                >
+                  {showAllSuggestedPlaces
+                    ? `${t("showFewerPlaces")} ▴`
+                    : `${t("showMorePlaces")} (+${suggestedPlaces.length - 12}) ▾`}
+                </button>
+              )}
             </div>
           )}
 
@@ -1179,6 +1386,35 @@ export default function TripPlanBuilderPage() {
               <p className="ww-place-name">
                 📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
               </p>
+
+              {/* Shown when our free (OpenStreetMap) lookup could NOT
+                  confirm this place's real location — honest instead of
+                  silently guessing, or worse, silently being wrong. The
+                  button opens an actual Google Maps SEARCH (not
+                  directions) so the student can see the real pin
+                  themselves and judge if it's the same place. */}
+              {/* Fires both when nothing was found at all, AND when
+                  something was found but under a clearly different name
+                  (namesLikelyMatch caught a mismatch) — either way the
+                  place shouldn't be trusted blindly. */}
+              {(p.geocodeStatus === "unverified" ||
+                ((p.lat == null || p.lng == null) && p.geocodeStatus !== "pending")) && (
+                <div className="ww-unverified-warning">
+                  <span className="ww-unverified-warning-icon">⚠️</span>
+                  <span className="ww-unverified-warning-text">{t("locationUnverifiedWarning")}</span>
+                  <a
+                    className="ww-unverified-warning-link"
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${p.name}, ${destination}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("viewOnGoogleMaps")} ↗
+                  </a>
+                </div>
+              )}
+
               <input
                 className="ww-place-notes-input"
                 placeholder={t("addNotesPlaceholder")}
@@ -1207,14 +1443,70 @@ export default function TripPlanBuilderPage() {
             </div>
           ))}
 
-          <input
-            ref={newPlaceInputRef}
-            className="ww-add-place-input"
-            placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
-            value={newPlaceInput}
-            onChange={(e) => setNewPlaceInput(e.target.value)}
-            onKeyDown={handleAddPlace}
-          />
+          {/* Typing is the fallback, not the main path — clicking a
+              suggested-places chip above (real OSM coordinates, no
+              fuzzy text matching) is the safer default. This is only
+              here for a place that isn't in the suggested list at all. */}
+          <p className="ww-field-label" style={{ marginBottom: 6, fontSize: 12, opacity: 0.8 }}>
+            {t("addPlaceFallbackLabel")}
+          </p>
+          <div style={{ position: "relative" }}>
+            <input
+              ref={newPlaceInputRef}
+              className="ww-add-place-input"
+              placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+              value={newPlaceInput}
+              onChange={(e) => setNewPlaceInput(e.target.value)}
+              onKeyDown={handleAddPlace}
+            />
+
+            {newPlaceInput.trim().length >= 3 &&
+              (loadingPlaceSuggestions || placeSuggestions.length > 0) && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    background: "#fff",
+                    border: "1px solid #dbeceb",
+                    borderRadius: 8,
+                    marginTop: 4,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                    maxHeight: 240,
+                    overflowY: "auto",
+                  }}
+                >
+                  {loadingPlaceSuggestions && (
+                    <p style={{ padding: "8px 12px", margin: 0, fontSize: 13, color: "#7a6a4f" }}>
+                      {t("loadingEllipsis")}
+                    </p>
+                  )}
+                  {!loadingPlaceSuggestions &&
+                    placeSuggestions.map((sug) => (
+                      <div
+                        key={sug.place_id}
+                        onClick={() => handleSelectPlaceSuggestion(sug)}
+                        style={{
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          cursor: "pointer",
+                          borderBottom: "1px solid #f0ede0",
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        📍 {sug.display_name}
+                      </div>
+                    ))}
+                  {!loadingPlaceSuggestions && placeSuggestions.length === 0 && (
+                    <p style={{ padding: "8px 12px", margin: 0, fontSize: 13, color: "#7a6a4f" }}>
+                      {t("noPlaceMatches")}
+                    </p>
+                  )}
+                </div>
+              )}
+          </div>
 
           <hr className="ww-builder-divider" />
 
@@ -1426,18 +1718,38 @@ export default function TripPlanBuilderPage() {
                               </div>
                             )}
 
-                            <p className="ww-mark-visited">
-                              {p.visited ? `✓ ${t("visited")}` : `✓ ${t("markVisited")}`}
+                            <p
+                              className="ww-mark-visited"
+                              onClick={() => toggleVisited(p.id)}
+                              style={{ cursor: "pointer" }}
+                            >
+                              {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
                             </p>
                           </div>
                         </div>
                         <p className="ww-directions-hint">
+                          {/* Quick preview of travel time/distance from
+                              where the student is right now — the full
+                              route + info lives on the dedicated
+                              Directions page, this is just the summary. */}
+                          {p.lat != null &&
+                            p.lng != null &&
+                            placeTravelInfo[p.id] &&
+                            !placeTravelInfo[p.id].loading &&
+                            !placeTravelInfo[p.id].error && (
+                              <span style={{ marginRight: 8 }}>
+                                🚗 {formatTravelDuration(placeTravelInfo[p.id].durationS)} -{" "}
+                                {formatTravelDistance(placeTravelInfo[p.id].distanceM)} |{" "}
+                              </span>
+                            )}
                           <span
                             className="ww-directions-link"
                             onClick={() => openDirections(p)}
                             style={{ cursor: "pointer" }}
                           >
-                            🚗 {t("directions")}
+                            {p.lat != null && p.lng != null && placeTravelInfo[p.id]
+                              ? t("directions")
+                              : `🚗 ${t("directions")}`}
                           </span>
                         </p>
                       </React.Fragment>

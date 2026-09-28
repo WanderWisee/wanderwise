@@ -1724,6 +1724,114 @@
 }
 
 /* Trip Plan Builder Page */
+/* === Suggested Places (redesigned) === */
+.ww-suggested-places-panel {
+  background: #faf8ec;
+  border: 1px solid #e6dfc0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.ww-suggested-places-label {
+  font-size: 13px;
+  color: #5c4a33;
+  margin: 0 0 10px;
+  font-weight: bold;
+}
+
+.ww-suggested-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ww-suggested-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid #d9cfa8;
+  background: #fff;
+  color: #2b1c12;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.ww-suggested-chip:hover {
+  background: #f2ecd2;
+  box-shadow: 0 2px 6px rgba(43, 28, 18, 0.12);
+  transform: translateY(-1px);
+}
+
+.ww-suggested-chip-plus {
+  color: #2f7a6e;
+  font-weight: bold;
+}
+
+.ww-show-more-btn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #2f7a6e;
+  background: transparent;
+  color: #2f7a6e;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ww-show-more-btn:hover {
+  background: #2f7a6e;
+  color: #fff;
+}
+
+/* === Unverified location warning (redesigned) === */
+/* One line: icon, message, then the link pushed to the right edge.
+   Wraps only on narrow screens so nothing gets cut off. */
+.ww-unverified-warning {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #fff8e6;
+  border: 1px solid #eecf7a;
+  border-left: 4px solid #d9a441;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin: 8px 0;
+}
+
+.ww-unverified-warning-icon {
+  font-size: 14px;
+}
+
+.ww-unverified-warning-text {
+  font-size: 13px;
+  color: #6b5320;
+}
+
+.ww-unverified-warning-link {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: bold;
+  color: #2f7a6e;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ww-unverified-warning-link:hover {
+  text-decoration: underline;
+}
+
 .ww-directions-link {
   color: #2f6f5f;
   font-weight: 600;

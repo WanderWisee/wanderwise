@@ -391,6 +391,24 @@ export const translations = {
     historyInvitedTag: "Invited",
     historyYouTag: "You",
     historyOwnerTag: "Owner",
+
+    // ===== Trip Plan Builder: suggested places / add place =====
+    showMorePlaces: "Show more",
+    showFewerPlaces: "Show less",
+    addPlaceFallbackLabel: "Can't find it in the suggestions? Search here:",
+    noPlaceMatches: "No matches found. Press Enter to add it as typed.",
+    locationUnverifiedWarning: "This location couldn't be verified.",
+    viewOnGoogleMaps: "View on Google Maps",
+
+    // ===== Directions page =====
+    directionsNoPlace: "No place selected. Go back to your itinerary and tap Directions again.",
+    directionsDestination: "Destination",
+    directionsYouAreHere: "You are here",
+    directionsLoadingLocation: "Getting your location…",
+    directionsLoadingRoute: "Getting directions…",
+    directionsNoRoute: "No route found to this place.",
+    directionsRouteFailed: "Couldn't load directions right now. Please try again later.",
+    directionsLocationDenied: "We can't access your location. Please allow location permission in your browser, then refresh this page.",
   },
 
   fil: {
@@ -784,5 +802,23 @@ export const translations = {
     today: "Ngayon",
     historyTypeTrip: "Byahe",
     historyTypeJournal: "Journal",
+
+    // ===== Trip Plan Builder: suggested places / add place =====
+    showMorePlaces: "Ipakita pa",
+    showFewerPlaces: "Ipakita nang kaunti",
+    addPlaceFallbackLabel: "Wala sa mungkahi? Maghanap dito:",
+    noPlaceMatches: "Walang nahanap. Pindutin ang Enter para idagdag ito gaya ng pagkakasulat.",
+    locationUnverifiedWarning: "Hindi na-verify ang lokasyong ito.",
+    viewOnGoogleMaps: "Tingnan sa Google Maps",
+
+    // ===== Directions page =====
+    directionsNoPlace: "Walang piniling lugar. Bumalik sa itinerary mo at pindutin ulit ang Direksyon.",
+    directionsDestination: "Destinasyon",
+    directionsYouAreHere: "Nandito ka",
+    directionsLoadingLocation: "Kinukuha ang lokasyon mo…",
+    directionsLoadingRoute: "Kinukuha ang direksyon…",
+    directionsNoRoute: "Walang nahanap na ruta papunta rito.",
+    directionsRouteFailed: "Hindi ma-load ang direksyon ngayon. Subukan ulit mamaya.",
+    directionsLocationDenied: "Hindi ma-access ang lokasyon mo. I-allow ang location permission sa browser, tapos i-refresh ang pahinang ito.",
   },
 };

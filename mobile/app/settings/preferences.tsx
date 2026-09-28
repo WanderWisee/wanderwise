@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
+import FadeScrollView from '../../components/FadeScrollView';
 
 function SelectRow({ label, value }) {
   return (
@@ -27,7 +28,7 @@ export default function PreferencesScreen() {
         <View style={{ width: 34 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>🌐 Language</Text>
         <SelectRow label="Change language" value="English" />
 
@@ -39,7 +40,7 @@ export default function PreferencesScreen() {
         <SelectRow label="Date Format" value="Month/Day" />
         <SelectRow label="Time Format" value="12 hour" />
         <SelectRow label="Distance Format" value="Kilometers" />
-      </ScrollView>
+      </FadeScrollView>
     </SafeAreaView>
   );
 }
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
   sectionTitle: {
     fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900,
     marginTop: 20, marginBottom: 4,

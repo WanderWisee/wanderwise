@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Switch, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
+import FadeScrollView from '../../components/FadeScrollView';
 
 const DEFAULT_TOGGLES = [
   { key: 'tripReminders', label: 'Trip reminders', value: true },
@@ -20,9 +21,7 @@ export default function NotificationSettingsScreen() {
   const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
 
   function toggle(key) {
-    setToggles((prev) =>
-      prev.map((t) => (t.key === key ? { ...t, value: !t.value } : t))
-    );
+    setToggles((prev) => prev.map((t) => (t.key === key ? { ...t, value: !t.value } : t)));
   }
 
   return (
@@ -35,7 +34,7 @@ export default function NotificationSettingsScreen() {
         <View style={{ width: 34 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>Push Notification</Text>
         {toggles.map((t) => (
           <View key={t.key} style={styles.row}>
@@ -48,7 +47,7 @@ export default function NotificationSettingsScreen() {
             />
           </View>
         ))}
-      </ScrollView>
+      </FadeScrollView>
     </SafeAreaView>
   );
 }
@@ -65,7 +64,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
   sectionTitle: {
     fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 14,
   },

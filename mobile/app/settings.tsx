@@ -1,7 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import Backdrop from '../components/Backdrop';
+import FadeScrollView from '../components/FadeScrollView';
 import { logout } from '../services/authService';
 
 const SETTINGS_ITEMS = [
@@ -30,15 +31,12 @@ export default function SettingsScreen() {
         <View style={{ width: 34 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <View style={styles.itemsCard}>
           {SETTINGS_ITEMS.map((item, index) => (
             <TouchableOpacity
               key={item.key}
-              style={[
-                styles.row,
-                index !== SETTINGS_ITEMS.length - 1 && styles.rowDivider,
-              ]}
+              style={[styles.row, index !== SETTINGS_ITEMS.length - 1 && styles.rowDivider]}
               onPress={() => router.push(item.route)}
               activeOpacity={0.6}
             >
@@ -55,7 +53,7 @@ export default function SettingsScreen() {
           <Text style={styles.logoutIcon}>⏻</Text>
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </FadeScrollView>
     </SafeAreaView>
   );
 }
@@ -73,22 +71,16 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
   itemsCard: {
     backgroundColor: '#FFFFFF', borderRadius: 18,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
-    marginTop: 16, marginBottom: 24, overflow: 'hidden',
+    marginBottom: 24, overflow: 'hidden',
   },
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingHorizontal: 16, paddingVertical: 16,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 16 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
-  iconBadge: {
-    width: 38, height: 38, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  iconBadge: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   rowLabel: { flex: 1, fontFamily: 'Lora_400Regular', fontSize: 15, color: Colors.brown900 },
   rowChevron: { fontSize: 18, color: Colors.brown600 },
   logoutButton: {

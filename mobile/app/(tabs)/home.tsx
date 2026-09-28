@@ -10,6 +10,7 @@ import { Colors } from '../../constants/theme';
 import { fetchTrips } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
+import FadeScrollView from '../../components/FadeScrollView';
 import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
 
 const TOP_DESTINATIONS = [
@@ -74,7 +75,8 @@ export default function HomeScreen() {
             <ActivityIndicator color={Colors.brown900} />
           </View>
         ) : (
-          <ScrollView
+          <FadeScrollView
+            fadeHeight={28}
             contentContainerStyle={styles.scrollContent}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -172,7 +174,7 @@ export default function HomeScreen() {
                 <Text style={[styles.bookingCardText, { color: '#555' }]}>agoda</Text>
               </TouchableOpacity>
             </ScrollView>
-          </ScrollView>
+          </FadeScrollView>
         )}
 
         <CalendarPicker
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 40 },
 
   sectionTitle: {
     fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,

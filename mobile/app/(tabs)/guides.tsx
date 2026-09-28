@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '../../constants/theme';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
+import FadeScrollView from '../../components/FadeScrollView';
 
 const DESTINATIONS = [
   { id: 'singapore', name: 'Singapore', emoji: '🏙️' },
@@ -30,36 +31,48 @@ export default function GuidesScreen() {
           </Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <FadeScrollView fadeHeight={28} contentContainerStyle={styles.content}>
           <Text style={styles.pageTitle}>Discover Travel Tips</Text>
 
-          <BlurView intensity={45} tint="light" style={styles.searchWrap}>
+          <View style={styles.searchWrap}>
+            <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <TextInput
               style={styles.searchInput}
               placeholder="Discover where to go"
               placeholderTextColor={Colors.brown600}
             />
-          </BlurView>
+          </View>
 
-          <Text style={styles.sectionTitle}>New Travel Tips</Text>
-
-          {DESTINATIONS.map((dest) => (
-            <View key={dest.id} style={styles.card}>
-              <View style={styles.imagePlaceholder}>
-                <Text style={{ fontSize: 40 }}>{dest.emoji}</Text>
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.destinationName}>{dest.name}</Text>
-                <TouchableOpacity
-                  style={styles.itineraryButton}
-                  onPress={() => router.push(`/guide/${dest.id}`)}
-                >
-                  <Text style={styles.itineraryButtonText}>See Itineraries</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBadge, { backgroundColor: '#F4D9A8' }]}>
+              <Text style={{ fontSize: 14 }}>✨</Text>
             </View>
-          ))}
-        </ScrollView>
+            <Text style={styles.sectionTitle}>New Travel Tips</Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          >
+            {DESTINATIONS.map((dest) => (
+              <View key={dest.id} style={styles.card}>
+                <View style={styles.imagePlaceholder}>
+                  <Text style={{ fontSize: 40 }}>{dest.emoji}</Text>
+                </View>
+                <View style={styles.cardBody}>
+                  <Text style={styles.destinationName}>{dest.name}</Text>
+                  <TouchableOpacity
+                    style={styles.itineraryButton}
+                    onPress={() => router.push(`/guide/${dest.id}`)}
+                  >
+                    <Text style={styles.itineraryButtonText}>See Itineraries</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </FadeScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -78,12 +91,12 @@ const styles = StyleSheet.create({
   },
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 40 },
   pageTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900, marginTop: 12, marginBottom: 16,
+    fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 16,
   },
   searchWrap: {
-    borderRadius: 10, overflow: 'hidden', marginBottom: 24,
+    borderRadius: 10, overflow: 'hidden', marginBottom: 26,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
   },
   searchInput: {
@@ -91,16 +104,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
     paddingHorizontal: 16, paddingVertical: 14,
   },
-  sectionTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,
-  },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
+  horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 18, overflow: 'hidden',
+    width: 220,
+    backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden',
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
   imagePlaceholder: {
-    height: 160, backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center',
+    height: 150, backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center',
   },
   cardBody: { padding: 16 },
   destinationName: {

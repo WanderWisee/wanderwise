@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '../../constants/theme';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
+import FadeScrollView from '../../components/FadeScrollView';
 import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
 
 const RESULTS = [
@@ -12,7 +13,7 @@ const RESULTS = [
     id: 'hidden-palms',
     name: 'Hidden Palms Inn/Resort',
     location: 'San Juan, La Union PH',
-    amenities: 'Free Wi-Fi • Free Breakfast • Free Parking • Outdoor Pool • Air Conditioning',
+    amenities: 'Free Wi-Fi • Free Breakfast • Free Parking',
     price: '₱2,900',
     total: '₱11,600',
   },
@@ -39,7 +40,7 @@ export default function HotelsScreen() {
           </Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <FadeScrollView fadeHeight={28} contentContainerStyle={styles.content}>
           <Text style={styles.pageTitle}>All your stays in one place!</Text>
           <Text style={styles.pageSubtitle}>
             A smarter way to find the perfect accommodation—built around your preferences.
@@ -90,29 +91,40 @@ export default function HotelsScreen() {
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
-          <Text style={styles.sectionTitle}>Discover Hotels at Top Destinations!</Text>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBadge, { backgroundColor: '#C9D9C4' }]}>
+              <Text style={{ fontSize: 14 }}>🏨</Text>
+            </View>
+            <Text style={styles.sectionTitle}>Discover Hotels at Top Destinations!</Text>
+          </View>
 
-          {RESULTS.map((hotel) => (
-            <View key={hotel.id} style={styles.resultCard}>
-              <View style={styles.imagePlaceholder}>
-                <Text style={{ fontSize: 40 }}>🏖️</Text>
-              </View>
-              <View style={styles.resultBody}>
-                <Text style={styles.hotelName}>{hotel.name}</Text>
-                <Text style={styles.hotelAmenities}>{hotel.amenities}</Text>
-                <View style={styles.priceRow}>
-                  <View>
-                    <Text style={styles.hotelPrice}>{hotel.price}</Text>
-                    <Text style={styles.hotelTotal}>Total {hotel.total}</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          >
+            {RESULTS.map((hotel) => (
+              <View key={hotel.id} style={styles.resultCard}>
+                <View style={styles.imagePlaceholder}>
+                  <Text style={{ fontSize: 40 }}>🏖️</Text>
+                </View>
+                <View style={styles.resultBody}>
+                  <Text style={styles.hotelName}>{hotel.name}</Text>
+                  <Text style={styles.hotelAmenities}>{hotel.amenities}</Text>
+                  <View style={styles.priceRow}>
+                    <View>
+                      <Text style={styles.hotelPrice}>{hotel.price}</Text>
+                      <Text style={styles.hotelTotal}>Total {hotel.total}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.dealButton}>
+                      <Text style={styles.dealButtonText}>View Deal</Text>
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity style={styles.dealButton}>
-                    <Text style={styles.dealButtonText}>View Deal</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        </FadeScrollView>
 
         <CalendarPicker
           visible={pickerOpen}
@@ -138,10 +150,8 @@ const styles = StyleSheet.create({
   },
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
-  pageTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900, marginTop: 12,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 40 },
+  pageTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900 },
   pageSubtitle: {
     fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown600,
     marginTop: 6, marginBottom: 20,
@@ -151,9 +161,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
     justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14,
   },
-  searchInput: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
-  },
+  searchInput: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900 },
   dateRangeText: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900 },
   dateRangePlaceholder: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown600 },
   counterRow: {
@@ -173,30 +181,28 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 30,
   },
   searchButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.mint },
-  sectionTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900, marginBottom: 14,
-  },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, flex: 1 },
+  horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
   resultCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 18, overflow: 'hidden',
+    width: 260,
+    backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden',
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
   imagePlaceholder: {
-    height: 160, backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center',
+    height: 150, backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center',
   },
   resultBody: { padding: 16 },
-  hotelName: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 6 },
-  hotelAmenities: {
-    fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 12,
-  },
-  priceRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  hotelPrice: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
-  hotelTotal: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600 },
+  hotelName: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 6 },
+  hotelAmenities: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 12 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  hotelPrice: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900 },
+  hotelTotal: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown600 },
   dealButton: {
-    backgroundColor: Colors.brown900, borderRadius: 10, paddingHorizontal: 18, height: 40,
+    backgroundColor: Colors.brown900, borderRadius: 10, paddingHorizontal: 16, height: 38,
     alignItems: 'center', justifyContent: 'center',
   },
-  dealButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  dealButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
 });

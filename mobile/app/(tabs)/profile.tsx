@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
+import FadeScrollView from '../../components/FadeScrollView';
 import MenuSheet from '../../components/MenuSheet';
 
 export default function ProfileScreen() {
@@ -25,7 +26,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <FadeScrollView fadeHeight={28} contentContainerStyle={styles.content}>
           <View style={styles.identitySection}>
             <View style={styles.avatar}>
               <Text style={{ fontSize: 36 }}>👤</Text>
@@ -65,22 +66,12 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
 
           <View style={styles.tabRow}>
-            <TouchableOpacity
-              style={styles.tabButton}
-              onPress={() => setActiveTab('trips')}
-            >
-              <Text style={[styles.tabText, activeTab === 'trips' && styles.tabTextActive]}>
-                📍 Trips
-              </Text>
+            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('trips')}>
+              <Text style={[styles.tabText, activeTab === 'trips' && styles.tabTextActive]}>📍 Trips</Text>
               {activeTab === 'trips' && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.tabButton}
-              onPress={() => setActiveTab('journal')}
-            >
-              <Text style={[styles.tabText, activeTab === 'journal' && styles.tabTextActive]}>
-                📖 Journal
-              </Text>
+            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('journal')}>
+              <Text style={[styles.tabText, activeTab === 'journal' && styles.tabTextActive]}>📖 Journal</Text>
               {activeTab === 'journal' && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           </View>
@@ -108,7 +99,7 @@ export default function ProfileScreen() {
               </>
             )}
           </View>
-        </ScrollView>
+        </FadeScrollView>
 
         <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
       </SafeAreaView>
@@ -127,14 +118,13 @@ const styles = StyleSheet.create({
     width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 40 },
 
   identitySection: { alignItems: 'center', marginBottom: 24 },
   avatar: {
     width: 84, height: 84, borderRadius: 42, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.line,
-    marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.line, marginBottom: 12,
   },
   username: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
   bio: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 4 },

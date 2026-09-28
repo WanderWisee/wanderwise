@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../constants/theme';
+import FadeScrollView from '../../components/FadeScrollView';
 
 const DESTINATION_INFO = {
   singapore: {
@@ -54,7 +55,7 @@ export default function GuideDetailScreen() {
         <Text style={styles.headerTitle}>{info.name} Travel Guide</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>Explore the Area</Text>
         <View style={styles.mapRow}>
           <View style={styles.mapThumb} />
@@ -77,7 +78,7 @@ export default function GuideDetailScreen() {
             </View>
           </View>
         ))}
-      </ScrollView>
+      </FadeScrollView>
     </SafeAreaView>
   );
 }
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, flexShrink: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
   sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 12 },
   mapRow: { flexDirection: 'row', gap: 10 },
   mapThumb: {

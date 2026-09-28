@@ -1,10 +1,9 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import Backdrop from '../components/Backdrop';
+import FadeScrollView from '../components/FadeScrollView';
 
-// Placeholder data — papalitan ito ng totoong activity log mula sa backend
-// kapag stable na ang API contract.
 const HISTORY_ITEMS = [];
 
 export default function HistoryScreen() {
@@ -29,15 +28,9 @@ export default function HistoryScreen() {
           <Text style={styles.emptySubtitle}>Your actions will show up here.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          {HISTORY_ITEMS.map((item, index) => (
-            <View
-              key={item.id}
-              style={[
-                styles.row,
-                index !== HISTORY_ITEMS.length - 1 && styles.rowDivider,
-              ]}
-            >
+        <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
+          {HISTORY_ITEMS.map((item) => (
+            <View key={item.id} style={styles.row}>
               <View style={styles.iconBadge}>
                 <Text style={{ fontSize: 16 }}>{item.icon}</Text>
               </View>
@@ -47,7 +40,7 @@ export default function HistoryScreen() {
               </View>
             </View>
           ))}
-        </ScrollView>
+        </FadeScrollView>
       )}
     </SafeAreaView>
   );
@@ -75,7 +68,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600,
     marginTop: 6, textAlign: 'center',
   },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#FFFFFF', borderRadius: 14,
@@ -83,7 +76,6 @@ const styles = StyleSheet.create({
     shadowColor: Colors.brown900, shadowOpacity: 0.05, shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
-  rowDivider: {},
   iconBadge: {
     width: 38, height: 38, borderRadius: 12, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',

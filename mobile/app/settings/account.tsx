@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
+import FadeScrollView from '../../components/FadeScrollView';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function AccountScreen() {
         <View style={{ width: 34 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
             <Text style={{ fontSize: 36 }}>👤</Text>
@@ -63,7 +64,7 @@ export default function AccountScreen() {
         <TouchableOpacity style={styles.saveButton}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </FadeScrollView>
     </SafeAreaView>
   );
 }
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  content: { paddingHorizontal: 24, paddingBottom: 40, alignItems: 'center' },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, alignItems: 'center' },
   avatarWrap: { marginBottom: 24 },
   avatar: {
     width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.cream2,

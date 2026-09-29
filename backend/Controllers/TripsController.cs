@@ -329,6 +329,16 @@ public class TripsController : ControllerBase
         });
         await _db.SaveChangesAsync();
 
+        // Trip invites notification for the person who was just added.
+        var adder = await _db.Users.FindAsync(CurrentUserId);
+        var adderName = NotificationHelper.FullName(adder);
+        var tripName = trip.Destination ?? trip.Title ?? "";
+        await NotificationHelper.CreateAsync(
+            _db, request.UserId, NotificationHelper.CrewAdded,
+            $"{adderName} added you to the trip to {tripName}.",
+            $"/trip-plan?tripId={id}",
+            new { actorName = adderName, tripDestination = tripName });
+
         return NoContent();
     }
 
@@ -392,6 +402,17 @@ public class TripsController : ControllerBase
                     JoinedAt = DateTime.UtcNow,
                 });
                 await _db.SaveChangesAsync();
+
+                // Trip invites notification for the owner: someone joined
+                // through the invite link.
+                var joiner = await _db.Users.FindAsync(CurrentUserId);
+                var joinerName = NotificationHelper.FullName(joiner);
+                var tripName = trip.Destination ?? trip.Title ?? "";
+                await NotificationHelper.CreateAsync(
+                    _db, trip.UserId, NotificationHelper.CrewJoined,
+                    $"{joinerName} joined your trip to {tripName}.",
+                    $"/trip-plan?tripId={trip.Id}",
+                    new { actorName = joinerName, tripDestination = tripName });
             }
         }
 

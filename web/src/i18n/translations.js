@@ -437,6 +437,29 @@ export const translations = {
     bookingsRecordedCount: "booking(s) recorded for this trip",
     routeSkippedPlaces: "Not included (no location):",
     noLocationTag: "No location",
+    // ===== Settings: saved preferences =====
+    settingSaved: "Saved",
+    formatPreview: "Preview",
+    notifTripRemindersHint: "Trip starting, upcoming activity, and hotel check-in",
+    notifTripInvitesHint: "When you're added to a trip, or someone joins yours",
+    notifCommentsHint: "When someone comments on your journal",
+
+    // ===== Notifications page =====
+    markAllRead: "Mark all as read",
+    notificationSettings: "Notification settings",
+    enableBrowserNotifHint: "Get a pop-up on this computer while WanderWise is open.",
+    enableBrowserNotif: "Turn on pop-ups",
+    enableBrowserNotifHintPush: "Get notifications on this computer, even when WanderWise is closed.",
+    browserNotifBlocked: "Pop-ups are blocked for this site. You can allow them in your browser's site settings.",
+    notifWhenToday: "today",
+    notifWhenTomorrow: "tomorrow",
+    notifTextTripStarts: "starts",
+    notifTextComingUp: "Coming up at",
+    notifTextCheckIn: "Hotel check-in",
+    notifTextAddedYou: "added you to",
+    notifTextJoinedTrip: "joined your",
+    notifTextCommented: "commented on",
+    notifYourStory: "your story",
   },
 
   fil: {
@@ -876,5 +899,28 @@ export const translations = {
     bookingsRecordedCount: "booking ang naitala para sa trip na ito",
     routeSkippedPlaces: "Hindi naisama (walang location):",
     noLocationTag: "Walang location",
+    // ===== Settings: saved preferences =====
+    settingSaved: "Na-save",
+    formatPreview: "Halimbawa",
+    notifTripRemindersHint: "Pagsisimula ng trip, paparating na activity, at check-in sa hotel",
+    notifTripInvitesHint: "Kapag idinagdag ka sa trip, o may sumali sa trip mo",
+    notifCommentsHint: "Kapag may nag-comment sa journal mo",
+
+    // ===== Notifications page =====
+    markAllRead: "Markahang nabasa lahat",
+    notificationSettings: "Settings ng notification",
+    enableBrowserNotifHint: "Makatanggap ng pop-up sa computer na ito habang bukas ang WanderWise.",
+    enableBrowserNotif: "I-on ang pop-ups",
+    enableBrowserNotifHintPush: "Makatanggap ng notification sa computer na ito, kahit sarado ang WanderWise.",
+    browserNotifBlocked: "Naka-block ang pop-ups para sa site na ito. Pwede itong payagan sa site settings ng browser mo.",
+    notifWhenToday: "ngayon",
+    notifWhenTomorrow: "bukas",
+    notifTextTripStarts: "ay magsisimula",
+    notifTextComingUp: "Paparating na sa",
+    notifTextCheckIn: "Check-in sa hotel",
+    notifTextAddedYou: "ay nagdagdag sa iyo sa",
+    notifTextJoinedTrip: "ay sumali sa",
+    notifTextCommented: "ay nag-comment sa",
+    notifYourStory: "iyong kwento",
   },
 };

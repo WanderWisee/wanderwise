@@ -370,7 +370,6 @@ export const translations = {
     historyTypeTrip: "Trip",
     historyTypeJournal: "Journal",
 
-    linkCopied: "Link copied!",
     linkUnavailable: "Link unavailable",
     crewOnThisTrip: "Crew on this trip",
     noCrewYet: "No crew added yet.",
@@ -378,8 +377,6 @@ export const translations = {
     confirmRemoveCrewMember: "Remove this person from the trip?",
     removeCrewMemberTitle: "Remove from crew",
     signUpToJoinBanner: "Sign up or log in as an MSEUF student to join this trip as a crew member!",
-    signUp: "Sign Up",
-    logIn: "Log In",
     tripNotFoundOrLinkInvalid: "This trip couldn't be found, or the link is invalid.",
     joiningTrip: "Joining trip…",
     inviteLinkInvalid: "This invite link is no longer valid.",
@@ -497,7 +494,6 @@ export const translations = {
     networkError: "May problema sa koneksyon. Pakisubukan ulit.",
     loadingEllipsis: "Naglo-load...",
 
-    linkCopied: "Nakopya na ang link!",
     linkUnavailable: "Hindi available ang link",
     crewOnThisTrip: "Mga kasama sa biyaheng ito",
     noCrewYet: "Wala pang naidagdag na kasama.",
@@ -505,8 +501,6 @@ export const translations = {
     confirmRemoveCrewMember: "Alisin ang taong ito sa trip?",
     removeCrewMemberTitle: "Alisin sa crew",
     signUpToJoinBanner: "Mag-sign up o mag-log in bilang MSEUF student para sumali sa trip na ito!",
-    signUp: "Mag-sign Up",
-    logIn: "Mag-log In",
     tripNotFoundOrLinkInvalid: "Hindi nahanap ang trip, o hindi na valid ang link.",
     joiningTrip: "Sumasali sa trip…",
     inviteLinkInvalid: "Hindi na valid ang invite link na ito.",

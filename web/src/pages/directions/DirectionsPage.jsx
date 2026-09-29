@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
 
 // Same style of inline SVG pins as TripMap — no external image
@@ -42,10 +43,6 @@ function formatDuration(seconds) {
   return minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
 }
 
-function formatDistance(meters) {
-  const km = meters / 1000;
-  return `${km.toFixed(1)} km`;
-}
 
 function FitBoundsToRoute({ routeCoords }) {
   const map = useMap();
@@ -61,6 +58,7 @@ export default function DirectionsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { formatDistance } = usePreferences(); // km or miles, from Settings
 
   // Passed in from the "🚗 Directions" link in the trip builder's
   // itinerary — the place to go to, and (if we already had it) the

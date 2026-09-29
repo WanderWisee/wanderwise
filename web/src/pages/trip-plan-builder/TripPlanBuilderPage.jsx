@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import TripMap from "../../components/TripMap";
 import { useLanguage } from "../../context/LanguageContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
 
 let nextPlaceId = 1;
@@ -317,6 +318,8 @@ export default function TripPlanBuilderPage() {
   const navigate = useNavigate();
   const tripInfo = location.state || {};
   const { t } = useLanguage();
+  // Date/time/distance formats from Settings → Formatting.
+  const { formatDateRange, formatTime, formatDistance } = usePreferences();
 
   // The tripId is kept in the URL query string (?tripId=123), NOT only in
   // location.state, because a browser refresh (F5) can lose/never had the
@@ -1286,7 +1289,7 @@ export default function TripPlanBuilderPage() {
     const minutes = totalMinutes % 60;
     return minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
   };
-  const formatTravelDistance = (meters) => `${(meters / 1000).toFixed(1)} km`;
+  const formatTravelDistance = (meters) => formatDistance(meters);
 
   const [addingCostFor, setAddingCostFor] = useState(null);
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
@@ -1485,7 +1488,7 @@ export default function TripPlanBuilderPage() {
             </span>
           </h1>
           {startDate && endDate && (
-            <p className="ww-builder-dates">📅 {startDate} - {endDate}</p>
+            <p className="ww-builder-dates">📅 {formatDateRange(startDate, endDate)}</p>
           )}
 
           <div className="ww-builder-map">
@@ -1816,7 +1819,7 @@ export default function TripPlanBuilderPage() {
               <h2 className="ww-builder-section-title" ref={itineraryRef}>
                 {t("itinerary")}
                 {startDate && endDate && (
-                  <span className="ww-date-pill">📅 {startDate} - {endDate}</span>
+                  <span className="ww-date-pill">📅 {formatDateRange(startDate, endDate)}</span>
                 )}
               </h2>
 
@@ -1945,7 +1948,7 @@ export default function TripPlanBuilderPage() {
                                   onClick={() => setEditingTimeFor(p.id)}
                                   style={{ cursor: "pointer" }}
                                 >
-                                  🕐 {p.time || t("selectTime")}
+                                  🕐 {p.time ? formatTime(p.time) : t("selectTime")}
                                 </span>
                               )}
                               <span

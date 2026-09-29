@@ -3,12 +3,23 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
+  // Formatting + notification choices, saved to the account and used by
+  // every page (dates, times, distances, and which notifications arrive).
+  const { prefs, updatePrefs, formatDate, formatTime, formatDistance } = usePreferences();
+  const [savedHint, setSavedHint] = useState("");
+
+  const savePref = async (changes) => {
+    const ok = await updatePrefs(changes);
+    setSavedHint(ok ? t("settingSaved") : t("networkError"));
+    setTimeout(() => setSavedHint(""), 2000);
+  };
   const {
     profileName,
     setProfileName,
@@ -63,32 +74,13 @@ export default function SettingsPage() {
   const [profileLocationInput, setProfileLocationInput] = useState(profileLocation);
   const [savingAccount, setSavingAccount] = useState(false);
 
-  const [dateFormat, setDateFormat] = useState("");
-  const [timeFormat, setTimeFormat] = useState("");
-  const [distanceFormat, setDistanceFormat] = useState("");
-
-  // Labels stay as stable keys internally — only the on-screen text
-  // (via t()) changes with the language.
-  const notificationKeys = [
-    "notifTripReminders",
-    "notifPriceDrops",
-    "notifNewFollowers",
-    "notifJournalLikes",
-    "notifComments",
-    "notifTripInvites",
-    "notifWeeklyDigest",
-    "notifPromotions",
-    "notifAppUpdates",
+  // Only the notifications WanderWise actually sends. Each maps to one
+  // saved setting.
+  const notificationOptions = [
+    { key: "notifTripReminders", hintKey: "notifTripRemindersHint" },
+    { key: "notifTripInvites", hintKey: "notifTripInvitesHint" },
+    { key: "notifComments", hintKey: "notifCommentsHint" },
   ];
-  const [notifications, setNotifications] = useState(
-    notificationKeys.map(() => true)
-  );
-
-  const toggleNotification = (index) => {
-    setNotifications((prev) =>
-      prev.map((v, i) => (i === index ? !v : v))
-    );
-  };
 
   const handleSaveAccount = async () => {
     // Name/Email are still local-only — not wired to the backend yet.
@@ -220,7 +212,7 @@ export default function SettingsPage() {
                 <input
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell other students a bit about yourself"
+                  placeholder={t("bioPlaceholder")}
                   maxLength={300}
                 />
               </label>
@@ -230,7 +222,7 @@ export default function SettingsPage() {
                 <input
                   value={profileLocationInput}
                   onChange={(e) => setProfileLocationInput(e.target.value)}
-                  placeholder="e.g. Lucena City, Quezon"
+                  placeholder={t("locationPlaceholder")}
                   maxLength={150}
                 />
               </label>
@@ -257,10 +249,9 @@ export default function SettingsPage() {
               <p className="ww-settings-field-label">{t("dateFormat")}</p>
               <select
                 className="ww-settings-plain-select"
-                value={dateFormat}
-                onChange={(e) => setDateFormat(e.target.value)}
+                value={prefs.dateFormat}
+                onChange={(e) => savePref({ dateFormat: e.target.value })}
               >
-                <option value="">{t("select")}</option>
                 <option value="mdy">MM/DD/YYYY</option>
                 <option value="dmy">DD/MM/YYYY</option>
               </select>
@@ -268,40 +259,48 @@ export default function SettingsPage() {
               <p className="ww-settings-field-label">{t("timeFormat")}</p>
               <select
                 className="ww-settings-plain-select"
-                value={timeFormat}
-                onChange={(e) => setTimeFormat(e.target.value)}
+                value={prefs.timeFormat}
+                onChange={(e) => savePref({ timeFormat: e.target.value })}
               >
-                <option value="">{t("select")}</option>
-                <option value="12h">12-hour</option>
-                <option value="24h">24-hour</option>
+                <option value="12h">{t("hour12")}</option>
+                <option value="24h">{t("hour24")}</option>
               </select>
 
               <p className="ww-settings-field-label">{t("distanceFormat")}</p>
               <select
                 className="ww-settings-plain-select"
-                value={distanceFormat}
-                onChange={(e) => setDistanceFormat(e.target.value)}
+                value={prefs.distanceFormat}
+                onChange={(e) => savePref({ distanceFormat: e.target.value })}
               >
-                <option value="">{t("select")}</option>
-                <option value="km">Kilometers</option>
-                <option value="mi">Miles</option>
+                <option value="km">{t("kilometers")}</option>
+                <option value="mi">{t("miles")}</option>
               </select>
+
+              {/* Live preview so the student sees the effect right away. */}
+              <p className="ww-settings-preview">
+                {t("formatPreview")}: {formatDate("2026-04-17")} · {formatTime("14:30")} · {formatDistance(2300)}
+              </p>
+              {savedHint && <p className="ww-settings-saved">{savedHint}</p>}
             </div>
           )}
 
           {activeSection === "notifications" && (
             <div className="ww-settings-notifications">
               <h2>{t("pushNotification")}</h2>
-              {notificationKeys.map((key, i) => (
+              {notificationOptions.map(({ key, hintKey }) => (
                 <label className="ww-settings-notification-row" key={key}>
                   <input
                     type="checkbox"
-                    checked={notifications[i]}
-                    onChange={() => toggleNotification(i)}
+                    checked={!!prefs[key]}
+                    onChange={() => savePref({ [key]: !prefs[key] })}
                   />
-                  <span>{t(key)}</span>
+                  <span>
+                    {t(key)}
+                    <small className="ww-settings-notif-hint">{t(hintKey)}</small>
+                  </span>
                 </label>
               ))}
+              {savedHint && <p className="ww-settings-saved">{savedHint}</p>}
             </div>
           )}
         </main>

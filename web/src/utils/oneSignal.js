@@ -5,7 +5,8 @@
 // Paste your OneSignal App ID below (OneSignal → Settings → Keys & IDs).
 // The App ID is not secret — it's fine in frontend code. The API key is
 // secret and goes ONLY in backend/.env.
-export const ONESIGNAL_APP_ID = "";
+export const ONESIGNAL_APP_ID = "57f8e7f3-e31c-44cd-b3ad-8aa929b478c1";
+
 
 export const isOneSignalEnabled = () => ONESIGNAL_APP_ID.trim() !== "";
 

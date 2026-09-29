@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
 
 // Google Maps can't carry check-in/check-out dates in the URL, so this
@@ -30,15 +31,6 @@ function buildKlookSearchUrl(query) {
 
 const BOOKING_SITES = ["Agoda", "Klook", "Booking.com", "Airbnb", "Traveloka"];
 
-// Dates come back from the API as "yyyy-MM-dd".
-function formatShortDate(iso) {
-  if (!iso) return "";
-  return new Date(String(iso).slice(0, 10) + "T00:00:00").toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-  });
-}
-
 function openInNewTab(url) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
@@ -47,6 +39,9 @@ export default function HotelsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { formatDate } = usePreferences();
+  // "Apr 17" (MM/DD setting) or "17 Apr" (DD/MM setting).
+  const formatShortDate = (iso) => formatDate(iso, { month: "short", day: "numeric" });
 
   // Two ways to arrive here:
   // 1. From the navbar / Dashboard → plain research: look at hotels on

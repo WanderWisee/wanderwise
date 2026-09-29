@@ -2,54 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
-
-function formatLastViewed(dateString, t) {
-  // The backend sends UTC time but without the "Z" suffix, so JS parses it
-  // as local time by default — this forces it to be read as UTC first,
-  // then converts properly to the browser's local timezone for display.
-  const utcDateString = dateString.endsWith("Z") ? dateString : dateString + "Z";
-  const date = new Date(utcDateString);
-  const now = new Date();
-  const sameDay = date.toDateString() === now.toDateString();
-  if (sameDay) {
-    const time = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    return `${time} ${t("today")}`;
-  }
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-// The trip's actual travel dates (when the trip is/was happening), not
-// when someone last opened the page. Sent as plain "yyyy-MM-dd" strings
-// with no time-of-day component, so no UTC/local conversion is needed
-// here — unlike lastViewed, which is a full timestamp.
-//
-// Always spells out the full month name and year (e.g. "January 1, 2026"
-// or "January 1 - 3, 2026") instead of a short "Sep 20 - 22" — trips can
-// span different months or even different years, so the year needs to
-// always be visible, not just implied as "this year".
-function formatTravelDate(startDate, endDate, t) {
-  if (!startDate) return "";
-  const start = new Date(startDate + "T00:00:00");
-  if (!endDate || endDate === startDate) {
-    return start.toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
-  }
-  const end = new Date(endDate + "T00:00:00");
-  const sameMonthAndYear =
-    start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
-
-  if (sameMonthAndYear) {
-    // "January 1 - 3, 2026" — month spelled out once, just the day repeated.
-    const monthDay = start.toLocaleDateString([], { month: "long", day: "numeric" });
-    return `${monthDay} - ${end.getDate()}, ${start.getFullYear()}`;
-  }
-
-  // Different month and/or year — spell out both fully, e.g.
-  // "January 30 - February 2, 2026".
-  const startText = start.toLocaleDateString([], { month: "long", day: "numeric" });
-  const endText = end.toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
-  return `${startText} - ${endText}`;
-}
 
 // Everyone ELSE who's viewed this trip (the backend already excludes
 // your own entry — you're shown as the Author on the main row instead)
@@ -65,6 +19,21 @@ function viewerTag(v, t) {
 export default function HistoryPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  // Date and time follow Settings → Formatting.
+  const { formatDate, formatTime, formatDateRange } = usePreferences();
+
+  // The backend sends UTC without the "Z", so add it before converting to
+  // local time. Today → "2:30 PM Today"; older → "Sep 20" / "20 Sep".
+  const formatLastViewed = (dateString) => {
+    const utcDateString = dateString.endsWith("Z") ? dateString : dateString + "Z";
+    const date = new Date(utcDateString);
+    const sameDay = date.toDateString() === new Date().toDateString();
+    if (sameDay) return `${formatTime(date)} ${t("today")}`;
+    return formatDate(date, { month: "short", day: "numeric" });
+  };
+
+  // The trip's own travel dates, e.g. "January 1 – 3, 2026".
+  const formatTravelDate = (startDate, endDate) => (startDate ? formatDateRange(startDate, endDate) : "");
 
   const [historyItems, setHistoryItems] = useState([]);
   const [loading, setLoading] = useState(true);

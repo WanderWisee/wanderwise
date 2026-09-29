@@ -5,10 +5,17 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
-import { createTrip } from '../services/tripService';
+import { createTrip, ensureDestination } from '../services/tripService';
 import Backdrop from '../components/Backdrop';
 import IconBadge from '../components/IconBadge';
 import CalendarPicker, { formatDate } from '../components/CalendarPicker';
+
+function toISO(d) {
+  if (!d) return null;
+  const mm = String(d.month + 1).padStart(2, '0');
+  const dd = String(d.day).padStart(2, '0');
+  return `${d.year}-${mm}-${dd}`;
+}
 
 export default function NewTripScreen() {
   const router = useRouter();
@@ -21,20 +28,30 @@ export default function NewTripScreen() {
 
   async function handleCreateTrip() {
     setError(null);
-    if (!destination) {
+    if (!destination.trim()) {
       setError('Please enter a destination.');
       return;
     }
     setLoading(true);
     try {
-      const trip = await createTrip({
-        name: `Trip to ${destination}`,
-        destination,
-        startDate: dateRange ? formatDate(dateRange.start) : null,
-        endDate: dateRange ? formatDate(dateRange.end) : null,
-        travelers,
+      const trimmed = destination.trim();
+      // Parehong ginagawa ng web: idinadagdag sa destinations list kung
+      // wala pa, para lumaki ang database base sa aktwal na hinahanap ng users.
+      ensureDestination(trimmed);
+
+      const title = `Trip to ${trimmed}`;
+      const { tripId } = await createTrip({
+        title,
+        destination: trimmed,
+        startDate: dateRange ? toISO(dateRange.start) : null,
+        endDate: dateRange ? toISO(dateRange.end) : null,
+        travelBuddiesCount: travelers,
+        budgetTotal: 0,
+        sections: [
+          { isDefault: true, name: title, sortOrder: 0, places: [] },
+        ],
       });
-      router.replace(`/trip/${trip.id}`);
+      router.replace(`/trip/${tripId}`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -72,7 +89,7 @@ export default function NewTripScreen() {
         />
 
         <Text style={styles.label}>Dates</Text>
-        <TouchableOpacity style={styles.dateField} onPress={() => setPickerOpen(true)}>
+        <TouchableOpacity style={styles.dateField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
           <Text style={dateRange ? styles.dateFieldText : styles.dateFieldPlaceholder}>
             {dateRange
               ? `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`

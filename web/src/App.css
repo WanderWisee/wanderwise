@@ -1724,6 +1724,333 @@
 }
 
 /* Trip Plan Builder Page */
+/* === Suggested Places (redesigned) === */
+.ww-suggested-places-panel {
+  background: #faf8ec;
+  border: 1px solid #e6dfc0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;/* === Suggested Places (redesigned) === */
+}
+
+.ww-suggested-places-panel {
+  background: #faf8ec;
+  border: 1px solid #e6dfc0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.ww-suggested-places-label {
+  font-size: 13px;
+  color: #5c4a33;
+  margin: 0 0 10px;
+  font-weight: bold;
+}
+
+.ww-suggested-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ww-suggested-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid #d9cfa8;
+  background: #fff;
+  color: #2b1c12;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.ww-suggested-chip:hover {
+  background: #f2ecd2;
+  box-shadow: 0 2px 6px rgba(43, 28, 18, 0.12);
+  transform: translateY(-1px);
+}
+
+.ww-suggested-chip-plus {
+  color: #2f7a6e;
+  font-weight: bold;
+}
+
+.ww-free-badge {
+  margin-left: 2px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #e3f3ea;
+  color: #1f7a4a;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.ww-show-more-btn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #2f7a6e;
+  background: transparent;
+  color: #2f7a6e;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ww-show-more-btn:hover {
+  background: #2f7a6e;
+  color: #fff;
+}
+
+/* === Unverified location warning (redesigned) === */
+/* One line: icon, message, then the link pushed to the right edge.
+   Wraps only on narrow screens so nothing gets cut off. */
+.ww-unverified-warning {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #fff8e6;
+  border: 1px solid #eecf7a;
+  border-left: 4px solid #d9a441;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin: 8px 0;
+}
+
+.ww-unverified-warning-icon {
+  font-size: 14px;
+}
+
+.ww-unverified-warning-text {
+  font-size: 13px;
+  color: #6b5320;
+}
+
+.ww-unverified-warning-link {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: bold;
+  color: #2f7a6e;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ww-unverified-warning-link:hover {
+  text-decoration: underline;
+}
+
+/* === Smart Route Optimization (per-day button) === */
+.ww-day-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ww-optimize-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #2f7a6e;
+  background: #fff;
+  color: #2f7a6e;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ww-optimize-btn:hover:not(:disabled) {
+  background: #2f7a6e;
+  color: #fff;
+}
+
+.ww-optimize-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ww-optimize-result {
+  margin: 4px 0 10px;
+  font-size: 13px;
+  color: #1f7a4a;
+}
+
+.ww-optimize-error {
+  color: #a33;
+}
+
+/* === My bookings (Booking Synchronization) === */
+.ww-bookings-panel {
+  background: #faf8ec;
+  border: 1px solid #e6dfc0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 16px 0;
+}
+
+.ww-bookings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ww-bookings-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: bold;
+  color: #2b1c12;
+}
+
+.ww-bookings-empty {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #7a6a4f;
+}
+
+.ww-booking-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #e6dfc0;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.ww-booking-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+  margin-top: 12px;
+}
+
+.ww-booking-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #5c4a33;
+}
+
+.ww-booking-form input,
+.ww-booking-form select {
+  padding: 7px 10px;
+  border: 1px solid #d9cfa8;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.ww-booking-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: #a33;
+}
+
+.ww-booking-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+
+.ww-booking-cancel {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #d9cfa8;
+  background: transparent;
+  color: #5c4a33;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.ww-day-booking {
+  margin: 4px 0 10px;
+  padding: 6px 12px;
+  background: #eef4fb;
+  border-left: 3px solid #2f7ae0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2b1c12;
+}
+
+.ww-bookings-count {
+  margin: 6px 0 12px;
+  font-size: 13px;
+  color: #1f7a4a;
+}
+
+/* === Hotels page: trip mode + bookings === */
+.ww-hotels-trip-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  margin: 20px auto 0;
+  padding: 12px 18px;
+  background: #faf8ec;
+  border: 1px solid #e6dfc0;
+  border-left: 4px solid #2f7a6e;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #2b1c12;
+}
+
+.ww-hotels-trip-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.ww-hotels-bookings {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.ww-booking-item-link {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ww-booking-item-link:hover {
+  background: #f2ecd2;
+}
+
+.ww-booking-trip-name {
+  color: #7a6a4f;
+}
+
+.ww-booking-open {
+  color: #2f7a6e;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 .ww-directions-link {
   color: #2f6f5f;
   font-weight: 600;

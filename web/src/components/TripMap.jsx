@@ -38,10 +38,14 @@ const destinationIcon = L.divIcon({
 
 const PH_CENTER = [12.8797, 121.7740]; // center of the Philippines
 
+// Plain marker map — no route drawing here. The full itinerary route was
+// removed (redundant with the dedicated Directions page), and the
+// single-place "how do I get there" route now lives entirely on its own
+// /directions page, so this component stays focused on just showing pins.
 export default function TripMap({ places, destinationMarker, destinationLabel }) {
   // Number each place by its position in the master "Where to go?"
   // list (not wherever it happened to get typed in) — this is what
-  // shows inside the red pin.
+  // shows inside the orange pin.
   const numbered = places.map((p, i) => ({ ...p, displayNumber: i + 1 }));
   const geocoded = numbered.filter((p) => p.lat && p.lng);
 

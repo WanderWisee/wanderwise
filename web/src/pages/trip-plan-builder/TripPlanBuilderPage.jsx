@@ -43,6 +43,84 @@ function addDaysIso(startDateStr, daysToAdd) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// ===== Smart Route Optimization helpers =====
+// Total length of visiting the points in `order`, one after another,
+// using a distance matrix (meters) from OSRM's /table service. An
+// unreachable pair (null) counts as huge so it's never picked.
+function pathLength(order, matrix) {
+  let total = 0;
+  for (let i = 0; i < order.length - 1; i++) {
+    const d = matrix[order[i]][order[i + 1]];
+    total += d == null ? 1e9 : d;
+  }
+  return total;
+}
+
+// Shortest one-way path that starts at point 0 (the day's first place
+// stays first — usually where the students start, e.g. their hotel) and
+// visits every other point once. Tries every order when there are few
+// places (exact answer); for bigger days, uses nearest-neighbour then
+// 2-opt swaps, which is close to optimal and still instant.
+function bestOpenPath(matrix) {
+  const n = matrix.length;
+  const rest = Array.from({ length: n - 1 }, (_, i) => i + 1);
+
+  if (n <= 8) {
+    let best = null;
+    let bestLen = Infinity;
+    const permute = (arr, l) => {
+      if (l === arr.length) {
+        const order = [0, ...arr];
+        const len = pathLength(order, matrix);
+        if (len < bestLen) {
+          bestLen = len;
+          best = order;
+        }
+        return;
+      }
+      for (let i = l; i < arr.length; i++) {
+        [arr[l], arr[i]] = [arr[i], arr[l]];
+        permute(arr, l + 1);
+        [arr[l], arr[i]] = [arr[i], arr[l]];
+      }
+    };
+    permute(rest, 0);
+    return best;
+  }
+
+  const order = [0];
+  const left = new Set(rest);
+  while (left.size > 0) {
+    const last = order[order.length - 1];
+    let next = null;
+    let nextDist = Infinity;
+    left.forEach((j) => {
+      const d = matrix[last][j] == null ? 1e9 : matrix[last][j];
+      if (d < nextDist) {
+        nextDist = d;
+        next = j;
+      }
+    });
+    order.push(next);
+    left.delete(next);
+  }
+
+  let improved = true;
+  while (improved) {
+    improved = false;
+    for (let i = 1; i < order.length - 1; i++) {
+      for (let k = i + 1; k < order.length; k++) {
+        const candidate = [...order.slice(0, i), ...order.slice(i, k + 1).reverse(), ...order.slice(k + 1)];
+        if (pathLength(candidate, matrix) < pathLength(order, matrix)) {
+          order.splice(0, order.length, ...candidate);
+          improved = true;
+        }
+      }
+    }
+  }
+  return order;
+}
+
 function buildItineraryDateMap(days, startDate) {
   const map = {};
   days.forEach((day, i) => {
@@ -54,10 +132,25 @@ function buildItineraryDateMap(days, startDate) {
   return map;
 }
 
-function serializePlace(p, itineraryDateMap, sortOrder) {
+// Position of each place WITHIN its itinerary day (0, 1, 2…). Saved as
+// itineraryOrder so a drag-and-drop or "Optimize route" reorder survives
+// a refresh — before this, only the date was saved, and the day's order
+// was rebuilt from the "Where to go?" list order on every load.
+function buildItineraryOrderMap(days) {
+  const map = {};
+  days.forEach((day) => {
+    day.placeIds.forEach((id, idx) => {
+      map[id] = idx;
+    });
+  });
+  return map;
+}
+
+function serializePlace(p, itineraryDateMap, sortOrder, itineraryOrderMap = {}) {
   return {
     name: p.name,
     itineraryDate: itineraryDateMap[p.id] || null,
+    itineraryOrder: itineraryDateMap[p.id] && p.id in itineraryOrderMap ? itineraryOrderMap[p.id] : null,
     latitude: typeof p.lat === "number" ? p.lat : null,
     longitude: typeof p.lng === "number" ? p.lng : null,
     notes: p.note || null,
@@ -70,19 +163,20 @@ function serializePlace(p, itineraryDateMap, sortOrder) {
 
 function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState }) {
   const itineraryDateMap = buildItineraryDateMap(tripState.days, startDate);
+  const itineraryOrderMap = buildItineraryOrderMap(tripState.days);
 
   const sections = [
     {
       isDefault: true,
       name: whereToGoTitle,
       sortOrder: 0,
-      places: tripState.places.map((p, i) => serializePlace(p, itineraryDateMap, i)),
+      places: tripState.places.map((p, i) => serializePlace(p, itineraryDateMap, i, itineraryOrderMap)),
     },
     ...tripState.customSections.map((s, idx) => ({
       isDefault: false,
       name: s.name || null,
       sortOrder: idx + 1,
-      places: s.places.map((p, i) => serializePlace(p, itineraryDateMap, i)),
+      places: s.places.map((p, i) => serializePlace(p, itineraryDateMap, i, itineraryOrderMap)),
     })),
   ];
 
@@ -109,6 +203,7 @@ function hydratePlace(p) {
     lng: p.longitude,
     costs: (p.costs || []).map((c) => ({ id: c.id, category: c.category, amount: c.amount })),
     _itineraryDate: p.itineraryDate,
+    _itineraryOrder: p.itineraryOrder ?? null,
   };
 }
 
@@ -144,7 +239,17 @@ function hydrateTripState(tripResponse, defaultTitle) {
   const allPlaces = [...places, ...customSections.flatMap((s) => s.places)];
   days.forEach((day, i) => {
     const iso = addDaysIso(tripResponse.startDate, i);
-    day.placeIds = allPlaces.filter((p) => p._itineraryDate === iso).map((p) => p.id);
+    // Restore the saved within-day order. Places saved before this
+    // column existed (null) keep their old list order, after the rest.
+    day.placeIds = allPlaces
+      .filter((p) => p._itineraryDate === iso)
+      .map((p, listIdx) => ({ p, listIdx }))
+      .sort((a, b) => {
+        const ao = a.p._itineraryOrder ?? Number.MAX_SAFE_INTEGER;
+        const bo = b.p._itineraryOrder ?? Number.MAX_SAFE_INTEGER;
+        return ao !== bo ? ao - bo : a.listIdx - b.listIdx;
+      })
+      .map(({ p }) => p.id);
   });
 
   return {
@@ -233,6 +338,11 @@ export default function TripPlanBuilderPage() {
 
   const [destination, setDestination] = useState(tripInfo.destination || "");
   const [destinationCoords, setDestinationCoords] = useState(null);
+
+  // Bookings recorded on the Hotels page for this trip (Booking
+  // Synchronization). Only read here, to show them on the matching
+  // itinerary days — adding/deleting happens on the Hotels page.
+  const [bookings, setBookings] = useState([]);
 
   useEffect(() => {
     if (!destination.trim()) {
@@ -376,6 +486,18 @@ export default function TripPlanBuilderPage() {
               }
             } catch (err) {
               console.warn("Failed to load expenses:", err);
+            }
+
+            // Bookings the students made on Agoda/Klook/etc. and recorded
+            // here ("Add my booking") — their own table, like expenses.
+            try {
+              const bookResp = await fetch(`/api/trips/${data.id}/bookings`, { headers: authHeaders });
+              if (bookResp.ok) {
+                const bookData = await bookResp.json();
+                setBookings(Array.isArray(bookData) ? bookData : []);
+              }
+            } catch (err) {
+              console.warn("Failed to load bookings:", err);
             }
           } else {
             // Trip not found / not owned by this user — nothing to hydrate.
@@ -539,6 +661,53 @@ export default function TripPlanBuilderPage() {
 
   const [suggestedPlaces, setSuggestedPlaces] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  // Whether to reveal every fetched suggestion instead of just the first
+  // 12 — clicking a chip is the accurate, no-typing way to add a place, so
+  // showing more of them means the student is less likely to fall back to
+  // typing (and less likely to end up at the wrong place).
+  const [showAllSuggestedPlaces, setShowAllSuggestedPlaces] = useState(false);
+
+  // Autocomplete candidates for the "Add new place" input — instead of
+  // silently geocoding whatever the user typed and trusting Nominatim's
+  // first (sometimes wrong/fuzzy) match, we show a few real candidates
+  // with their full address so the user can confirm which actual place
+  // they mean before it gets added, e.g. typing "Hotel Dolores" no longer
+  // auto-picks an unrelated "Villa Dolores Resort" somewhere else.
+  const [placeSuggestions, setPlaceSuggestions] = useState([]);
+  const [loadingPlaceSuggestions, setLoadingPlaceSuggestions] = useState(false);
+
+  useEffect(() => {
+    const query = newPlaceInput.trim();
+    if (query.length < 3) {
+      setPlaceSuggestions([]);
+      setLoadingPlaceSuggestions(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPlaceSuggestions(true);
+    // Debounced so we don't fire a request on every keystroke.
+    const timer = setTimeout(async () => {
+      try {
+        const q = encodeURIComponent(
+          destination ? `${query}, ${destination}, Philippines` : `${query}, Philippines`
+        );
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5&countrycodes=ph`
+        );
+        const data = await res.json();
+        if (!cancelled) setPlaceSuggestions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.warn("Place suggestion lookup failed", err);
+        if (!cancelled) setPlaceSuggestions([]);
+      } finally {
+        if (!cancelled) setLoadingPlaceSuggestions(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [newPlaceInput, destination]);
 
   useEffect(() => {
     if (!destination.trim()) {
@@ -628,6 +797,37 @@ export default function TripPlanBuilderPage() {
 
   const budgetSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
+  // A "match" here just means the words in what the user typed actually
+  // show up in the name OSM returned — catches the "Hotel Dolores" typed
+  // in, "Villa Dolores Resort" returned case, where Nominatim DID return
+  // a result (so it isn't a plain "no result" miss), but it's clearly a
+  // different, same-ish-sounding place, not the one asked for.
+  function namesLikelyMatch(typedName, resultDisplayName) {
+    if (!resultDisplayName) return false;
+    const normalize = (s) =>
+      s
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .split(/\s+/)
+        .filter(Boolean);
+    const typedWords = normalize(typedName);
+    const resultWords = new Set(normalize(resultDisplayName));
+    // Only judge on "significant" words (3+ letters) — skip short filler
+    // words like "the", "sa", "ng" that don't actually identify the place.
+    const significant = typedWords.filter((w) => w.length >= 3);
+    if (significant.length === 0) return true; // nothing meaningful to compare, don't block
+    const matchedCount = significant.filter((w) => resultWords.has(w)).length;
+    return matchedCount / significant.length >= 0.5;
+  }
+
+  // geocodeStatus lets the UI tell the user, honestly, when we could NOT
+  // confirm a place's real location against our free (OpenStreetMap) data
+  // — instead of silently adding it with no coordinates, or guessing
+  // wrong. "verified" = OSM returned a result AND its name actually
+  // matches what was typed. "unverified" = either nothing came back, or
+  // something came back under a clearly different name — either way, the
+  // user should double-check it themselves on Google Maps before
+  // trusting the directions (or before it feeds into route optimization).
   const geocodePlace = async (place) => {
     const query = encodeURIComponent(
       destination ? `${place.name}, ${destination}, Philippines` : `${place.name}, Philippines`
@@ -639,21 +839,64 @@ export default function TripPlanBuilderPage() {
       if (data && data[0]) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
-        setTripState((prev) => updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, lat, lng })));
+        const matches = namesLikelyMatch(place.name, data[0].display_name);
+        setTripState((prev) =>
+          updatePlaceEverywhere(prev, place.id, (p) => ({
+            ...p,
+            lat,
+            lng,
+            geocodeStatus: matches ? "verified" : "unverified",
+          }))
+        );
+      } else {
+        setTripState((prev) =>
+          updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, geocodeStatus: "unverified" }))
+        );
       }
     } catch (err) {
       console.warn("Geocoding failed for", place.name, err);
+      setTripState((prev) =>
+        updatePlaceEverywhere(prev, place.id, (p) => ({ ...p, geocodeStatus: "unverified" }))
+      );
     }
   };
 
-  const addPlace = (name) => {
-    const place = { id: nextPlaceId++, number: nextNumber++, name, visited: false };
+  const addPlace = (name, coords) => {
+    const place = {
+      id: nextPlaceId++,
+      number: nextNumber++,
+      name,
+      visited: false,
+      // coords means it came from a suggestion chip or a picked
+      // autocomplete result — already confirmed, no need to re-check.
+      geocodeStatus: coords ? "verified" : "pending",
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
+    };
     applyChange((prev) => ({ ...prev, places: [...prev.places, place] }));
-    geocodePlace(place);
+    // Only geocode blind (auto-pick first match) when we don't already have
+    // confirmed coordinates from a suggestion the user themselves picked.
+    if (!coords) geocodePlace(place);
+  };
+
+  // Called when the user clicks one of the autocomplete suggestions —
+  // we already know exactly which place they mean and its real
+  // coordinates, so no further (fuzzy) geocoding is needed.
+  const handleSelectPlaceSuggestion = (suggestion) => {
+    const label = (suggestion.display_name || "").split(",")[0].trim() || newPlaceInput.trim();
+    addPlace(label, { lat: parseFloat(suggestion.lat), lng: parseFloat(suggestion.lon) });
+    setNewPlaceInput("");
+    setPlaceSuggestions([]);
   };
 
   const handleAddPlace = (e) => {
     if (e.key !== "Enter" || !newPlaceInput.trim()) return;
+    // If suggestions are showing, treat Enter as "confirm the top match"
+    // instead of blindly re-geocoding the raw typed text — same accuracy
+    // benefit as clicking a suggestion.
+    if (placeSuggestions.length > 0) {
+      handleSelectPlaceSuggestion(placeSuggestions[0]);
+      return;
+    }
     addPlace(newPlaceInput.trim());
     setNewPlaceInput("");
   };
@@ -726,6 +969,7 @@ export default function TripPlanBuilderPage() {
           number: nextNumber++,
           name: s.placeInput.trim(),
           visited: false,
+          geocodeStatus: "pending",
         };
         newlyCreated.push(place);
         return { ...s, places: [...s.places, place], placeInput: "" };
@@ -804,7 +1048,13 @@ export default function TripPlanBuilderPage() {
       if (existing) {
         placeId = existing.id;
       } else {
-        const newPlace = { id: nextPlaceId++, number: nextNumber++, name: value, visited: false };
+        const newPlace = {
+          id: nextPlaceId++,
+          number: nextNumber++,
+          name: value,
+          visited: false,
+          geocodeStatus: "pending",
+        };
         createdPlace = newPlace;
         updatedState = { ...prev, places: [...prev.places, newPlace] };
         placeId = newPlace.id;
@@ -860,6 +1110,90 @@ export default function TripPlanBuilderPage() {
     }));
   };
 
+  // Smart Route Optimization: reorders ONE day's places into the shortest
+  // driving order (first place stays first). Uses OSRM's free /table
+  // service for real road distances between every pair of places, then
+  // picks the best order locally. Goes through applyChange, so Undo works
+  // and it saves like a normal drag-reorder.
+  // optimizeInfo[dayIndex] = { status, beforeS/afterS (seconds), beforeM/
+  // afterM (meters), skippedNames, forIds } — forIds
+  // lets the message disappear by itself once the day is changed again.
+  const [optimizeInfo, setOptimizeInfo] = useState({});
+
+  const optimizeDay = async (dayIndex) => {
+    const day = days[dayIndex];
+    const entries = day.placeIds
+      .map((id) => findPlaceWithOrigin(tripState, id))
+      .filter(Boolean)
+      .map(({ place }) => place);
+    const withCoords = entries.filter((p) => p.lat != null && p.lng != null);
+    const withoutCoords = entries.filter((p) => p.lat == null || p.lng == null);
+    const unknownIds = day.placeIds.filter((id) => !entries.some((p) => p.id === id));
+    if (withCoords.length < 3) return;
+
+    setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "loading" } }));
+    // Places with no confirmed location can't be measured, so they're left
+    // out of the calculation — named in the result so the student knows.
+    const skippedNames = withoutCoords.map((p) => p.name);
+    try {
+      const coords = withCoords.map((p) => `${p.lng},${p.lat}`).join(";");
+      const res = await fetch(
+        `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=duration,distance`
+      );
+      const data = await res.json();
+      if (data.code !== "Ok" || !data.durations) throw new Error(data.code || "No durations");
+
+      // Optimize on TRAVEL TIME (seconds), not km — a longer highway can be
+      // faster than a short road through town. Distance is only shown.
+      const timeMatrix = data.durations;
+      const distMatrix = data.distances;
+      const currentOrder = withCoords.map((_, i) => i);
+      const bestOrder = bestOpenPath(timeMatrix);
+      const beforeS = pathLength(currentOrder, timeMatrix);
+      const afterS = pathLength(bestOrder, timeMatrix);
+      const beforeM = distMatrix ? pathLength(currentOrder, distMatrix) : null;
+      const afterM = distMatrix ? pathLength(bestOrder, distMatrix) : null;
+
+      // Less than a minute saved isn't worth reshuffling the student's list.
+      if (afterS >= beforeS - 60) {
+        setOptimizeInfo((prev) => ({
+          ...prev,
+          [dayIndex]: { status: "already", skippedNames, forIds: day.placeIds.join(",") },
+        }));
+        return;
+      }
+
+      // Places without a confirmed location keep their relative order at
+      // the end of the day instead of vanishing.
+      const newIds = [
+        ...bestOrder.map((i) => withCoords[i].id),
+        ...withoutCoords.map((p) => p.id),
+        ...unknownIds,
+      ];
+      applyChange((prev) => ({
+        ...prev,
+        days: prev.days.map((d, i) => (i === dayIndex ? { ...d, placeIds: newIds } : d)),
+      }));
+      setOptimizeInfo((prev) => ({
+        ...prev,
+        [dayIndex]: {
+          status: "done",
+          beforeS,
+          afterS,
+          beforeM,
+          afterM,
+          skippedNames,
+          forIds: newIds.join(","),
+        },
+      }));
+    } catch (err) {
+      console.warn("Route optimization failed:", err);
+      setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "error" } }));
+    }
+  };
+
+  // Dates come back as "2026-04-17T00:00:00" — only the date part matters.
+  const bookingDate = (value) => (value ? String(value).slice(0, 10) : "");
   const [editingTimeFor, setEditingTimeFor] = useState(null);
 
   const updatePlaceTime = (placeId, value) => {
@@ -878,15 +1212,81 @@ export default function TripPlanBuilderPage() {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // "Directions" now opens the dedicated /directions page (its own route,
+  // its own map) instead of drawing the route inline here — same OSRM/OSM
+  // data underneath, just shown on a separate screen like Google Maps'
+  // own Directions view.
   const openDirections = (place) => {
-    const destParam = encodeURIComponent(`${place.name}, ${destination}`);
-    const originParam = userLocation ? `&origin=${userLocation.lat},${userLocation.lng}` : "";
-    window.open(
-      `https://www.google.com/maps/dir/?api=1${originParam}&destination=${destParam}&travelmode=driving`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    if (!place.lat || !place.lng) {
+      // No confirmed coordinates for this place at all — nowhere real to
+      // route to, so fall back to a Google Maps search the student can
+      // check manually (same as the "unverified" warning's own link).
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, ${destination}`)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+    navigate("/directions", {
+      state: { placeName: place.name, lat: place.lat, lng: place.lng, origin: userLocation },
+    });
   };
+
+  // Quick "X min - Y km" summary shown next to each itinerary place's
+  // Directions link — computed the same way (OSRM, from the student's
+  // current location) as the dedicated Directions page, just condensed.
+  const [placeTravelInfo, setPlaceTravelInfo] = useState({});
+
+  useEffect(() => {
+    if (!userLocation) return;
+    const targets = days
+      .flatMap((day) => day.placeIds.map((id) => findPlaceWithOrigin(tripState, id)))
+      .filter(Boolean)
+      .map(({ place }) => place)
+      .filter((p) => p.lat != null && p.lng != null && !placeTravelInfo[p.id]);
+
+    if (targets.length === 0) return;
+    let cancelled = false;
+
+    targets.forEach((p) => {
+      setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: true } }));
+      const url = `https://router.project-osrm.org/route/v1/driving/${userLocation.lng},${userLocation.lat};${p.lng},${p.lat}?overview=false`;
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (data.code === "Ok" && data.routes && data.routes[0]) {
+            const route = data.routes[0];
+            setPlaceTravelInfo((prev) => ({
+              ...prev,
+              [p.id]: { loading: false, distanceM: route.distance, durationS: route.duration },
+            }));
+          } else {
+            setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: false, error: true } }));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: false, error: true } }));
+          }
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLocation, days, tripState]);
+
+  const formatTravelDuration = (seconds) => {
+    const totalMinutes = Math.round(seconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
+  };
+  const formatTravelDistance = (meters) => `${(meters / 1000).toFixed(1)} km`;
 
   const [addingCostFor, setAddingCostFor] = useState(null);
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
@@ -1059,13 +1459,13 @@ export default function TripPlanBuilderPage() {
         <aside className="ww-builder-sidebar">
           <p className="ww-sidebar-item active">{t("overview")}</p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(whereToGoRef)} style={{ cursor: "pointer" }}>
-            {t("whereToGoDefault")}
+            {whereToGoTitle || t("whereToGoDefault")}
           </p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(itineraryRef)} style={{ cursor: "pointer" }}>
             {t("notes")}
           </p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(untitledRef)} style={{ cursor: "pointer" }}>
-            {t("untitled")}
+            {customSections[0]?.name?.trim() || t("untitled")}
           </p>
           <p className="ww-sidebar-header">{t("itinerary")}</p>
           {days.map((day) => (
@@ -1099,13 +1499,21 @@ export default function TripPlanBuilderPage() {
           <button
             className="ww-browse-btn"
             onClick={() =>
-              navigate("/hotels/results", {
-                state: { destination, startDate, endDate, buddies: people },
+              // Opens the Hotels page in "trip mode": destination and dates
+              // pre-filled, plus the form to record the booking on this trip.
+              navigate("/hotels", {
+                state: { tripId, destination, startDate, endDate, buddies: people },
               })
             }
           >
             🏨 {t("bookAHotel")}
           </button>
+
+          {bookings.length > 0 && (
+            <p className="ww-bookings-count">
+              ✓ {bookings.length} {t("bookingsRecordedCount")}
+            </p>
+          )}
 
           <h2 className="ww-builder-section-title">
             <span className="ww-title-with-icon">
@@ -1148,29 +1556,46 @@ export default function TripPlanBuilderPage() {
           )}
 
           {suggestedPlaces.length > 0 && (
-            <div className="ww-suggested-places" style={{ marginBottom: 16 }}>
-              <p className="ww-field-label" style={{ marginBottom: 8 }}>
+            <div className="ww-suggested-places-panel">
+              <p className="ww-suggested-places-label">
                 {t("suggestedPlacesIn")} {destination}:
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {suggestedPlaces.slice(0, 12).map((sp) => (
+              <div className="ww-suggested-chips">
+                {suggestedPlaces.slice(0, showAllSuggestedPlaces ? suggestedPlaces.length : 12).map((sp) => (
                   <button
                     key={sp.name}
                     type="button"
-                    onClick={() => addPlace(sp.name)}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: 16,
-                      border: "1px solid #dbeceb",
-                      background: "#f2f6f5",
-                      cursor: "pointer",
-                      fontSize: 13,
-                    }}
+                    className="ww-suggested-chip"
+                    // sp already carries real coordinates from the Overpass
+                    // lookup (see PlacesController) — pass them straight
+                    // through instead of re-geocoding the name by text,
+                    // which is what let a fuzzy/wrong match sneak in before.
+                    onClick={() => addPlace(sp.name, { lat: sp.lat, lng: sp.lon })}
                   >
-                    + {sp.name}
+                    <span className="ww-suggested-chip-plus">+</span> {sp.name}
+                    {/* Only shown when OpenStreetMap explicitly says entry
+                        is free (fee=no) — helps students pick places that
+                        fit their budget (FR 14). */}
+                    {sp.isFree && <span className="ww-free-badge">{t("freeEntry")}</span>}
                   </button>
                 ))}
               </div>
+              {/* Clicking a chip is the safest way to add a place (real,
+                  verified OSM coordinates, no typing/fuzzy-matching
+                  involved), so we let the user reveal every suggestion we
+                  fetched instead of hiding most of them behind the
+                  12-item cap. */}
+              {suggestedPlaces.length > 12 && (
+                <button
+                  type="button"
+                  className="ww-show-more-btn"
+                  onClick={() => setShowAllSuggestedPlaces((v) => !v)}
+                >
+                  {showAllSuggestedPlaces
+                    ? `${t("showFewerPlaces")} ▴`
+                    : `${t("showMorePlaces")} (+${suggestedPlaces.length - 12}) ▾`}
+                </button>
+              )}
             </div>
           )}
 
@@ -1179,6 +1604,35 @@ export default function TripPlanBuilderPage() {
               <p className="ww-place-name">
                 📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
               </p>
+
+              {/* Shown when our free (OpenStreetMap) lookup could NOT
+                  confirm this place's real location — honest instead of
+                  silently guessing, or worse, silently being wrong. The
+                  button opens an actual Google Maps SEARCH (not
+                  directions) so the student can see the real pin
+                  themselves and judge if it's the same place. */}
+              {/* Fires both when nothing was found at all, AND when
+                  something was found but under a clearly different name
+                  (namesLikelyMatch caught a mismatch) — either way the
+                  place shouldn't be trusted blindly. */}
+              {(p.geocodeStatus === "unverified" ||
+                ((p.lat == null || p.lng == null) && p.geocodeStatus !== "pending")) && (
+                <div className="ww-unverified-warning">
+                  <span className="ww-unverified-warning-icon">⚠️</span>
+                  <span className="ww-unverified-warning-text">{t("locationUnverifiedWarning")}</span>
+                  <a
+                    className="ww-unverified-warning-link"
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${p.name}, ${destination}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("viewOnGoogleMaps")} ↗
+                  </a>
+                </div>
+              )}
+
               <input
                 className="ww-place-notes-input"
                 placeholder={t("addNotesPlaceholder")}
@@ -1207,14 +1661,70 @@ export default function TripPlanBuilderPage() {
             </div>
           ))}
 
-          <input
-            ref={newPlaceInputRef}
-            className="ww-add-place-input"
-            placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
-            value={newPlaceInput}
-            onChange={(e) => setNewPlaceInput(e.target.value)}
-            onKeyDown={handleAddPlace}
-          />
+          {/* Typing is the fallback, not the main path — clicking a
+              suggested-places chip above (real OSM coordinates, no
+              fuzzy text matching) is the safer default. This is only
+              here for a place that isn't in the suggested list at all. */}
+          <p className="ww-field-label" style={{ marginBottom: 6, fontSize: 12, opacity: 0.8 }}>
+            {t("addPlaceFallbackLabel")}
+          </p>
+          <div style={{ position: "relative" }}>
+            <input
+              ref={newPlaceInputRef}
+              className="ww-add-place-input"
+              placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+              value={newPlaceInput}
+              onChange={(e) => setNewPlaceInput(e.target.value)}
+              onKeyDown={handleAddPlace}
+            />
+
+            {newPlaceInput.trim().length >= 3 &&
+              (loadingPlaceSuggestions || placeSuggestions.length > 0) && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    background: "#fff",
+                    border: "1px solid #dbeceb",
+                    borderRadius: 8,
+                    marginTop: 4,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                    maxHeight: 240,
+                    overflowY: "auto",
+                  }}
+                >
+                  {loadingPlaceSuggestions && (
+                    <p style={{ padding: "8px 12px", margin: 0, fontSize: 13, color: "#7a6a4f" }}>
+                      {t("loadingEllipsis")}
+                    </p>
+                  )}
+                  {!loadingPlaceSuggestions &&
+                    placeSuggestions.map((sug) => (
+                      <div
+                        key={sug.place_id}
+                        onClick={() => handleSelectPlaceSuggestion(sug)}
+                        style={{
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          cursor: "pointer",
+                          borderBottom: "1px solid #f0ede0",
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        📍 {sug.display_name}
+                      </div>
+                    ))}
+                  {!loadingPlaceSuggestions && placeSuggestions.length === 0 && (
+                    <p style={{ padding: "8px 12px", margin: 0, fontSize: 13, color: "#7a6a4f" }}>
+                      {t("noPlaceMatches")}
+                    </p>
+                  )}
+                </div>
+              )}
+          </div>
 
           <hr className="ww-builder-divider" />
 
@@ -1315,9 +1825,70 @@ export default function TripPlanBuilderPage() {
                   .map((id) => findPlaceWithOrigin(tripState, id))
                   .filter(Boolean);
 
+                const routablePlaces = dayPlaces.filter(
+                  ({ place }) => place.lat != null && place.lng != null
+                ).length;
+                const info = optimizeInfo[dayIndex];
+                // Hide the result once the day's list changes again (drag,
+                // add, remove) so it never describes an order that's gone.
+                const showInfo =
+                  info &&
+                  (info.status === "loading" ||
+                    info.status === "error" ||
+                    info.forIds === day.placeIds.join(","));
+
                 return (
                   <div className="ww-day-block" key={day.label}>
-                    <p className="ww-day-header">⌄ {day.label}</p>
+                    <div className="ww-day-header-row">
+                      <p className="ww-day-header">⌄ {day.label}</p>
+                      {routablePlaces >= 3 && (
+                        <button
+                          type="button"
+                          className="ww-optimize-btn"
+                          onClick={() => optimizeDay(dayIndex)}
+                          disabled={info?.status === "loading"}
+                          title={t("optimizeRouteHint")}
+                        >
+                          {info?.status === "loading" ? t("optimizingRoute") : `⇅ ${t("optimizeRoute")}`}
+                        </button>
+                      )}
+                    </div>
+                    {showInfo && info.status === "done" && (
+                      <p className="ww-optimize-result">
+                        ✓ {t("routeOptimized")} {formatTravelDuration(info.beforeS)} →{" "}
+                        <strong>{formatTravelDuration(info.afterS)}</strong>
+                        {info.beforeM != null && info.afterM != null && (
+                          <> ({formatTravelDistance(info.beforeM)} → {formatTravelDistance(info.afterM)})</>
+                        )}
+                      </p>
+                    )}
+                    {showInfo && info.status === "already" && (
+                      <p className="ww-optimize-result">✓ {t("routeAlreadyShortest")}</p>
+                    )}
+                    {showInfo &&
+                      (info.status === "done" || info.status === "already") &&
+                      info.skippedNames?.length > 0 && (
+                        <p className="ww-optimize-result ww-optimize-error">
+                          ⚠️ {t("routeSkippedPlaces")} {info.skippedNames.join(", ")}
+                        </p>
+                      )}
+                    {showInfo && info.status === "error" && (
+                      <p className="ww-optimize-result ww-optimize-error">⚠️ {t("routeOptimizeFailed")}</p>
+                    )}
+                    {/* Recorded bookings land on the day they start/end. */}
+                    {(() => {
+                      const dayIso = addDaysIso(startDate, dayIndex);
+                      if (!dayIso) return null;
+                      return bookings
+                        .filter((b) => bookingDate(b.checkIn) === dayIso || bookingDate(b.checkOut) === dayIso)
+                        .map((b) => (
+                          <p className="ww-day-booking" key={`bk-${b.id}-${dayIso}`}>
+                            🏨 {bookingDate(b.checkIn) === dayIso ? t("bookingCheckIn") : t("bookingCheckOut")}:{" "}
+                            <strong>{b.placeName}</strong>
+                            {b.confirmationNumber && <> · #{b.confirmationNumber}</>}
+                          </p>
+                        ));
+                    })()}
                     {dayPlaces.map(({ place: p, number }, i) => (
                       <React.Fragment key={p.id}>
                         <div
@@ -1339,7 +1910,18 @@ export default function TripPlanBuilderPage() {
                             />
                           </div>
                           <div>
-                            <p className="ww-place-name">📍{number} {p.name}</p>
+                            <p className="ww-place-name">
+                              📍{number} {p.name}
+                              {/* Tells the student up front which places
+                                  have no confirmed location, so they know
+                                  why a place is skipped by "Optimize route"
+                                  and has no travel time. */}
+                              {(p.lat == null || p.lng == null) && (
+                                <span className="ww-no-location-tag" title={t("locationUnverifiedWarning")}>
+                                  ⚠️ {t("noLocationTag")}
+                                </span>
+                              )}
+                            </p>
                             <input
                               className="ww-place-notes-input"
                               placeholder={t("addNotesPlaceholder")}
@@ -1426,18 +2008,38 @@ export default function TripPlanBuilderPage() {
                               </div>
                             )}
 
-                            <p className="ww-mark-visited">
-                              {p.visited ? `✓ ${t("visited")}` : `✓ ${t("markVisited")}`}
+                            <p
+                              className="ww-mark-visited"
+                              onClick={() => toggleVisited(p.id)}
+                              style={{ cursor: "pointer" }}
+                            >
+                              {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
                             </p>
                           </div>
                         </div>
                         <p className="ww-directions-hint">
+                          {/* Quick preview of travel time/distance from
+                              where the student is right now — the full
+                              route + info lives on the dedicated
+                              Directions page, this is just the summary. */}
+                          {p.lat != null &&
+                            p.lng != null &&
+                            placeTravelInfo[p.id] &&
+                            !placeTravelInfo[p.id].loading &&
+                            !placeTravelInfo[p.id].error && (
+                              <span style={{ marginRight: 8 }}>
+                                🚗 {formatTravelDuration(placeTravelInfo[p.id].durationS)} -{" "}
+                                {formatTravelDistance(placeTravelInfo[p.id].distanceM)} |{" "}
+                              </span>
+                            )}
                           <span
                             className="ww-directions-link"
                             onClick={() => openDirections(p)}
                             style={{ cursor: "pointer" }}
                           >
-                            🚗 {t("directions")}
+                            {p.lat != null && p.lng != null && placeTravelInfo[p.id]
+                              ? t("directions")
+                              : `🚗 ${t("directions")}`}
                           </span>
                         </p>
                       </React.Fragment>

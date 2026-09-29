@@ -25,6 +25,7 @@ public class PlaceDto
 {
     public string Name { get; set; } = string.Empty;
     public string? ItineraryDate { get; set; }  // "yyyy-MM-dd" or null
+    public int? ItineraryOrder { get; set; }    // position within its itinerary day, or null
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public string? Notes { get; set; }
@@ -65,6 +66,7 @@ public class PlaceResponse
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? ItineraryDate { get; set; }
+    public int? ItineraryOrder { get; set; }    // position within its itinerary day, or null
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public string? Notes { get; set; }

@@ -118,6 +118,9 @@ public class TripsController : ControllerBase
                     TripId = id,
                     SectionId = sectionId,
                     ItineraryDate = ParseDate(placeDto.ItineraryDate),
+                    // Position within its itinerary day, so a drag-and-drop
+                    // or "Optimize route" reorder survives a refresh.
+                    ItineraryOrder = placeDto.ItineraryOrder,
                     Name = placeDto.Name,
                     Latitude = placeDto.Latitude.HasValue ? (decimal)placeDto.Latitude.Value : null,
                     Longitude = placeDto.Longitude.HasValue ? (decimal)placeDto.Longitude.Value : null,
@@ -484,6 +487,7 @@ public class TripsController : ControllerBase
             Id = p.Id,
             Name = p.Name,
             ItineraryDate = p.ItineraryDate?.ToString("yyyy-MM-dd"),
+            ItineraryOrder = p.ItineraryOrder,
             Latitude = p.Latitude.HasValue ? (double)p.Latitude.Value : null,
             Longitude = p.Longitude.HasValue ? (double)p.Longitude.Value : null,
             Notes = p.Notes,

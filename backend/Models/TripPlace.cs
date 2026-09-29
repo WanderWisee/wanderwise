@@ -19,6 +19,9 @@ public class TripPlace
     [Column("itinerary_date")]
     public DateOnly? ItineraryDate { get; set; }
 
+     [Column("itinerary_order")]
+     public int? ItineraryOrder { get; set; }
+
     [Column("name")]
     public string Name { get; set; } = string.Empty;
 

@@ -376,7 +376,6 @@ export default function TripDetailScreen() {
         <View style={styles.tabContent}>
           {activeTab === 'Overview' && (
             <>
-              {/* Notes — elevated card na may icon badge */}
               <View style={styles.sectionHeaderRow}>
                 <View style={[styles.sectionIconBadge, { backgroundColor: '#B8D4D9' }]}>
                   <Text style={{ fontSize: 14 }}>📝</Text>
@@ -389,7 +388,6 @@ export default function TripDetailScreen() {
                 </Text>
               </View>
 
-              {/* Bawat listahan ("Places to visit" + custom lists) — elevated card */}
               {trip.sections.map((section, sIndex) => {
                 const unscheduled = section.places.filter((p) => !p.itineraryDate);
                 return (
@@ -459,62 +457,85 @@ export default function TripDetailScreen() {
           {activeTab === 'Itinerary' && (
             <>
               {days.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  Set a start and end date for this trip (Overview) to see day-by-day scheduling.
-                </Text>
+                <View style={styles.emptyStateCard}>
+                  <Text style={{ fontSize: 30 }}>🗓️</Text>
+                  <Text style={styles.emptyStateTitle}>No dates set yet</Text>
+                  <Text style={styles.emptyText}>
+                    Set a start and end date for this trip (Overview) to see day-by-day scheduling.
+                  </Text>
+                </View>
               ) : (
                 <>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayPillRow}>
-                    {days.map((day) => (
-                      <TouchableOpacity
-                        key={day.key}
-                        style={[styles.dayPill, selectedDayKey === day.key && styles.dayPillActive]}
-                        onPress={() => setSelectedDayKey(day.key)}
-                      >
-                        <Text style={[styles.dayPillText, selectedDayKey === day.key && styles.dayPillTextActive]}>
-                          {day.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-
-                  <View style={styles.addPlaceRow}>
-                    <TextInput
-                      style={styles.addPlaceInput}
-                      placeholder="Add a place for this day"
-                      placeholderTextColor={GREY_PLACEHOLDER}
-                      value={dayPlaceInput}
-                      onChangeText={setDayPlaceInput}
-                      onSubmitEditing={addPlaceToDay}
-                    />
-                    <TouchableOpacity style={styles.addPlaceButton} onPress={addPlaceToDay} disabled={saving}>
-                      {saving ? (
-                        <ActivityIndicator size="small" color={Colors.mint} />
-                      ) : (
-                        <Text style={styles.addPlaceButtonText}>+</Text>
-                      )}
-                    </TouchableOpacity>
+                  <View style={styles.dayPillCard}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                      {days.map((day) => (
+                        <TouchableOpacity
+                          key={day.key}
+                          style={[styles.dayPill, selectedDayKey === day.key && styles.dayPillActive]}
+                          onPress={() => setSelectedDayKey(day.key)}
+                        >
+                          <Text style={[styles.dayPillText, selectedDayKey === day.key && styles.dayPillTextActive]}>
+                            {day.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
 
-                  {stopsForSelectedDay.length === 0 ? (
-                    <Text style={styles.emptyText}>No places scheduled for this day yet.</Text>
-                  ) : (
-                    stopsForSelectedDay.map((place, index) => (
-                      <View key={place.key} style={styles.stopCard}>
-                        <View style={styles.stopNumberBadge}>
-                          <Text style={styles.stopNumberText}>{index + 1}</Text>
+                  <View style={styles.sectionHeaderRow}>
+                    <View style={[styles.sectionIconBadge, { backgroundColor: '#F4D9A8' }]}>
+                      <Text style={{ fontSize: 14 }}>📍</Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>
+                      {days.find((d) => d.key === selectedDayKey)?.label || 'Day'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.listCard}>
+                    <View style={styles.addPlaceRow}>
+                      <TextInput
+                        style={styles.addPlaceInput}
+                        placeholder="Add a place for this day"
+                        placeholderTextColor={GREY_PLACEHOLDER}
+                        value={dayPlaceInput}
+                        onChangeText={setDayPlaceInput}
+                        onSubmitEditing={addPlaceToDay}
+                      />
+                      <TouchableOpacity style={styles.addPlaceButton} onPress={addPlaceToDay} disabled={saving}>
+                        {saving ? (
+                          <ActivityIndicator size="small" color={Colors.mint} />
+                        ) : (
+                          <Text style={styles.addPlaceButtonText}>+</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+
+                    {stopsForSelectedDay.length === 0 ? (
+                      <Text style={styles.emptyTextSmall}>No places scheduled for this day yet.</Text>
+                    ) : (
+                      stopsForSelectedDay.map((place, index) => (
+                        <View
+                          key={place.key}
+                          style={[
+                            styles.stopRow,
+                            index !== stopsForSelectedDay.length - 1 && styles.stopRowDivider,
+                          ]}
+                        >
+                          <View style={styles.stopNumberBadge}>
+                            <Text style={styles.stopNumberText}>{index + 1}</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.stopName}>{place.name}</Text>
+                            <TouchableOpacity onPress={() => toggleVisited(place.sectionKey, place.key)}>
+                              <Text style={[styles.visitedText, place.visited && styles.visitedTextActive]}>
+                                {place.visited ? '✓ Visited' : 'Mark visited'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.stopName}>{place.name}</Text>
-                          <TouchableOpacity onPress={() => toggleVisited(place.sectionKey, place.key)}>
-                            <Text style={[styles.visitedText, place.visited && styles.visitedTextActive]}>
-                              {place.visited ? '✓ Visited' : 'Mark visited'}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </View>
                 </>
               )}
             </>
@@ -675,21 +696,30 @@ const styles = StyleSheet.create({
   },
   assignButtonText: { fontFamily: 'Lora_400Regular', fontSize: 10.5, color: Colors.brown900 },
 
-  dayPillRow: { marginBottom: 16 },
+  emptyStateCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', gap: 8,
+    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+  },
+  emptyStateTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
+
+  dayPillCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 10, marginBottom: 20,
+    shadowColor: Colors.brown900, shadowOpacity: 0.05, shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 }, elevation: 1,
+  },
   dayPill: {
     backgroundColor: Colors.cream2, borderRadius: 20, paddingHorizontal: 16, height: 38,
-    alignItems: 'center', justifyContent: 'center', marginRight: 10,
-    borderWidth: 1, borderColor: Colors.line,
+    alignItems: 'center', justifyContent: 'center',
   },
-  dayPillActive: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
+  dayPillActive: { backgroundColor: Colors.brown900 },
   dayPillText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
   dayPillTextActive: { color: Colors.mint },
 
-  stopCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.cream2, borderRadius: 14, borderWidth: 1, borderColor: Colors.line,
-    padding: 14, marginBottom: 10,
+  stopRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12,
   },
+  stopRowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
   stopNumberBadge: {
     width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',

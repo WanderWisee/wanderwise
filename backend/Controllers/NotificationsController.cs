@@ -24,9 +24,24 @@ public class NotificationsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetMyNotifications()
     {
+        // Also checked here (not only by the background job) so a reminder
+        // that's due shows up the moment the page is opened.
+        await NotificationHelper.GenerateTripRemindersAsync(_db, CurrentUserId);
+
         var items = await _db.Notifications
             .Where(n => n.UserId == CurrentUserId)
             .OrderByDescending(n => n.CreatedAt)
+            .Take(50)
+            .Select(n => new
+            {
+                id = n.Id,
+                type = n.Type,
+                message = n.Message,
+                link = n.Link,
+                data = n.Data,
+                isRead = n.IsRead,
+                createdAt = n.CreatedAt,
+            })
             .ToListAsync();
 
         return Ok(items);
@@ -40,6 +55,17 @@ public class NotificationsController : ControllerBase
 
         notif.IsRead = true;
         await _db.SaveChangesAsync();
-        return Ok(notif);
+        return NoContent();
+    }
+
+    [HttpPut("read-all")]
+    public async Task<IActionResult> MarkAllRead()
+    {
+        var unread = await _db.Notifications
+            .Where(n => n.UserId == CurrentUserId && !n.IsRead)
+            .ToListAsync();
+        unread.ForEach(n => n.IsRead = true);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 }

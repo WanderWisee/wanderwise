@@ -134,8 +134,8 @@ public class JournalController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Text))
             return BadRequest("Comment can't be empty.");
 
-        var entryExists = await _db.JournalEntries.AnyAsync(j => j.Id == id);
-        if (!entryExists) return NotFound();
+        var entry = await _db.JournalEntries.FirstOrDefaultAsync(j => j.Id == id);
+        if (entry is null) return NotFound();
 
         var comment = new JournalComment
         {
@@ -149,6 +149,19 @@ public class JournalController : ControllerBase
         await _db.SaveChangesAsync();
 
         var user = await _db.Users.FindAsync(CurrentUserId);
+
+        // Comments notification for the journal's author (not when you
+        // comment on your own post).
+        if (entry.UserId != CurrentUserId)
+        {
+            var commenterName = NotificationHelper.FullName(user);
+            var title = string.IsNullOrWhiteSpace(entry.Title) ? "your story" : entry.Title;
+            await NotificationHelper.CreateAsync(
+                _db, entry.UserId, NotificationHelper.Comment,
+                $"{commenterName} commented on {title}.",
+                $"/journal/view/{id}",
+                new { actorName = commenterName, journalTitle = entry.Title });
+        }
 
         return Ok(new
         {

@@ -26,6 +26,8 @@ import SettingsPage from './pages/settings/SettingsPage';
 import HistoryPage from './pages/history/HistoryPage';
 import { AppDataProvider } from './context/AppDataContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { PreferencesProvider } from './context/PreferencesContext';
+import NotificationWatcher from './components/NotificationWatcher';
 import JournalViewPage from './pages/journal/JournalViewPage';
 import JoinTripPage from "./pages/trip-plan-builder/JoinTripPage";
 import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
@@ -33,7 +35,11 @@ import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
 function App() {
   return (
   <LanguageProvider>
+    <PreferencesProvider>
     <AppDataProvider>
+      {/* Checks for new notifications and trip reminders every minute on
+          every page, and shows a browser pop-up when allowed. */}
+      <NotificationWatcher />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -70,6 +76,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AppDataProvider>
+    </PreferencesProvider>
   </LanguageProvider>
   );
 }

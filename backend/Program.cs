@@ -62,6 +62,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddHostedService<WanderWiseApi.Controllers.TripReminderService>();
 
 var app = builder.Build();
 

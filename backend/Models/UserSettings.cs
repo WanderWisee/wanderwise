@@ -23,6 +23,10 @@ public class UserSettings
     [Column("notif_comments")]
     public bool NotifComments { get; set; } = true;
 
+    // A crew member changed the trip: itinerary, expenses, bookings, budget.
+    [Column("notif_trip_updates")]
+    public bool NotifTripUpdates { get; set; } = true;
+
     [Column("date_format")]
     public string DateFormat { get; set; } = "mdy";
 

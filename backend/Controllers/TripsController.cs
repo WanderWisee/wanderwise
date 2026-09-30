@@ -71,6 +71,21 @@ public class TripsController : ControllerBase
         var trip = await GetAccessibleTripAsync(id);
         if (trip is null) return NotFound();
 
+        // Snapshot of the trip BEFORE saving, to tell whether anything the
+        // crew would care about actually changed (the page also saves when
+        // nothing changed, e.g. right after opening a trip).
+        var oldPlacesForCompare = await _db.TripPlaces
+            .Where(p => p.TripId == id)
+            .OrderBy(p => p.SortOrder)
+            .ToListAsync();
+        var beforeSignature = TripSignature(
+            trip.Title, trip.Destination,
+            trip.StartDate?.ToString("yyyy-MM-dd"), trip.EndDate?.ToString("yyyy-MM-dd"),
+            Convert.ToDecimal(trip.BudgetTotal),
+            oldPlacesForCompare.Select(p => PlaceSignature(
+                p.Name, p.ItineraryDate?.ToString("yyyy-MM-dd"), p.ItineraryOrder,
+                p.ScheduledTime?.ToString("HH:mm"), p.Visited)));
+
         trip.Title = request.Title;
         trip.Destination = request.Destination;
         trip.StartDate = ParseDate(request.StartDate);
@@ -148,8 +163,35 @@ public class TripsController : ControllerBase
         }
         await _db.SaveChangesAsync();
 
+        // Trip updates: if something changed, tell the rest of the crew.
+        var afterSignature = TripSignature(
+            trip.Title, trip.Destination,
+            trip.StartDate?.ToString("yyyy-MM-dd"), trip.EndDate?.ToString("yyyy-MM-dd"),
+            Convert.ToDecimal(trip.BudgetTotal),
+            request.Sections.SelectMany(sec => sec.Places).Select(p => PlaceSignature(
+                p.Name, ParseDate(p.ItineraryDate)?.ToString("yyyy-MM-dd"), p.ItineraryOrder,
+                ParseTime(p.ScheduledTime)?.ToString("HH:mm"), p.Visited)));
+
+        if (afterSignature != beforeSignature)
+        {
+            var editor = await _db.Users.FindAsync(CurrentUserId);
+            var editorName = NotificationHelper.FullName(editor);
+            var tripName = trip.Destination ?? trip.Title ?? "";
+            await NotificationHelper.NotifyTripCrewAsync(
+                _db, trip, CurrentUserId, NotificationHelper.TripUpdated,
+                $"{editorName} updated the trip to {tripName}.",
+                new { actorName = editorName, tripDestination = tripName });
+        }
+
         return await GetTrip(id);
     }
+
+    private static string PlaceSignature(string? name, string? date, int? order, string? time, bool visited) =>
+        $"{name?.Trim()}|{date}|{order}|{time}|{visited}";
+
+    private static string TripSignature(
+        string? title, string? destination, string? start, string? end, decimal budget, IEnumerable<string> places) =>
+        $"{title}|{destination}|{start}|{end}|{budget}||" + string.Join("||", places);
 
     // Open to the owner AND any crew member — a joined collaborator needs
     // to be able to load the trip, not just the person who created it.
@@ -357,6 +399,44 @@ public class TripsController : ControllerBase
 
         _db.TripMembers.Remove(member);
         await _db.SaveChangesAsync();
+
+        // Trip invites: tell the person they were removed. No link — they
+        // can't open the trip anymore.
+        var owner = await _db.Users.FindAsync(CurrentUserId);
+        var ownerName = NotificationHelper.FullName(owner);
+        var tripName = trip.Destination ?? trip.Title ?? "";
+        await NotificationHelper.CreateAsync(
+            _db, member.UserId, NotificationHelper.CrewRemoved,
+            $"{ownerName} removed you from the trip to {tripName}.",
+            null,
+            new { actorName = ownerName, tripDestination = tripName });
+
+        return NoContent();
+    }
+
+    // A crew member leaves a trip they joined (the owner can't leave their
+    // own trip — they delete it instead). Tells the owner.
+    [HttpPost("/api/trips/{id}/leave")]
+    public async Task<IActionResult> LeaveTrip(int id)
+    {
+        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id);
+        if (trip is null) return NotFound();
+
+        var member = await _db.TripMembers.FirstOrDefaultAsync(m => m.TripId == id && m.UserId == CurrentUserId);
+        if (member is null) return NotFound();
+
+        _db.TripMembers.Remove(member);
+        await _db.SaveChangesAsync();
+
+        var leaver = await _db.Users.FindAsync(CurrentUserId);
+        var leaverName = NotificationHelper.FullName(leaver);
+        var tripName = trip.Destination ?? trip.Title ?? "";
+        await NotificationHelper.CreateAsync(
+            _db, trip.UserId, NotificationHelper.CrewLeft,
+            $"{leaverName} left your trip to {tripName}.",
+            $"/trip-plan?tripId={trip.Id}",
+            new { actorName = leaverName, tripDestination = tripName });
+
         return NoContent();
     }
 

@@ -16,8 +16,20 @@ public static class NotificationHelper
     // Trip invites
     public const string CrewAdded = "crew_added";
     public const string CrewJoined = "crew_joined";
+    public const string CrewRemoved = "crew_removed";
+    public const string CrewLeft = "crew_left";
     // Comments
     public const string Comment = "comment";
+    // Trip updates (a crew member changed the shared trip)
+    public const string TripUpdated = "trip_updated";
+    public const string ExpenseAdded = "expense_added";
+    public const string BookingAdded = "booking_added";
+    public const string BudgetWarning = "budget_80";
+    public const string BudgetOver = "budget_over";
+    // Trip reminders: the day after a trip ends → write your story
+    public const string TripEnded = "trip_ended";
+    // Security — always sent, can't be turned off in Settings
+    public const string PasswordChanged = "password_changed";
 
     public static async Task<bool> IsEnabledAsync(WanderWiseDbContext db, int userId, string type)
     {
@@ -26,9 +38,11 @@ public static class NotificationHelper
 
         return type switch
         {
-            TripStart or Activity or CheckIn => s.NotifTripReminders,
-            CrewAdded or CrewJoined => s.NotifTripInvites,
+            TripStart or Activity or CheckIn or TripEnded => s.NotifTripReminders,
+            CrewAdded or CrewJoined or CrewRemoved or CrewLeft => s.NotifTripInvites,
             Comment => s.NotifComments,
+            TripUpdated or ExpenseAdded or BookingAdded or BudgetWarning or BudgetOver => s.NotifTripUpdates,
+            PasswordChanged => true,
             _ => true,
         };
     }
@@ -67,10 +81,82 @@ public static class NotificationHelper
         await OneSignalPush.SendAsync(userId, message, link);
     }
 
-    // Three kinds of trip reminder, for trips you own or joined as crew:
+    // Everyone on a trip: the owner plus every crew member.
+    public static async Task<List<int>> TripPeopleAsync(WanderWiseDbContext db, Trip trip)
+    {
+        var crew = await db.TripMembers
+            .Where(m => m.TripId == trip.Id)
+            .Select(m => m.UserId)
+            .ToListAsync();
+        return crew.Append(trip.UserId).Distinct().ToList();
+    }
+
+    // Tells everyone on the trip EXCEPT the person who made the change.
+    // At most one notification per person, per kind, per trip, per editor
+    // every 30 minutes — the trip saves on every little edit, so without
+    // this the crew would get dozens of pop-ups.
+    public static async Task NotifyTripCrewAsync(
+        WanderWiseDbContext db,
+        Trip trip,
+        int actorId,
+        string type,
+        string message,
+        object data)
+    {
+        var halfHourBucket = DateTime.UtcNow.Ticks / TimeSpan.FromMinutes(30).Ticks;
+        foreach (var userId in await TripPeopleAsync(db, trip))
+        {
+            if (userId == actorId) continue;
+            await CreateAsync(
+                db, userId, type, message,
+                $"/trip-plan?tripId={trip.Id}",
+                data,
+                $"{type}:{trip.Id}:{actorId}:{halfHourBucket}");
+        }
+    }
+
+    // After an expense is added: warn everyone on the trip once when real
+    // expenses reach 80% of the budget, and once when they go over it.
+    // (Estimated "$ Add Cost" amounts on places don't count — only rows
+    // with no placeId, which are the real expenses.) The ref key includes
+    // the budget, so raising the budget lets the warning happen again.
+    public static async Task CheckBudgetAsync(WanderWiseDbContext db, Trip trip)
+    {
+        var budget = Convert.ToDecimal(trip.BudgetTotal);
+        if (budget <= 0) return;
+
+        var amounts = await db.Expenses
+            .Where(e => e.TripId == trip.Id && e.PlaceId == null)
+            .Select(e => e.Amount)
+            .ToListAsync();
+        var spent = amounts.Sum(a => Convert.ToDecimal(a));
+
+        string type;
+        if (spent > budget) type = BudgetOver;
+        else if (spent >= budget * 0.8m) type = BudgetWarning;
+        else return;
+
+        var tripName = trip.Destination ?? trip.Title ?? "";
+        var percent = (int)Math.Round(spent / budget * 100);
+        var message = type == BudgetOver
+            ? $"Your trip to {tripName} is over budget: ₱{spent:N0} of ₱{budget:N0}."
+            : $"You've used {percent}% of the budget for {tripName}: ₱{spent:N0} of ₱{budget:N0}.";
+
+        foreach (var userId in await TripPeopleAsync(db, trip))
+        {
+            await CreateAsync(
+                db, userId, type, message,
+                $"/trip-plan?tripId={trip.Id}",
+                new { tripDestination = tripName, spent = spent.ToString("N0"), budget = budget.ToString("N0"), percent },
+                $"{type}:{trip.Id}:{budget}");
+        }
+    }
+
+    // Trip reminders, for trips you own or joined as crew:
     //  1. Your trip starts today / tomorrow
     //  2. An itinerary place with a set time is coming up within 2 hours
     //  3. A recorded hotel booking checks in today / tomorrow
+    //  4. Your trip ended yesterday → write your story in the Journal
     // Each has a ref key, so it's only ever created once.
     public static async Task GenerateTripRemindersAsync(WanderWiseDbContext db, int userId)
     {
@@ -79,17 +165,18 @@ public static class NotificationHelper
         var now = DateTime.UtcNow.AddHours(8); // Philippine time (UTC+8, no DST)
         var today = DateOnly.FromDateTime(now);
         var tomorrow = today.AddDays(1);
+        var yesterday = today.AddDays(-1);
 
         var memberTripIds = await db.TripMembers
             .Where(m => m.UserId == userId)
             .Select(m => m.TripId)
             .ToListAsync();
 
-        // Only trips happening now or starting tomorrow.
+        // Trips happening now, starting tomorrow, or that ended yesterday.
         var trips = await db.Trips
             .Where(t => (t.UserId == userId || memberTripIds.Contains(t.Id))
                         && t.StartDate != null && t.StartDate <= tomorrow
-                        && (t.EndDate == null || t.EndDate >= today))
+                        && (t.EndDate == null || t.EndDate >= yesterday))
             .ToListAsync();
         if (trips.Count == 0) return;
 
@@ -97,6 +184,18 @@ public static class NotificationHelper
         {
             var link = $"/trip-plan?tripId={trip.Id}";
             var tripName = trip.Destination ?? trip.Title ?? "";
+
+            // 4. Trip ended yesterday → invite them to write about it
+            if (trip.EndDate == yesterday)
+            {
+                await CreateAsync(
+                    db, userId, TripEnded,
+                    $"Your trip to {tripName} is over! Write your story in the Journal.",
+                    JournalLink,
+                    new { tripDestination = tripName },
+                    $"trip_ended:{trip.Id}:{trip.EndDate!.Value:yyyy-MM-dd}");
+                continue;
+            }
 
             // 1. Trip starts today / tomorrow
             if (trip.StartDate == today || trip.StartDate == tomorrow)
@@ -156,6 +255,9 @@ public static class NotificationHelper
             }
         }
     }
+
+    // Where "write your story" opens.
+    public const string JournalLink = "/journal/new";
 
     public static string FullName(User? u) =>
         u is null

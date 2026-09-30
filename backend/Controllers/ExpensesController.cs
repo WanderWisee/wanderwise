@@ -62,6 +62,23 @@ public class ExpensesController : ControllerBase
 
         _db.Expenses.Add(expense);
         await _db.SaveChangesAsync();
+
+        // Trip updates: tell the rest of the crew, then check the budget.
+        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == tripId);
+        if (trip != null)
+        {
+            var actor = await _db.Users.FindAsync(CurrentUserId);
+            var actorName = NotificationHelper.FullName(actor);
+            var tripName = trip.Destination ?? trip.Title ?? "";
+            var amountText = Convert.ToDecimal(expense.Amount).ToString("N0");
+            await NotificationHelper.NotifyTripCrewAsync(
+                _db, trip, CurrentUserId, NotificationHelper.ExpenseAdded,
+                $"{actorName} added an expense to {tripName}: {expense.Category} ₱{amountText}.",
+                new { actorName, tripDestination = tripName, category = expense.Category, amount = amountText });
+
+            await NotificationHelper.CheckBudgetAsync(_db, trip);
+        }
+
         return Ok(expense);
     }
 

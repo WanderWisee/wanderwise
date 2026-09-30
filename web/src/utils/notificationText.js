@@ -29,6 +29,24 @@ export function notificationText(n, t, formatTime) {
       return `${d.actorName} ${t("notifTextJoinedTrip")} ${trip}.`;
     case "comment":
       return `${d.actorName} ${t("notifTextCommented")} ${d.journalTitle || t("notifYourStory")}.`;
+    case "crew_removed":
+      return `${d.actorName} ${t("notifTextRemovedYou")} ${trip}.`;
+    case "crew_left":
+      return `${d.actorName} ${t("notifTextLeftTrip")} ${trip}.`;
+    case "trip_updated":
+      return `${d.actorName} ${t("notifTextUpdatedTrip")} ${trip}.`;
+    case "expense_added":
+      return `${d.actorName} ${t("notifTextAddedExpense")} ${trip}: ${d.category} ₱${d.amount}`;
+    case "booking_added":
+      return `${d.actorName} ${t("notifTextRecordedBooking")} ${trip}: ${d.placeName}`;
+    case "budget_80":
+      return `${t("notifTextBudgetUsed")} ${d.percent}% ${t("notifTextOfBudget")} ${trip} (₱${d.spent} / ₱${d.budget})`;
+    case "budget_over":
+      return `${trip} ${t("notifTextOverBudget")} (₱${d.spent} / ₱${d.budget})`;
+    case "trip_ended":
+      return `${trip} ${t("notifTextTripEnded")}`;
+    case "password_changed":
+      return t("notifTextPasswordChanged");
     default:
       return n.message || "";
   }
@@ -44,9 +62,25 @@ export function notificationIcon(type) {
       return "🏨";
     case "crew_added":
     case "crew_joined":
+    case "crew_removed":
+    case "crew_left":
       return "👥";
     case "comment":
       return "💬";
+    case "trip_updated":
+      return "✏️";
+    case "expense_added":
+      return "💸";
+    case "booking_added":
+      return "🏨";
+    case "budget_80":
+      return "⚠️";
+    case "budget_over":
+      return "🚨";
+    case "trip_ended":
+      return "📖";
+    case "password_changed":
+      return "🔒";
     default:
       return "🔔";
   }

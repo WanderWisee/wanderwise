@@ -6,7 +6,8 @@ using WanderWiseApi.Data;
 namespace WanderWiseApi.Controllers;
 
 // Runs inside the backend every minute and creates trip reminders for
-// everyone with a trip happening today or starting tomorrow — so the push
+// everyone with a trip happening today, starting tomorrow, or that ended
+// yesterday — so the push
 // arrives on time even if nobody has WanderWise open.
 // Registered in Program.cs with:
 //   builder.Services.AddHostedService<TripReminderService>();
@@ -31,10 +32,11 @@ public class TripReminderService : BackgroundService
                 var now = DateTime.UtcNow.AddHours(8); // Philippine time
                 var today = DateOnly.FromDateTime(now);
                 var tomorrow = today.AddDays(1);
+                var yesterday = today.AddDays(-1); // for "trip is over, write your story"
 
                 var activeTrips = await db.Trips
                     .Where(t => t.StartDate != null && t.StartDate <= tomorrow
-                                && (t.EndDate == null || t.EndDate >= today))
+                                && (t.EndDate == null || t.EndDate >= yesterday))
                     .Select(t => new { t.Id, t.UserId })
                     .ToListAsync(stoppingToken);
 

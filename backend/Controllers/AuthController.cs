@@ -244,6 +244,15 @@ public class AuthController : ControllerBase
         user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
+        // Security alert on every device the account is logged in on, so
+        // the owner finds out if someone else reset their password. Always
+        // sent — it has no on/off switch in Settings.
+        await NotificationHelper.CreateAsync(
+            _db, user.Id, NotificationHelper.PasswordChanged,
+            "Your WanderWise password was changed. If this wasn't you, reset it right away.",
+            null,
+            new { });
+
         return Ok(new { message = "Password updated successfully." });
     }
 

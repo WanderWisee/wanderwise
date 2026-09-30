@@ -441,9 +441,12 @@ export const translations = {
     // ===== Settings: saved preferences =====
     settingSaved: "Saved",
     formatPreview: "Preview",
-    notifTripRemindersHint: "Trip starting, upcoming activity, and hotel check-in",
-    notifTripInvitesHint: "When you're added to a trip, or someone joins yours",
+    notifTripRemindersHint: "Trip starting, upcoming activity, hotel check-in, and a reminder to write your story after the trip",
+    notifTripInvitesHint: "When you're added to or removed from a trip, or someone joins or leaves yours",
     notifCommentsHint: "When someone comments on your journal",
+    notifTripUpdates: "Trip updates",
+    notifTripUpdatesHint: "When your crew changes the itinerary, adds an expense or booking, and budget alerts",
+    notifSecurityAlwaysOn: "Security alerts (like a password change) are always on.",
 
     // ===== Notifications page =====
     markAllRead: "Mark all as read",
@@ -461,6 +464,16 @@ export const translations = {
     notifTextJoinedTrip: "joined your",
     notifTextCommented: "commented on",
     notifYourStory: "your story",
+    notifTextRemovedYou: "removed you from",
+    notifTextLeftTrip: "left your",
+    notifTextUpdatedTrip: "updated the",
+    notifTextAddedExpense: "added an expense to",
+    notifTextRecordedBooking: "recorded a booking for",
+    notifTextBudgetUsed: "You've used",
+    notifTextOfBudget: "of the budget for",
+    notifTextOverBudget: "is over budget",
+    notifTextTripEnded: "is over! Write your story in the Journal.",
+    notifTextPasswordChanged: "Your WanderWise password was changed. If this wasn't you, reset it right away.",
   },
 
   fil: {
@@ -904,9 +917,12 @@ export const translations = {
     // ===== Settings: saved preferences =====
     settingSaved: "Na-save",
     formatPreview: "Halimbawa",
-    notifTripRemindersHint: "Pagsisimula ng trip, paparating na activity, at check-in sa hotel",
-    notifTripInvitesHint: "Kapag idinagdag ka sa trip, o may sumali sa trip mo",
+    notifTripRemindersHint: "Pagsisimula ng trip, paparating na activity, check-in sa hotel, at paalala na isulat ang kwento mo pagkatapos ng trip",
+    notifTripInvitesHint: "Kapag idinagdag o inalis ka sa trip, o may sumali o umalis sa trip mo",
     notifCommentsHint: "Kapag may nag-comment sa journal mo",
+    notifTripUpdates: "Update sa trip",
+    notifTripUpdatesHint: "Kapag may binago ang crew sa itinerary, nagdagdag ng gastos o booking, at mga babala sa badyet",
+    notifSecurityAlwaysOn: "Laging naka-on ang mga security alert (tulad ng pagpalit ng password).",
 
     // ===== Notifications page =====
     markAllRead: "Markahang nabasa lahat",
@@ -924,5 +940,15 @@ export const translations = {
     notifTextJoinedTrip: "ay sumali sa",
     notifTextCommented: "ay nag-comment sa",
     notifYourStory: "iyong kwento",
+    notifTextRemovedYou: "ay nag-alis sa iyo sa",
+    notifTextLeftTrip: "ay umalis sa",
+    notifTextUpdatedTrip: "ay nag-update sa",
+    notifTextAddedExpense: "ay nagdagdag ng gastos sa",
+    notifTextRecordedBooking: "ay nagtala ng booking para sa",
+    notifTextBudgetUsed: "Nagamit na ang",
+    notifTextOfBudget: "ng badyet para sa",
+    notifTextOverBudget: "ay lampas na sa badyet",
+    notifTextTripEnded: "ay tapos na! Isulat ang kwento mo sa Journal.",
+    notifTextPasswordChanged: "Napalitan ang password ng WanderWise account mo. Kung hindi ikaw ito, i-reset agad.",
   },
 };

@@ -124,6 +124,20 @@ public class BookingsController : ControllerBase
 
         _db.TripBookings.Add(booking);
         await _db.SaveChangesAsync();
+
+        // Trip updates: tell the rest of the crew about the new booking.
+        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == tripId);
+        if (trip != null)
+        {
+            var actor = await _db.Users.FindAsync(CurrentUserId);
+            var actorName = NotificationHelper.FullName(actor);
+            var tripName = trip.Destination ?? trip.Title ?? "";
+            await NotificationHelper.NotifyTripCrewAsync(
+                _db, trip, CurrentUserId, NotificationHelper.BookingAdded,
+                $"{actorName} recorded a booking for {tripName}: {booking.PlaceName}.",
+                new { actorName, tripDestination = tripName, placeName = booking.PlaceName });
+        }
+
         return Ok(ToDto(booking));
     }
 

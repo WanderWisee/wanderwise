@@ -12,6 +12,7 @@ public class UpdateSettingsRequest
     public bool? NotifTripReminders { get; set; }
     public bool? NotifTripInvites { get; set; }
     public bool? NotifComments { get; set; }
+    public bool? NotifTripUpdates { get; set; }
     public string? DateFormat { get; set; }
     public string? TimeFormat { get; set; }
     public string? DistanceFormat { get; set; }
@@ -37,6 +38,7 @@ public class SettingsController : ControllerBase
         notifTripReminders = s.NotifTripReminders,
         notifTripInvites = s.NotifTripInvites,
         notifComments = s.NotifComments,
+        notifTripUpdates = s.NotifTripUpdates,
         dateFormat = s.DateFormat,
         timeFormat = s.TimeFormat,
         distanceFormat = s.DistanceFormat,
@@ -65,6 +67,7 @@ public class SettingsController : ControllerBase
         if (request.NotifTripReminders.HasValue) settings.NotifTripReminders = request.NotifTripReminders.Value;
         if (request.NotifTripInvites.HasValue) settings.NotifTripInvites = request.NotifTripInvites.Value;
         if (request.NotifComments.HasValue) settings.NotifComments = request.NotifComments.Value;
+        if (request.NotifTripUpdates.HasValue) settings.NotifTripUpdates = request.NotifTripUpdates.Value;
         if (request.DateFormat is "mdy" or "dmy") settings.DateFormat = request.DateFormat;
         if (request.TimeFormat is "12h" or "24h") settings.TimeFormat = request.TimeFormat;
         if (request.DistanceFormat is "km" or "mi") settings.DistanceFormat = request.DistanceFormat;

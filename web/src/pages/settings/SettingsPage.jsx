@@ -80,6 +80,7 @@ export default function SettingsPage() {
     { key: "notifTripReminders", hintKey: "notifTripRemindersHint" },
     { key: "notifTripInvites", hintKey: "notifTripInvitesHint" },
     { key: "notifComments", hintKey: "notifCommentsHint" },
+    { key: "notifTripUpdates", hintKey: "notifTripUpdatesHint" },
   ];
 
   const handleSaveAccount = async () => {
@@ -289,10 +290,11 @@ export default function SettingsPage() {
               <h2>{t("pushNotification")}</h2>
               {notificationOptions.map(({ key, hintKey }) => (
                 <label className="ww-settings-notification-row" key={key}>
+                  {/* A setting the account hasn't saved yet counts as ON. */}
                   <input
                     type="checkbox"
-                    checked={!!prefs[key]}
-                    onChange={() => savePref({ [key]: !prefs[key] })}
+                    checked={prefs[key] !== false}
+                    onChange={() => savePref({ [key]: prefs[key] === false })}
                   />
                   <span>
                     {t(key)}
@@ -300,6 +302,8 @@ export default function SettingsPage() {
                   </span>
                 </label>
               ))}
+              {/* Security alerts can't be turned off. */}
+              <p className="ww-settings-notif-always" style={{ fontSize: 13, opacity: 0.75, marginTop: 14 }}>🔒 {t("notifSecurityAlwaysOn")}</p>
               {savedHint && <p className="ww-settings-saved">{savedHint}</p>}
             </div>
           )}

@@ -1,17 +1,56 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
-import FadeScrollView from '../../components/FadeScrollView';
 import MenuSheet from '../../components/MenuSheet';
+import TripListItem from '../../components/TripListItem';
+import TripActionsSheet from '../../components/TripActionsSheet';
+import InviteTripmatesSheet from '../../components/InviteTripmatesSheet';
+import { fetchTrips, deleteTrip } from '../../services/tripService';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('trips');
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [trips, setTrips] = useState([]);
+  const [loadingTrips, setLoadingTrips] = useState(true);
+
+  const [actionsTripId, setActionsTripId] = useState(null);
+  const [inviteTripId, setInviteTripId] = useState(null);
+
+  async function loadTrips() {
+    try {
+      const data = await fetchTrips();
+      setTrips(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setTrips([]);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoadingTrips(true);
+      loadTrips().finally(() => setLoadingTrips(false));
+    }, [])
+  );
+
+  function confirmDelete(tripId) {
+    Alert.alert('Delete this trip?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteTrip(tripId);
+          loadTrips();
+        },
+      },
+    ]);
+  }
 
   return (
     <LinearGradient colors={['#F6F1DC', '#E6D9AE']} style={styles.screen}>
@@ -26,7 +65,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <FadeScrollView fadeHeight={28} contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.identitySection}>
             <View style={styles.avatar}>
               <Text style={{ fontSize: 36 }}>👤</Text>
@@ -85,7 +124,26 @@ export default function ProfileScreen() {
                     <Text style={styles.addButtonText}>+ Add new plan</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.emptyText}>No trips yet.</Text>
+
+                {loadingTrips ? (
+                  <ActivityIndicator color={Colors.brown900} style={{ marginTop: 10 }} />
+                ) : trips.length === 0 ? (
+                  <Text style={styles.emptyText}>No trips yet.</Text>
+                ) : (
+                  trips.map((trip, index) => (
+                    <View
+                      key={trip.id}
+                      style={index !== trips.length - 1 ? styles.tripRowDivider : null}
+                    >
+                      <TripListItem
+                        trip={trip}
+                        onPress={() => router.push(`/trip/${trip.id}`)}
+                        onShare={() => setInviteTripId(trip.id)}
+                        onMenu={() => setActionsTripId(trip.id)}
+                      />
+                    </View>
+                  ))
+                )}
               </>
             ) : (
               <>
@@ -99,9 +157,23 @@ export default function ProfileScreen() {
               </>
             )}
           </View>
-        </FadeScrollView>
+        </ScrollView>
 
         <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
+
+        <TripActionsSheet
+          visible={!!actionsTripId}
+          onClose={() => setActionsTripId(null)}
+          onShare={() => setInviteTripId(actionsTripId)}
+          onEdit={() => router.push(`/trip/${actionsTripId}`)}
+          onDelete={() => confirmDelete(actionsTripId)}
+        />
+
+        <InviteTripmatesSheet
+          visible={!!inviteTripId}
+          onClose={() => setInviteTripId(null)}
+          tripId={inviteTripId}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -118,7 +190,7 @@ const styles = StyleSheet.create({
     width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
-  content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
 
   identitySection: { alignItems: 'center', marginBottom: 24 },
   avatar: {
@@ -161,7 +233,7 @@ const styles = StyleSheet.create({
 
   tabContent: { paddingHorizontal: 2 },
   sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8,
   },
   sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   addButton: {
@@ -170,4 +242,5 @@ const styles = StyleSheet.create({
   },
   addButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
   emptyText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
+  tripRowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
 });

@@ -10,7 +10,7 @@ import { Colors } from '../../constants/theme';
 import { fetchTrips } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
-import FadeScrollView from '../../components/FadeScrollView';
+import TripListItem from '../../components/TripListItem';
 import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
 
 const TOP_DESTINATIONS = [
@@ -32,7 +32,7 @@ export default function HomeScreen() {
   async function loadTrips() {
     try {
       const data = await fetchTrips();
-      setTrips(data);
+      setTrips(Array.isArray(data) ? data : []);
     } catch (e) {
       setTrips([]);
     }
@@ -55,6 +55,8 @@ export default function HomeScreen() {
     Linking.openURL(url);
   }
 
+  const latestTrip = trips[0];
+
   return (
     <LinearGradient colors={['#F6F1DC', '#E6D9AE']} style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }}>
@@ -75,13 +77,30 @@ export default function HomeScreen() {
             <ActivityIndicator color={Colors.brown900} />
           </View>
         ) : (
-          <FadeScrollView
-            fadeHeight={28}
+          <ScrollView
             contentContainerStyle={styles.scrollContent}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
+            {latestTrip && (
+              <>
+                <View style={styles.continueHeaderRow}>
+                  <Text style={styles.sectionTitle}>Continue planning</Text>
+                  <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+                    <Text style={styles.seeAllText}>See all</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.continueCard}>
+                  <TripListItem
+                    trip={latestTrip}
+                    onPress={() => router.push(`/trip/${latestTrip.id}`)}
+                    showActions={false}
+                  />
+                </View>
+              </>
+            )}
+
             <Text style={styles.sectionTitle}>Start Exploring</Text>
             <View style={styles.mapPlaceholder}>
               <Text style={styles.mapPlaceholderText}>Map</Text>
@@ -174,7 +193,7 @@ export default function HomeScreen() {
                 <Text style={[styles.bookingCardText, { color: '#555' }]}>agoda</Text>
               </TouchableOpacity>
             </ScrollView>
-          </FadeScrollView>
+          </ScrollView>
         )}
 
         <CalendarPicker
@@ -202,7 +221,17 @@ const styles = StyleSheet.create({
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+
+  continueHeaderRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
+  },
+  seeAllText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900, textDecorationLine: 'underline' },
+  continueCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16, marginBottom: 26,
+    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+  },
 
   sectionTitle: {
     fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,

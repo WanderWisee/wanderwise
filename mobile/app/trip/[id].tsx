@@ -10,6 +10,7 @@ import {
   fetchExpenses, createExpense,
 } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
+import SwipeToDelete from '../../components/SwipeToDelete';
 
 const TABS = [
   { key: 'Overview', icon: '📋' },
@@ -115,6 +116,9 @@ export default function TripDetailScreen() {
   const [selectedDayKey, setSelectedDayKey] = useState(null);
   const [dayPlaceInput, setDayPlaceInput] = useState('');
 
+  const [selectedPlaceKeys, setSelectedPlaceKeys] = useState([]);
+  const [isSelecting, setIsSelecting] = useState(false);
+
   const [expenses, setExpenses] = useState([]);
   const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
@@ -156,6 +160,10 @@ export default function TripDetailScreen() {
     }
   }
 
+  function updateTripTitle(value) {
+    setTrip({ ...trip, title: value });
+  }
+
   function updateSectionField(sectionKey, field, value) {
     const nextTrip = {
       ...trip,
@@ -163,12 +171,6 @@ export default function TripDetailScreen() {
         s.key === sectionKey ? { ...s, [field]: value } : s
       ),
     };
-    if (field === 'name') {
-      const section = trip.sections.find((s) => s.key === sectionKey);
-      if (section && section.isDefault) {
-        nextTrip.title = value;
-      }
-    }
     setTrip(nextTrip);
   }
 
@@ -207,6 +209,63 @@ export default function TripDetailScreen() {
     });
   }
 
+  function startSelecting(placeKey) {
+    setIsSelecting(true);
+    setSelectedPlaceKeys([placeKey]);
+  }
+
+  function togglePlaceSelected(placeKey) {
+    setSelectedPlaceKeys((prev) =>
+      prev.includes(placeKey) ? prev.filter((k) => k !== placeKey) : [...prev, placeKey]
+    );
+  }
+
+  function cancelSelecting() {
+    setIsSelecting(false);
+    setSelectedPlaceKeys([]);
+  }
+
+  async function assignSelectedToDay(dayKey) {
+    if (selectedPlaceKeys.length === 0) return;
+    const nextTrip = {
+      ...trip,
+      sections: trip.sections.map((s) => ({
+        ...s,
+        places: s.places.map((p) =>
+          selectedPlaceKeys.includes(p.key) ? { ...p, itineraryDate: dayKey } : p
+        ),
+      })),
+    };
+    setSelectedPlaceKeys([]);
+    setIsSelecting(false);
+    await persist(nextTrip);
+  }
+
+  async function deletePlace(sectionKey, placeKey) {
+    const nextTrip = {
+      ...trip,
+      sections: trip.sections.map((s) =>
+        s.key === sectionKey
+          ? { ...s, places: s.places.filter((p) => p.key !== placeKey) }
+          : s
+      ),
+    };
+    await persist(nextTrip);
+  }
+
+  async function deleteSelected() {
+    const nextTrip = {
+      ...trip,
+      sections: trip.sections.map((s) => ({
+        ...s,
+        places: s.places.filter((p) => !selectedPlaceKeys.includes(p.key)),
+      })),
+    };
+    setSelectedPlaceKeys([]);
+    setIsSelecting(false);
+    await persist(nextTrip);
+  }
+
   async function addPlaceToDay() {
     if (!dayPlaceInput.trim() || !selectedDayKey) return;
     const defaultSection = trip.sections.find((s) => s.isDefault) || trip.sections[0];
@@ -228,23 +287,6 @@ export default function TripDetailScreen() {
       ),
     };
     setDayPlaceInput('');
-    await persist(nextTrip);
-  }
-
-  async function assignPlaceToDay(sectionKey, placeKey, dayKey) {
-    const nextTrip = {
-      ...trip,
-      sections: trip.sections.map((s) =>
-        s.key === sectionKey
-          ? {
-              ...s,
-              places: s.places.map((p) =>
-                p.key === placeKey ? { ...p, itineraryDate: dayKey } : p
-              ),
-            }
-          : s
-      ),
-    };
     await persist(nextTrip);
   }
 
@@ -347,7 +389,14 @@ export default function TripDetailScreen() {
         </View>
 
         <View style={styles.titleCard}>
-          <Text style={styles.tripName}>{trip.title}</Text>
+          <TextInput
+            style={styles.tripName}
+            value={trip.title}
+            onChangeText={updateTripTitle}
+            onEndEditing={() => persist(trip)}
+            placeholder="Trip name"
+            placeholderTextColor={GREY_PLACEHOLDER}
+          />
           <View style={styles.titleRow}>
             {(trip.startDate || trip.endDate) && (
               <Text style={styles.tripDates}>
@@ -426,23 +475,35 @@ export default function TripDetailScreen() {
                     {unscheduled.length === 0 ? (
                       <Text style={styles.emptyTextSmall}>No places added yet.</Text>
                     ) : (
-                      unscheduled.map((place) => (
-                        <View key={place.key} style={styles.unscheduledRow}>
-                          <View style={styles.placeDot} />
-                          <Text style={styles.stopNameInline}>{place.name}</Text>
-                          <TouchableOpacity
-                            style={styles.assignButton}
-                            onPress={() => {
-                              if (days.length === 0) return;
-                              setActiveTab('Itinerary');
-                              setSelectedDayKey(days[0].key);
-                              assignPlaceToDay(section.key, place.key, days[0].key);
-                            }}
+                      unscheduled.map((place) => {
+                        const isSelected = selectedPlaceKeys.includes(place.key);
+                        return (
+                          <SwipeToDelete
+                            key={place.key}
+                            disabled={isSelecting}
+                            onDelete={() => deletePlace(section.key, place.key)}
                           >
-                            <Text style={styles.assignButtonText}>Day 1</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))
+                            <TouchableOpacity
+                              style={[styles.unscheduledRow, { backgroundColor: '#FFFFFF' }]}
+                              onPress={() => {
+                                if (isSelecting) togglePlaceSelected(place.key);
+                              }}
+                              onLongPress={() => {
+                                if (!isSelecting) startSelecting(place.key);
+                              }}
+                              delayLongPress={300}
+                              activeOpacity={0.6}
+                            >
+                              {isSelecting && (
+                                <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
+                                  {isSelected && <Text style={styles.checkboxMark}>✓</Text>}
+                                </View>
+                              )}
+                              <Text style={styles.stopNameInline}>{place.name}</Text>
+                            </TouchableOpacity>
+                          </SwipeToDelete>
+                        );
+                      })
                     )}
                   </View>
                 );
@@ -451,6 +512,37 @@ export default function TripDetailScreen() {
               <TouchableOpacity style={styles.newListButtonMinimal} onPress={addNewList}>
                 <Text style={styles.newListButtonMinimalText}>+ New List</Text>
               </TouchableOpacity>
+
+              {selectedPlaceKeys.length > 0 && (
+                <View style={styles.assignBar}>
+                  <Text style={styles.assignBarTitle}>
+                    {selectedPlaceKeys.length} place{selectedPlaceKeys.length > 1 ? 's' : ''} selected — add to:
+                  </Text>
+                  {days.length === 0 ? (
+                    <Text style={styles.emptyTextSmall}>Set dates for this trip to assign a day.</Text>
+                  ) : (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                      {days.map((day) => (
+                        <TouchableOpacity
+                          key={day.key}
+                          style={styles.assignBarDayPill}
+                          onPress={() => assignSelectedToDay(day.key)}
+                        >
+                          <Text style={styles.assignBarDayPillText}>{day.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  )}
+                  <View style={styles.assignBarBottomRow}>
+                    <TouchableOpacity onPress={deleteSelected}>
+                      <Text style={styles.assignBarDelete}>🗑 Delete selected</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={cancelSelecting}>
+                      <Text style={styles.assignBarCancel}>Cancel selection</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </>
           )}
 
@@ -624,7 +716,10 @@ const styles = StyleSheet.create({
     shadowColor: Colors.brown900, shadowOpacity: 0.1, shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
-  tripName: { fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900, marginBottom: 8 },
+  tripName: {
+    fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900,
+    marginBottom: 8, padding: 0,
+  },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   tripDates: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
 
@@ -685,16 +780,31 @@ const styles = StyleSheet.create({
   },
 
   unscheduledRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.line,
   },
-  placeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.brown600 },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: Colors.line,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream,
+  },
+  checkboxChecked: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
+  checkboxMark: { color: Colors.mint, fontSize: 13, fontFamily: 'Lora_600SemiBold' },
   stopNameInline: { flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
-  assignButton: {
-    backgroundColor: Colors.cream2, borderRadius: 10, paddingHorizontal: 12, height: 30,
+
+  assignBar: {
+    backgroundColor: Colors.brown900, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 20,
+  },
+  assignBarTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint, marginBottom: 10 },
+  assignBarDayPill: {
+    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingHorizontal: 14, height: 34,
     alignItems: 'center', justifyContent: 'center',
   },
-  assignButtonText: { fontFamily: 'Lora_400Regular', fontSize: 10.5, color: Colors.brown900 },
+  assignBarDayPillText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: '#FFFFFF' },
+  assignBarBottomRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10,
+  },
+  assignBarDelete: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: '#F4A19A' },
+  assignBarCancel: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', textDecorationLine: 'underline' },
 
   emptyStateCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', gap: 8,

@@ -289,16 +289,33 @@ function findDayLabelForPlace(tripStateLike, placeId) {
   return day ? day.label : null;
 }
 
+// Expenses recorded for a specific place on the Add Expense page are saved
+// with the place NAME as their category (and no placeId — place ids change
+// on every trip save). So a category that isn't one of the fixed ones is a
+// place: it gets the 📍 icon and the day that place is on.
+function findDayLabelForPlaceName(tripStateLike, name) {
+  if (!name) return null;
+  const lower = name.trim().toLowerCase();
+  const all = [...tripStateLike.places, ...tripStateLike.customSections.flatMap((s) => s.places)];
+  const place = all.find((p) => p.name.trim().toLowerCase() === lower);
+  return place ? findDayLabelForPlace(tripStateLike, place.id) : null;
+}
+
 function mapExpenseFromApi(e, tripStateLike) {
   const placeName = e.placeId ? findPlaceNameById(tripStateLike, e.placeId) : null;
   const categoryMatch = EXPENSE_CATEGORIES.find((c) => c.label === e.category);
+  const isPlaceExpense = !categoryMatch && !!e.category;
   return {
     id: e.id,
     amount: e.amount,
     label: placeName || e.category || "Expense",
-    icon: categoryMatch ? categoryMatch.icon : placeName ? "📍" : "💰",
+    icon: categoryMatch ? categoryMatch.icon : placeName || isPlaceExpense ? "📍" : "💰",
     description: e.description || "",
-    dayLabel: e.placeId ? findDayLabelForPlace(tripStateLike, e.placeId) : null,
+    dayLabel: e.placeId
+      ? findDayLabelForPlace(tripStateLike, e.placeId)
+      : isPlaceExpense
+        ? findDayLabelForPlaceName(tripStateLike, e.category)
+        : null,
     placeId: e.placeId || null,
     category: e.category,
   };
@@ -1027,12 +1044,61 @@ export default function TripPlanBuilderPage() {
 
   const handleDayInputChange = (dayIndex, value) => {
     setDayInputs((prev) => ({ ...prev, [dayIndex]: value }));
+    setDayNotice((prev) => (prev[dayIndex] ? { ...prev, [dayIndex]: null } : prev));
+  };
+
+  // Which day's "add place" box is open, for the suggestion list below it.
+  const [focusedDayIndex, setFocusedDayIndex] = useState(null);
+
+  // Places already in "Where to go" (and custom sections) that aren't on
+  // any day yet, filtered by what's typed — so students can pick instead
+  // of retyping the exact spelling.
+  const getDaySuggestions = (dayIndex) => {
+    const typed = (dayInputs[dayIndex] || "").trim().toLowerCase();
+    // A place can only be on one day, so hide places already scheduled.
+    const scheduled = new Set(days.flatMap((d) => d.placeIds));
+    const seen = new Set();
+    return [...places, ...customSections.flatMap((s) => s.places)]
+      .filter((p) => {
+        const name = p.name.trim().toLowerCase();
+        if (!name || scheduled.has(p.id) || seen.has(name)) return false;
+        seen.add(name);
+        return !typed || name.includes(typed);
+      })
+      .slice(0, 8);
   };
 
   const handleAddDayPlace = (dayIndex) => (e) => {
+    if (e.key === "Escape") {
+      setFocusedDayIndex(null);
+      return;
+    }
     if (e.key !== "Enter") return;
-    const value = (dayInputs[dayIndex] || "").trim();
+    addPlaceToDay(dayIndex, dayInputs[dayIndex] || "");
+  };
+
+  // dayNotice[dayIndex] = { name, dayNumber } — shown under the box when a
+  // place is already scheduled on a day.
+  const [dayNotice, setDayNotice] = useState({});
+
+  const addPlaceToDay = (dayIndex, rawValue) => {
+    const value = rawValue.trim();
     if (!value) return;
+
+    // Each place belongs to only one day of the itinerary.
+    const lowerValue = value.toLowerCase();
+    const alreadyScheduledOn = days.findIndex((d) =>
+      d.placeIds.some((id) => {
+        const found = findPlaceWithOrigin(tripState, id);
+        return found && found.place.name.trim().toLowerCase() === lowerValue;
+      })
+    );
+    if (alreadyScheduledOn !== -1) {
+      setDayNotice((prev) => ({ ...prev, [dayIndex]: { name: value, dayNumber: alreadyScheduledOn + 1 } }));
+      setDayInputs((prev) => ({ ...prev, [dayIndex]: "" }));
+      return;
+    }
+    setDayNotice((prev) => ({ ...prev, [dayIndex]: null }));
 
     let createdPlace = null;
 
@@ -1878,19 +1944,33 @@ export default function TripPlanBuilderPage() {
                     {showInfo && info.status === "error" && (
                       <p className="ww-optimize-result ww-optimize-error">⚠️ {t("routeOptimizeFailed")}</p>
                     )}
-                    {/* Recorded bookings land on the day they start/end. */}
+                    {/* Recorded bookings show on every day of the stay:
+                        check-in day, the nights in between, and check-out day. */}
                     {(() => {
                       const dayIso = addDaysIso(startDate, dayIndex);
                       if (!dayIso) return null;
                       return bookings
-                        .filter((b) => bookingDate(b.checkIn) === dayIso || bookingDate(b.checkOut) === dayIso)
-                        .map((b) => (
-                          <p className="ww-day-booking" key={`bk-${b.id}-${dayIso}`}>
-                            🏨 {bookingDate(b.checkIn) === dayIso ? t("bookingCheckIn") : t("bookingCheckOut")}:{" "}
-                            <strong>{b.placeName}</strong>
-                            {b.confirmationNumber && <> · #{b.confirmationNumber}</>}
-                          </p>
-                        ));
+                        .filter((b) => {
+                          const inDay = bookingDate(b.checkIn);
+                          const outDay = bookingDate(b.checkOut) || inDay;
+                          return dayIso >= inDay && dayIso <= outDay;
+                        })
+                        .map((b) => {
+                          const inDay = bookingDate(b.checkIn);
+                          const outDay = bookingDate(b.checkOut);
+                          const label =
+                            dayIso === inDay
+                              ? t("bookingCheckIn")
+                              : dayIso === outDay
+                                ? t("bookingCheckOut")
+                                : t("bookingStaying");
+                          return (
+                            <p className="ww-day-booking" key={`bk-${b.id}-${dayIso}`}>
+                              🏨 {label}: <strong>{b.placeName}</strong>
+                              {dayIso === inDay && b.confirmationNumber && <> · #{b.confirmationNumber}</>}
+                            </p>
+                          );
+                        });
                     })()}
                     {dayPlaces.map(({ place: p, number }, i) => (
                       <React.Fragment key={p.id}>
@@ -2047,13 +2127,46 @@ export default function TripPlanBuilderPage() {
                         </p>
                       </React.Fragment>
                     ))}
-                    <input
-                      className="ww-add-place-input"
-                      placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
-                      value={dayInputs[dayIndex] || ""}
-                      onChange={(e) => handleDayInputChange(dayIndex, e.target.value)}
-                      onKeyDown={handleAddDayPlace(dayIndex)}
-                    />
+                    <div className="ww-day-add-wrap">
+                      <input
+                        className="ww-add-place-input"
+                        placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+                        value={dayInputs[dayIndex] || ""}
+                        onChange={(e) => handleDayInputChange(dayIndex, e.target.value)}
+                        onKeyDown={handleAddDayPlace(dayIndex)}
+                        onFocus={() => setFocusedDayIndex(dayIndex)}
+                        onBlur={() => setFocusedDayIndex((cur) => (cur === dayIndex ? null : cur))}
+                      />
+                      {focusedDayIndex === dayIndex &&
+                        (() => {
+                          const suggestions = getDaySuggestions(dayIndex);
+                          if (suggestions.length === 0) return null;
+                          return (
+                            <ul className="ww-day-suggest">
+                              <li className="ww-day-suggest-title">{t("pickFromWhereToGo")}</li>
+                              {suggestions.map((p) => (
+                                <li
+                                  key={p.id}
+                                  className="ww-day-suggest-item"
+                                  // mousedown fires before the input loses focus
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    addPlaceToDay(dayIndex, p.name);
+                                  }}
+                                >
+                                  📍 {p.name}
+                                </li>
+                              ))}
+                            </ul>
+                          );
+                        })()}
+                    </div>
+                    {dayNotice[dayIndex] && (
+                      <p className="ww-day-notice">
+                        ⚠️ <strong>{dayNotice[dayIndex].name}</strong> {t("placeAlreadyOnDay")}{" "}
+                        {dayNotice[dayIndex].dayNumber}. {t("placeAlreadyOnDayHint")}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -2090,7 +2203,11 @@ export default function TripPlanBuilderPage() {
           ) : (
             expenses.map((e) => (
               <div className="ww-expense-row" key={e.id}>
-                <span>{e.icon} {e.description || e.label}</span>
+                {/* The category (or place) always stays; the description is added beside it. */}
+                <span>
+                  {e.icon} {e.label}
+                  {e.description && <span className="ww-expense-desc"> · {e.description}</span>}
+                </span>
                 <span>
                   ₱{e.amount.toLocaleString()}
                   <span

@@ -40,24 +40,10 @@ export default function AddExpensePage() {
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Finds a place by id in either "Where to go?" or a custom list, and
-  // returns an updated copy of tripState with a new cost pushed onto it —
-  // same shape as the "$ Add Cost" button already uses per place.
-  const addEstimatedCostToPlace = (state, placeId, category, amount) => {
-    const updater = (p) => ({
-      ...p,
-      costs: [...(p.costs || []), { id: Date.now(), category, amount }],
-    });
-    if (state.places.some((p) => p.id === placeId)) {
-      return { ...state, places: state.places.map((p) => (p.id === placeId ? updater(p) : p)) };
-    }
-    return {
-      ...state,
-      customSections: state.customSections.map((s) => ({
-        ...s,
-        places: s.places.map((p) => (p.id === placeId ? updater(p) : p)),
-      })),
-    };
+  // The day a place is on in the itinerary (for the day-by-day breakdown).
+  const dayLabelForPlace = (placeId) => {
+    const day = (tripState.days || []).find((d) => (d.placeIds || []).includes(placeId));
+    return day ? day.label : null;
   };
 
   const handleSave = async () => {
@@ -68,23 +54,15 @@ export default function AddExpensePage() {
     const numericAmount = Number(amount) || 0;
     setSaving(true);
 
-    // "From a trip plan" (picking a specific place) is just an ESTIMATED
-    // cost for that place — the same idea as the "$ Add Cost" button on
-    // each itinerary item — so it belongs on that place's own cost
-    // breakdown, NOT in the standalone Expenses list. It's saved the same
-    // way place edits normally save: through the builder page's own
-    // auto-save once we navigate back with the updated tripState.
-    if (selectedItem) {
-      const updatedTripState = addEstimatedCostToPlace(tripState, selectedItem, "Other", numericAmount);
-      setSaving(false);
-      navigate(returnPath, {
-        state: { destination, startDate, endDate, people, restoredTripState: updatedTripState },
-      });
-      return;
-    }
+    // Both "From a category" and "From a trip plan" are real expenses and
+    // go to the Expenses list. (The "$ Add Cost" button on a place is
+    // different — that's only an estimated cost.) A place expense is saved
+    // with the place NAME as its category and no placeId, because place ids
+    // change every time the trip is saved.
+    const pickedPlace = selectedItem ? tripPlanItems.find((item) => item.id === selectedItem) : null;
+    // (Trimmed to 50 characters so it fits the category column.)
+    const categoryToSave = pickedPlace ? pickedPlace.name.trim().slice(0, 50) : selectedCategory;
 
-    // "From a category" is an actual recorded expense — this one really
-    // does get saved to the backend's Expenses table.
     let savedExpense = null;
     const token = localStorage.getItem("wanderwise_token");
     if (tripId && token) {
@@ -97,7 +75,7 @@ export default function AddExpensePage() {
           },
           body: JSON.stringify({
             placeId: null,
-            category: selectedCategory,
+            category: categoryToSave,
             amount: numericAmount,
             description: description.trim() || null,
           }),
@@ -117,10 +95,10 @@ export default function AddExpensePage() {
     const newExpense = {
       id: savedExpense?.id ?? nextExpenseId++,
       amount: numericAmount,
-      label: selectedCategory,
-      icon: categories.find((c) => c.label === selectedCategory)?.icon,
+      label: categoryToSave,
+      icon: pickedPlace ? "📍" : categories.find((c) => c.label === selectedCategory)?.icon,
       description: description.trim(),
-      dayLabel: null,
+      dayLabel: pickedPlace ? dayLabelForPlace(pickedPlace.id) : null,
     };
 
     const updatedTripState = {

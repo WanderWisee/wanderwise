@@ -4274,3 +4274,158 @@
 .ww-dialog-danger:hover {
   background: #8a2f22;
 }
+
+/* ===== Date range picker (one field for start + end date) ===== */
+.ww-drp {
+  position: relative;
+  width: 100%;
+}
+
+.ww-drp-field {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  color: #2b1c12;
+  background: #fffaf0;
+  border: 1px solid #d4c9a8;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.ww-drp-field.placeholder {
+  color: #8a7654;
+}
+
+.ww-drp-field:hover {
+  border-color: #b9a982;
+}
+
+.ww-drp-popover {
+  position: fixed; /* placed by the component; never cut off or causes scrolling */
+  z-index: 2500; /* above maps and the Edit trip window */
+  box-sizing: border-box;
+  background: #fffaf0;
+  border: 1px solid #d4c9a8;
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  padding: 14px 16px 12px;
+}
+
+.ww-drp-hint {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #2f6f5f;
+  text-align: center;
+}
+
+.ww-drp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ww-drp-arrow {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid #d4c9a8;
+  background: #f6f3d9;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #2b1c12;
+}
+
+.ww-drp-arrow:hover:not(:disabled) {
+  background: #e6dcc0;
+}
+
+.ww-drp-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ww-drp-month-title {
+  margin: 0;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.ww-drp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 2px;
+}
+
+.ww-drp-weekday {
+  text-align: center;
+  font-size: 12px;
+  color: #8a7654;
+  padding-bottom: 4px;
+}
+
+.ww-drp-day {
+  height: 34px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: #2b1c12;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.ww-drp-day:hover:not(:disabled) {
+  background: #e6dcc0;
+}
+
+.ww-drp-day.today {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.ww-drp-day.in-range,
+.ww-drp-day.in-range:hover:not(:disabled) {
+  background: #d7ebe6;
+  border-radius: 0;
+}
+
+.ww-drp-day.selected,
+.ww-drp-day.selected:hover:not(:disabled) {
+  background: #2f6f5f;
+  color: #fff;
+  border-radius: 50%;
+}
+
+.ww-drp-day.disabled,
+.ww-drp-day:disabled {
+  color: #cfc5ad;
+  cursor: default;
+}
+
+.ww-drp-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #7a6a4f;
+}
+
+.ww-drp-clear {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: #a33a2a;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ww-place-actions { flex-wrap: wrap; }

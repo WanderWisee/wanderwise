@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import TripMap from "../../components/TripMap";
+import DateRangePicker from "../../components/DateRangePicker";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import { usePreferences } from "../../context/PreferencesContext";
@@ -1364,8 +1365,10 @@ export default function TripPlanBuilderPage() {
   const [customCostCategory, setCustomCostCategory] = useState("");
   const [costAmount, setCostAmount] = useState("");
 
-  const openAddCost = (placeId) => {
-    setAddingCostFor(placeId);
+  // costKey = "<where the card is>:<place id>", so a place shown in both
+  // Where to go and the itinerary only opens the form on the card clicked.
+  const openAddCost = (costKey) => {
+    setAddingCostFor(costKey);
     setCostCategory(COST_CATEGORIES[0]);
     setCustomCostCategory("");
     setCostAmount("");
@@ -1476,6 +1479,64 @@ export default function TripPlanBuilderPage() {
       },
     });
   };
+
+  // "$ Add Cost" + its form + the cost list on an itinerary card. (Where to
+  // go and custom lists are just a listing with notes — times and costs
+  // are set in the itinerary.)
+  const renderAddCostButton = (p, area) => (
+    <span onClick={() => openAddCost(`${area}:${p.id}`)} style={{ cursor: "pointer" }}>
+      $ {t("addCost")}
+    </span>
+  );
+
+  const renderCostEditor = (p, area) => (
+    <>
+      {addingCostFor === `${area}:${p.id}` && (
+        <div className="ww-cost-add-row">
+          <select value={costCategory} onChange={(e) => setCostCategory(e.target.value)}>
+            {COST_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{t(COST_CATEGORY_KEYS[c])}</option>
+            ))}
+          </select>
+          {costCategory === "Other" && (
+            <input
+              type="text"
+              placeholder={t("typeCategory")}
+              value={customCostCategory}
+              onChange={(e) => setCustomCostCategory(e.target.value)}
+            />
+          )}
+          <input
+            type="number"
+            min="0"
+            placeholder={`₱ ${t("amount")}`}
+            value={costAmount}
+            onChange={(e) => setCostAmount(e.target.value)}
+          />
+          <button onClick={() => confirmAddCost(p.id)}>{t("add")}</button>
+        </div>
+      )}
+
+      {(p.costs || []).length > 0 && (
+        <div className="ww-cost-breakdown">
+          {p.costs.map((c) => (
+            <div className="ww-cost-line" key={c.id}>
+              <span>{COST_CATEGORY_KEYS[c.category] ? t(COST_CATEGORY_KEYS[c.category]) : c.category}</span>
+              <span>
+                ₱{c.amount.toLocaleString()}
+                <span className="ww-cost-remove" onClick={() => removeCost(p.id, c.id)}>
+                  ✕
+                </span>
+              </span>
+            </div>
+          ))}
+          <div className="ww-cost-total">
+            {t("expectedCost")}: ₱{p.costs.reduce((sum, c) => sum + c.amount, 0).toLocaleString()}
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="ww-builder-page">
@@ -1713,15 +1774,6 @@ export default function TripPlanBuilderPage() {
                   if (e.key === "Enter") e.target.blur();
                 }}
               />
-              <p className="ww-place-actions">
-                <span>🕐 {t("selectTime")}</span>
-                <span>$ {t("addCost")}</span>
-              </p>
-              {(p.costs || []).length > 0 && (
-                <p className="ww-cost-total-inline">
-                  {t("expectedCost")}: ₱{p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
-                </p>
-              )}
               <p
                 className="ww-mark-visited"
                 onClick={() => toggleVisited(p.id)}
@@ -1853,10 +1905,6 @@ export default function TripPlanBuilderPage() {
                       if (e.key === "Enter") e.target.blur();
                     }}
                   />
-                  <p className="ww-place-actions">
-                    <span>🕐 {t("selectTime")}</span>
-                    <span>$ {t("addCost")}</span>
-                  </p>
                   <p
                     className="ww-mark-visited"
                     onClick={() => toggleSectionPlaceVisited(section.id, p.id)}
@@ -2033,65 +2081,10 @@ export default function TripPlanBuilderPage() {
                                   🕐 {p.time ? formatTime(p.time) : t("selectTime")}
                                 </span>
                               )}
-                              <span
-                                onClick={() => openAddCost(p.id)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                $ {t("addCost")}
-                              </span>
+                              {renderAddCostButton(p, "day")}
                             </p>
 
-                            {addingCostFor === p.id && (
-                              <div className="ww-cost-add-row">
-                                <select
-                                  value={costCategory}
-                                  onChange={(e) => setCostCategory(e.target.value)}
-                                >
-                                  {COST_CATEGORIES.map((c) => (
-                                    <option key={c} value={c}>{t(COST_CATEGORY_KEYS[c])}</option>
-                                  ))}
-                                </select>
-                                {costCategory === "Other" && (
-                                  <input
-                                    type="text"
-                                    placeholder={t("typeCategory")}
-                                    value={customCostCategory}
-                                    onChange={(e) => setCustomCostCategory(e.target.value)}
-                                  />
-                                )}
-                                <input
-                                  type="number"
-                                  min="0"
-                                  placeholder={`₱ ${t("amount")}`}
-                                  value={costAmount}
-                                  onChange={(e) => setCostAmount(e.target.value)}
-                                />
-                                <button onClick={() => confirmAddCost(p.id)}>{t("add")}</button>
-                              </div>
-                            )}
-
-                            {(p.costs || []).length > 0 && (
-                              <div className="ww-cost-breakdown">
-                                {p.costs.map((c) => (
-                                  <div className="ww-cost-line" key={c.id}>
-                                    <span>{c.category}</span>
-                                    <span>
-                                      ₱{c.amount.toLocaleString()}
-                                      <span
-                                        className="ww-cost-remove"
-                                        onClick={() => removeCost(p.id, c.id)}
-                                      >
-                                        ✕
-                                      </span>
-                                    </span>
-                                  </div>
-                                ))}
-                                <div className="ww-cost-total">
-                                  {t("expectedCost")}: ₱
-                                  {p.costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}
-                                </div>
-                              </div>
-                            )}
+                            {renderCostEditor(p, "day")}
 
                             <p
                               className="ww-mark-visited"
@@ -2247,20 +2240,14 @@ export default function TripPlanBuilderPage() {
             </datalist>
             <hr className="ww-planning-divider" />
             <label className="ww-planning-label">{t("dates")}</label>
-            <div className="ww-dates-row">
-              <input
-                type="date"
-                className="ww-date-input"
-                value={editForm.startDate}
-                onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
-              />
-              <input
-                type="date"
-                className="ww-date-input"
-                value={editForm.endDate}
-                onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
-              />
-            </div>
+            {/* One calendar for both dates. Past dates allowed here — the
+                trip may already have started. */}
+            <DateRangePicker
+              startDate={editForm.startDate}
+              endDate={editForm.endDate}
+              minDate={null}
+              onChange={({ startDate: s, endDate: e }) => setEditForm({ ...editForm, startDate: s, endDate: e })}
+            />
             <hr className="ww-planning-divider" />
             <label className="ww-planning-label ww-center-label">{t("howManyPeople")}</label>
             <div className="ww-people-counter">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import DateRangePicker from "../../components/DateRangePicker";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
@@ -85,20 +86,15 @@ export default function TripPlanningPage() {
           <hr className="ww-planning-divider" />
 
           <label className="ww-planning-label">{t("dates")}</label>
-          <div className="ww-dates-row">
-            <input
-              type="date"
-              className="ww-date-input"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <input
-              type="date"
-              className="ww-date-input"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
+          {/* One calendar: tap the start date, then the end date. */}
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={({ startDate: s, endDate: e }) => {
+              setStartDate(s);
+              setEndDate(e);
+            }}
+          />
 
           <hr className="ww-planning-divider" />
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import DateRangePicker from "../../components/DateRangePicker";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLanguage } from "../../context/LanguageContext";
@@ -172,36 +173,17 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="ww-dates-row">
-            <div className="ww-date-field">
-              <label className="ww-planning-label">
-                {t("startDate")}
-              </label>
-
-              <input
-                type="date"
-                className="ww-date-input"
-                value={startDate}
-                onChange={(e) =>
-                  setStartDate(e.target.value)
-                }
-              />
-            </div>
-
-            <div className="ww-date-field">
-              <label className="ww-planning-label">
-                {t("endDate")}
-              </label>
-
-              <input
-                type="date"
-                className="ww-date-input"
-                value={endDate}
-                onChange={(e) =>
-                  setEndDate(e.target.value)
-                }
-              />
-            </div>
+          <div className="ww-date-field">
+            <label className="ww-planning-label">{t("dates")}</label>
+            {/* One calendar: tap the start date, then the end date. */}
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChange={({ startDate: s, endDate: e }) => {
+                setStartDate(s);
+                setEndDate(e);
+              }}
+            />
           </div>
 
           <div className="ww-buddies-counter">

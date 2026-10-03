@@ -497,6 +497,10 @@ export const translations = {
     leaveTripFailed: "Couldn't leave the trip. Please try again.",
     dialogConfirm: "Yes, continue",
     dialogDelete: "Delete",
+    pickStartDate: "Pick your start date",
+    pickEndDate: "Now pick your end date",
+    daysSuffix: "day(s)",
+    clearDates: "Clear",
   },
 
   fil: {
@@ -996,5 +1000,9 @@ export const translations = {
     leaveTripFailed: "Hindi makaalis sa trip. Subukan ulit.",
     dialogConfirm: "Oo, ituloy",
     dialogDelete: "Burahin",
+    pickStartDate: "Piliin ang unang araw",
+    pickEndDate: "Ngayon, piliin ang huling araw",
+    daysSuffix: "araw",
+    clearDates: "I-clear",
   },
 };

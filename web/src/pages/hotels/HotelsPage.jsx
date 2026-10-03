@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import DateRangePicker from "../../components/DateRangePicker";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
@@ -277,26 +278,17 @@ export default function HotelsPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="ww-dates-row">
-              <div className="ww-date-field">
-                <label className="ww-planning-label">{t("startDate")}</label>
-                <input
-                  type="date"
-                  className="ww-date-input"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-
-              <div className="ww-date-field">
-                <label className="ww-planning-label">{t("endDate")}</label>
-                <input
-                  type="date"
-                  className="ww-date-input"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+            <div className="ww-date-field">
+              <label className="ww-planning-label">{t("dates")}</label>
+              {/* One calendar: tap the check-in date, then the check-out date. */}
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onChange={({ startDate: s, endDate: e }) => {
+                  setStartDate(s);
+                  setEndDate(e);
+                }}
+              />
             </div>
             <div className="ww-buddies-counter">
               <span>{t("travelBuddies")}</span>

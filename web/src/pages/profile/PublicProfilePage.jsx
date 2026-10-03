@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 
 // Same destination-photo lookup used in ProfilePage.jsx — goes through our
@@ -35,6 +36,7 @@ export default function PublicProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { alert } = useDialog();
 
   // Same "strip trailing Travel <word>, then reappend Travel Story" trick
   // used in Profile/Guides, so journal titles look consistent everywhere.

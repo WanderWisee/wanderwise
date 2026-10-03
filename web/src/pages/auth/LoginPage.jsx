@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
+import { notifyAuthChanged } from "../../context/AppDataContext";
 import "../../App.css";
 
 export default function LoginPage() {
@@ -60,6 +61,9 @@ export default function LoginPage() {
       }
       if (data?.token) {
         localStorage.setItem("wanderwise_token", data.token);
+        // Load THIS account's profile and journals right away, instead of
+        // showing the previous account's until the page is refreshed.
+        notifyAuthChanged();
       }
       await continuePendingInvite();
     } catch (err) {

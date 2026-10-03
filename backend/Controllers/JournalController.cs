@@ -66,6 +66,48 @@ public class JournalController : ControllerBase
         return Ok(entry);
     }
 
+    // Guides → "See Itineraries": every student's journal posts, newest
+    // first, with the author's name and small profile picture.
+    // With ?q=Baguio, only posts whose title or one of whose places
+    // mentions it (MySQL compares case-insensitively).
+    [HttpGet("feed")]
+    public async Task<IActionResult> GetFeed([FromQuery] string? q, [FromQuery] int limit = 50)
+    {
+        limit = Math.Clamp(limit, 1, 200);
+        var query = _db.JournalEntries.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            query = query.Where(j =>
+                (j.Title != null && j.Title.Contains(term)) ||
+                j.Places.Any(p => p.PlaceName != null && p.PlaceName.Contains(term)));
+        }
+
+        var items = await query
+            .OrderByDescending(j => j.CreatedAt)
+            .Take(limit)
+            .Select(j => new
+            {
+                id = j.Id,
+                title = j.Title,
+                coverImage = j.CoverImage,
+                createdAt = j.CreatedAt,
+                placesCount = j.Places.Count,
+                commentsCount = _db.JournalComments.Count(c => c.JournalEntryId == j.Id),
+                author = new
+                {
+                    id = j.UserId,
+                    firstName = j.User!.FirstName,
+                    lastName = j.User.LastName,
+                    avatarUrl = j.User.AvatarUrl,
+                },
+            })
+            .ToListAsync();
+
+        return Ok(items);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateEntry([FromBody] CreateJournalEntryRequest request)
     {

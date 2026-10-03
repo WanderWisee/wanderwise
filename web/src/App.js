@@ -13,6 +13,7 @@ import TravelTipsPage from './pages/travel-tips/TravelTipsPage';
 import HotelsPage from './pages/hotels/HotelsPage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import TravelGuidePage from './pages/guides/TravelGuidePage';
+import DestinationStoriesPage from './pages/guides/DestinationStoriesPage';
 import HotelSearchResultsPage from './pages/hotels/HotelSearchResultsPage';
 import TripPlanBuilderPage from './pages/trip-plan-builder/TripPlanBuilderPage';
 import InviteCrewPage from './pages/trip-plan-builder/InviteCrewPage';
@@ -27,6 +28,7 @@ import HistoryPage from './pages/history/HistoryPage';
 import { AppDataProvider } from './context/AppDataContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { PreferencesProvider } from './context/PreferencesContext';
+import { DialogProvider } from './context/DialogContext';
 import NotificationWatcher from './components/NotificationWatcher';
 import JournalViewPage from './pages/journal/JournalViewPage';
 import JoinTripPage from "./pages/trip-plan-builder/JoinTripPage";
@@ -36,6 +38,7 @@ function App() {
   return (
   <LanguageProvider>
     <PreferencesProvider>
+    <DialogProvider>
     <AppDataProvider>
       {/* Checks for new notifications and trip reminders every minute on
           every page, and shows a browser pop-up when allowed. */}
@@ -52,6 +55,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/trip-planning" element={<TripPlanningPage />} />
           <Route path="/travel-tips" element={<TravelTipsPage />} />
+          <Route path="/travel-tips/stories" element={<DestinationStoriesPage />} />
           <Route path="/hotels" element={<HotelsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/guides/:destinationName" element={<TravelGuidePage />} />
@@ -76,6 +80,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AppDataProvider>
+    </DialogProvider>
     </PreferencesProvider>
   </LanguageProvider>
   );

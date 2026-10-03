@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import TripMap from "../../components/TripMap";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
 
@@ -335,6 +336,7 @@ export default function TripPlanBuilderPage() {
   const navigate = useNavigate();
   const tripInfo = location.state || {};
   const { t } = useLanguage();
+  const { confirm } = useDialog();
   // Date/time/distance formats from Settings → Formatting.
   const { formatDateRange, formatTime, formatDistance } = usePreferences();
 
@@ -635,7 +637,7 @@ export default function TripPlanBuilderPage() {
       days.some((d) => d.placeIds.length > 0);
 
     if (destinationChanged && hasExistingItinerary) {
-      const confirmed = window.confirm(t("confirmChangeDestination"));
+      const confirmed = await confirm(t("confirmChangeDestination"), { danger: true });
       if (!confirmed) return;
     }
 
@@ -1412,7 +1414,7 @@ export default function TripPlanBuilderPage() {
   };
 
   const handleDeleteExpense = async (expenseId) => {
-    if (!window.confirm(t("confirmDeleteExpense"))) return;
+    if (!(await confirm(t("confirmDeleteExpense"), { danger: true, confirmLabel: t("dialogDelete") }))) return;
     const token = localStorage.getItem("wanderwise_token");
     if (tripId && token) {
       try {

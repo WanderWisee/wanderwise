@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 
 export default function InviteCrewPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { confirm, alert } = useDialog();
 
   const {
     destination = "",
@@ -18,6 +20,17 @@ export default function InviteCrewPage() {
     returnPath = "/trip-plan",
     tripId = null,
   } = location.state || {};
+
+  // Who is looking at this page — the user id is inside the login token.
+  const myUserId = (() => {
+    try {
+      const token = localStorage.getItem("wanderwise_token");
+      const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return payload.sub ? Number(payload.sub) : null;
+    } catch {
+      return null;
+    }
+  })();
 
   const authHeaders = () => {
     const token = localStorage.getItem("wanderwise_token");
@@ -144,7 +157,7 @@ export default function InviteCrewPage() {
 
   const handleRemoveCrew = async (memberId) => {
     if (!tripId) return;
-    if (!window.confirm(t("confirmRemoveCrewMember"))) return;
+    if (!(await confirm(t("confirmRemoveCrewMember"), { danger: true, confirmLabel: t("removeCrewMemberTitle") }))) return;
     try {
       await fetch(`/api/trips/${tripId}/crew/${memberId}`, {
         method: "DELETE",
@@ -153,6 +166,34 @@ export default function InviteCrewPage() {
       loadCrew();
     } catch (err) {
       console.warn("Failed to remove crew member:", err);
+    }
+  };
+
+  // Only the owner can remove people; a crew member can only leave.
+  const iAmOwner = crew.some((c) => c.isOwner && c.userId === myUserId);
+  const iAmCrewMember = crew.some((c) => !c.isOwner && c.userId === myUserId);
+  const [leaving, setLeaving] = useState(false);
+
+  const handleLeaveTrip = async () => {
+    if (!tripId || leaving) return;
+    if (!(await confirm(t("confirmLeaveTrip"), { danger: true, confirmLabel: t("leaveTrip") }))) return;
+    setLeaving(true);
+    try {
+      const resp = await fetch(`/api/trips/${tripId}/leave`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      if (resp.ok) {
+        // The trip isn't yours anymore, so don't go back into it.
+        navigate("/dashboard");
+        return;
+      }
+      alert(t("leaveTripFailed"));
+    } catch (err) {
+      console.warn("Failed to leave trip:", err);
+      alert(t("leaveTripFailed"));
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -252,8 +293,9 @@ export default function InviteCrewPage() {
                 />
                 <span>
                   {c.firstName} {c.lastName} {c.isOwner ? `(${t("tripOwner")})` : ""}
+                  {c.userId === myUserId ? ` · ${t("historyYouTag")}` : ""}
                 </span>
-                {!c.isOwner && (
+                {!c.isOwner && iAmOwner && (
                   <span
                     className="ww-cost-remove"
                     onClick={() => handleRemoveCrew(c.id)}
@@ -266,6 +308,19 @@ export default function InviteCrewPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Crew members (not the owner) can leave the trip themselves. */}
+        {iAmCrewMember && (
+          <button
+            type="button"
+            className="ww-booking-cancel"
+            style={{ marginTop: 20 }}
+            onClick={handleLeaveTrip}
+            disabled={leaving}
+          >
+            🚪 {leaving ? t("leavingTrip") : t("leaveTrip")}
+          </button>
         )}
       </main>
     </div>

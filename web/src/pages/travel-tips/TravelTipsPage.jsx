@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
+import JournalAvatar from "../../components/JournalAvatar";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
@@ -11,6 +12,19 @@ export default function TravelTipsPage() {
   const { journalEntries } = useAppData();
   const { t } = useLanguage();
   const [search, setSearch] = useState(location.state?.search || "");
+
+  // Every student's journal posts (not just yours), so Guides works like a
+  // shared feed. Falls back to your own posts if the server can't be reached.
+  const [feed, setFeed] = useState(null);
+  useEffect(() => {
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) return;
+    fetch("/api/journal/feed?limit=200", { headers: { Authorization: `Bearer ${token}` } })
+      .then((resp) => (resp.ok ? resp.json() : null))
+      .then((data) => setFeed(Array.isArray(data) ? data : null))
+      .catch(() => setFeed(null));
+  }, []);
+  const allJournals = (feed || journalEntries).filter((j) => j.title);
 
   useEffect(() => {
     setSearch(location.state?.search || "");
@@ -36,27 +50,63 @@ export default function TravelTipsPage() {
   // it. Either way, Guides should always show a consistent
   // "<Place> Travel Story" heading — strip whatever single word follows
   // "Travel" at the end (if any), then add "Travel Story" back.
-  const getDisplayTitle = (title) => {
-    const bare = title.replace(/ Travel \w+$/i, "").trim();
-    return `${bare} ${t("travelStorySuffix")}`;
+  const bareTitle = (title) => title.replace(/ Travel \w+$/i, "").trim();
+  const getDisplayTitle = (title) => `${bareTitle(title)} ${t("travelStorySuffix")}`;
+
+  // The word to look for in journal titles: "Baguio City" → "Baguio",
+  // "Siargao Island" → "Siargao", "El Nido, Palawan" → "El Nido".
+  const keywordFor = (destName) =>
+    destName.split(",")[0].replace(/\b(city|islands?)\b/gi, "").trim();
+
+  // Opens the list of every student's story about this place.
+  const openStories = (place, title) =>
+    navigate(`/travel-tips/stories?place=${encodeURIComponent(place)}&title=${encodeURIComponent(title)}`);
+
+  // Up to 3 small profile pictures of the people who wrote about a place.
+  const authorsOf = (journals) => {
+    const seen = new Set();
+    return journals
+      .map((j) => j.author)
+      .filter((a) => a && !seen.has(a.id) && seen.add(a.id));
+  };
+  const renderAuthors = (journals) => {
+    const authors = authorsOf(journals);
+    if (authors.length === 0) return null;
+    return (
+      <div className="ww-tips-authors">
+        <span className="ww-tips-avatars">
+          {authors.slice(0, 3).map((a) => (
+            <JournalAvatar key={a.id} author={a} size={26} />
+          ))}
+        </span>
+        <span className="ww-tips-authors-text">
+          {journals.length} {t("storiesCountSuffix")}
+        </span>
+      </div>
+    );
   };
 
   // Case-insensitive match: does a journal post's title mention this
   // destination's name? (e.g. "El Nido, Palawan Travel Story" matches
   // the "El Nido, Palawan" destination card.)
-  const matchesDestination = (journalTitle, destName) => {
-    const place = destName.split(",")[0].trim().toLowerCase();
-    return journalTitle.toLowerCase().includes(place);
-  };
+  const matchesDestination = (journalTitle, destName) =>
+    journalTitle.toLowerCase().includes(keywordFor(destName).toLowerCase());
 
-  const findMatchingJournal = (destName) =>
-    journalEntries.find((j) => matchesDestination(j.title, destName));
+  const journalsFor = (destName) => allJournals.filter((j) => matchesDestination(j.title, destName));
 
   // Journal posts about places NOT already in the static destinations
-  // list still get their own cards.
-  const unmatchedJournalEntries = journalEntries
-    .filter((j) => !destinations.some((d) => matchesDestination(j.title, d.name)))
-    .filter((j) => j.title.toLowerCase().includes(search.toLowerCase()));
+  // list still get their own cards — one card per place, even if several
+  // students wrote about it.
+  const unmatchedGroups = Object.values(
+    allJournals
+      .filter((j) => !destinations.some((d) => matchesDestination(j.title, d.name)))
+      .filter((j) => j.title.toLowerCase().includes(search.toLowerCase()))
+      .reduce((groups, j) => {
+        const key = bareTitle(j.title).toLowerCase();
+        (groups[key] = groups[key] || []).push(j);
+        return groups;
+      }, {})
+  );
 
   return (
     <div className="ww-planning-page">
@@ -98,41 +148,42 @@ export default function TravelTipsPage() {
         <h2 className="ww-tips-subtitle">{t("newTravelTips")}</h2>
 
         <div className="ww-tips-grid">
-          {unmatchedJournalEntries.map((j) => (
-            <div
-              className="ww-tips-card"
-              key={`journal-${j.id}`}
-              onClick={() => navigate(`/journal/view/${j.id}`)}
-              style={{ cursor: "pointer" }}
-            >
-              <img src={j.coverImage} alt={j.title} />
-              <h3>{getDisplayTitle(j.title)}</h3>
-              <button
-                className="ww-itinerary-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/journal/view/${j.id}`);
-                }}
+          {unmatchedGroups.map((group) => {
+            const j = group[0]; // newest post about this place
+            const place = bareTitle(j.title);
+            return (
+              <div
+                className="ww-tips-card"
+                key={`journal-${j.id}`}
+                onClick={() => openStories(place, place)}
+                style={{ cursor: "pointer" }}
               >
-                {t("seeItineraries")}
-              </button>
-            </div>
-          ))}
+                <img src={j.coverImage} alt={j.title} />
+                <h3>{getDisplayTitle(j.title)}</h3>
+                {renderAuthors(group)}
+                <button
+                  className="ww-itinerary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openStories(place, place);
+                  }}
+                >
+                  {t("seeItineraries")}
+                </button>
+              </div>
+            );
+          })}
 
           {filteredDestinations.map((dest) => {
-            const matchedJournal = findMatchingJournal(dest.name);
+            const matched = journalsFor(dest.name);
             // Boracay always has its own built-in guide; any other
-            // destination becomes enabled once you've posted a
-            // matching journal entry for it.
-            const hasGuide = dest.name === "Boracay, Aklan" || !!matchedJournal;
+            // destination becomes enabled once any student has posted a
+            // journal about it.
+            const hasGuide = dest.name === "Boracay, Aklan" || matched.length > 0;
 
             const goToGuide = () => {
               if (!hasGuide) return;
-              if (matchedJournal) {
-                navigate(`/journal/view/${matchedJournal.id}`);
-              } else {
-                navigate("/travel-guide", { state: { destination: dest.name } });
-              }
+              openStories(keywordFor(dest.name), dest.name);
             };
 
             return (
@@ -144,6 +195,7 @@ export default function TravelTipsPage() {
               >
                 <img src={dest.img} alt={dest.name} />
                 <h3>{dest.name}</h3>
+                {renderAuthors(matched)}
                 <button
                   className="ww-itinerary-btn"
                   disabled={!hasGuide}

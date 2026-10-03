@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 
 // Google Maps can't carry check-in/check-out dates in the URL, so this
@@ -39,6 +40,7 @@ export default function HotelsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { confirm, alert } = useDialog();
   const { formatDate } = usePreferences();
   // "Apr 17" (MM/DD setting) or "17 Apr" (DD/MM setting).
   const formatShortDate = (iso) => formatDate(iso, { month: "short", day: "numeric" });
@@ -179,7 +181,7 @@ export default function HotelsPage() {
   };
 
   const handleDeleteBooking = async (booking) => {
-    if (!window.confirm(t("confirmDeleteBooking"))) return;
+    if (!(await confirm(t("confirmDeleteBooking"), { danger: true, confirmLabel: t("dialogDelete") }))) return;
     const tripIdForBooking = trip ? trip.id : booking.tripId;
     try {
       const resp = await fetch(`/api/trips/${tripIdForBooking}/bookings/${booking.id}`, {

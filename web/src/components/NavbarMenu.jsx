@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
+import { notifyAuthChanged } from "../context/AppDataContext";
 import "../App.css";
 
 export default function NavbarMenu() {
@@ -28,6 +29,8 @@ export default function NavbarMenu() {
   const handleLogout = () => {
     setOpen(false);
     localStorage.removeItem("wanderwise_token");
+    // Clears the previous account's profile/journals right away.
+    notifyAuthChanged();
     navigate("/login");
   };
 

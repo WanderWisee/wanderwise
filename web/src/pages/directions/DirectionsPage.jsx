@@ -79,8 +79,11 @@ export default function DirectionsPage() {
     );
   }, [passedOrigin]);
 
-  const [routeCoords, setRouteCoords] = useState(null);
-  const [routeInfo, setRouteInfo] = useState(null); // { distanceM, durationS }
+  // Every route OSRM offers (the main one plus alternatives), each as
+  // { coords, distanceM, durationS, via }. The student picks one; the
+  // others stay on the map in gray so they can compare.
+  const [routes, setRoutes] = useState([]);
+  const [selectedRoute, setSelectedRoute] = useState(0);
   const [routeError, setRouteError] = useState(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
 
@@ -93,16 +96,24 @@ export default function DirectionsPage() {
     // the exact same coordinates already confirmed/pinned in the trip
     // builder, so the route drawn here always matches what the student
     // already saw there.
-    const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${lng},${lat}?overview=full&geometries=geojson`;
+    // alternatives=3 asks for up to 3 extra routes. OSRM only returns
+    // alternatives that are really different, so sometimes there's just one.
+    const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${lng},${lat}?overview=full&geometries=geojson&alternatives=3&steps=true`;
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
-        if (data.code === "Ok" && data.routes && data.routes[0]) {
-          const route = data.routes[0];
-          const latLngs = route.geometry.coordinates.map(([rlng, rlat]) => [rlat, rlng]);
-          setRouteCoords(latLngs);
-          setRouteInfo({ distanceM: route.distance, durationS: route.duration });
+        if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+          setRoutes(
+            data.routes.map((route) => ({
+              coords: route.geometry.coordinates.map(([rlng, rlat]) => [rlat, rlng]),
+              distanceM: route.distance,
+              durationS: route.duration,
+              // Main roads used, e.g. "Maharlika Highway, SLEX".
+              via: (route.legs || []).map((leg) => leg.summary).filter(Boolean).join(", "),
+            }))
+          );
+          setSelectedRoute(0); // OSRM lists the fastest first
         } else {
           setRouteError("directionsNoRoute");
         }
@@ -120,6 +131,10 @@ export default function DirectionsPage() {
   }, [origin, lat, lng]);
 
   const hasTarget = lat != null && lng != null;
+  const activeRoute = routes[selectedRoute] || null;
+  const shortestIndex = routes.length
+    ? routes.reduce((best, r, i) => (r.distanceM < routes[best].distanceM ? i : best), 0)
+    : -1;
   const center = hasTarget ? [lat, lng] : origin ? [origin.lat, origin.lng] : [12.8797, 121.774];
   const zoom = hasTarget ? 14 : 6;
 
@@ -178,10 +193,26 @@ export default function DirectionsPage() {
                   </Marker>
                 )}
 
-                {routeCoords && (
+                {/* Other routes in gray first, so the chosen one is drawn on
+                    top. Clicking a gray route selects it. */}
+                {routes.map((r, i) =>
+                  i === selectedRoute ? null : (
+                    <Polyline
+                      key={`alt-${i}`}
+                      positions={r.coords}
+                      pathOptions={{ color: "#8a8a8a", weight: 5, opacity: 0.6, dashArray: "6 8" }}
+                      eventHandlers={{ click: () => setSelectedRoute(i) }}
+                    />
+                  )
+                )}
+                {activeRoute && (
                   <>
-                    <Polyline positions={routeCoords} pathOptions={{ color: "#2f7ae0", weight: 5, opacity: 0.85 }} />
-                    <FitBoundsToRoute routeCoords={routeCoords} />
+                    <Polyline
+                      key={`active-${selectedRoute}`}
+                      positions={activeRoute.coords}
+                      pathOptions={{ color: "#2f7ae0", weight: 6, opacity: 0.9 }}
+                    />
+                    <FitBoundsToRoute routeCoords={routes[0].coords} />
                   </>
                 )}
               </MapContainer>
@@ -207,12 +238,48 @@ export default function DirectionsPage() {
               {origin && !loadingRoute && routeError && (
                 <p style={{ color: "#a33", margin: 0 }}>⚠️ {t(routeError)}</p>
               )}
-              {origin && !loadingRoute && routeInfo && (
+              {origin && !loadingRoute && activeRoute && (
                 <p style={{ margin: 0 }}>
-                  🚗 <strong>{formatDuration(routeInfo.durationS)}</strong> ({formatDistance(routeInfo.distanceM)})
+                  🚗 <strong>{formatDuration(activeRoute.durationS)}</strong> ({formatDistance(activeRoute.distanceM)})
                 </p>
               )}
             </div>
+
+            {/* Route choices — like Google Maps: every way there, with its
+                time and distance. Tap one to show it on the map. */}
+            {origin && !loadingRoute && routes.length > 0 && (
+              <div className="ww-route-options">
+                <p className="ww-route-options-title">
+                  {routes.length > 1 ? `${t("routeOptionsTitle")} (${routes.length})` : t("routeOnlyOne")}
+                </p>
+                {routes.map((r, i) => (
+                  <button
+                    type="button"
+                    key={`opt-${i}`}
+                    className={`ww-route-option ${i === selectedRoute ? "selected" : ""}`}
+                    onClick={() => setSelectedRoute(i)}
+                  >
+                    <span className="ww-route-option-main">
+                      <strong>{formatDuration(r.durationS)}</strong> · {formatDistance(r.distanceM)}
+                      {routes.length > 1 && i === 0 && <span className="ww-route-tag">⚡ {t("routeFastest")}</span>}
+                      {routes.length > 1 && i === shortestIndex && i !== 0 && (
+                        <span className="ww-route-tag">📏 {t("routeShortest")}</span>
+                      )}
+                    </span>
+                    {r.via && (
+                      <span className="ww-route-option-via">
+                        {t("routeVia")} {r.via}
+                      </span>
+                    )}
+                    {i !== 0 && routes.length > 1 && (
+                      <span className="ww-route-option-diff">
+                        +{formatDuration(Math.max(0, r.durationS - routes[0].durationS))} {t("routeSlowerThanFastest")}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
       </main>

@@ -3461,6 +3461,13 @@
   z-index: 100;
 }
 
+/* Navbar dropdowns stay above Leaflet maps (Directions, Trip Builder,
+   Dashboard), whose layers go up to z-index 1000. */
+.ww-menu-panel,
+.ww-navbar-search-dropdown {
+  z-index: 1100;
+}
+
 .ww-menu-item {
   padding: 12px 20px;
   margin: 0;
@@ -3987,4 +3994,283 @@
 .ww-expense-desc {
   color: #8a7654;
   font-size: 0.92em;
+}
+
+/* ===== Directions: route choices ===== */
+.ww-route-options { 
+  margin-top: 16px;
+  max-width: 640px; 
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+ }
+
+.ww-route-options-title { 
+  margin: 0 0 2px;
+  font-weight: bold;
+  color: #2b1c12;
+ }
+
+.ww-route-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 15px;
+  color: #2b1c12;
+  background: #fffaf0;
+  border: 1px solid #d4c9a8;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.ww-route-option:hover {
+  background: #f1e4c8;
+}
+
+.ww-route-option.selected { 
+  border: 2px solid #2f7ae0;
+  background: #eaf2fb;
+ }
+
+.ww-route-option-main { display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+ }
+
+.ww-route-tag { 
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px; 
+  background: #2f6f5f; 
+  color: #fff; }
+
+.ww-route-option-via,
+.ww-route-option-diff { 
+  font-size: 13px; 
+  color: #7a6a4f; }
+
+  /* ===== Guides: student stories (small profile pictures) ===== */
+.ww-journal-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #d8c39c;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #f6f3d9;
+  color: #5c4a33;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+}
+
+.ww-tips-authors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 10px;
+}
+
+.ww-tips-avatars {
+  display: inline-flex;
+}
+
+.ww-tips-avatars .ww-journal-avatar + .ww-journal-avatar {
+  margin-left: -8px;
+}
+
+.ww-tips-authors-text {
+  font-size: 13px;
+  color: #7a6a4f;
+}
+
+.ww-stories-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.ww-stories-back {
+  cursor: pointer;
+  color: #7a6a4f;
+  margin: 0 0 12px;
+}
+
+.ww-stories-title {
+  font-size: 32px;
+  margin: 0 0 6px;
+}
+
+.ww-stories-subtitle {
+  color: #7a6a4f;
+  margin: 0 0 24px;
+}
+
+.ww-story-card {
+  background: #fffaf0;
+  border: 1px solid #d4c9a8;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ww-story-guide {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.ww-story-guide:hover {
+  background: #f1e4c8;
+}
+
+.ww-story-guide-icon {
+  font-size: 28px;
+}
+
+.ww-story-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ww-story-name {
+  margin: 0;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.ww-story-name:hover {
+  text-decoration: underline;
+}
+
+.ww-story-meta {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #7a6a4f;
+}
+
+.ww-story-body {
+  cursor: pointer;
+}
+
+.ww-story-title {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.ww-story-cover {
+  width: 100%;
+  max-height: 340px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.ww-story-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== WanderWise dialog (replaces the browser's "localhost says…") ===== */
+.ww-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000; /* above Leaflet maps and other modals */
+  background: rgba(43, 28, 18, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ww-dialog {
+  width: 100%;
+  max-width: 420px;
+  background: #f6f3d9;
+  border: 1px solid #d4c9a8;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  padding: 20px 22px 18px;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #2b1c12;
+}
+
+.ww-dialog-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.ww-dialog-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.ww-dialog-message {
+  margin: 0 0 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-line; /* keeps line breaks, e.g. a link on its own line */
+  word-break: break-word;
+}
+
+.ww-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ww-dialog-btn {
+  font-family: inherit;
+  font-size: 15px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.ww-dialog-cancel {
+  background: transparent;
+  border-color: #b9a982;
+  color: #5c4a33;
+}
+
+.ww-dialog-cancel:hover {
+  background: #e6dcc0;
+}
+
+.ww-dialog-ok {
+  background: #2f6f5f;
+  color: #fff;
+}
+
+.ww-dialog-ok:hover {
+  background: #255a4d;
+}
+
+.ww-dialog-danger {
+  background: #a33a2a;
+  color: #fff;
+}
+
+.ww-dialog-danger:hover {
+  background: #8a2f22;
 }

@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 
 let nextHotelId = 1;
@@ -28,6 +29,7 @@ export default function JournalNewPostPage() {
   const navigate = useNavigate();
   const { addJournalEntry } = useAppData();
   const { t } = useLanguage();
+  const { alert } = useDialog();
 
   const [storyTitle, setStoryTitle] = useState(
     location.state?.destination

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
@@ -73,6 +73,14 @@ export default function SettingsPage() {
   const [bio, setBio] = useState(profileBio);
   const [profileLocationInput, setProfileLocationInput] = useState(profileLocation);
   const [savingAccount, setSavingAccount] = useState(false);
+
+  // The profile loads from the server a moment after the page opens (and
+  // changes when someone else logs in) — copy it into the boxes when it
+  // arrives, instead of only once when the page first opened.
+  useEffect(() => setName(profileName), [profileName]);
+  useEffect(() => setEmail(profileEmail), [profileEmail]);
+  useEffect(() => setBio(profileBio), [profileBio]);
+  useEffect(() => setProfileLocationInput(profileLocation), [profileLocation]);
 
   // Only the notifications WanderWise actually sends. Each maps to one
   // saved setting.

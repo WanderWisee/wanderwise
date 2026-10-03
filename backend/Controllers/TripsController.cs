@@ -441,14 +441,14 @@ public class TripsController : ControllerBase
     }
 
     // Generates (once) and returns this trip's share token, used to build
-    // the invite/share link shown on the Add Crew page. Owner-only —
-    // keeps control of who can (re)create the trip's invite link to the
-    // person who owns it. Idempotent — an existing token is just returned
-    // as-is instead of rotated.
+    // the invite/share link shown on the Add Crew page. Open to the owner
+    // AND crew members — crew can already add people by name, so they can
+    // share the invite link too. Idempotent — an existing token is just
+    // returned as-is instead of rotated.
     [HttpPost("/api/trips/{id}/share-link")]
     public async Task<IActionResult> GetOrCreateShareLink(int id)
     {
-        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.UserId == CurrentUserId);
+        var trip = await GetAccessibleTripAsync(id);
         if (trip is null) return NotFound();
 
         if (string.IsNullOrWhiteSpace(trip.ShareToken))

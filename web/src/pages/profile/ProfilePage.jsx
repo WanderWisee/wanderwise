@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 
 const destinationImageCache = {};
@@ -31,6 +32,7 @@ async function fetchDestinationImage(destination) {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { confirm, alert } = useDialog();
   const {
     journalEntries,
     profileName,
@@ -137,7 +139,7 @@ export default function ProfilePage() {
 
   const handleDeleteTrip = async (e, tripId) => {
     e.stopPropagation();
-    if (!window.confirm(t("confirmDeleteTrip"))) return;
+    if (!(await confirm(t("confirmDeleteTrip"), { danger: true, confirmLabel: t("dialogDelete") }))) return;
     const token = localStorage.getItem("wanderwise_token");
     try {
       const resp = await fetch(`/api/trips/${tripId}`, {
@@ -174,7 +176,7 @@ export default function ProfilePage() {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {
-      window.alert(`${t("copyThisLink")}\n${link}`);
+      alert(`${t("copyThisLink")}\n${link}`);
     }
   };
 

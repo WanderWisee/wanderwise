@@ -44,7 +44,7 @@ const DESTINATION_INFO = {
 export default function GuideDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const info = DESTINATION_INFO[id] || { name: 'Destination', attractions: [] };
+  const info = DESTINATION_INFO[String(id)] || { name: 'Destination', attractions: [] };
 
   return (
     <SafeAreaView style={styles.screen}>

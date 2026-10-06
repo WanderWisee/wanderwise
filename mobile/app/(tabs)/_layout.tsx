@@ -81,7 +81,7 @@ export default function TabsLayout() {
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            e.preventDefault();
+            (e as any).preventDefault();
             // Ang aktwal na navigation ay hawak na ng AddTabButton mismo
           },
         })}

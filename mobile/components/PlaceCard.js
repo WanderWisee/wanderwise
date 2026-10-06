@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../constants/theme';
-import TimePickerSheet, { formatTime12 } from './TimePickerSheet';
+import TimePickerSheet from './TimePickerSheet';
+import { useApp } from '../context/AppContext';
+import { formatPeso } from '../utils/dates';
 
 const GREY_PLACEHOLDER = '#A8A29B';
+// Naka-save sa English (gaya ng web); isinasalin lang kapag ipinapakita.
 const COST_CATEGORIES = ['Transportation', 'Entrance Fee', 'Food', 'Hotel', 'Other'];
+const COST_CATEGORY_KEYS = {
+  Transportation: 'costCatTransportation',
+  'Entrance Fee': 'costCatEntranceFee',
+  Food: 'costCatFood',
+  Hotel: 'costCatHotel',
+  Other: 'costCatOther',
+};
 
 export default function PlaceCard({
   place,
@@ -22,6 +32,8 @@ export default function PlaceCard({
   onAddCost,
   onRemoveCost,
 }) {
+  const { t, formatTime } = useApp();
+  const catLabel = (cat) => (COST_CATEGORY_KEYS[cat] ? t(COST_CATEGORY_KEYS[cat]) : cat);
   const [timeOpen, setTimeOpen] = useState(false);
   const [addingCost, setAddingCost] = useState(false);
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
@@ -78,17 +90,17 @@ export default function PlaceCard({
               )}
               {place.visited && (
                 <View style={[styles.chip, styles.chipVisited]}>
-                  <Text style={[styles.chipText, styles.chipVisitedText]}>✓ Visited</Text>
+                  <Text style={[styles.chipText, styles.chipVisitedText]}>✓ {t('visited')}</Text>
                 </View>
               )}
               {!!place.scheduledTime && (
                 <View style={styles.chip}>
-                  <Text style={styles.chipText}>🕒 {formatTime12(place.scheduledTime)}</Text>
+                  <Text style={styles.chipText}>🕒 {formatTime(place.scheduledTime)}</Text>
                 </View>
               )}
               {totalCost > 0 && (
                 <View style={styles.chip}>
-                  <Text style={styles.chipText}>₱{totalCost.toLocaleString()}</Text>
+                  <Text style={styles.chipText}>{formatPeso(totalCost)}</Text>
                 </View>
               )}
             </View>
@@ -104,7 +116,7 @@ export default function PlaceCard({
         <View style={styles.details}>
           <TextInput
             style={styles.notesInput}
-            placeholder="Add notes, links, etc."
+            placeholder={t('addNotesPlaceholder')}
             placeholderTextColor={GREY_PLACEHOLDER}
             value={place.notes}
             onChangeText={onChangeNotes}
@@ -115,18 +127,18 @@ export default function PlaceCard({
           <View style={styles.actionsRow}>
             <TouchableOpacity onPress={onToggleVisited} style={styles.actionButton}>
               <Text style={[styles.actionText, place.visited && styles.actionTextActive]}>
-                {place.visited ? '✓ Visited' : '✓ Mark as visited'}
+                {place.visited ? `✓ ${t('unmarkVisited')}` : `✓ ${t('markVisited')}`}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setTimeOpen(true)} style={styles.actionButton}>
               <Text style={styles.actionText}>
-                🕒 {place.scheduledTime ? formatTime12(place.scheduledTime) : 'Add time'}
+                🕒 {place.scheduledTime ? formatTime(place.scheduledTime) : t('selectTime')}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setAddingCost(true)} style={styles.actionButton}>
-              <Text style={styles.actionText}>₱ Add cost</Text>
+              <Text style={styles.actionText}>₱ {t('addCost')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -134,14 +146,14 @@ export default function PlaceCard({
             <View style={styles.costList}>
               {costs.map((c) => (
                 <View key={c.id} style={styles.costRow}>
-                  <Text style={styles.costCategory}>{c.category}</Text>
-                  <Text style={styles.costAmount}>₱{Number(c.amount).toLocaleString()}</Text>
+                  <Text style={styles.costCategory}>{catLabel(c.category)}</Text>
+                  <Text style={styles.costAmount}>{formatPeso(c.amount)}</Text>
                   <TouchableOpacity onPress={() => onRemoveCost(c.id)} style={styles.costRemove}>
                     <Text style={styles.costRemoveText}>✕</Text>
                   </TouchableOpacity>
                 </View>
               ))}
-              <Text style={styles.costTotal}>Total: ₱{totalCost.toLocaleString()}</Text>
+              <Text style={styles.costTotal}>{t('total')}: {formatPeso(totalCost)}</Text>
             </View>
           )}
 
@@ -155,7 +167,7 @@ export default function PlaceCard({
                     onPress={() => setCostCategory(cat)}
                   >
                     <Text style={[styles.categoryChipText, costCategory === cat && styles.categoryChipTextActive]}>
-                      {cat}
+                      {catLabel(cat)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -164,7 +176,7 @@ export default function PlaceCard({
               {costCategory === 'Other' && (
                 <TextInput
                   style={styles.costInput}
-                  placeholder="Category name"
+                  placeholder={t('typeCategory')}
                   placeholderTextColor={GREY_PLACEHOLDER}
                   value={customCategory}
                   onChangeText={setCustomCategory}
@@ -173,7 +185,7 @@ export default function PlaceCard({
 
               <TextInput
                 style={styles.costInput}
-                placeholder="Amount (₱)"
+                placeholder={`${t('amount')} (₱)`}
                 placeholderTextColor={GREY_PLACEHOLDER}
                 value={costAmount}
                 onChangeText={setCostAmount}
@@ -182,10 +194,10 @@ export default function PlaceCard({
 
               <View style={styles.costFormActions}>
                 <TouchableOpacity style={styles.costCancel} onPress={resetCostForm}>
-                  <Text style={styles.costCancelText}>Cancel</Text>
+                  <Text style={styles.costCancelText}>{t('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.costAdd} onPress={confirmCost}>
-                  <Text style={styles.costAddText}>Add</Text>
+                  <Text style={styles.costAddText}>{t('add')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

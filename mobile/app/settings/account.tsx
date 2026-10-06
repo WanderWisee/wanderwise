@@ -1,111 +1,126 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
-import FadeScrollView from '../../components/FadeScrollView';
+import { useApp } from '../../context/AppContext';
+import { useDialog } from '../../context/DialogContext';
+import { fullName, updateAvatar, updateProfile } from '../../services/userService';
+import { Avatar, Field, PrimaryButton, ScreenHeader } from '../../components/ui';
 
+// Parehong Settings → Account ng web. Ang pangalan at email ay galing sa
+// registration at hindi pa nababago sa backend, kaya naka-lock dito;
+// ang larawan, bio at location ay nase-save sa account.
 export default function AccountScreen() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
+  const { t, user, setUser, refreshUser } = useApp();
+  const { toast, alert } = useDialog();
+  const [bio, setBio] = useState(user?.bio || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Kapag dumating ang /api/me pagkatapos magbukas ang screen.
+  useEffect(() => {
+    setBio(user?.bio || '');
+    setLocation(user?.location || '');
+  }, [user?.userId]);
+
+  async function pickAvatar() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert(t('photoPermissionTitle'), t('photoPermissionMessage'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.4,
+      base64: true,
+    });
+    if (result.canceled || !result.assets?.[0]?.base64) return;
+    const dataUrl = `data:image/jpeg;base64,${result.assets[0].base64}`;
+    setUploading(true);
+    try {
+      await updateAvatar(dataUrl);
+      setUser((u) => ({ ...u, avatarUrl: dataUrl }));
+      toast(t('photoUpdated'));
+    } catch (e) {
+      alert(t('saveFailed'), e.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const saved = await updateProfile({ bio: bio.trim(), location: location.trim() });
+      setUser((u) => ({ ...u, bio: saved?.bio ?? bio.trim(), location: saved?.location ?? location.trim() }));
+      toast(t('settingSaved'));
+      refreshUser();
+    } catch (e) {
+      alert(t('saveFailed'), e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Account</Text>
-        <View style={{ width: 34 }} />
-      </View>
+      <ScreenHeader title={t('settingsAccount')} onBack={() => router.back()} />
 
-      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
-        <View style={styles.avatarWrap}>
-          <View style={styles.avatar}>
-            <Text style={{ fontSize: 36 }}>👤</Text>
-          </View>
-          <View style={styles.avatarEditBadge}>
-            <Text style={{ fontSize: 12 }}>✎</Text>
-          </View>
-        </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading} activeOpacity={0.8}>
+            <Avatar person={user} size={100} />
+            <View style={styles.avatarEditBadge}>
+              {uploading ? <ActivityIndicator size="small" color={Colors.brown900} /> : <Text style={{ fontSize: 12 }}>✎</Text>}
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.changePhoto}>{t('changePhoto')}</Text>
 
-        <Text style={styles.label}>Name</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} />
+          <Field label={t('accountName')} value={fullName(user)} editable={false} hint={t('nameLockedHint')} style={styles.field} />
+          <Field label={t('accountEmail')} value={user?.email || ''} editable={false} style={styles.field} />
+          <Field
+            label={t('accountBio')}
+            value={bio}
+            onChangeText={setBio}
+            placeholder={t('bioPlaceholder')}
+            multiline
+            numberOfLines={3}
+            maxLength={300}
+            inputStyle={{ minHeight: 84, textAlignVertical: 'top' }}
+            style={styles.field}
+          />
+          <Field
+            label={t('accountLocation')}
+            value={location}
+            onChangeText={setLocation}
+            placeholder={t('locationPlaceholder')}
+            maxLength={150}
+            style={styles.field}
+          />
 
-        <Text style={styles.label}>Username</Text>
-        <TextInput style={styles.input} value={username} onChangeText={setUsername} />
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-
-        <Text style={styles.label}>Bio</Text>
-        <TextInput
-          style={[styles.input, styles.bioInput]}
-          value={bio}
-          onChangeText={setBio}
-          placeholder="Tell others a bit about yourself"
-          placeholderTextColor={Colors.brown600}
-          multiline
-          numberOfLines={3}
-        />
-
-        <Text style={styles.label}>Location</Text>
-        <TextInput
-          style={styles.input}
-          value={location}
-          onChangeText={setLocation}
-          placeholder="Where are you based?"
-          placeholderTextColor={Colors.brown600}
-        />
-
-        <TouchableOpacity style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
-      </FadeScrollView>
+          <PrimaryButton label={t('save')} onPress={handleSave} loading={saving} style={{ alignSelf: 'stretch', marginTop: 8 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
-  },
-  backButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, alignItems: 'center' },
-  avatarWrap: { marginBottom: 24 },
-  avatar: {
-    width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.cream2,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40, alignItems: 'center' },
+  avatarWrap: { marginBottom: 8 },
   avatarEditBadge: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFFFFF',
+    width: 30, height: 30, borderRadius: 15, backgroundColor: '#FFFFFF',
     borderWidth: 1, borderColor: Colors.line,
     alignItems: 'center', justifyContent: 'center',
   },
-  label: {
-    fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600,
-    alignSelf: 'flex-start', marginBottom: 6,
-  },
-  input: {
-    width: '100%', fontFamily: 'Lora_400Regular', fontSize: 15, color: Colors.brown900,
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 18,
-  },
-  bioInput: { minHeight: 80, textAlignVertical: 'top' },
-  saveButton: {
-    width: '100%', height: 48, borderRadius: 12, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center', marginTop: 8,
-  },
-  saveButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.mint },
+  changePhoto: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 22 },
+  field: { alignSelf: 'stretch' },
 });

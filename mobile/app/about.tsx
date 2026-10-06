@@ -1,18 +1,21 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 import FadeScrollView from '../components/FadeScrollView';
 
 export default function AboutScreen() {
   const router = useRouter();
+  const { t } = useApp();
 
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={styles.backButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>About Us</Text>
+        <Text style={styles.headerTitle}>{t('aboutUs')}</Text>
         <View style={{ width: 34 }} />
       </View>
 
@@ -48,6 +51,11 @@ export default function AboutScreen() {
           <Text style={styles.paragraph}>
             WanderWise is a capstone project developed for the Tourism Management program, 2026.
           </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>The Team</Text>
+          <Text style={styles.paragraph}>Reuven Reyes{'\n'}Geilonn Romulo{'\n'}Niel Deo Villaverde</Text>
         </View>
       </FadeScrollView>
     </SafeAreaView>

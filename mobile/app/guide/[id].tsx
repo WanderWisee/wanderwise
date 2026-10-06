@@ -1,122 +1,170 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../constants/theme';
-import FadeScrollView from '../../components/FadeScrollView';
+import { DESTINATIONS, keywordFor } from '../../constants/destinations';
+import { useApp } from '../../context/AppContext';
+import { fetchJournalFeed } from '../../services/journalService';
+import { geocodeDestination } from '../../services/geoService';
+import { fullName } from '../../services/userService';
+import OsmMap from '../../components/OsmMap';
+import { Avatar, EmptyState, ErrorState, Loading, ScreenHeader } from '../../components/ui';
 
-const DESTINATION_INFO = {
-  singapore: {
-    name: 'Singapore',
-    attractions: [
-      {
-        name: 'Universal Studios Singapore',
-        blurb: "Experience movie magic with thrilling rides and attractions at Southeast Asia's first and only Universal Studios theme park.",
-        emoji: '🎢',
-      },
-      {
-        name: 'Riverside Walk',
-        blurb: 'A scenic evening stroll along the river, lined with restaurants and city lights.',
-        emoji: '🌉',
-      },
-    ],
-  },
-  bali: {
-    name: 'Bali, Indonesia',
-    attractions: [
-      {
-        name: 'Ulun Danu Beratan Temple',
-        blurb: 'A serene water temple set against the backdrop of Lake Beratan and misty mountains.',
-        emoji: '⛩️',
-      },
-    ],
-  },
-  tokyo: {
-    name: 'Tokyo, Japan',
-    attractions: [
-      {
-        name: 'Shibuya Crossing',
-        blurb: "One of the world's busiest pedestrian crossings, surrounded by neon lights and skyscrapers.",
-        emoji: '🚦',
-      },
-    ],
-  },
-};
-
+// Guides → "See Itineraries": lahat ng kwento ng mga estudyante tungkol sa
+// isang lugar (parehong DestinationStoriesPage ng web).
 export default function GuideDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const info = DESTINATION_INFO[String(id)] || { name: 'Destination', attractions: [] };
+  const params = useLocalSearchParams();
+  const place = String(params.id || '');
+  const heading = String(params.title || place);
+  const { t, formatDate } = useApp();
+
+  const [stories, setStories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [coords, setCoords] = useState(null);
+
+  const known = DESTINATIONS.find((d) => keywordFor(d.name).toLowerCase() === place.toLowerCase());
+  const hasOfficialGuide = place.toLowerCase() === 'boracay';
+
+  async function load() {
+    try {
+      setStories(await fetchJournalFeed({ q: place }));
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+    if (known) setCoords({ latitude: known.lat, longitude: known.lon });
+    else geocodeDestination(heading).then((c) => c && setCoords(c));
+  }, [place]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{info.name} Travel Guide</Text>
-      </View>
+      <ScreenHeader title={`${heading} ${t('travelStorySuffix')}`} onBack={() => router.back()} titleSize={17} />
 
-      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Explore the Area</Text>
-        <View style={styles.mapRow}>
-          <View style={styles.mapThumb} />
-          <View style={styles.mapThumb} />
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {known && <Image source={known.image} style={styles.hero} />}
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Top Attractions</Text>
+        <Text style={styles.sectionTitle}>{t('exploreTheArea')}</Text>
+        <OsmMap
+          markers={coords ? [{ ...coords, label: heading }] : []}
+          height={170}
+          singleZoom={11}
+          numbered={false}
+          emptyLabel={t('loadingMap')}
+        />
 
-        {info.attractions.map((spot) => (
-          <View key={spot.name} style={styles.attractionCard}>
-            <View style={styles.attractionImagePlaceholder}>
-              <Text style={{ fontSize: 40 }}>{spot.emoji}</Text>
+        {hasOfficialGuide && (
+          <TouchableOpacity style={styles.officialCard} onPress={() => router.push('/guide/official')} activeOpacity={0.85}>
+            <Text style={{ fontSize: 26 }}>📘</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.storyName}>{t('officialGuide')}</Text>
+              <Text style={styles.storyMeta}>{t('officialGuideHint')}</Text>
             </View>
-            <View style={styles.attractionBody}>
-              <Text style={styles.attractionName}>{spot.name}</Text>
-              <Text style={styles.attractionBlurb}>{spot.blurb}</Text>
-              <TouchableOpacity style={styles.learnMoreButton}>
-                <Text style={styles.learnMoreText}>Learn More</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        )}
+
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t('studentStories')}</Text>
+        <Text style={styles.subtitle}>{t('storiesSubtitle')}</Text>
+
+        {loading ? (
+          <Loading />
+        ) : error ? (
+          <ErrorState message={error} onRetry={onRefresh} retryLabel={t('tryAgain')} />
+        ) : stories.length === 0 ? (
+          <EmptyState
+            icon="📖"
+            title={t('storiesEmpty')}
+            action={
+              <TouchableOpacity
+                style={[styles.readButton, { marginTop: 16, paddingHorizontal: 20 }]}
+                onPress={() => router.push({ pathname: '/new-post', params: { place: heading } })}
+              >
+                <Text style={styles.readButtonText}>{t('writeFirstStory')}</Text>
               </TouchableOpacity>
+            }
+          />
+        ) : (
+          stories.map((s) => (
+            <View key={s.id} style={styles.storyCard}>
+              <TouchableOpacity style={styles.storyHeader} onPress={() => router.push(`/user/${s.author?.id}`)} activeOpacity={0.7}>
+                <Avatar person={s.author} size={40} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.storyName}>{fullName(s.author, t('student'))}</Text>
+                  <Text style={styles.storyMeta}>{formatDate(s.createdAt)}</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => router.push(`/journal/${s.id}`)} activeOpacity={0.85}>
+                <Text style={styles.storyTitle}>{s.title}</Text>
+                {!!s.coverImage && <Image source={{ uri: s.coverImage }} style={styles.cover} />}
+                <Text style={styles.storyMeta}>
+                  📍 {s.placesCount} {t('storyPlacesCount')} · 💬 {s.commentsCount} {t('storyCommentsCount')}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.storyActions}>
+                <TouchableOpacity style={styles.readButton} onPress={() => router.push(`/journal/${s.id}`)}>
+                  <Text style={styles.readButtonText}>{t('readStory')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.profileButton} onPress={() => router.push(`/user/${s.author?.id}`)}>
+                  <Text style={styles.profileButtonText}>👤 {t('viewProfile')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
-      </FadeScrollView>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
-  },
-  backButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, flexShrink: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  hero: { width: '100%', height: 170, borderRadius: 16, marginBottom: 22, backgroundColor: Colors.cream2 },
   sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 12 },
-  mapRow: { flexDirection: 'row', gap: 10 },
-  mapThumb: {
-    flex: 1, height: 100, backgroundColor: Colors.cream2, borderRadius: 12,
+  subtitle: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: -6, marginBottom: 14 },
+  officialCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 18,
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
     borderWidth: 1, borderColor: Colors.line,
   },
-  attractionCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 18,
-    borderWidth: 1, borderColor: Colors.line, overflow: 'hidden',
+  chevron: { fontSize: 22, color: Colors.brown600 },
+  storyCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16,
+    borderWidth: 1, borderColor: Colors.line,
   },
-  attractionImagePlaceholder: {
-    height: 150, backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center',
+  storyHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  storyName: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  storyMeta: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
+  storyTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 16.5, color: Colors.brown900, marginBottom: 10 },
+  cover: { width: '100%', height: 190, borderRadius: 12, marginBottom: 10, backgroundColor: Colors.cream2 },
+  storyActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  readButton: {
+    flex: 1, backgroundColor: Colors.brown900, borderRadius: 12, height: 40,
+    alignItems: 'center', justifyContent: 'center',
   },
-  attractionBody: { padding: 16 },
-  attractionName: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 6 },
-  attractionBlurb: {
-    fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, lineHeight: 19, marginBottom: 14,
+  readButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  profileButton: {
+    flex: 1, borderRadius: 12, height: 40, borderWidth: 1.4, borderColor: Colors.brown900,
+    alignItems: 'center', justifyContent: 'center',
   },
-  learnMoreButton: {
-    backgroundColor: Colors.brown900, borderRadius: 12, height: 40, alignSelf: 'flex-start',
-    paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center',
-  },
-  learnMoreText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  profileButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
 });

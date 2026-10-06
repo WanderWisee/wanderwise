@@ -1,50 +1,66 @@
-# Welcome to your Expo app 👋
+# WanderWise Mobile (React Native / Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Ang mobile app ng WanderWise. Iisang backend (`/backend`, .NET) at iisang
+database ang gamit ng web at mobile, kaya ang trip na ginawa sa phone ay
+lalabas agad sa web, at kabaligtaran.
 
-## Get started
+## Patakbuhin
 
-1. Install dependencies
+1. **Backend** — sa laptop, buksan ito para maabot ng phone sa parehong Wi-Fi:
 
    ```bash
-   npm install
+   cd backend
+   dotnet run --launch-profile lan
    ```
 
-2. Start the app
+   (Ang `lan` profile ay nakikinig sa `0.0.0.0:5269`. Ang `http` profile ay
+   `localhost` lang, kaya hindi ito maaabot ng phone.) Kapag hindi pa rin
+   maabot, payagan ang port 5269 sa Windows Firewall.
+
+2. **Mobile**
 
    ```bash
+   cd mobile
+   npm install
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   I-scan ang QR code gamit ang Expo Go.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Saan kumokonekta ang app?
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Kusang ginagamit ng app ang IP ng laptop na nagpapatakbo ng `npx expo start`
+(port 5269). Kung nasa ibang computer ang backend, o naka-deploy na ito,
+gumawa ng `mobile/.env.local` (tingnan ang `.env.example`):
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+EXPO_PUBLIC_API_URL=http://192.168.1.151:5269/api
+EXPO_PUBLIC_WEB_URL=http://192.168.1.151:3000
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Pagkatapos baguhin, i-restart gamit ang `npx expo start -c`. Kailangan din ito
+kapag gumagamit ng `npx expo start --tunnel`.
 
-## Learn more
+## Ayos ng code
 
-To learn more about developing your project with Expo, look at the following resources:
+| Folder | Laman |
+| --- | --- |
+| `app/` | Mga screen (Expo Router — ang file name ang route) |
+| `services/api.js` | Iisang pinto papunta sa backend: token, timeout, error, 401 → Login |
+| `services/*Service.js` | Mga tawag sa API, parehong endpoints ng web |
+| `context/AppContext.js` | Session (`/api/me`), wika (en/fil), at preferences (`/api/me/settings`) |
+| `context/DialogContext.js` | In-app na confirm/alert/toast (gumagana rin sa Expo web) |
+| `components/ui.js` | Paulit-ulit na UI: header, buttons, field, avatar, empty/error state |
+| `components/OsmMap.js` | Mapa gamit ang OpenStreetMap tiles (walang dagdag na library) |
+| `i18n/translations.js` | **Kopya** ng `web/src/i18n/translations.js` — kapag binago sa web, kopyahin ulit dito |
+| `i18n/mobileStrings.js` | Mga salitang pang-mobile lang |
+| `constants/destinations.js` | Parehong listahan at larawan ng destinations ng web |
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Mga tala
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Ang `trip.title` ay ang pangalan ng "Where to go?" list (gaya sa web); ang
+  pangalan ng trip na ipinapakita ay "Trip to &lt;destination&gt;".
+- Ang mga larawan (profile, journal) ay ipinapadala bilang base64 data URL —
+  parehong format ng web.
+- Ang invite link ay `EXPO_PUBLIC_WEB_URL/trip-plan/join/<token>` — parehong
+  link ng web. Sa phone, puwede rin itong i-paste sa Menu → "Join a trip".

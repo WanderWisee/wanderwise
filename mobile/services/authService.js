@@ -1,42 +1,63 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api, getToken as readToken, setToken } from './api';
 
-const BASE_URL = 'http://192.168.1.151:3001/api'; // TODO: palitan ng totoong IP
-const TOKEN_KEY = 'wanderwise_token';
+// Parehong mga endpoint na gamit ng web (AuthController.cs).
+// Ang login ay gamit ang school email (@student.mseuf.edu.ph), hindi
+// student number — ang student number ay kinukuha ng backend mula sa email.
 
-async function request(path, body) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+export const SCHOOL_EMAIL_REGEX = /^[^@\s]+@student\.mseuf\.edu\.ph$/i;
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || 'Something went wrong. Please try again.');
-  }
-
+export async function login({ email, password }) {
+  const data = await api.post('/login', { email: email.trim(), password }, { auth: false });
+  await setToken(data.token);
   return data;
 }
 
-export async function register({ studentNumber, dob, cellphone, password }) {
-  const data = await request('/register', { studentNumber, dob, cellphone, password });
-  if (data.token) {
-    await AsyncStorage.setItem(TOKEN_KEY, data.token);
-  }
+// Hakbang 1 ng pag-register: magpapadala ang backend ng code sa recovery email.
+export function sendRegisterOtp({ schoolEmail, recoveryEmail }) {
+  return api.post(
+    '/register/send-otp',
+    { schoolEmail: schoolEmail.trim(), recoveryEmail: recoveryEmail.trim() },
+    { auth: false, timeout: 30000 }
+  );
+}
+
+// Hakbang 2: buuin ang account gamit ang code.
+// dob: "YYYY-MM-DD" (tinatanggap din ng backend ang ibang format)
+export async function register(form) {
+  const data = await api.post(
+    '/register',
+    {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      schoolEmail: form.schoolEmail.trim(),
+      recoveryEmail: form.recoveryEmail.trim(),
+      dob: form.dob,
+      cellphone: form.cellphone.trim(),
+      password: form.password,
+      otpCode: form.otpCode.trim(),
+    },
+    { auth: false }
+  );
+  if (data && data.token) await setToken(data.token);
   return data;
 }
 
-export async function login({ studentNumber, password }) {
-  const data = await request('/login', { studentNumber, password });
-  await AsyncStorage.setItem(TOKEN_KEY, data.token);
-  return data;
+export function sendForgotPasswordOtp(schoolEmail) {
+  return api.post('/forgot-password/send-otp', { schoolEmail: schoolEmail.trim() }, { auth: false, timeout: 30000 });
+}
+
+export function resetPassword({ schoolEmail, otpCode, newPassword }) {
+  return api.post(
+    '/forgot-password/reset',
+    { schoolEmail: schoolEmail.trim(), otpCode: otpCode.trim(), newPassword },
+    { auth: false }
+  );
 }
 
 export async function logout() {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+  await setToken(null);
 }
 
-export async function getToken() {
-  return AsyncStorage.getItem(TOKEN_KEY);
+export function getToken() {
+  return readToken();
 }

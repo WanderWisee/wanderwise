@@ -18,7 +18,7 @@ function formatDateRange(startDate, endDate) {
   return `${only.month} ${only.day}`;
 }
 
-export default function TripListItem({ trip, onPress, onShare, onMenu, showActions = true }) {
+export default function TripListItem({ trip, onPress, onShare = null, onMenu = null, showActions = true }) {
   const dateLabel = formatDateRange(trip.startDate, trip.endDate);
 
   return (

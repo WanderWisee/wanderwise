@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // ScrollView na may fade sa itaas: unti-unting naglalaho ang content
 // malapit sa itaas na gilid, kaya walang matigas na hiwa sa ilalim ng header.
-export default function FadeScrollView({ fadeHeight = 28, style, children, ...props }) {
+export default function FadeScrollView({ fadeHeight = 28, style = null, children, ...props }) {
   return (
     <MaskedView
       style={[{ flex: 1 }, style]}

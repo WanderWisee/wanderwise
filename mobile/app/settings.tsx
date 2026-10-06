@@ -37,7 +37,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               key={item.key}
               style={[styles.row, index !== SETTINGS_ITEMS.length - 1 && styles.rowDivider]}
-              onPress={() => router.push(item.route)}
+              onPress={() => router.push(item.route as any)}
               activeOpacity={0.6}
             >
               <View style={[styles.iconBadge, { backgroundColor: item.tint }]}>

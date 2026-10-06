@@ -33,7 +33,7 @@ function buildDaysFromRange(startDate, endDate) {
   if (!startDate || !endDate) return [];
   const start = new Date(startDate + 'T00:00:00');
   const end = new Date(endDate + 'T00:00:00');
-  if (isNaN(start) || isNaN(end) || start > end) return [];
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return [];
   const days = [];
   const cursor = new Date(start);
   while (cursor <= end) {

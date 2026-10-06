@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  SafeAreaView, ScrollView, Image, Alert,
+  ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
+import { useDialog } from '../context/DialogContext';
+import { createJournalEntry } from '../services/journalService';
 import Backdrop from '../components/Backdrop';
 import MeshBlobs from '../components/MeshBlobs';
 
@@ -13,6 +17,8 @@ function makeEmptyEntry() {
   return {
     id: `entry_${Date.now()}_${Math.random()}`,
     photoUri: null,
+    photoData: null, // data URL na ipapadala sa backend (parehong format ng web)
+    placeName: '',
     rating: 0,
     description: '',
     pros: [],
@@ -24,7 +30,10 @@ function makeEmptyEntry() {
 
 export default function NewPostScreen() {
   const router = useRouter();
-  const [place, setPlace] = useState('');
+  const params = useLocalSearchParams();
+  const { t } = useApp();
+  const { alert, toast } = useDialog();
+  const [place, setPlace] = useState(String(params.place || ''));
   const [entries, setEntries] = useState([makeEmptyEntry()]);
   const [hotels, setHotels] = useState([]);
   const [hotelName, setHotelName] = useState('');
@@ -36,13 +45,27 @@ export default function NewPostScreen() {
   }
 
   async function pickPhotoFor(id, isLastEntry) {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert(t('photoPermissionTitle'), t('photoPermissionMessage'));
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      // Mababang quality para hindi lumaki nang husto ang base64 sa database.
+      quality: 0.35,
+      base64: true,
     });
-    if (result.canceled) return;
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    if (!asset.base64) {
+      alert(t('couldntReadPhoto'));
+      return;
+    }
 
-    updateEntry(id, { photoUri: result.assets[0].uri });
+    updateEntry(id, { photoUri: asset.uri, photoData: `data:image/jpeg;base64,${asset.base64}` });
 
     if (isLastEntry) {
       setEntries((prev) => [...prev, makeEmptyEntry()]);
@@ -80,19 +103,46 @@ export default function NewPostScreen() {
   }
 
   async function handlePost() {
-    if (!place.trim()) {
-      Alert.alert('Missing place', 'Please tell us where this trip was.');
+    const where = place.trim();
+    if (!where) {
+      alert(t('missingPlaceTitle'), t('missingPlaceMessage'));
       return;
     }
-    const filledEntries = entries.filter((e) => e.photoUri);
+    const filledEntries = entries.filter((e) => e.photoData);
     if (filledEntries.length === 0) {
-      Alert.alert('Missing photo', 'Please add at least one photo.');
+      alert(t('chooseAPhotoFirst'));
       return;
     }
+    // Isama ang hotel na naka-type pero hindi pa na-"+ add".
+    const allHotels = hotelName.trim()
+      ? [...hotels, { name: hotelName.trim(), description: hotelDesc.trim() }]
+      : hotels;
+
+    // Parehong hugis ng CreateJournalEntryRequest na ipinapadala ng web.
+    // Laging "<lugar> Travel Story" ang title para mag-grupo nang tama sa Guides.
+    const payload = {
+      title: `${where} Travel Story`,
+      coverImage: filledEntries[0].photoData,
+      places: filledEntries.map((e, idx) => ({
+        placeName: e.placeName.trim() || where,
+        imageUrl: e.photoData,
+        rating: e.rating,
+        description: e.description.trim(),
+        sortOrder: idx,
+        pros: e.pros,
+        cons: e.cons,
+        hotels: idx === 0 ? allHotels.map((h) => ({ name: h.name, description: h.description || null })) : [],
+      })),
+    };
+
     setPosting(true);
     try {
-      await new Promise((res) => setTimeout(res, 600));
-      router.back();
+      const created = await createJournalEntry(payload);
+      toast(t('postedBanner'));
+      if (created && created.id) router.replace(`/journal/${created.id}`);
+      else router.back();
+    } catch (e) {
+      alert(t('journalSaveError'), e.message);
     } finally {
       setPosting(false);
     }
@@ -107,15 +157,16 @@ export default function NewPostScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Journal Entry</Text>
+        <Text style={styles.headerTitle}>{t('newJournalEntry')}</Text>
         <View style={{ width: 34 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.handLabelOutside}>Where was this trip?</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.handLabelOutside}>{t('whereWasThisTrip')}</Text>
         <TextInput
           style={styles.destinationInputOutside}
-          placeholder="e.g. Boracay"
+          placeholder={t('egBoracay')}
           placeholderTextColor={Colors.brown600}
           value={place}
           onChangeText={setPlace}
@@ -143,12 +194,21 @@ export default function NewPostScreen() {
                 ) : (
                   <View style={styles.photoPlaceholder}>
                     <Text style={{ fontSize: 30 }}>📷</Text>
-                    <Text style={styles.photoPlaceholderText}>Tap to add a photo</Text>
+                    <Text style={styles.photoPlaceholderText}>{t('tapToAddPhoto')}</Text>
                   </View>
                 )}
               </TouchableOpacity>
 
-              <Text style={styles.handLabel}>How was it?</Text>
+              <Text style={styles.handLabel}>{t('spotName')}</Text>
+              <TextInput
+                style={[styles.lineInput, { marginBottom: 18 }]}
+                placeholder={place.trim() || t('addAPlace')}
+                placeholderTextColor={Colors.brown600}
+                value={entry.placeName}
+                onChangeText={(text) => updateEntry(entry.id, { placeName: text })}
+              />
+
+              <Text style={styles.handLabel}>{t('rateYourExperience')}</Text>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((n) => (
                   <TouchableOpacity key={n} onPress={() => updateEntry(entry.id, { rating: n })}>
@@ -157,10 +217,10 @@ export default function NewPostScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.handLabel, { marginTop: 20 }]}>Your story</Text>
+              <Text style={[styles.handLabel, { marginTop: 20 }]}>{t('yourStory')}</Text>
               <TextInput
                 style={[styles.lineInput, styles.lineTextArea]}
-                placeholder="Write about this spot..."
+                                placeholder={t('writeShortDescription')}
                 placeholderTextColor={Colors.brown600}
                 value={entry.description}
                 onChangeText={(text) => updateEntry(entry.id, { description: text })}
@@ -168,11 +228,11 @@ export default function NewPostScreen() {
                 numberOfLines={4}
               />
 
-              <Text style={[styles.sectionHandLabel, { marginTop: 24 }]}>What you loved</Text>
+              <Text style={[styles.sectionHandLabel, { marginTop: 24 }]}>{t('pros')}</Text>
               <View style={styles.chipInputRow}>
                 <TextInput
                   style={[styles.lineInput, { flex: 1 }]}
-                  placeholder="Add a pro"
+                  placeholder={t('addAProPlaceholder')}
                   placeholderTextColor={Colors.brown600}
                   value={entry.prosInput}
                   onChangeText={(text) => updateEntry(entry.id, { prosInput: text })}
@@ -192,11 +252,11 @@ export default function NewPostScreen() {
                 </View>
               )}
 
-              <Text style={[styles.sectionHandLabel, { marginTop: 20 }]}>What could be better</Text>
+              <Text style={[styles.sectionHandLabel, { marginTop: 20 }]}>{t('cons')}</Text>
               <View style={styles.chipInputRow}>
                 <TextInput
                   style={[styles.lineInput, { flex: 1 }]}
-                  placeholder="Add a con"
+                  placeholder={t('addAConPlaceholder')}
                   placeholderTextColor={Colors.brown600}
                   value={entry.consInput}
                   onChangeText={(text) => updateEntry(entry.id, { consInput: text })}
@@ -219,23 +279,23 @@ export default function NewPostScreen() {
           );
         })}
 
-        <Text style={[styles.handLabelOutside, { marginTop: 24 }]}>Where did you stay?</Text>
+        <Text style={[styles.handLabelOutside, { marginTop: 24 }]}>{t('hotelOptions')}</Text>
         <TextInput
           style={styles.lineInputOutside}
-          placeholder="Hotel name"
+          placeholder={t('hotelName')}
           placeholderTextColor={Colors.brown600}
           value={hotelName}
           onChangeText={setHotelName}
         />
         <TextInput
           style={[styles.lineInputOutside, { marginTop: 8 }]}
-          placeholder="Short hotel description"
+          placeholder={t('shortHotelDescription')}
           placeholderTextColor={Colors.brown600}
           value={hotelDesc}
           onChangeText={setHotelDesc}
         />
         <TouchableOpacity onPress={addHotel} style={styles.addHotelLink}>
-          <Text style={styles.addHotelLinkText}>+ add hotel</Text>
+          <Text style={styles.addHotelLinkText}>+ {t('addHotel')}</Text>
         </TouchableOpacity>
 
         {hotels.map((h, i) => (
@@ -246,9 +306,14 @@ export default function NewPostScreen() {
         ))}
 
         <TouchableOpacity style={styles.postButton} onPress={handlePost} disabled={posting} activeOpacity={0.85}>
-          <Text style={styles.postButtonText}>{posting ? 'Posting…' : 'Post to Journal'}</Text>
+          {posting ? (
+            <ActivityIndicator color={Colors.mint} />
+          ) : (
+            <Text style={styles.postButtonText}>{t('postToJournal')}</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

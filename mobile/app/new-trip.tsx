@@ -1,25 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  SafeAreaView, ActivityIndicator,
+  ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
-import { createTrip, ensureDestination } from '../services/tripService';
+import { useApp } from '../context/AppContext';
+import { createTrip, ensureDestination, fetchDestinations } from '../services/tripService';
 import Backdrop from '../components/Backdrop';
 import IconBadge from '../components/IconBadge';
 import CalendarPicker, { formatDate } from '../components/CalendarPicker';
 
-function toISO(d) {
-  if (!d) return null;
-  const mm = String(d.month + 1).padStart(2, '0');
-  const dd = String(d.day).padStart(2, '0');
-  return `${d.year}-${mm}-${dd}`;
-}
+import { partsToISO as toISO } from '../utils/dates';
 
 export default function NewTripScreen() {
   const router = useRouter();
+  const { t } = useApp();
   const [destination, setDestination] = useState('');
+  const [allDestinations, setAllDestinations] = useState([]);
+  const [focused, setFocused] = useState(false);
+
+  // Parehong listahan ng destinations na gamit ng web (GET /api/destinations).
+  useEffect(() => {
+    fetchDestinations().then(setAllDestinations);
+  }, []);
+
+  const q = destination.trim().toLowerCase();
+  const suggestions = allDestinations
+    .filter((d) => d.name && (!q || d.name.toLowerCase().includes(q)) && d.name.toLowerCase() !== q)
+    .slice(0, 6);
   const [dateRange, setDateRange] = useState(null);
   const [travelers, setTravelers] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -29,7 +39,7 @@ export default function NewTripScreen() {
   async function handleCreateTrip() {
     setError(null);
     if (!destination.trim()) {
-      setError('Please enter a destination.');
+      setError(t('enterDestinationError'));
       return;
     }
     setLoading(true);
@@ -39,7 +49,9 @@ export default function NewTripScreen() {
       // wala pa, para lumaki ang database base sa aktwal na hinahanap ng users.
       ensureDestination(trimmed);
 
-      const title = `Trip to ${trimmed}`;
+      // Sa web, ang trip.title ay ang pangalan ng "Where to go?" list —
+      // parehong default ang gamit dito para magkapareho ang itsura sa dalawa.
+      const title = t('whereToGoDefault');
       const { tripId } = await createTrip({
         title,
         destination: trimmed,
@@ -47,9 +59,7 @@ export default function NewTripScreen() {
         endDate: dateRange ? toISO(dateRange.end) : null,
         travelBuddiesCount: travelers,
         budgetTotal: 0,
-        sections: [
-          { isDefault: true, name: title, sortOrder: 0, places: [] },
-        ],
+        sections: [],
       });
       router.replace(`/trip/${tripId}`);
     } catch (e) {
@@ -72,32 +82,52 @@ export default function NewTripScreen() {
         </Text>
       </View>
 
-      <View style={styles.content}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: 'center', marginBottom: 20 }}>
           <IconBadge emoji="🧳" size={72} />
         </View>
 
-        <Text style={styles.heading}>Begin your journey</Text>
+        <Text style={styles.heading}>{t('beginYourJourney')}</Text>
 
-        <Text style={styles.label}>Destination?</Text>
+        <Text style={styles.label}>{t('destinationQuestion')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Thailand"
+          placeholder={t('whereAreYouHeaded')}
           placeholderTextColor={Colors.brown600}
           value={destination}
           onChangeText={setDestination}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
         />
+        {focused && suggestions.length > 0 && (
+          <View style={styles.suggestions}>
+            {suggestions.map((d) => (
+              <TouchableOpacity
+                key={d.id}
+                style={styles.suggestionRow}
+                onPress={() => {
+                  setDestination(d.name);
+                  setFocused(false);
+                }}
+              >
+                <Text style={styles.suggestionText}>📍 {d.name}</Text>
+                {!!d.country && <Text style={styles.suggestionCountry}>{d.country}</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
-        <Text style={styles.label}>Dates</Text>
+        <Text style={styles.label}>{t('dates')}</Text>
         <TouchableOpacity style={styles.dateField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
           <Text style={dateRange ? styles.dateFieldText : styles.dateFieldPlaceholder}>
             {dateRange
               ? `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`
-              : 'Select start and end date'}
+              : t('selectDates')}
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>How many people?</Text>
+        <Text style={styles.label}>{t('howManyPeople')}</Text>
         <View style={styles.counterRow}>
           <TouchableOpacity
             style={styles.counterButton}
@@ -124,10 +154,11 @@ export default function NewTripScreen() {
           {loading ? (
             <ActivityIndicator color={Colors.mint} />
           ) : (
-            <Text style={styles.submitButtonText}>Let's go</Text>
+            <Text style={styles.submitButtonText}>{t('letsGo')}</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
 
       <CalendarPicker
         visible={pickerOpen}
@@ -153,7 +184,17 @@ const styles = StyleSheet.create({
   backText: { fontSize: 18, color: Colors.brown900 },
   wordmark: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Lora_400Regular', color: Colors.brown600 },
-  content: { paddingHorizontal: 24, paddingTop: 10 },
+  content: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 },
+  suggestions: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
+    marginTop: -10, marginBottom: 16, overflow: 'hidden',
+  },
+  suggestionRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.line,
+  },
+  suggestionText: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900 },
+  suggestionCountry: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600 },
   heading: {
     fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900,
     textAlign: 'center', marginBottom: 30,

@@ -1,7 +1,7 @@
 // Lahat ng OpenStreetMap-related na tawag: geocoding (Nominatim),
 // routing (OSRM), at directions link (openstreetmap.org).
 
-const BASE_URL = 'http://192.168.1.151:3001/api'; // TODO: dapat parehas sa tripService.js
+import { API_URL as BASE_URL } from '../constants/config';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 const OSRM_URL = 'https://routing.openstreetmap.de';
@@ -166,4 +166,39 @@ export function directionsUrl(from, to, mode, destination) {
     `https://www.openstreetmap.org/directions?engine=${engine}` +
     `&from=${encodeURIComponent(label(from))}&to=${encodeURIComponent(label(to))}`
   );
+}
+
+// ===== Larawan ng destination (Wikipedia, sa pamamagitan ng backend) =====
+// Parehong /api/destination-image na gamit ng Profile page ng web.
+
+const imageCache = {};
+
+export async function fetchDestinationImage(name) {
+  const key = String(name || '').trim().toLowerCase();
+  if (!key) return null;
+  if (key in imageCache) return imageCache[key];
+  imageCache[key] = (async () => {
+    // Unahin ang buong pangalan, tapos ang unang bahagi ("El Nido, Palawan" -> "El Nido")
+    const attempts = [name.trim()];
+    const first = name.split(',')[0].trim();
+    if (first && first !== attempts[0]) attempts.push(first);
+    for (const q of attempts) {
+      try {
+        const res = await fetchWithTimeout(`${BASE_URL}/destination-image?name=${encodeURIComponent(q)}`, {}, 12000);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data && data.found && data.url) return data.url;
+      } catch (err) {
+        // subukan ang susunod
+      }
+    }
+    return null;
+  })();
+  return imageCache[key];
+}
+
+// Destination ng buong trip (hal. "Baguio City") -> coordinates.
+export async function geocodeDestination(destination) {
+  if (!destination) return null;
+  return (await geocodeOnce(`${destination}, Philippines`)) || (await geocodeOnce(destination));
 }

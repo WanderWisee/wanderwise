@@ -1,76 +1,66 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
-import FadeScrollView from '../../components/FadeScrollView';
+import { useApp } from '../../context/AppContext';
+import { useDialog } from '../../context/DialogContext';
+import { ScreenHeader } from '../../components/ui';
 
-const DEFAULT_TOGGLES = [
-  { key: 'tripReminders', label: 'Trip reminders', value: true },
-  { key: 'deals', label: 'New deals and offers', value: true },
-  { key: 'friendActivity', label: 'Friend activity', value: true },
-  { key: 'messages', label: 'Messages', value: true },
-  { key: 'reviewRequests', label: 'Review requests', value: true },
-  { key: 'email', label: 'Email updates', value: false },
-  { key: 'push', label: 'Push notifications', value: true },
-  { key: 'sms', label: 'SMS notifications', value: true },
-  { key: 'inApp', label: 'In-app notifications', value: false },
+// Ang mga notification lang na talagang ipinapadala ng WanderWise —
+// parehong apat na setting ng web, naka-save sa account.
+const OPTIONS = [
+  { key: 'notifTripReminders', hintKey: 'notifTripRemindersHint' },
+  { key: 'notifTripInvites', hintKey: 'notifTripInvitesHint' },
+  { key: 'notifComments', hintKey: 'notifCommentsHint' },
+  { key: 'notifTripUpdates', hintKey: 'notifTripUpdatesHint' },
 ];
 
 export default function NotificationSettingsScreen() {
   const router = useRouter();
-  const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
+  const { t, prefs, updatePrefs } = useApp();
+  const { toast } = useDialog();
 
-  function toggle(key) {
-    setToggles((prev) => prev.map((t) => (t.key === key ? { ...t, value: !t.value } : t)));
+  async function toggle(key) {
+    // Ang setting na hindi pa naka-save ay itinuturing na ON (gaya sa web).
+    const ok = await updatePrefs({ [key]: prefs[key] === false });
+    toast(ok ? t('settingSaved') : t('networkError'));
   }
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 34 }} />
-      </View>
+      <ScreenHeader title={t('settingsNotifications')} onBack={() => router.back()} />
 
-      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Push Notification</Text>
-        {toggles.map((t) => (
-          <View key={t.key} style={styles.row}>
-            <Text style={styles.rowLabel}>{t.label}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.sectionTitle}>{t('pushNotification')}</Text>
+        {OPTIONS.map(({ key, hintKey }) => (
+          <View key={key} style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowLabel}>{t(key)}</Text>
+              <Text style={styles.rowHint}>{t(hintKey)}</Text>
+            </View>
             <Switch
-              value={t.value}
-              onValueChange={() => toggle(t.key)}
+              value={prefs[key] !== false}
+              onValueChange={() => toggle(key)}
               trackColor={{ false: Colors.line, true: Colors.brown900 }}
               thumbColor="#FFFFFF"
             />
           </View>
         ))}
-      </FadeScrollView>
+        <Text style={styles.always}>🔒 {t('notifSecurityAlwaysOn')}</Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
-  },
-  backButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
-  sectionTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 14,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 8 },
   row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.line,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.line,
   },
   rowLabel: { fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown900 },
+  rowHint: { fontFamily: 'Lora_400Regular', fontSize: 12, lineHeight: 17, color: Colors.brown600, marginTop: 3 },
+  always: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginTop: 18 },
 });

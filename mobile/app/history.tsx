@@ -1,46 +1,124 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
+import { fetchHistory } from '../services/userService';
 import Backdrop from '../components/Backdrop';
-import FadeScrollView from '../components/FadeScrollView';
+import { ChoiceChips, EmptyState, ErrorState, Loading, ScreenHeader } from '../components/ui';
 
-const HISTORY_ITEMS = [];
-
+// Parehong /api/history ng web: mga trip (sarili at sinalihan) at journal
+// posts, ayon sa huling pagbukas — kasama kung sino pa ang tumingin.
 export default function HistoryScreen() {
   const router = useRouter();
+  const { t, timeAgo, formatDateRange } = useApp();
+  const [items, setItems] = useState([]);
+  const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function load() {
+    try {
+      setItems(await fetchHistory());
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      load().finally(() => setLoading(false));
+    }, [])
+  );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
+  const shown = items.filter((i) => filter === 'all' || i.type === filter);
+
+  function viewerLine(item) {
+    if (!item.viewedBy || item.viewedBy.length === 0) return null;
+    return item.viewedBy
+      .slice(0, 3)
+      .map((v) => `${v.name || t('historyAnonymousViewer')}${v.isOwner ? ` (${t('historyOwnerTag')})` : ''} · ${timeAgo(v.viewedAt)}`)
+      .join('\n');
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
       <Backdrop height={180} style={styles.backdrop} />
+      <ScreenHeader title={t('history')} onBack={() => router.back()} />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>History</Text>
-        <View style={{ width: 34 }} />
-      </View>
-
-      {HISTORY_ITEMS.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={{ fontSize: 40 }}>🕘</Text>
-          <Text style={styles.emptyTitle}>No activity yet.</Text>
-          <Text style={styles.emptySubtitle}>Your actions will show up here.</Text>
-        </View>
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <ErrorState message={error} onRetry={onRefresh} retryLabel={t('tryAgain')} />
       ) : (
-        <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
-          {HISTORY_ITEMS.map((item) => (
-            <View key={item.id} style={styles.row}>
-              <View style={styles.iconBadge}>
-                <Text style={{ fontSize: 16 }}>{item.icon}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{item.title}</Text>
-                <Text style={styles.rowSubtitle}>{item.subtitle}</Text>
-              </View>
+        <FlatList
+          data={shown}
+          keyExtractor={(i) => `${i.type}-${i.id}`}
+          contentContainerStyle={shown.length === 0 ? { flex: 1, paddingHorizontal: 20 } : styles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListHeaderComponent={
+            <ChoiceChips
+              style={{ marginBottom: 16 }}
+              options={[
+                { value: 'all', label: t('all') },
+                { value: 'Trip', label: t('historyTypeTrip') },
+                { value: 'Journal', label: t('historyTypeJournal') },
+              ]}
+              value={filter}
+              onChange={setFilter}
+            />
+          }
+          ListEmptyComponent={
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <EmptyState icon="🕘" title={t('historyEmpty')} />
             </View>
-          ))}
-        </FadeScrollView>
+          }
+          renderItem={({ item }) => {
+            const isTrip = item.type === 'Trip';
+            const viewers = viewerLine(item);
+            return (
+              <TouchableOpacity
+                style={styles.row}
+                onPress={() => router.push(isTrip ? `/trip/${item.id}` : `/journal/${item.id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconBadge, { backgroundColor: isTrip ? Colors.tintSand : Colors.tintSage }]}>
+                  <Text style={{ fontSize: 16 }}>{isTrip ? '🧳' : '📖'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle} numberOfLines={1}>
+                    {isTrip && item.title?.startsWith('Trip to ')
+                      ? `${t('tripToPrefix')} ${item.title.slice(8)}`
+                      : item.title}
+                  </Text>
+                  <Text style={styles.rowSubtitle}>
+                    {isTrip ? t('historyTypeTrip') : t('historyTypeJournal')} · {t('historyColViewed')} {timeAgo(item.lastViewed)}
+                  </Text>
+                  {isTrip && (item.startDate || item.endDate) && (
+                    <Text style={styles.rowSubtitle}>📅 {formatDateRange(item.startDate, item.endDate)}</Text>
+                  )}
+                  {!!viewers && (
+                    <Text style={styles.viewers}>
+                      {t('historyViewedByLabel')}
+                      {'\n'}
+                      {viewers}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.chevron}>›</Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
       )}
     </SafeAreaView>
   );
@@ -49,26 +127,7 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
-  },
-  backButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
-  emptyTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900,
-    marginTop: 16, textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600,
-    marginTop: 6, textAlign: 'center',
-  },
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#FFFFFF', borderRadius: 14,
@@ -76,10 +135,9 @@ const styles = StyleSheet.create({
     shadowColor: Colors.brown900, shadowOpacity: 0.05, shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
-  iconBadge: {
-    width: 38, height: 38, borderRadius: 12, backgroundColor: Colors.cream2,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  rowTitle: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900 },
+  iconBadge: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 14.5, color: Colors.brown900 },
   rowSubtitle: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 3 },
+  viewers: { fontFamily: 'Lora_400Regular', fontSize: 11, lineHeight: 16, color: Colors.placeholder, marginTop: 6 },
+  chevron: { fontSize: 20, color: Colors.brown600 },
 });

@@ -1,24 +1,26 @@
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 
 export default function TripActionsSheet({ visible, onClose, onShare, onEdit, onDelete }) {
+  const { t } = useApp();
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.handle} />
 
           <TouchableOpacity style={styles.row} onPress={() => { onClose(); onShare(); }}>
             <Text style={styles.icon}>↗</Text>
-            <Text style={styles.label}>Share</Text>
+            <Text style={styles.label}>{t('inviteYourCrew')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={() => { onClose(); onEdit(); }}>
             <Text style={styles.icon}>✎</Text>
-            <Text style={styles.label}>Edit</Text>
+            <Text style={styles.label}>{t('editYourTrip')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={() => { onClose(); onDelete(); }}>
             <Text style={[styles.icon, { color: Colors.error }]}>🗑</Text>
-            <Text style={[styles.label, { color: Colors.error }]}>Delete</Text>
+            <Text style={[styles.label, { color: Colors.error }]}>{t('deleteOrLeaveTrip')}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>

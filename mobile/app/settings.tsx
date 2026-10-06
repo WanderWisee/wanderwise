@@ -1,21 +1,23 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import Backdrop from '../components/Backdrop';
 import FadeScrollView from '../components/FadeScrollView';
-import { logout } from '../services/authService';
+import { useApp } from '../context/AppContext';
 
 const SETTINGS_ITEMS = [
-  { key: 'account', label: 'Account', icon: '👤', tint: '#F4D9A8', route: '/settings/account' },
-  { key: 'preferences', label: 'User preferences', icon: '⚙️', tint: '#C9D9C4', route: '/settings/preferences' },
-  { key: 'notifications', label: 'Notifications', icon: '🔔', tint: '#D9C4D0', route: '/settings/notifications' },
+  { key: 'account', labelKey: 'settingsAccount', icon: '👤', tint: '#F4D9A8', route: '/settings/account' },
+  { key: 'preferences', labelKey: 'settingsPreferences', icon: '⚙️', tint: '#C9D9C4', route: '/settings/preferences' },
+  { key: 'notifications', labelKey: 'settingsNotifications', icon: '🔔', tint: '#D9C4D0', route: '/settings/notifications' },
 ];
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, signOut } = useApp();
 
   async function handleLogout() {
-    await logout();
+    await signOut();
     router.replace('/');
   }
 
@@ -27,7 +29,7 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>{t('settingsTitle')}</Text>
         <View style={{ width: 34 }} />
       </View>
 
@@ -43,7 +45,7 @@ export default function SettingsScreen() {
               <View style={[styles.iconBadge, { backgroundColor: item.tint }]}>
                 <Text style={{ fontSize: 16 }}>{item.icon}</Text>
               </View>
-              <Text style={styles.rowLabel}>{item.label}</Text>
+              <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
               <Text style={styles.rowChevron}>›</Text>
             </TouchableOpacity>
           ))}
@@ -51,7 +53,7 @@ export default function SettingsScreen() {
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
           <Text style={styles.logoutIcon}>⏻</Text>
-          <Text style={styles.logoutText}>Log out</Text>
+          <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
       </FadeScrollView>
     </SafeAreaView>

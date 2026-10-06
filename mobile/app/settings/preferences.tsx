@@ -1,76 +1,93 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
-import FadeScrollView from '../../components/FadeScrollView';
+import { useApp } from '../../context/AppContext';
+import { useDialog } from '../../context/DialogContext';
+import { ChoiceChips, ScreenHeader } from '../../components/ui';
 
-function SelectRow({ label, value }) {
-  return (
-    <TouchableOpacity style={styles.selectRow}>
-      <View>
-        <Text style={styles.selectLabel}>{label}</Text>
-        <Text style={styles.selectValue}>{value}</Text>
-      </View>
-      <Text style={styles.selectChevron}>⌄</Text>
-    </TouchableOpacity>
-  );
-}
-
+// Parehong Settings → Preferences ng web. Naka-save sa account
+// (/api/me/settings), kaya pareho ang format sa web at sa mobile.
 export default function PreferencesScreen() {
   const router = useRouter();
+  const { t, language, setLanguage, prefs, updatePrefs, formatDate, formatTime, formatDistance } = useApp();
+  const { toast } = useDialog();
+
+  async function save(changes) {
+    const ok = await updatePrefs(changes);
+    toast(ok ? t('settingSaved') : t('networkError'));
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>User preferences</Text>
-        <View style={{ width: 34 }} />
-      </View>
+      <ScreenHeader title={t('settingsPreferences')} onBack={() => router.back()} titleSize={18} />
 
-      <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>🌐 Language</Text>
-        <SelectRow label="Change language" value="English" />
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.sectionTitle}>🌐 {t('changeLanguage')}</Text>
+        <ChoiceChips
+          options={[
+            { value: 'en', label: 'English' },
+            { value: 'fil', label: 'Filipino' },
+          ]}
+          value={language}
+          onChange={(v) => {
+            setLanguage(v);
+            toast(v === 'fil' ? 'Na-save ang setting' : 'Setting saved');
+          }}
+        />
 
-        <Text style={styles.sectionTitle}>Trip and Journal Planner</Text>
-        <Text style={styles.sectionSubtitle}>Plan trips offline, sync when connected.</Text>
-        <SelectRow label="Offline sync" value="Select" />
+        <Text style={styles.sectionTitle}>{t('formatting')}</Text>
 
-        <Text style={styles.sectionTitle}>Formatting</Text>
-        <SelectRow label="Date Format" value="Month/Day" />
-        <SelectRow label="Time Format" value="12 hour" />
-        <SelectRow label="Distance Format" value="Kilometers" />
-      </FadeScrollView>
+        <Text style={styles.label}>{t('dateFormat')}</Text>
+        <ChoiceChips
+          options={[
+            { value: 'mdy', label: 'MM/DD/YYYY' },
+            { value: 'dmy', label: 'DD/MM/YYYY' },
+          ]}
+          value={prefs.dateFormat}
+          onChange={(v) => save({ dateFormat: v })}
+        />
+
+        <Text style={styles.label}>{t('timeFormat')}</Text>
+        <ChoiceChips
+          options={[
+            { value: '12h', label: t('hour12') },
+            { value: '24h', label: t('hour24') },
+          ]}
+          value={prefs.timeFormat}
+          onChange={(v) => save({ timeFormat: v })}
+        />
+
+        <Text style={styles.label}>{t('distanceFormat')}</Text>
+        <ChoiceChips
+          options={[
+            { value: 'km', label: t('kilometers') },
+            { value: 'mi', label: t('miles') },
+          ]}
+          value={prefs.distanceFormat}
+          onChange={(v) => save({ distanceFormat: v })}
+        />
+
+        <View style={styles.preview}>
+          <Text style={styles.previewLabel}>{t('formatPreview')}</Text>
+          <Text style={styles.previewValue}>
+            {formatDate('2026-04-17')} · {formatTime('14:30')} · {formatDistance(2300)}
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginTop: 18, marginBottom: 12 },
+  label: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 14, marginBottom: 8 },
+  preview: {
+    marginTop: 26, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: Colors.line,
   },
-  backButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
-  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
-  sectionTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900,
-    marginTop: 20, marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 10,
-  },
-  selectRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 10,
-  },
-  selectLabel: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600 },
-  selectValue: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginTop: 2 },
-  selectChevron: { fontSize: 16, color: Colors.brown600 },
+  previewLabel: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600 },
+  previewValue: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginTop: 4 },
 });

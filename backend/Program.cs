@@ -40,10 +40,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 
 // Allows the React dev server (localhost:3000) to call this API.
+// localhost:8081 = the mobile app running as Expo web (`npx expo start --web`).
+// The native mobile app (Expo Go / APK) doesn't need CORS at all.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:8081")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });

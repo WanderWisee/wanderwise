@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 
 // "14:30" -> "2:30 PM". Tumatanggap din ng "14:30:00" mula sa backend.
 export function formatTime12(hhmm) {
@@ -27,6 +28,7 @@ export default function TimePickerSheet({ visible, initial, onClose, onSave }) {
   const [hour, setHour] = useState(9);
   const [minute, setMinute] = useState(0);
   const [period, setPeriod] = useState('AM');
+  const { t } = useApp();
 
   useEffect(() => {
     if (visible) {
@@ -47,7 +49,7 @@ export default function TimePickerSheet({ visible, initial, onClose, onSave }) {
     <Modal visible={visible} transparent animationType="fade">
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>Set time</Text>
+          <Text style={styles.title}>{t('selectTime')}</Text>
 
           <View style={styles.columnsRow}>
             <View style={styles.column}>
@@ -87,10 +89,10 @@ export default function TimePickerSheet({ visible, initial, onClose, onSave }) {
 
           <View style={styles.actions}>
             <TouchableOpacity style={styles.clearButton} onPress={() => onSave(null)}>
-              <Text style={styles.clearText}>Clear</Text>
+              <Text style={styles.clearText}>{t('clear')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('save')}</Text>
             </TouchableOpacity>
           </View>
         </Pressable>

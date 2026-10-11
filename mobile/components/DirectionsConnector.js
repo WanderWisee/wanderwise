@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { Colors } from '../constants/theme';
 import { getRoute, directionsUrl, hasCoords } from '../services/geoService';
+import { useApp } from '../context/AppContext';
 
 const MODE_ICONS = { walking: '🚶', driving: '🚗' };
 
@@ -12,11 +13,9 @@ function formatDuration(mins) {
   return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
 }
 
-function formatDistance(km) {
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
-}
 
 export default function DirectionsConnector({ from, to, destination }) {
+  const { t, formatDistance } = useApp();
   const [mode, setMode] = useState('walking');
   const [route, setRoute] = useState(null);
   const bothLocated = hasCoords(from) && hasCoords(to);
@@ -35,9 +34,9 @@ export default function DirectionsConnector({ from, to, destination }) {
 
   let summary = null;
   if (route) {
-    summary = `${route.estimated ? '~' : ''}${formatDuration(route.durationMin)} • ${formatDistance(route.distanceKm)}`;
+    summary = `${route.estimated ? '~' : ''}${formatDuration(route.durationMin)} • ${route.distanceKm < 1 && formatDistance(1000).endsWith('km') ? `${Math.round(route.distanceKm * 1000)} m` : formatDistance(route.distanceKm * 1000)}`;
   } else if (bothLocated) {
-    summary = 'Calculating…';
+    summary = t('directionsLoadingRoute');
   }
 
   return (
@@ -53,7 +52,7 @@ export default function DirectionsConnector({ from, to, destination }) {
       {summary && <Text style={styles.summary}>{summary}</Text>}
 
       <TouchableOpacity onPress={() => Linking.openURL(directionsUrl(from, to, mode, destination))}>
-        <Text style={styles.directionsLink}>Directions</Text>
+        <Text style={styles.directionsLink}>{t('directions')}</Text>
       </TouchableOpacity>
 
       <View style={styles.dashedLine} />

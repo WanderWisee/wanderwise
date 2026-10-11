@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -29,6 +30,18 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
   const [viewMonth, setViewMonth] = useState(initialRange?.start?.month ?? today.getMonth());
   const [start, setStart] = useState(initialRange?.start || null);
   const [end, setEnd] = useState(initialRange?.end || null);
+  const { t } = useApp();
+
+  // Tuwing bubuksan, simulan sa kasalukuyang napiling range.
+  useEffect(() => {
+    if (!visible) return;
+    setStart(initialRange?.start || null);
+    setEnd(initialRange?.end || null);
+    if (initialRange?.start) {
+      setViewYear(initialRange.start.year);
+      setViewMonth(initialRange.start.month);
+    }
+  }, [visible]);
 
   function goPrevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
@@ -119,13 +132,13 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
 
           <View style={styles.calendarSummary}>
             <Text style={styles.calendarSummaryText}>
-              {start ? formatDate(start) : 'Start date'} — {end ? formatDate(end) : 'End date'}
+              {start ? formatDate(start) : t('startDate')} — {end ? formatDate(end) : t('endDate')}
             </Text>
           </View>
 
           <View style={styles.dateCardActions}>
             <TouchableOpacity style={styles.dateCancelButton} onPress={onClose}>
-              <Text style={styles.dateCancelButtonText}>Cancel</Text>
+              <Text style={styles.dateCancelButtonText}>{t('cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.dateConfirmButton}
@@ -135,7 +148,7 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
                 onClose();
               }}
             >
-              <Text style={styles.dateConfirmButtonText}>Confirm</Text>
+              <Text style={styles.dateConfirmButtonText}>{t('save')}</Text>
             </TouchableOpacity>
           </View>
         </Pressable>

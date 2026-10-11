@@ -2,7 +2,9 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
+import { useApp } from '../../context/AppContext';
 
 function AddTabButton(props) {
   const router = useRouter();
@@ -35,6 +37,8 @@ function AddTabButton(props) {
 }
 
 export default function TabsLayout() {
+  const { t } = useApp();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -44,8 +48,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Colors.brown900,
           borderTopWidth: 0,
-          height: 62,
-          paddingBottom: 8,
+          height: 62 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
@@ -57,7 +61,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: t('navHome'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -66,7 +70,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="guides"
         options={{
-          title: 'Guides',
+          title: t('navGuides'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map-outline" size={size} color={color} />
           ),
@@ -79,7 +83,7 @@ export default function TabsLayout() {
           tabBarIcon: () => <AddTabButton />,
           tabBarButton: (props) => <AddTabButton {...props} />,
         }}
-        listeners={({ navigation }) => ({
+        listeners={() => ({
           tabPress: (e) => {
             (e as any).preventDefault();
             // Ang aktwal na navigation ay hawak na ng AddTabButton mismo
@@ -89,7 +93,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="hotels"
         options={{
-          title: 'Hotels',
+          title: t('navHotels'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="business-outline" size={size} color={color} />
           ),
@@ -98,7 +102,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('navProfile'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

@@ -1,11 +1,14 @@
 import { useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 
 export default function LandingScreen() {
   const router = useRouter();
+  const { t, language, setLanguage } = useApp();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
@@ -66,11 +69,10 @@ export default function LandingScreen() {
         </View>
 
         <Text style={styles.heading}>
-          Tourism students, welcome to your travel companion
+          {t('landingTitle')}
         </Text>
         <Text style={styles.subtitle}>
-          Plan smarter, explore further, and create trips you'll never forget.
-          Your next adventure starts here.
+          {t('landingSubtitle')}
         </Text>
 
         <View style={styles.buttonRow}>
@@ -78,26 +80,26 @@ export default function LandingScreen() {
             style={styles.outlineButton}
             onPress={() => router.push('/login')}
           >
-            <Text style={styles.outlineButtonText}>Log in</Text>
+            <Text style={styles.outlineButtonText}>{t('logIn')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/signup')}
           >
-            <Text style={styles.primaryButtonText}>Sign up</Text>
+            <Text style={styles.primaryButtonText}>{t('signUp')}</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/home')} style={{ marginTop: 20 }}>
-          <Text style={styles.footerLink}>Skip to Home (dev only)</Text>
-        </TouchableOpacity>
       </Animated.View>
 
       <View style={styles.footer}>
         <View style={styles.divider} />
         <TouchableOpacity onPress={() => router.push('/about')}>
-          <Text style={styles.footerLink}>About us</Text>
+          <Text style={styles.footerLink}>{t('aboutUs')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setLanguage(language === 'en' ? 'fil' : 'en')} style={{ marginTop: 10 }}>
+          <Text style={styles.footerLink}>{language === 'en' ? 'Filipino' : 'English'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

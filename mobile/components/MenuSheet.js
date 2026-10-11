@@ -1,27 +1,36 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
-import { logout } from '../services/authService';
+import { useApp } from '../context/AppContext';
+import { fetchNotifications, fullName } from '../services/userService';
+import { Avatar } from './ui';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
 
 const MENU_ITEMS = [
-  { key: 'notifications', label: 'Notifications', icon: '🔔', tint: '#F4D9A8', route: '/notifications' },
-  { key: 'settings', label: 'Settings', icon: '⚙️', tint: '#C9D9C4', route: '/settings' },
-  { key: 'history', label: 'History', icon: '🕘', tint: '#D9C4D0', route: '/history' },
-  { key: 'language', label: 'Language', icon: '🌐', tint: '#B8D4D9', route: '/language' },
+  { key: 'notifications', labelKey: 'notificationsTitle', icon: '🔔', tint: '#F4D9A8', route: '/notifications' },
+  { key: 'settings', labelKey: 'settingsTitle', icon: '⚙️', tint: '#C9D9C4', route: '/settings' },
+  { key: 'history', labelKey: 'history', icon: '🕘', tint: '#D9C4D0', route: '/history' },
+  { key: 'language', labelKey: 'language', icon: '🌐', tint: '#B8D4D9', route: '/language' },
+  { key: 'join', labelKey: 'joinWithLink', icon: '🔗', tint: '#F4D9A8', route: '/join' },
+  { key: 'about', labelKey: 'aboutUs', icon: 'ℹ️', tint: '#C9D9C4', route: '/about' },
 ];
 
 export default function MenuSheet({ visible, onClose }) {
   const router = useRouter();
   const slideAnim = useRef(new Animated.Value(DRAWER_WIDTH)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
+  const { t, user, signOut } = useApp();
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     if (visible) {
+      fetchNotifications()
+        .then((list) => setUnread(list.filter((n) => !n.isRead).length))
+        .catch(() => {});
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
         Animated.timing(overlayAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
@@ -40,13 +49,13 @@ export default function MenuSheet({ visible, onClose }) {
   }
 
   async function handleLogout() {
-    await logout();
     handleClose();
+    await signOut();
     router.replace('/');
   }
 
   return (
-    <Modal visible={visible} transparent animationType="none">
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
       <View style={StyleSheet.absoluteFill}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
           <Animated.View style={[styles.overlay, { opacity: overlayAnim }]} />
@@ -61,9 +70,24 @@ export default function MenuSheet({ visible, onClose }) {
           <LinearGradient colors={['#FBF7E8', Colors.cream2]} style={StyleSheet.absoluteFill} />
 
           <View style={styles.content}>
-            <Text style={styles.title}>Menu</Text>
+            <Text style={styles.title}>{t('menu')}</Text>
 
-           
+            <TouchableOpacity
+              style={styles.profileRow}
+              onPress={() => {
+                handleClose();
+                router.push('/settings/account');
+              }}
+              activeOpacity={0.7}
+            >
+              <Avatar person={user} size={48} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.profileName} numberOfLines={1}>{fullName(user, t('student'))}</Text>
+                <Text style={styles.profileLink}>{t('editProfile')}</Text>
+              </View>
+            </TouchableOpacity>
+            <View style={styles.divider} />
+
             {/* Menu items */}
             <View style={styles.itemsList}>
               {MENU_ITEMS.map((item) => (
@@ -79,7 +103,12 @@ export default function MenuSheet({ visible, onClose }) {
                   <View style={[styles.iconBadge, { backgroundColor: item.tint }]}>
                     <Text style={{ fontSize: 15 }}>{item.icon}</Text>
                   </View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
+                  <Text style={styles.menuLabel}>{t(item.labelKey)}</Text>
+                  {item.key === 'notifications' && unread > 0 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
+                    </View>
+                  )}
                   <Text style={styles.chevron}>›</Text>
                 </TouchableOpacity>
               ))}
@@ -87,7 +116,7 @@ export default function MenuSheet({ visible, onClose }) {
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
               <Text style={styles.logoutIcon}>⏻</Text>
-              <Text style={styles.logoutText}>Log out</Text>
+              <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -98,7 +127,7 @@ export default function MenuSheet({ visible, onClose }) {
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(46,27,14,0.5)',
   },
   drawer: {
@@ -146,6 +175,11 @@ const styles = StyleSheet.create({
   },
   menuLabel: { flex: 1, fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown900 },
   chevron: { fontSize: 17, color: Colors.brown600 },
+  badge: {
+    minWidth: 20, height: 20, borderRadius: 10, backgroundColor: Colors.error,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5,
+  },
+  badgeText: { fontFamily: 'Lora_600SemiBold', fontSize: 10.5, color: '#FFFFFF' },
   logoutButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Colors.brown900, borderRadius: 14, height: 50, marginBottom: 30,

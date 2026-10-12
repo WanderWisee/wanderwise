@@ -33,6 +33,7 @@ import NotificationWatcher from './components/NotificationWatcher';
 import JournalViewPage from './pages/journal/JournalViewPage';
 import JoinTripPage from "./pages/trip-plan-builder/JoinTripPage";
 import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
+import TourDayPage from "./pages/tour/TourDayPage";
 
 function App() {
   return (
@@ -77,6 +78,7 @@ function App() {
           <Route path="/journal/view/:id" element={<JournalViewPage />} />
           <Route path="/trip-plan/join/:shareToken" element={<JoinTripPage />} />
           <Route path="/trip-plan/shared/:shareToken" element={<SharedTripViewPage />} />
+          <Route path="/trip-plan/tour" element={<TourDayPage />} />
         </Routes>
       </BrowserRouter>
     </AppDataProvider>

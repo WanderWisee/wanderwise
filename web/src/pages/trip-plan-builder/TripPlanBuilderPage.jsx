@@ -1974,6 +1974,17 @@ export default function TripPlanBuilderPage() {
             👥 {t("addCrew")}
           </button>
 
+          
+          {tripId && startDate && endDate && (
+            <button
+              className="ww-trip-plan-btn"
+              onClick={() => navigate(`/trip-plan/tour?tripId=${tripId}`)}
+              style={{ marginLeft: 10, minHeight: 42 }}
+            >
+              🧭 {t("tourDayBtn")}
+            </button>
+          )}
+
           {myRole !== "owner" && (
             <button
               type="button"
@@ -2334,6 +2345,19 @@ export default function TripPlanBuilderPage() {
                   >
                     <div className="ww-day-header-row">
                       <p className="ww-day-header">⌄ {day.label}</p>
+                      {/* Tour Day for this day: attendance, check-in,
+                          announcements, activities. */}
+                      {tripId && (
+                        <button
+                          type="button"
+                          className="ww-tour-link"
+                          style={{ marginLeft: "auto" }}
+                          onClick={() => navigate(`/trip-plan/tour?tripId=${tripId}&day=${dayIndex}`)}
+                        >
+                          🧭 {t("tourDayLink")}
+                        </button>
+                      )}
+
                       {routablePlaces >= 3 && (
                         <button
                           type="button"

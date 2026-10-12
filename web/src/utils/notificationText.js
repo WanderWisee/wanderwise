@@ -45,6 +45,8 @@ export function notificationText(n, t, formatTime) {
       return `${trip} ${t("notifTextOverBudget")} (₱${d.spent} / ₱${d.budget})`;
     case "trip_ended":
       return `${trip} ${t("notifTextTripEnded")}`;
+    case "announcement":
+      return `📢 ${d.actorName} ${t("notifTextAnnounced")} ${trip}: ${d.message}`;
     case "password_changed":
       return t("notifTextPasswordChanged");
     default:
@@ -79,6 +81,8 @@ export function notificationIcon(type) {
       return "🚨";
     case "trip_ended":
       return "📖";
+    case "announcement":
+      return "📢";
     case "password_changed":
       return "🔒";
     default:

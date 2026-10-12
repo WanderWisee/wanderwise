@@ -30,7 +30,9 @@ public static class NotificationHelper
     public const string TripEnded = "trip_ended";
     // Security — always sent, can't be turned off in Settings
     public const string PasswordChanged = "password_changed";
-
+        // Tour Day announcement from the trip owner (pick-up time, what to
+    // bring…). Always sent — the group needs it during the trip.
+    public const string Announcement = "announcement";
     public static async Task<bool> IsEnabledAsync(WanderWiseDbContext db, int userId, string type)
     {
         var s = await db.UserSettings.FindAsync(userId);
@@ -42,7 +44,7 @@ public static class NotificationHelper
             CrewAdded or CrewJoined or CrewRemoved or CrewLeft => s.NotifTripInvites,
             Comment => s.NotifComments,
             TripUpdated or ExpenseAdded or BookingAdded or BudgetWarning or BudgetOver => s.NotifTripUpdates,
-            PasswordChanged => true,
+            PasswordChanged or Announcement => true,
             _ => true,
         };
     }

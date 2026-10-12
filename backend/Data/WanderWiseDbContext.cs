@@ -29,7 +29,11 @@ public class WanderWiseDbContext : DbContext
     public DbSet<JournalEntryHotel> JournalEntryHotels => Set<JournalEntryHotel>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
     public DbSet<JournalComment> JournalComments => Set<JournalComment>();
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+        // Tour Day (attendance, check-ins, announcements, activities)
+    public DbSet<TripDaySetting> TripDaySettings => Set<TripDaySetting>();
+    public DbSet<TripAttendance> TripAttendance => Set<TripAttendance>();
+    public DbSet<TripAnnouncement> TripAnnouncements => Set<TripAnnouncement>();
+    public DbSet<TripActivity> TripActivities => Set<TripActivity>();    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.StudentNumber).IsUnique();
         modelBuilder.Entity<Trip>().HasIndex(t => t.ShareToken).IsUnique();

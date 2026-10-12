@@ -139,7 +139,7 @@ export default function TravelTipsPage() {
           <input
             type="text"
             className="ww-tips-search"
-            placeholder={`🔍  ${t("discoverWhereToGo")}`}
+            placeholder={`  ${t("discoverWhereToGo")}`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

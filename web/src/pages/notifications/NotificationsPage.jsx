@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { notificationText, notificationIcon } from "../../utils/notificationText";
 import { requestPushPermission, isOneSignalEnabled } from "../../utils/oneSignal";
+import { setUnreadBadge } from "../../components/NotificationWatcher";
 import "../../App.css";
 
 // The server sends UTC times without the "Z" — add it so the browser
@@ -86,6 +87,12 @@ export default function NotificationsPage() {
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // Keep the bell's red badge in step as notifications are opened or
+  // marked read here (instead of waiting for the next background check).
+  useEffect(() => {
+    if (!loading) setUnreadBadge(unreadCount);
+  }, [unreadCount, loading]);
 
   return (
     <div className="ww-notifications-page">

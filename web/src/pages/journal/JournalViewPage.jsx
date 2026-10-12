@@ -31,6 +31,14 @@ function normalizeJournalEntry(serverEntry) {
 export default function JournalViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Back to wherever the journal was opened from (Profile, a classmate's
+  // profile, Destination Stories…). If it was opened directly from a
+  // link, there's no page to go back to, so go to the Profile instead.
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) navigate(-1);
+    else navigate("/profile");
+  };
   const { journalEntries } = useAppData();
   const { t, language } = useLanguage();
 
@@ -152,6 +160,10 @@ export default function JournalViewPage() {
       </header>
 
       <main className="ww-guide-main">
+        <p className="ww-stories-back" onClick={handleBack}>
+          ← {t("back")}
+        </p>
+
         {loadingRemote && !journal ? (
           <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
         ) : !journal ? (

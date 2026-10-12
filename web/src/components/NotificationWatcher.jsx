@@ -18,6 +18,19 @@ import {
 //    while WanderWise is open).
 const POLL_MS = 60 * 1000;
 
+// Red badge on the navbar bell: puts the unread count on <html> and the
+// CSS in App.css draws it on the bell icon of every page. 0 hides it.
+export function setUnreadBadge(count) {
+  const root = document.documentElement;
+  if (count > 0) {
+    root.setAttribute("data-ww-unread", String(count));
+    root.style.setProperty("--ww-unread-label", `"${count > 9 ? "9+" : count}"`);
+  } else {
+    root.removeAttribute("data-ww-unread");
+    root.style.removeProperty("--ww-unread-label");
+  }
+}
+
 export default function NotificationWatcher() {
   const { t } = useLanguage();
   const { formatTime } = usePreferences();
@@ -57,13 +70,18 @@ export default function NotificationWatcher() {
       } catch {
         token = null;
       }
-      if (!token) return;
+      if (!token) {
+        setUnreadBadge(0); // logged out
+        return;
+      }
 
       try {
         const resp = await fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` } });
         if (!resp.ok || cancelled) return;
         const items = await resp.json();
         if (!Array.isArray(items)) return;
+
+        setUnreadBadge(items.filter((n) => !n.isRead).length);
 
         // With OneSignal on, it already sends the pop-up — don't show a second one.
         const canPopUp =
@@ -97,9 +115,16 @@ export default function NotificationWatcher() {
 
     check();
     const timer = setInterval(check, POLL_MS);
+    // Also check right away when the student comes back to the tab, or
+    // after logging in/out (so the badge doesn't wait a full minute).
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("wanderwise-auth-changed", onFocus);
     return () => {
       cancelled = true;
       clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("wanderwise-auth-changed", onFocus);
     };
   }, []);
 

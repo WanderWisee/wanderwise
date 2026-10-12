@@ -29,7 +29,7 @@ export default function JournalNewPostPage() {
   const navigate = useNavigate();
   const { addJournalEntry } = useAppData();
   const { t } = useLanguage();
-  const { alert } = useDialog();
+  const { alert, confirm } = useDialog();
 
   const [storyTitle, setStoryTitle] = useState(
     location.state?.destination
@@ -55,6 +55,21 @@ export default function JournalNewPostPage() {
   // instead of silently navigating somewhere else.
   const [posted, setPosted] = useState(false);
   const [posting, setPosting] = useState(false);
+
+  // Back to the page this was opened from (Profile, etc.). If photos were
+  // already added and not posted yet, ask first so they aren't lost by
+  // accident. Opened directly from a link → go to the Profile.
+  const handleBack = async () => {
+    if (entries.length > 0) {
+      const ok = await confirm(t("confirmLeaveJournal"), {
+        danger: true,
+        confirmLabel: t("leaveLabel"),
+      });
+      if (!ok) return;
+    }
+    if (window.history.state && window.history.state.idx > 0) navigate(-1);
+    else navigate("/profile");
+  };
 
   const handleUploadPhoto = async () => {
     if (!selectedFile) {
@@ -273,6 +288,10 @@ export default function JournalNewPostPage() {
       ) : (
         // --- Editing form ---
         <main className="ww-journal-main">
+          <p className="ww-stories-back" onClick={handleBack}>
+            ← {t("back")}
+          </p>
+
           <h1 className="ww-journal-title">
             {editingTitle ? (
               <input

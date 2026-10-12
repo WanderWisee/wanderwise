@@ -13,6 +13,13 @@ export default function TripPlanningPage() {
   const [destinationOptions, setDestinationOptions] = useState([]);
 
   const navigate = useNavigate();
+
+  // Back to the page this was opened from (usually the Dashboard). If it
+  // was opened directly from a link, go to the Dashboard.
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) navigate(-1);
+    else navigate("/dashboard");
+  };
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -65,6 +72,14 @@ export default function TripPlanningPage() {
       </header>
 
       <main className="ww-planning-main">
+        <p
+          className="ww-stories-back"
+          onClick={handleBack}
+          style={{ width: "100%", maxWidth: 620 }}
+        >
+          ← {t("back")}
+        </p>
+
         <h1 className="ww-planning-title">{t("beginYourJourney")}</h1>
 
         <div className="ww-planning-form">

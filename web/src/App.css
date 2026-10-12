@@ -383,9 +383,7 @@ a {
   line-height: 1;
   cursor: pointer;
   padding: 0;
-  filter: grayscale(1);
-  opacity: 0.72;
-  transition: background-color var(--ww-t-fast), opacity var(--ww-t-fast), filter var(--ww-t-fast);
+  transition: background-color var(--ww-t-fast), transform var(--ww-t-fast);
 }
 
 .ww-nav-icons > span:hover,
@@ -394,15 +392,41 @@ a {
 .ww-navbar-search-anchor > span:hover,
 .ww-nav-icon-btn:hover {
   background-color: var(--ww-surface-2);
-  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* Red badge on the bell (2nd navbar icon on every page) when there are
+   unread notifications. NotificationWatcher sets data-ww-unread and the
+   --ww-unread-label count on <html>. */
+.ww-nav-icons > :nth-child(2) {
+  position: relative;
+}
+
+html[data-ww-unread] .ww-nav-icons > :nth-child(2)::after {
+  content: var(--ww-unread-label, "");
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--ww-r-pill);
+  background: #d93025;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--ww-surface);
+  pointer-events: none;
+  animation: ww-pop-in 0.2s var(--ww-ease);
 }
 
 /* Icon of the current page (notifications / profile) */
 .ww-notifications-page .ww-nav-icons > span:nth-last-child(2),
 .ww-profile-page .ww-nav-icons > span:last-child {
-  background-color: var(--ww-primary-50);
-  filter: none;
-  opacity: 1;
+  background-color: var(--ww-surface-3);
 }
 
 /* Navbar "Menu" dropdown */
@@ -696,8 +720,8 @@ a {
 .ww-journal-post-btn:disabled,
 .ww-journal-upload-btn:disabled,
 .ww-copy-btn:disabled {
-  background-color: var(--ww-border-strong);
-  color: #ffffff;
+  background-color: var(--ww-surface-3);
+  color: var(--ww-text-subtle);
   box-shadow: none;
   transform: none;
   cursor: not-allowed;
@@ -1906,7 +1930,9 @@ input[type="time"]:focus {
 
 .ww-destinations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  /* auto-fit: the cards stretch to fill the row instead of leaving
+     empty columns on the right */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin: 0;
 }
@@ -1918,7 +1944,7 @@ input[type="time"]:focus {
 
 .ww-booking-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
   margin: 0;
 }

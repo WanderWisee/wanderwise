@@ -1,15 +1,70 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import DateRangePicker from "../../components/DateRangePicker";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 import { useLanguage } from "../../context/LanguageContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import '../../App.css';
+
+// Brown pin (same style as the trip destination pin in the Trip Plan
+// Builder), drawn inline so ad blockers can't block an image request.
+const tripPinIcon = L.divIcon({
+  className: "",
+  html: `
+    <svg width="28" height="40" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 0C5.8 0 0 5.8 0 13c0 9.7 13 25 13 25s13-15.3 13-25C26 5.8 20.2 0 13 0z"
+            fill="#3a2416" stroke="#2b1c12" stroke-width="1.5"/>
+      <circle cx="13" cy="13" r="5" fill="#a9e4dc"/>
+    </svg>`,
+  iconSize: [28, 40],
+  iconAnchor: [14, 40],
+  popupAnchor: [0, -36],
+});
+
+// Destination -> { lat, lng } (or null if not found). Kept outside the
+// component so going back to the Dashboard doesn't look them up again.
+const destinationCoordsCache = {};
+
+async function lookUpDestination(destination) {
+  const key = destination.trim().toLowerCase();
+  if (key in destinationCoordsCache) return destinationCoordsCache[key];
+  try {
+    // Our own backend proxy for OpenStreetMap (cached + retried there).
+    const resp = await fetch(`/api/geocode?query=${encodeURIComponent(`${destination}, Philippines`)}`);
+    const data = await resp.json();
+    const coords = data && data.found ? { lat: data.lat, lng: data.lon } : null;
+    destinationCoordsCache[key] = coords;
+    return coords;
+  } catch {
+    return null; // not cached, so it's tried again next time
+  }
+}
+
+// Zooms the map to show every trip pin (stays on the whole Philippines
+// when there are none).
+function FitToPins({ pins }) {
+  const map = useMap();
+  useEffect(() => {
+    if (pins.length === 0) return;
+    if (pins.length === 1) {
+      map.setView([pins[0].lat, pins[0].lng], 9);
+      return;
+    }
+    map.fitBounds(
+      pins.map((p) => [p.lat, p.lng]),
+      { padding: [40, 40], maxZoom: 9 }
+    );
+  }, [map, pins]);
+  return null;
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { formatDateRange } = usePreferences();
 
   // Travel trips
   const [trips, setTrips] = useState([]);
@@ -22,6 +77,47 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState("");
 
   const PH_CENTER = [12.8797, 121.7740];
+
+  // Map pins for the user's itineraries: destination -> coords.
+  const [tripCoords, setTripCoords] = useState({});
+
+  useEffect(() => {
+    const uniqueDestinations = [
+      ...new Set(trips.map((trip) => (trip.destination || "").trim()).filter(Boolean)),
+    ];
+    if (uniqueDestinations.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      // One at a time, so OpenStreetMap doesn't reject quick repeat requests.
+      for (const destination of uniqueDestinations) {
+        const coords = await lookUpDestination(destination);
+        if (cancelled) return;
+        setTripCoords((prev) => ({ ...prev, [destination.toLowerCase()]: coords }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trips]);
+
+  // One pin per destination; trips to the same place share a pin.
+  const tripPins = useMemo(() => {
+    const byDestination = {};
+    trips.forEach((trip) => {
+      const destination = (trip.destination || "").trim();
+      const coords = tripCoords[destination.toLowerCase()];
+      if (!destination || !coords) return;
+      const key = destination.toLowerCase();
+      if (!byDestination[key]) {
+        byDestination[key] = { destination, lat: coords.lat, lng: coords.lng, trips: [] };
+      }
+      byDestination[key].trips.push(trip);
+    });
+    return Object.values(byDestination);
+  }, [trips, tripCoords]);
+
+  const tripDates = (trip) =>
+    trip.startDate ? formatDateRange(trip.startDate, trip.endDate) : t("noDatesSet");
 
   const destinations = [
     {
@@ -123,7 +219,18 @@ export default function DashboardPage() {
                   className="ww-story-item"
                   onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
                 >
-                  📍 {trip.destination || trip.title || t("untitledTrip")}
+                  <span>📍 {trip.destination || trip.title || t("untitledTrip")}</span>
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "#8a7654",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    📅 {tripDates(trip)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -148,6 +255,28 @@ export default function DashboardPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+
+            <FitToPins pins={tripPins} />
+
+            {/* A pin for every destination in "Your Itineraries" */}
+            {tripPins.map((pin) => (
+              <Marker key={pin.destination} position={[pin.lat, pin.lng]} icon={tripPinIcon}>
+                <Popup>
+                  <strong>📍 {pin.destination}</strong>
+                  {pin.trips.map((trip) => (
+                    <div key={trip.id} style={{ marginTop: 8 }}>
+                      <div>📅 {tripDates(trip)}</div>
+                      <span
+                        onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
+                        style={{ color: "#2f6f5f", fontWeight: 600, cursor: "pointer" }}
+                      >
+                        {t("openItinerary")} →
+                      </span>
+                    </div>
+                  ))}
+                </Popup>
+              </Marker>
+            ))}
           </MapContainer>
         </div>
       </section>

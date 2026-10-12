@@ -331,7 +331,7 @@ export const translations = {
     noStudentsFound: "No students found.",
     noBioYet: "No bio yet.",
     locationNotSet: "Location not set",
-    trips: "trips",
+    trips: "Trips",
     journalPosts: "journal posts",
     placesVisited: "places visited",
     journal: "Journal",

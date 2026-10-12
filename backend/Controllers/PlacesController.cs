@@ -13,20 +13,41 @@ namespace WanderWise.Controllers
         private static readonly Dictionary<string, (DateTime CachedAt, object Data)> _cache = new();
         private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(6);
 
+        // Optional ?category= for per-section suggestions in the Trip Plan
+        // Builder (e.g. a section named "Lamon" asks for category=food).
+        // Each entry is the OpenStreetMap tag filter(s) used in the Overpass
+        // query, plus the tag key whose value is returned as the place "type".
+        // No category (or an unknown one) = the original tourism search.
+        private static readonly Dictionary<string, (string[] Filters, string TypeKey)> Categories = new()
+        {
+            ["food"] = (new[] { @"[""amenity""~""^(restaurant|cafe|fast_food|food_court|bar|pub|ice_cream|bakery)$""]" }, "amenity"),
+            ["hotel"] = (new[] { @"[""tourism""~""^(hotel|hostel|guest_house|motel|apartment|resort|chalet)$""]" }, "tourism"),
+            ["shopping"] = (new[] { @"[""shop""~""^(mall|supermarket|department_store|gift|souvenir|convenience|clothes)$""]", @"[""amenity""=""marketplace""]" }, "shop"),
+            ["beach"] = (new[] { @"[""natural""=""beach""]", @"[""leisure""=""beach_resort""]" }, "natural"),
+            ["nature"] = (new[] { @"[""natural""~""^(peak|waterfall|cave_entrance|hot_spring|spring)$""]", @"[""leisure""~""^(park|nature_reserve|garden)$""]" }, "natural"),
+            ["heritage"] = (new[] { @"[""historic""]", @"[""tourism""=""museum""]", @"[""amenity""=""place_of_worship""]" }, "historic"),
+        };
+
         public PlacesController(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPlaces([FromQuery] string destination)
+        public async Task<IActionResult> GetPlaces([FromQuery] string destination, [FromQuery] string? category = null)
         {
             if (string.IsNullOrWhiteSpace(destination))
             {
                 return BadRequest(new { message = "destination is required" });
             }
 
-            var cacheKey = destination.Trim().ToLowerInvariant();
+            var categoryKey = (category ?? "").Trim().ToLowerInvariant();
+            var hasCategory = Categories.TryGetValue(categoryKey, out var categoryDef);
+            if (!hasCategory) categoryKey = "";
+
+            // Category is part of the cache key so "Boracay" tourist spots and
+            // "Boracay" food spots are cached separately.
+            var cacheKey = destination.Trim().ToLowerInvariant() + "|" + categoryKey;
 
             // Serve from cache if we have a recent successful result
             if (_cache.TryGetValue(cacheKey, out var cached) &&
@@ -141,11 +162,16 @@ namespace WanderWise.Controllers
                     "(around:6000,{0},{1})", lat.Value, lon.Value);
             }
 
+            // Default = tourist spots (original behaviour). With a category,
+            // search that category's OSM tags inside the same area instead.
+            var tagFilters = hasCategory ? categoryDef.Filters : new[] { @"[""tourism""]" };
+            var typeKey = hasCategory ? categoryDef.TypeKey : "tourism";
+            var selectors = string.Concat(tagFilters.Select(f =>
+                $"\n                  node{f}{areaFilter};\n                  way{f}{areaFilter};"));
+
             var overpassQuery = $@"
                 [out:json][timeout:15];
-                (
-                  node[""tourism""]{areaFilter};
-                  way[""tourism""]{areaFilter};
+                ({selectors}
                 );
                 out center 40;";
 
@@ -199,9 +225,16 @@ namespace WanderWise.Controllers
                             if (pLat == null || pLon == null) continue;
 
                             string? type = null;
-                            if (el.TryGetProperty("tags", out var tags2) && tags2.TryGetProperty("tourism", out var typeProp))
+                            if (el.TryGetProperty("tags", out var tags2))
                             {
-                                type = typeProp.GetString();
+                                if (tags2.TryGetProperty(typeKey, out var typeProp))
+                                {
+                                    type = typeProp.GetString();
+                                }
+                                else if (tags2.TryGetProperty("amenity", out var amenityProp))
+                                {
+                                    type = amenityProp.GetString();
+                                }
                             }
 
                             // OSM's "fee" tag says whether entry costs money.
@@ -217,7 +250,7 @@ namespace WanderWise.Controllers
                             places.Add(new
                             {
                                 name,
-                                type = type ?? "attraction",
+                                type = type ?? (hasCategory ? categoryKey : "attraction"),
                                 lat = pLat.Value,
                                 lon = pLon.Value,
                                 isFree
@@ -240,6 +273,7 @@ namespace WanderWise.Controllers
             var result = new
             {
                 destination,
+                category = hasCategory ? categoryKey : null,
                 lat,
                 lon,
                 places,

@@ -3175,6 +3175,19 @@ input[type="time"]:focus {
   font-size: var(--ww-fs-sm);
 }
 
+/* Sidebar links scroll here — keep the target below the sticky top bar */
+.ww-day-block,
+.ww-custom-section {
+  scroll-margin-top: calc(var(--ww-topbar-h) + 16px);
+}
+
+@media (max-width: 860px) {
+  .ww-day-block,
+  .ww-custom-section {
+    scroll-margin-top: calc(var(--ww-topbar-h) + 72px);
+  }
+}
+
 /* ---------------------------------------------------------------------
    Shared content column for secondary pages
    --------------------------------------------------------------------- */

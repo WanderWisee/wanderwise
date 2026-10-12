@@ -46,6 +46,20 @@ export default function AddExpensePage() {
     return day ? day.label : null;
   };
 
+  // Back to the trip builder without saving — passes the same tripState
+  // back (same as the Breakdown page) so nothing on the trip is lost.
+  const handleBack = () => {
+    navigate(returnPath, {
+      state: {
+        destination,
+        startDate,
+        endDate,
+        people,
+        restoredTripState: tripState,
+      },
+    });
+  };
+
   const handleSave = async () => {
     // Require at least one choice (category or trip-plan item) before saving.
     if (!selectedCategory && !selectedItem) return;
@@ -138,7 +152,15 @@ export default function AddExpensePage() {
       </header>
 
       <main className="ww-add-expense-main">
-        <h1 className="ww-add-expense-title">{t("addExpenseTitle")}</h1>
+        {/* Click the title to go back (same as the Breakdown page) */}
+        <h1
+          className="ww-add-expense-title"
+          onClick={handleBack}
+          title={t("back")}
+          style={{ cursor: "pointer" }}
+        >
+          ← {t("addExpenseTitle")}
+        </h1>
 
         <div className="ww-amount-input">
           <span className="ww-amount-caret">⌄</span>

@@ -25,6 +25,11 @@ public class TripMember
     [Column("joined_at")]
     public DateTime JoinedAt { get; set; }
 
+    // Crew join as VIEWERS (can open the trip but not change it). The trip
+    // owner can turn this on per person from the Add Crew page.
+    [Column("can_edit")]
+    public bool CanEdit { get; set; }
+
     [ForeignKey(nameof(TripId))]
     public Trip? Trip { get; set; }
 

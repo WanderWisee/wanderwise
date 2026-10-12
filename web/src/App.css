@@ -3214,6 +3214,64 @@ input[type="time"]:focus {
   }
 }
 
+/* ---- View-only crew (Trip Plan Builder) ----
+   Crew join as viewers: every control that changes the trip is hidden,
+   and what's left (notes, times) is shown as plain text. */
+.ww-builder-readonly .ww-undo-redo,
+.ww-builder-readonly .ww-builder-saved,
+.ww-builder-readonly .ww-edit-icon,
+.ww-builder-readonly .ww-more-icon,
+.ww-builder-readonly .ww-suggested-places-panel,
+.ww-builder-readonly .ww-show-more-btn,
+.ww-builder-readonly .ww-add-place-input,
+.ww-builder-readonly .ww-day-add-wrap,
+.ww-builder-readonly .ww-day-suggest,
+.ww-builder-readonly .ww-new-list-btn,
+.ww-builder-readonly .ww-optimize-btn,
+.ww-builder-readonly .ww-mark-visited,
+.ww-builder-readonly .ww-visited-checkbox,
+.ww-builder-readonly .ww-browse-btn,
+.ww-builder-readonly .ww-add-expense-btn,
+.ww-builder-readonly .ww-cost-remove,
+.ww-builder-readonly .ww-cost-add-row,
+.ww-builder-readonly .ww-unverified-warning-link,
+.ww-builder-readonly .ww-builder-main > .ww-field-label,
+.ww-builder-readonly .ww-place-actions > span:nth-child(2) {
+  display: none !important;
+}
+
+.ww-builder-readonly .ww-place-card,
+.ww-builder-readonly .ww-place-actions {
+  cursor: default !important;
+}
+
+.ww-builder-readonly .ww-place-actions,
+.ww-builder-readonly .ww-itinerary-place .ww-visited-checkbox,
+.ww-builder-readonly .ww-place-notes-input {
+  pointer-events: none;
+}
+
+.ww-builder-readonly .ww-place-notes-input {
+  padding-left: 0;
+  background: transparent;
+  border-color: transparent;
+}
+
+.ww-builder-readonly .ww-place-notes-input:placeholder-shown {
+  display: none;
+}
+
+/* The Add Crew button stays (to see who's on the trip) */
+.ww-builder-readonly .ww-trip-plan-btn[style] {
+  margin-left: 0 !important;
+}
+
+/* Add Crew / Leave trip buttons under the map: same spacing as Book a Hotel */
+.ww-builder-main > .ww-trip-plan-btn,
+.ww-builder-main > .ww-booking-cancel {
+  margin-bottom: 28px;
+}
+
 /* ---------------------------------------------------------------------
    Shared content column for secondary pages
    --------------------------------------------------------------------- */

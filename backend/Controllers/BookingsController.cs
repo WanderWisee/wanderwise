@@ -42,6 +42,16 @@ public class BookingsController : ControllerBase
         return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId);
     }
 
+    // Adding/deleting is only for the owner and crew with edit access;
+    // view-only crew can still see the list (GET above).
+    private async Task<bool> CanEditTripAsync(int tripId)
+    {
+        var isOwner = await _db.Trips.AnyAsync(t => t.Id == tripId && t.UserId == CurrentUserId);
+        if (isOwner) return true;
+
+        return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId && m.CanEdit);
+    }
+
     // Plain shape for the frontend — no Trip navigation property, so the
     // JSON never tries to serialize the whole trip along with it.
     private static object ToDto(TripBooking b) => new
@@ -103,6 +113,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> AddBooking(int tripId, [FromBody] CreateBookingRequest request)
     {
         if (!await CanAccessTripAsync(tripId)) return NotFound();
+        if (!await CanEditTripAsync(tripId)) return Forbid();
 
         var placeName = (request.PlaceName ?? "").Trim();
         if (placeName.Length == 0)
@@ -145,6 +156,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> DeleteBooking(int tripId, int bookingId)
     {
         if (!await CanAccessTripAsync(tripId)) return NotFound();
+        if (!await CanEditTripAsync(tripId)) return Forbid();
 
         var booking = await _db.TripBookings.FirstOrDefaultAsync(b => b.Id == bookingId && b.TripId == tripId);
         if (booking is null) return NotFound();

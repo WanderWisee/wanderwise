@@ -37,6 +37,24 @@ public class TripsController : ControllerBase
         return isMember ? trip : null;
     }
 
+    // "owner", "editor" (crew allowed to edit) or "viewer" (crew, view only).
+    // null = not on this trip at all.
+    private async Task<string?> GetMyRoleAsync(Trip trip)
+    {
+        if (trip.UserId == CurrentUserId) return "owner";
+        var member = await _db.TripMembers.FirstOrDefaultAsync(m => m.TripId == trip.Id && m.UserId == CurrentUserId);
+        if (member is null) return null;
+        return member.CanEdit ? "editor" : "viewer";
+    }
+
+    // Changing the trip (saving, adding crew, the invite link) is only for
+    // the owner and crew the owner gave edit access to — viewers can only look.
+    private async Task<bool> CanEditTripAsync(Trip trip)
+    {
+        var role = await GetMyRoleAsync(trip);
+        return role == "owner" || role == "editor";
+    }
+
     // Creates a bare trip right after "Let's go" on Trip Planning —
     // the builder page fills it in afterward via PUT.
     [HttpPost("/api/trips")]
@@ -63,13 +81,13 @@ public class TripsController : ControllerBase
     // Full-replace save: wipes this trip's sections/places/costs and
     // rewrites them from what the builder page currently has. Simpler
     // and safer than trying to diff/patch a freeform nested structure.
-    // Open to the owner AND any crew member — that's the point of
-    // collaboration: everyone added to the trip can edit it.
+    // Open to the owner and crew with edit access. View-only crew get 403.
     [HttpPut("/api/trips/{id}")]
     public async Task<IActionResult> SaveTrip(int id, [FromBody] SaveTripRequest request)
     {
         var trip = await GetAccessibleTripAsync(id);
         if (trip is null) return NotFound();
+        if (!await CanEditTripAsync(trip)) return Forbid();
 
         // Snapshot of the trip BEFORE saving, to tell whether anything the
         // crew would care about actually changed (the page also saves when
@@ -215,6 +233,7 @@ public class TripsController : ControllerBase
             EndDate = trip.EndDate?.ToString("yyyy-MM-dd"),
             TravelBuddiesCount = trip.TravelBuddiesCount,
             BudgetTotal = trip.BudgetTotal,
+            MyRole = await GetMyRoleAsync(trip) ?? "viewer",
         };
 
         response.Sections.Add(new SectionResponse
@@ -321,6 +340,7 @@ public class TripsController : ControllerBase
                 avatarUrl = u.AvatarUrl,
                 joinedAt = m.JoinedAt,
                 isOwner = false,
+                canEdit = m.CanEdit,
             })
             .ToListAsync();
 
@@ -336,6 +356,7 @@ public class TripsController : ControllerBase
                 avatarUrl = owner.AvatarUrl,
                 joinedAt = trip.CreatedAt,
                 isOwner = true,
+                canEdit = true,
             });
         }
         result.AddRange(members);
@@ -353,6 +374,7 @@ public class TripsController : ControllerBase
     {
         var trip = await GetAccessibleTripAsync(id);
         if (trip is null) return NotFound();
+        if (!await CanEditTripAsync(trip)) return Forbid();
 
         if (request.UserId == trip.UserId)
             return BadRequest("This user already owns the trip.");
@@ -368,6 +390,7 @@ public class TripsController : ControllerBase
             TripId = id,
             UserId = request.UserId,
             JoinedAt = DateTime.UtcNow,
+            CanEdit = false, // view only until the owner allows editing
         });
         await _db.SaveChangesAsync();
 
@@ -414,6 +437,22 @@ public class TripsController : ControllerBase
         return NoContent();
     }
 
+    // Owner-only: lets a crew member edit the trip, or makes them view-only again.
+    [HttpPut("/api/trips/{id}/crew/{memberId}/permission")]
+    public async Task<IActionResult> SetCrewPermission(int id, int memberId, [FromBody] SetCrewPermissionRequest request)
+    {
+        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == id && t.UserId == CurrentUserId);
+        if (trip is null) return NotFound();
+
+        var member = await _db.TripMembers.FirstOrDefaultAsync(m => m.Id == memberId && m.TripId == id);
+        if (member is null) return NotFound();
+
+        member.CanEdit = request.CanEdit;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { id = member.Id, canEdit = member.CanEdit });
+    }
+
     // A crew member leaves a trip they joined (the owner can't leave their
     // own trip — they delete it instead). Tells the owner.
     [HttpPost("/api/trips/{id}/leave")]
@@ -450,6 +489,7 @@ public class TripsController : ControllerBase
     {
         var trip = await GetAccessibleTripAsync(id);
         if (trip is null) return NotFound();
+        if (!await CanEditTripAsync(trip)) return Forbid();
 
         if (string.IsNullOrWhiteSpace(trip.ShareToken))
         {
@@ -480,6 +520,7 @@ public class TripsController : ControllerBase
                     TripId = trip.Id,
                     UserId = CurrentUserId,
                     JoinedAt = DateTime.UtcNow,
+                    CanEdit = false, // view only until the owner allows editing
                 });
                 await _db.SaveChangesAsync();
 
@@ -524,6 +565,7 @@ public class TripsController : ControllerBase
             EndDate = trip.EndDate?.ToString("yyyy-MM-dd"),
             TravelBuddiesCount = trip.TravelBuddiesCount,
             BudgetTotal = trip.BudgetTotal,
+            MyRole = "viewer",
         };
 
         response.Sections.Add(new SectionResponse

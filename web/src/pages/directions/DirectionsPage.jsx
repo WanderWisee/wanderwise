@@ -57,6 +57,13 @@ function FitBoundsToRoute({ routeCoords }) {
 export default function DirectionsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Back to the trip it was opened from. If it was opened directly from a
+  // link, there's no trip to go back to, so go to the Dashboard.
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) navigate(-1);
+    else navigate("/dashboard");
+  };
   const { t } = useLanguage();
   const { formatDistance } = usePreferences(); // km or miles, from Settings
 
@@ -159,6 +166,10 @@ export default function DirectionsPage() {
       </header>
 
       <main className="ww-directions-main">
+        <p className="ww-stories-back" onClick={handleBack}>
+          ← {t("back")}
+        </p>
+
         <h1 className="ww-directions-title">
           {t("directionsTitle")}
           {placeName && <span style={{ fontSize: 18, fontWeight: "normal" }}> — {placeName}</span>}

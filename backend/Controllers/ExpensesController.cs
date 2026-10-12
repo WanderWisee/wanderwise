@@ -35,6 +35,16 @@ public class ExpensesController : ControllerBase
         return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId);
     }
 
+    // Adding/deleting is only for the owner and crew with edit access;
+    // view-only crew can still see the list (GET above).
+    private async Task<bool> CanEditTripAsync(int tripId)
+    {
+        var isOwner = await _db.Trips.AnyAsync(t => t.Id == tripId && t.UserId == CurrentUserId);
+        if (isOwner) return true;
+
+        return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId && m.CanEdit);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetExpenses(int tripId)
     {
@@ -48,6 +58,7 @@ public class ExpensesController : ControllerBase
     public async Task<IActionResult> AddExpense(int tripId, [FromBody] CreateExpenseRequest request)
     {
         if (!await CanAccessTripAsync(tripId)) return NotFound();
+        if (!await CanEditTripAsync(tripId)) return Forbid();
 
         var expense = new Expense
         {
@@ -86,6 +97,7 @@ public class ExpensesController : ControllerBase
     public async Task<IActionResult> DeleteExpense(int tripId, int expenseId)
     {
         if (!await CanAccessTripAsync(tripId)) return NotFound();
+        if (!await CanEditTripAsync(tripId)) return Forbid();
 
         var expense = await _db.Expenses
             .FirstOrDefaultAsync(e => e.Id == expenseId && e.TripId == tripId);

@@ -50,6 +50,9 @@ public class TripResponse
     public string? EndDate { get; set; }
     public int TravelBuddiesCount { get; set; }
     public decimal BudgetTotal { get; set; }
+    // What the person asking may do: "owner", "editor" or "viewer".
+    // The Trip Plan Builder turns into view-only mode for "viewer".
+    public string MyRole { get; set; } = "owner";
     public List<SectionResponse> Sections { get; set; } = new();
 }
 

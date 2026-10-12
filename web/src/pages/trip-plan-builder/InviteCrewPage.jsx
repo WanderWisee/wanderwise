@@ -172,6 +172,33 @@ export default function InviteCrewPage() {
   // Only the owner can remove people; a crew member can only leave.
   const iAmOwner = crew.some((c) => c.isOwner && c.userId === myUserId);
   const iAmCrewMember = crew.some((c) => !c.isOwner && c.userId === myUserId);
+  // Crew join as viewers. Only the owner and crew the owner allowed to
+  // edit can invite more people (link + search below).
+  const iCanEdit = iAmOwner || crew.some((c) => c.userId === myUserId && c.canEdit);
+
+  // Owner-only: switch a crew member between "can edit" and "view only".
+  const [updatingMemberId, setUpdatingMemberId] = useState(null);
+  const handleTogglePermission = async (member) => {
+    if (!tripId || updatingMemberId) return;
+    setUpdatingMemberId(member.id);
+    try {
+      const resp = await fetch(`/api/trips/${tripId}/crew/${member.id}/permission`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ canEdit: !member.canEdit }),
+      });
+      if (resp.ok) {
+        setCrew((prev) => prev.map((c) => (c.id === member.id && !c.isOwner ? { ...c, canEdit: !member.canEdit } : c)));
+      } else {
+        alert(t("permissionUpdateFailed"));
+      }
+    } catch (err) {
+      console.warn("Failed to update permission:", err);
+      alert(t("permissionUpdateFailed"));
+    } finally {
+      setUpdatingMemberId(null);
+    }
+  };
   const [leaving, setLeaving] = useState(false);
 
   const handleLeaveTrip = async () => {
@@ -228,6 +255,14 @@ export default function InviteCrewPage() {
           ← {t("inviteYourCrew")}
         </h1>
 
+        {!loadingCrew && !iCanEdit && (
+          <div className="ww-hotels-trip-banner" style={{ margin: "0 0 20px" }}>
+            <span>👁 {t("viewOnlyNotice")}</span>
+          </div>
+        )}
+
+        {(loadingCrew || iCanEdit) && (
+        <>
         <div className="ww-invite-link-row">
           <span>🔗 {loadingLink ? t("loadingEllipsis") : shareLink || t("linkUnavailable")}</span>
           <button className="ww-copy-btn" onClick={handleCopy} disabled={!shareLink}>
@@ -271,6 +306,8 @@ export default function InviteCrewPage() {
             </div>
           )}
         </div>
+        </>
+        )}
 
         <h2 className="ww-builder-section-title" style={{ marginTop: 24 }}>
           {t("crewOnThisTrip")}
@@ -295,11 +332,30 @@ export default function InviteCrewPage() {
                   {c.firstName} {c.lastName} {c.isOwner ? `(${t("tripOwner")})` : ""}
                   {c.userId === myUserId ? ` · ${t("historyYouTag")}` : ""}
                 </span>
+                {/* Owner: button to allow/stop editing. Everyone else: just a label. */}
+                {!c.isOwner && (
+                  iAmOwner ? (
+                    <button
+                      type="button"
+                      className="ww-optimize-btn"
+                      onClick={() => handleTogglePermission(c)}
+                      disabled={updatingMemberId === c.id}
+                      title={t("permissionToggleHint")}
+                      style={{ marginLeft: "auto" }}
+                    >
+                      {c.canEdit ? `✏️ ${t("canEditLabel")}` : `👁 ${t("viewOnlyLabel")}`}
+                    </button>
+                  ) : (
+                    <span className="ww-expense-desc" style={{ marginLeft: "auto" }}>
+                      {c.canEdit ? `✏️ ${t("canEditLabel")}` : `👁 ${t("viewOnlyLabel")}`}
+                    </span>
+                  )
+                )}
                 {!c.isOwner && iAmOwner && (
                   <span
                     className="ww-cost-remove"
                     onClick={() => handleRemoveCrew(c.id)}
-                    style={{ cursor: "pointer", marginLeft: "auto" }}
+                    style={{ cursor: "pointer" }}
                     title={t("removeCrewMemberTitle")}
                   >
                     ✕

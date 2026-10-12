@@ -426,7 +426,7 @@ export default function TripPlanBuilderPage() {
   const navigate = useNavigate();
   const tripInfo = location.state || {};
   const { t } = useLanguage();
-  const { confirm } = useDialog();
+  const { confirm, alert } = useDialog();
   // Date/time/distance formats from Settings → Formatting.
   const { formatDateRange, formatTime, formatDistance } = usePreferences();
 
@@ -442,6 +442,14 @@ export default function TripPlanBuilderPage() {
     urlTripId ? Number(urlTripId) : tripInfo.tripId || null
   );
   const [saveStatus, setSaveStatus] = useState("Saved");
+
+  // "owner", "editor" or "viewer" (from GET /api/trips/{id}). Crew join as
+  // viewers: they can open the trip but not change it, until the owner
+  // allows editing on the Add Crew page.
+  const [myRole, setMyRole] = useState("owner");
+  const canEdit = myRole !== "viewer";
+  const canEditRef = useRef(true);
+  canEditRef.current = canEdit;
   const saveStatusLabel =
     saveStatus === "Saving..." ? t("savingEllipsis")
     : saveStatus === "Save failed" ? t("saveFailed")
@@ -502,6 +510,8 @@ export default function TripPlanBuilderPage() {
   const [future, setFuture] = useState([]);
 
   const applyChange = (updater) => {
+    // View-only crew can't change the trip.
+    if (!canEditRef.current) return;
     setTripState((prevState) => {
       setPast((p) => [...p, prevState]);
       setFuture([]);
@@ -560,6 +570,7 @@ export default function TripPlanBuilderPage() {
           if (resp.ok) {
             const data = await resp.json();
             setTripId(data.id);
+            setMyRole(data.myRole || "owner");
             setDestination(data.destination || "");
             setStartDate(data.startDate || "");
             setEndDate(data.endDate || "");
@@ -648,6 +659,8 @@ export default function TripPlanBuilderPage() {
 
   useEffect(() => {
     if (!hasLoadedRef.current || !tripId) return;
+    // View-only crew never save (the server would refuse it anyway).
+    if (!canEditRef.current) return;
 
     const token = localStorage.getItem("wanderwise_token");
     if (!token) return;
@@ -1727,6 +1740,31 @@ export default function TripPlanBuilderPage() {
     });
   };
 
+  // Crew (not the owner) can leave the trip from here too.
+  const [leavingTrip, setLeavingTrip] = useState(false);
+  const handleLeaveTrip = async () => {
+    if (!tripId || leavingTrip) return;
+    if (!(await confirm(t("confirmLeaveTrip"), { danger: true, confirmLabel: t("leaveTrip") }))) return;
+    setLeavingTrip(true);
+    try {
+      const token = localStorage.getItem("wanderwise_token");
+      const resp = await fetch(`/api/trips/${tripId}/leave`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        navigate("/dashboard");
+        return;
+      }
+      alert(t("leaveTripFailed"));
+    } catch (err) {
+      console.warn("Failed to leave trip:", err);
+      alert(t("leaveTripFailed"));
+    } finally {
+      setLeavingTrip(false);
+    }
+  };
+
     const handleGoToAddCrew = () => {
     navigate("/invite-crew", {
       state: {
@@ -1800,7 +1838,7 @@ export default function TripPlanBuilderPage() {
   );
 
   return (
-    <div className="ww-builder-page">
+    <div className={`ww-builder-page ${canEdit ? "" : "ww-builder-readonly"}`}>
       <header className="ww-builder-topbar">
         <div className="ww-brand">
           <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
@@ -1901,6 +1939,12 @@ export default function TripPlanBuilderPage() {
             <p className="ww-builder-dates">📅 {formatDateRange(startDate, endDate)}</p>
           )}
 
+          {!canEdit && (
+            <div className="ww-hotels-trip-banner" style={{ margin: "0 0 16px" }}>
+              <span>👁 {t("viewOnlyNotice")}</span>
+            </div>
+          )}
+
           <div className="ww-builder-map">
             <TripMap
               places={places}
@@ -1929,6 +1973,18 @@ export default function TripPlanBuilderPage() {
           >
             👥 {t("addCrew")}
           </button>
+
+          {myRole !== "owner" && (
+            <button
+              type="button"
+              className="ww-booking-cancel"
+              onClick={handleLeaveTrip}
+              disabled={leavingTrip}
+              style={{ marginLeft: 10, minHeight: 42 }}
+            >
+              🚪 {leavingTrip ? t("leavingTrip") : t("leaveTrip")}
+            </button>
+          )}
 
           {bookings.length > 0 && (
             <p className="ww-bookings-count">

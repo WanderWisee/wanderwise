@@ -22,9 +22,9 @@ public class LoginRequest
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    // Which login page sent this: "teacher" (web /teacher/login) or
-    // empty/"student" (web /login and the mobile app). Teachers can only
-    // log in on the teacher page, everyone else only on the student page.
+    // Which login page sent this: "teacher" (web /teacher/login), "admin"
+    // (web /admin/login), or empty/"student" (web /login and the mobile
+    // app). Each account type can only log in on its own page.
     public string? Portal { get; set; }
 }
 

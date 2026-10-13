@@ -31,7 +31,11 @@ export default function TeacherLoginPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.code === "use_student_login" ? t("useStudentLogin") : data?.error || t("loginErrFailed"));
+        setError(
+          data?.code === "use_student_login" ? t("useStudentLogin")
+          : data?.code === "use_admin_login" ? t("useAdminLogin")
+          : data?.error || t("loginErrFailed")
+        );
         return;
       }
       if (data?.token) {
@@ -61,14 +65,14 @@ export default function TeacherLoginPage() {
             ←
           </button>
 
-          <p className="ww-portal-eyebrow ww-login-eyebrow">🎓 {t("teacherPortal")}</p>
+          
           <h1 className="ww-login-title">{t("teacherLoginTitle")}</h1>
 
           <label className="ww-field-label">{t("facultyEmail")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder="juan.delacruz@mseuf.edu.ph"
+            placeholder="Enter Faculty Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
@@ -100,7 +104,7 @@ export default function TeacherLoginPage() {
           </button>
 
           <div className="ww-links-row">
-            <a href="/forgot-password" className="ww-bottom-link">
+            <a href="/forgot-password?for=teacher" className="ww-bottom-link">
               {t("forgotPassword")}
             </a>
             <a href="/register/teacher" className="ww-bottom-link">

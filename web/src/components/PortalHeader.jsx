@@ -21,6 +21,7 @@ export default function PortalHeader() {
   const { t } = useLanguage();
   const { profileRole } = useAppData();
   const isTeacher = profileRole === "teacher";
+  const isStaff = isTeacher || profileRole === "admin";
   const home = isTeacher ? "/teacher" : profileRole === "admin" ? "/admin" : "/dashboard";
 
   return (
@@ -33,13 +34,17 @@ export default function PortalHeader() {
         {profileRole === "admin" && <a href="/admin">{t("adminPanel")}</a>}
         {isTeacher && <a href="/teacher">{t("navClasses")}</a>}
         {profileRole === "student" && <a href="/classes">{t("navClasses")}</a>}
-        {!isTeacher && <a href="/dashboard">{t("navHome")}</a>}
-        <a href="/travel-tips">{t("navGuides")}</a>
+        {!isStaff && <a href="/dashboard">{t("navHome")}</a>}
+        {/* Admins only view the system — no Guides. */}
+        {profileRole !== "admin" && <a href="/travel-tips">{t("navGuides")}</a>}
         <NavbarMenu />
       </nav>
-      <div className="ww-nav-icons">
-        <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-        {!isTeacher && (
+            <div className="ww-nav-icons">
+        {/* Admins get no notifications — the Activity log covers it. */}
+        {profileRole !== "admin" && (
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
+        )}
+        {!isStaff && (
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
         )}
       </div>
@@ -52,7 +57,7 @@ export function RoleGate({ need, children }) {
   const { t } = useLanguage();
   const { profileRole } = useAppData();
   const navigate = useNavigate();
-  const loginPath = need === "teacher" ? "/teacher/login" : "/login";
+  const loginPath = need === "teacher" ? "/teacher/login" : need === "admin" ? "/admin/login" : "/login";
 
   if (!hasToken()) {
     return (
@@ -85,10 +90,11 @@ export function RoleGate({ need, children }) {
 // Wraps the student-only pages (Home, Trip Planning, Hotels, History,
 // Profile, Budget…). A teacher who lands on one is sent to the Teacher
 // portal instead — teachers don't plan trips of their own.
-export function StudentOnly({ children }) {
+export function StudentOnly({ children, allowTeacher = false }) {
   const { profileRole } = useAppData();
   if (!hasToken()) return children; // the page handles "not logged in" itself
   if (profileRole === null) return null; // still checking who this is
-  if (profileRole === "teacher") return <Navigate to="/teacher" replace />;
+  if (profileRole === "teacher" && !allowTeacher) return <Navigate to="/teacher" replace />;
+  if (profileRole === "admin") return <Navigate to="/admin" replace />;
   return children;
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 
@@ -9,6 +9,10 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { t } = useLanguage();
+  // Opened from the Teacher log in page (/forgot-password?for=teacher):
+  // faculty email, and the flow ends back on the teacher login.
+  const location = useLocation();
+  const isTeacher = new URLSearchParams(location.search).get("for") === "teacher";
 
   const handleContinue = async () => {
     setError("");
@@ -29,7 +33,9 @@ export default function ForgotPasswordPage() {
         setError(data?.error || t("forgotErrSendFailed"));
         return;
       }
-      navigate("/reset-password/verify-otp", { state: { email: email.trim() } });
+      navigate("/reset-password/verify-otp", {
+        state: { email: email.trim(), portal: isTeacher ? "teacher" : "student" },
+      });
     } catch (err) {
       setError(t("networkError"));
     } finally {
@@ -55,7 +61,7 @@ export default function ForgotPasswordPage() {
           <button
             className="ww-back-btn"
             aria-label="Go back"
-            onClick={() => navigate("/login")}
+              onClick={() => navigate(isTeacher ? "/teacher/login" : "/login")}
           >
             ←
           </button>
@@ -65,11 +71,11 @@ export default function ForgotPasswordPage() {
             {t("forgotPasswordSubtitle")}
           </p>
 
-          <label className="ww-field-label">{t("schoolEmail")}</label>
+          <label className="ww-field-label">{isTeacher ? t("facultyEmail") : t("schoolEmail")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder={t("enterStudentEmail")}
+            placeholder={isTeacher ? "juan.delacruz@mseuf.edu.ph" : t("enterStudentEmail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />

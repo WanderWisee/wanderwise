@@ -5,7 +5,6 @@ export const portalTranslations = {
   en: {
     // ===== Shared =====
     adminPanel: "Admin Panel",
-    teacherPortal: "Teacher Portal",
     myClasses: "My Classes",
     navClasses: "Classes",
     portalLoginFirst: "Please log in first.",
@@ -26,6 +25,10 @@ export const portalTranslations = {
     // ===== Login / teacher sign-up =====
     areYouTeacher: "Are you a teacher?",
     teacherLoginHere: "Log in here",
+    adminLoginTitle: "Admin Log In",
+    adminAccountLabel: "Admin account",
+    notAdminAccount: "This is not an admin account.",
+    useAdminLogin: "Admin accounts log in on the admin page (/admin/login).",
     teacherLoginTitle: "Teacher Log In",
     studentLoginHere: "Student log in",
     haveTeacherAccount: "Already have a teacher account?",
@@ -37,7 +40,7 @@ export const portalTranslations = {
     teacherRegisterIntro: "Use your faculty email. You can start making classes right after signing up.",
     employeeId: "Employee ID",
     enterEmployeeId: "Enter your employee ID",
-    facultyEmail: "Faculty email (@mseuf.edu.ph)",
+    facultyEmail: "Faculty Email",
     teacherErrEmail: "Please use your official @mseuf.edu.ph faculty email.",
     teacherSendCode: "Send verification code",
     teacherCodeSent: "We sent a 6-digit code to your personal email.",
@@ -330,6 +333,10 @@ export const portalTranslations = {
     // ===== Login / teacher sign-up =====
     areYouTeacher: "Teacher ka ba?",
     teacherLoginHere: "Mag-log in dito",
+    adminLoginTitle: "Admin Log In",
+    adminAccountLabel: "Admin account",
+    notAdminAccount: "Hindi ito admin account.",
+    useAdminLogin: "Sa admin page nagla-log in ang admin (/admin/login).",
     teacherLoginTitle: "Teacher Log In",
     studentLoginHere: "Student log in",
     haveTeacherAccount: "May teacher account ka na?",

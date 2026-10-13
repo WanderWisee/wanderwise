@@ -246,18 +246,21 @@ public class AuthController : ControllerBase
             return StatusCode(403, new { error = "This account has been deactivated. Please contact the admin.", code = "deactivated" });
         }
 
-        // Separate logins: teachers on /teacher/login, students (and the
-        // admin) on /login. The mobile app is students-only.
-        var teacherPortal = string.Equals(request.Portal?.Trim(), "teacher", StringComparison.OrdinalIgnoreCase);
-        if (teacherPortal && user.Role != PortalAccess.RoleTeacher)
+        // Separate logins (web only for teachers and admins):
+        //   students → /login and the mobile app (no "portal" sent)
+        //   teachers → /teacher/login  (portal = "teacher")
+        //   admins   → /admin/login    (portal = "admin")
+        // An account can only log in through its own page, so teacher and
+        // admin accounts can't get into the mobile app.
+        var portal = (request.Portal ?? "").Trim().ToLowerInvariant();
+        if (portal != PortalAccess.RoleTeacher && portal != PortalAccess.RoleAdmin) portal = PortalAccess.RoleStudent;
+        if (user.Role != portal)
         {
-            await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.LoginBlocked, "not a teacher account (teacher login)", HttpContext);
-            return StatusCode(403, new { error = "This is not a teacher account. Please use the student login.", code = "use_student_login" });
-        }
-        if (!teacherPortal && user.Role == PortalAccess.RoleTeacher)
-        {
-            await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.LoginBlocked, "teacher account (student login)", HttpContext);
-            return StatusCode(403, new { error = "Teacher accounts log in on the teacher login page.", code = "use_teacher_login" });
+            await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.LoginBlocked, $"{user.Role} account on the {portal} login", HttpContext);
+            var code = user.Role == PortalAccess.RoleTeacher ? "use_teacher_login"
+                : user.Role == PortalAccess.RoleAdmin ? "use_admin_login"
+                : "use_student_login";
+            return StatusCode(403, new { error = "Please use the log in page for your account type.", code });
         }
 
         await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.LoginSuccess, user.Role, HttpContext);

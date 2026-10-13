@@ -120,7 +120,7 @@ export default function TeacherRegisterPage() {
             </>
           ) : (
             <>
-              <h1 className="ww-register-title">🎓 {t("teacherRegisterTitle")}</h1>
+              <h1 className="ww-register-title"> {t("teacherRegisterTitle")}</h1>
               <p className="ww-portal-muted">{t("teacherRegisterIntro")}</p>
 
               <label className="ww-field-label">{t("firstName")}</label>

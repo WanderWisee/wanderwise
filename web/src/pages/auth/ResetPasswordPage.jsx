@@ -15,6 +15,9 @@ export default function ResetPasswordPage() {
   const { t } = useLanguage();
   const email = location.state?.email || "";
   const otp = location.state?.otp || "";
+  // Teachers go back to the Teacher log in page when done.
+  const portal = location.state?.portal || "student";
+  const forgotPath = portal === "teacher" ? "/forgot-password?for=teacher" : "/forgot-password";
 
   const handleSubmit = async () => {
     setError("");
@@ -48,7 +51,7 @@ export default function ResetPasswordPage() {
         setError(data?.error || t("resetErrFailed"));
         return;
       }
-      navigate("/login");
+      navigate(portal === "teacher" ? "/teacher/login" : "/login");
     } catch (err) {
       setError(t("networkError"));
     } finally {
@@ -74,7 +77,7 @@ export default function ResetPasswordPage() {
           <button
             className="ww-back-btn"
             aria-label="Go back"
-            onClick={() => navigate("/forgot-password")}
+            onClick={() => navigate(forgotPath)}
           >
             ←
           </button>

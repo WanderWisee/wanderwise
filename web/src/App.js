@@ -36,6 +36,7 @@ import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
 import TourDayPage from "./pages/tour/TourDayPage";
 import TeacherRegisterPage from "./pages/auth/TeacherRegisterPage";
 import TeacherLoginPage from "./pages/auth/TeacherLoginPage";
+import AdminLoginPage from "./pages/auth/AdminLoginPage";
 import { StudentOnly } from "./components/PortalHeader";
 import TeacherHomePage from "./pages/teacher/TeacherHomePage";
 import TeacherClassPage from "./pages/teacher/TeacherClassPage";
@@ -65,11 +66,11 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/dashboard" element={<StudentOnly><DashboardPage /></StudentOnly>} />
           <Route path="/trip-planning" element={<StudentOnly><TripPlanningPage /></StudentOnly>} />
-          <Route path="/travel-tips" element={<TravelTipsPage />} />
-          <Route path="/travel-tips/stories" element={<DestinationStoriesPage />} />
+          <Route path="/travel-tips" element={<StudentOnly allowTeacher><TravelTipsPage /></StudentOnly>} />
+          <Route path="/travel-tips/stories" element={<StudentOnly allowTeacher><DestinationStoriesPage /></StudentOnly>} />
           <Route path="/hotels" element={<StudentOnly><HotelsPage /></StudentOnly>} />
           <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/guides/:destinationName" element={<TravelGuidePage />} />
+          <Route path="/guides/:destinationName" element={<StudentOnly allowTeacher><TravelGuidePage /></StudentOnly>} />
           <Route path="/hotels/results" element={<StudentOnly><HotelSearchResultsPage /></StudentOnly>} />
           <Route path="/trip-plan" element={<TripPlanBuilderPage />} />
           <Route path="/trip-plan/invite" element={<StudentOnly><InviteCrewPage /></StudentOnly>} />
@@ -79,7 +80,7 @@ function App() {
           <Route path="/add-expense" element={<StudentOnly><AddExpensePage /></StudentOnly>} />
           <Route path="/breakdown" element={<StudentOnly><BudgetBreakdownPage /></StudentOnly>} />
           <Route path="/invite-crew" element={<StudentOnly><InviteCrewPage /></StudentOnly>} />
-          <Route path="/travel-guide" element={<TravelGuidePage />} />
+          <Route path="/travel-guide" element={<StudentOnly allowTeacher><TravelGuidePage /></StudentOnly>} />
           <Route path="/profile" element={<StudentOnly><ProfilePage /></StudentOnly>} />
           <Route path="/profile/view/:userId" element={<PublicProfilePage />} />
           <Route path="/journal/new" element={<StudentOnly><JournalNewPostPage /></StudentOnly>} />
@@ -92,6 +93,7 @@ function App() {
           {/* Teacher portal, student classes, admin panel.
               <StudentOnly> pages send a teacher to /teacher instead. */}
           <Route path="/teacher/login" element={<TeacherLoginPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/register/teacher" element={<TeacherRegisterPage />} />
           <Route path="/teacher" element={<TeacherHomePage />} />
           <Route path="/teacher/class/:classId" element={<TeacherClassPage />} />

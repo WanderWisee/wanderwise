@@ -32,8 +32,8 @@ export default function NavbarMenu() {
     localStorage.removeItem("wanderwise_token");
     // Clears the previous account's profile/journals right away.
     notifyAuthChanged();
-    // Teachers go back to their own login page.
-    navigate(profileRole === "teacher" ? "/teacher/login" : "/login");
+    // Teachers and admins go back to their own login page.
+    navigate(profileRole === "teacher" ? "/teacher/login" : profileRole === "admin" ? "/admin/login" : "/login");
   };
 
   return (
@@ -64,7 +64,7 @@ export default function NavbarMenu() {
             {t("settingsTitle")}
           </p>
           {/* Trip history is for students only. */}
-          {profileRole !== "teacher" && (
+          {profileRole !== "teacher" && profileRole !== "admin" && (
             <p className="ww-menu-item" onClick={() => goTo("/history")}>
               {t("history")}
             </p>

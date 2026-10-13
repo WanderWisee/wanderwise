@@ -7384,10 +7384,16 @@ strong .ww-portal-badge {
         a student's trip…): hide the student-only links — Hotels, search
         and own profile. The portal's own header has none of these. ---- */
 html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/hotels"],
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/dashboard"],
 html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:first-child,
-html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:last-child {
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:last-child,
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/hotels"],
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/dashboard"],
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:first-child,
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:last-child {
   display: none;
 }
+
 
 .ww-login-eyebrow {
   text-align: center;

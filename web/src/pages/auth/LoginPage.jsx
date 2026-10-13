@@ -58,7 +58,11 @@ export default function LoginPage() {
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.code === "use_teacher_login" ? t("useTeacherLogin") : data?.error || t("loginErrFailed"));
+        setError(
+          data?.code === "use_teacher_login" ? t("useTeacherLogin")
+          : data?.code === "use_admin_login" ? t("useAdminLogin")
+          : data?.error || t("loginErrFailed")
+        );
         return;
       }
       if (data?.token) {

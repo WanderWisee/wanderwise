@@ -54,12 +54,6 @@ export function notificationText(n, t, formatTime) {
       return `${d.actorName} ${t("notifTextClassAdded")} ${d.className}.`;
     case "class_announcement":
       return `📢 ${d.actorName} (${d.className}): ${d.message}`;
-    case "assignment_posted":
-      return `${t("notifTextAssignmentPosted")} ${d.className}: ${d.title}`;
-    case "assignment_submitted":
-      return `${d.actorName} ${t("notifTextAssignmentSubmitted")} "${d.title}" (${d.className}).`;
-    case "assignment_graded":
-      return `${d.actorName} ${t("notifTextAssignmentGraded")} "${d.title}": ${d.score}/${d.points}`;
     case "teacher_pending":
       return `${d.actorName} ${t("notifTextTeacherPending")}`;
     case "teacher_approved":
@@ -107,11 +101,6 @@ export function notificationIcon(type) {
       return "🎓";
     case "class_announcement":
       return "📢";
-    case "assignment_posted":
-    case "assignment_submitted":
-      return "📝";
-    case "assignment_graded":
-      return "✅";
     case "teacher_pending":
       return "🧑‍🏫";
     case "journal_hidden":

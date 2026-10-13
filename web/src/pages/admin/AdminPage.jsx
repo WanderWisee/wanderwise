@@ -456,8 +456,6 @@ function Classes() {
                 <th>{t("colClass")}</th>
                 <th>{t("teacherLabel")}</th>
                 <th className="num">{t("statStudents")}</th>
-                <th className="num">{t("tab_assignments")}</th>
-                <th className="num">{t("tab_fieldtrips")}</th>
                 <th>{t("colCreated")}</th>
               </tr>
             </thead>
@@ -467,8 +465,6 @@ function Classes() {
                   <td><strong>{c.name}</strong><br /><small>{[c.section, c.term].filter(Boolean).join(" · ")}</small></td>
                   <td>{c.teacherName}</td>
                   <td className="num">{c.students}</td>
-                  <td className="num">{c.assignments}</td>
-                  <td className="num">{c.fieldTrips}</td>
                   <td>{formatDate(toLocalDate(c.createdAt), { month: "short", day: "numeric", year: "numeric" })}</td>
                 </tr>
               ))}

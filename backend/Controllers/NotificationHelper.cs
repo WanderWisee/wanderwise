@@ -36,9 +36,6 @@ public static class NotificationHelper
     // Teacher portal — always sent (school work)
     public const string ClassAdded = "class_added";
     public const string ClassAnnouncement = "class_announcement";
-    public const string AssignmentPosted = "assignment_posted";
-    public const string AssignmentSubmitted = "assignment_submitted";
-    public const string AssignmentGraded = "assignment_graded";
     // Admin panel — always sent
     public const string TeacherPending = "teacher_pending";
     public const string TeacherApproved = "teacher_approved";
@@ -56,7 +53,7 @@ public static class NotificationHelper
             Comment => s.NotifComments,
             TripUpdated or ExpenseAdded or BookingAdded or BudgetWarning or BudgetOver => s.NotifTripUpdates,
             PasswordChanged or Announcement => true,
-            ClassAdded or ClassAnnouncement or AssignmentPosted or AssignmentSubmitted or AssignmentGraded => true,
+            ClassAdded or ClassAnnouncement => true,
             TeacherPending or TeacherApproved or JournalHidden => true,
             _ => true,
         };

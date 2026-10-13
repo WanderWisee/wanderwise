@@ -7394,10 +7394,15 @@ html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:l
   display: none;
 }
 
-
 .ww-login-eyebrow {
   text-align: center;
   margin-bottom: 0;
+}
+
+.ww-portal-section-title {
+  margin: 4px 0 -8px;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
 }
 
 /* ---------------------------------------------------------------------

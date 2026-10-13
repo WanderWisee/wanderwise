@@ -38,8 +38,6 @@ public class WanderWiseDbContext : DbContext
     public DbSet<SchoolClass> Classes => Set<SchoolClass>();
     public DbSet<ClassMember> ClassMembers => Set<ClassMember>();
     public DbSet<ClassAnnouncement> ClassAnnouncements => Set<ClassAnnouncement>();
-    public DbSet<ClassAssignment> ClassAssignments => Set<ClassAssignment>();
-    public DbSet<AssignmentSubmission> AssignmentSubmissions => Set<AssignmentSubmission>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

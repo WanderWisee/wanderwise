@@ -209,8 +209,6 @@ public class AdminController : ControllerBase
                 createdAt = c.CreatedAt,
                 teacherId = c.TeacherId,
                 students = _db.ClassMembers.Count(m => m.ClassId == c.Id),
-                assignments = _db.ClassAssignments.Count(a => a.ClassId == c.Id),
-                fieldTrips = _db.Trips.Count(t => t.ClassId == c.Id),
             })
             .ToListAsync();
 
@@ -219,7 +217,7 @@ public class AdminController : ControllerBase
 
         return Ok(classes.Select(c => new
         {
-            c.id, c.name, c.section, c.term, c.createdAt, c.students, c.assignments, c.fieldTrips,
+            c.id, c.name, c.section, c.term, c.createdAt, c.students,
             teacherName = NotificationHelper.FullName(teachers.FirstOrDefault(t => t.Id == c.teacherId)),
         }));
     }

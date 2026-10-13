@@ -84,13 +84,6 @@ function MyClasses() {
               <span className="ww-portal-class-meta">
                 <span>🧑‍🏫 {c.teacherName}</span>
               </span>
-              <span className="ww-portal-class-foot">
-                {c.todoCount > 0 ? (
-                  <span className="ww-portal-badge warn">📝 {c.todoCount} {t("toDoLabel")}</span>
-                ) : (
-                  <span className="ww-portal-badge ok">✓ {t("allDone")}</span>
-                )}
-              </span>
             </button>
           ))}
         </div>

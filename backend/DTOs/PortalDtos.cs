@@ -24,29 +24,6 @@ public class ClassAnnouncementRequest
     public string Message { get; set; } = string.Empty;
 }
 
-public class SaveAssignmentRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string? Instructions { get; set; }
-    public string? Destination { get; set; }
-    public decimal? BudgetLimit { get; set; }
-    // ISO time in UTC (the page converts the teacher's local date-time).
-    public string? DueAt { get; set; }
-    public int Points { get; set; } = 100;
-}
-
-public class SubmitAssignmentRequest
-{
-    public int TripId { get; set; }
-    public string? Note { get; set; }
-}
-
-public class GradeSubmissionRequest
-{
-    public decimal? Score { get; set; }
-    public string? Feedback { get; set; }
-}
-
 // ===== Admin panel =====
 public class SetRoleRequest
 {

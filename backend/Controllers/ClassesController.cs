@@ -11,11 +11,10 @@ using WanderWiseApi.Models;
 namespace WanderWiseApi.Controllers;
 
 // ===== Teacher portal (like Canvas, per subject/section) =====
-// Teachers: classes, roster, each student's trips/attendance/journals,
-// class announcements, itinerary assignments + grading. Teachers don't
-// make itineraries — they review the students' own trips (read-only).
-// Students: join with a code, read announcements, hand in a trip for an
-// assignment, see their grade.
+// Teachers are "viewing only": classes, roster, each student's trips
+// (itinerary + budget, read-only), attendance/check-ins and journals, plus
+// class announcements. Teachers don't make itineraries.
+// Students: join with a code and read the announcements.
 [ApiController]
 [Authorize]
 public class ClassesController : ControllerBase
@@ -65,13 +64,6 @@ public class ClassesController : ControllerBase
     private static string ClassLabel(SchoolClass c) =>
         string.IsNullOrWhiteSpace(c.Section) ? c.Name : $"{c.Name} · {c.Section}";
 
-    private static DateTime? ParseUtc(string? raw) =>
-        !string.IsNullOrWhiteSpace(raw) &&
-        DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.AdjustToUniversal |
-                                     System.Globalization.DateTimeStyles.AssumeUniversal, out var d)
-            ? d
-            : null;
-
     private static DateOnly? ParseDate(string? raw) =>
         !string.IsNullOrWhiteSpace(raw) && DateOnly.TryParse(raw, out var d) ? d : null;
 
@@ -104,9 +96,6 @@ public class ClassesController : ControllerBase
                 joinCode = c.JoinCode,
                 createdAt = c.CreatedAt,
                 studentCount = _db.ClassMembers.Count(m => m.ClassId == c.Id),
-                assignmentCount = _db.ClassAssignments.Count(a => a.ClassId == c.Id),
-                toGradeCount = _db.AssignmentSubmissions.Count(s => s.GradedAt == null &&
-                    _db.ClassAssignments.Any(a => a.Id == s.AssignmentId && a.ClassId == c.Id)),
             })
             .ToListAsync();
 
@@ -159,7 +148,7 @@ public class ClassesController : ControllerBase
         return Ok(new { joinCode = cls.JoinCode });
     }
 
-    // Deletes the class (roster, announcements, assignments, grades).
+    // Deletes the class (roster and announcements).
     // Field trips stay as the teacher's own trips.
     [HttpDelete("/api/teacher/classes/{classId:int}")]
     public async Task<IActionResult> DeleteClass(int classId)
@@ -200,9 +189,6 @@ public class ClassesController : ControllerBase
                 .GroupBy(j => j.UserId).Select(g => new { userId = g.Key, count = g.Count() }).ToListAsync();
             var checkIns = await _db.TripAttendance.Where(a => ids.Contains(a.UserId) && a.Present)
                 .GroupBy(a => a.UserId).Select(g => new { userId = g.Key, count = g.Count() }).ToListAsync();
-            var assignmentIds = await _db.ClassAssignments.Where(a => a.ClassId == classId).Select(a => a.Id).ToListAsync();
-            var subs = await _db.AssignmentSubmissions.Where(s => assignmentIds.Contains(s.AssignmentId))
-                .Select(s => new { s.StudentId, s.Score }).ToListAsync();
 
             students = rows
                 .OrderBy(r => r.u.LastName).ThenBy(r => r.u.FirstName)
@@ -219,8 +205,6 @@ public class ClassesController : ControllerBase
                                  memberTrips.Count(t => t.UserId == r.u.Id),
                     journalsCount = journals.FirstOrDefault(j => j.userId == r.u.Id)?.count ?? 0,
                     checkInsCount = checkIns.FirstOrDefault(c => c.userId == r.u.Id)?.count ?? 0,
-                    submittedCount = subs.Count(s => s.StudentId == r.u.Id),
-                    assignmentsCount = assignmentIds.Count,
                 })
                 .ToList();
         }
@@ -297,7 +281,7 @@ public class ClassesController : ControllerBase
     }
 
     // One student's work: trips, attendance (with check-in photos and
-    // location), journal posts and grades in this class.
+    // location) and journal posts.
     [HttpGet("/api/teacher/classes/{classId:int}/students/{studentId:int}")]
     public async Task<IActionResult> GetStudent(int classId, int studentId)
     {
@@ -338,13 +322,6 @@ public class ClassesController : ControllerBase
                 placesCount = j.Places.Count,
                 isHidden = j.IsHidden,
             })
-            .ToListAsync();
-
-        var assignments = await _db.ClassAssignments.Where(a => a.ClassId == classId)
-            .OrderBy(a => a.DueAt == null).ThenBy(a => a.DueAt).ToListAsync();
-        var assignmentIds = assignments.Select(a => a.Id).ToList();
-        var submissions = await _db.AssignmentSubmissions
-            .Where(s => s.StudentId == studentId && assignmentIds.Contains(s.AssignmentId))
             .ToListAsync();
 
         return Ok(new
@@ -395,23 +372,6 @@ public class ClassesController : ControllerBase
                 };
             }),
             journals,
-            grades = assignments.Select(a =>
-            {
-                var s = submissions.FirstOrDefault(x => x.AssignmentId == a.Id);
-                return new
-                {
-                    assignmentId = a.Id,
-                    title = a.Title,
-                    points = a.Points,
-                    dueAt = a.DueAt,
-                    submissionId = s?.Id,
-                    tripId = s?.TripId,
-                    submittedAt = s?.SubmittedAt,
-                    late = s != null && a.DueAt != null && s.SubmittedAt > a.DueAt,
-                    score = s?.Score,
-                    feedback = s?.Feedback,
-                };
-            }),
         });
     }
 
@@ -487,304 +447,6 @@ public class ClassesController : ControllerBase
         return NoContent();
     }
 
-    // ================= Assignments =================
-
-    // Teacher: with how many handed in / graded.
-    // Student: with their own submission and grade.
-    [HttpGet("/api/classes/{classId:int}/assignments")]
-    public async Task<IActionResult> GetAssignments(int classId)
-    {
-        var (cls, role) = await LoadClassAsync(classId);
-        if (cls is null) return NotFound();
-
-        var assignments = await _db.ClassAssignments
-            .Where(a => a.ClassId == classId)
-            .OrderBy(a => a.DueAt == null).ThenBy(a => a.DueAt).ThenByDescending(a => a.CreatedAt)
-            .ToListAsync();
-        var ids = assignments.Select(a => a.Id).ToList();
-        var subs = role == "teacher"
-            ? await _db.AssignmentSubmissions.Where(s => ids.Contains(s.AssignmentId)).ToListAsync()
-            : await _db.AssignmentSubmissions.Where(s => ids.Contains(s.AssignmentId) && s.StudentId == CurrentUserId).ToListAsync();
-        var tripIds = subs.Select(s => s.TripId).Distinct().ToList();
-        var trips = await _db.Trips.Where(t => tripIds.Contains(t.Id))
-            .Select(t => new { t.Id, t.Title, t.Destination }).ToListAsync();
-        var studentCount = await _db.ClassMembers.CountAsync(m => m.ClassId == classId);
-
-        return Ok(assignments.Select(a =>
-        {
-            var mine = role == "student" ? subs.FirstOrDefault(s => s.AssignmentId == a.Id) : null;
-            var trip = mine != null ? trips.FirstOrDefault(t => t.Id == mine.TripId) : null;
-            return new
-            {
-                id = a.Id,
-                title = a.Title,
-                instructions = a.Instructions,
-                destination = a.Destination,
-                budgetLimit = a.BudgetLimit,
-                dueAt = a.DueAt,
-                points = a.Points,
-                createdAt = a.CreatedAt,
-                submittedCount = role == "teacher" ? subs.Count(s => s.AssignmentId == a.Id) : (int?)null,
-                gradedCount = role == "teacher" ? subs.Count(s => s.AssignmentId == a.Id && s.GradedAt != null) : (int?)null,
-                studentCount = role == "teacher" ? studentCount : (int?)null,
-                mySubmission = mine == null ? null : new
-                {
-                    id = mine.Id,
-                    tripId = mine.TripId,
-                    tripTitle = trip?.Title,
-                    tripDestination = trip?.Destination,
-                    note = mine.Note,
-                    submittedAt = mine.SubmittedAt,
-                    late = a.DueAt != null && mine.SubmittedAt > a.DueAt,
-                    score = mine.Score,
-                    feedback = mine.Feedback,
-                    gradedAt = mine.GradedAt,
-                },
-            };
-        }));
-    }
-
-    private static string? ValidateAssignment(SaveAssignmentRequest r)
-    {
-        if (string.IsNullOrWhiteSpace(r.Title)) return "title_required";
-        if (r.Points < 1 || r.Points > 1000) return "bad_points";
-        if (r.BudgetLimit is < 0) return "bad_budget";
-        return null;
-    }
-
-    [HttpPost("/api/classes/{classId:int}/assignments")]
-    public async Task<IActionResult> CreateAssignment(int classId, [FromBody] SaveAssignmentRequest request)
-    {
-        var cls = await LoadMyClassAsTeacherAsync(classId);
-        if (cls is null) return NotFound();
-        var err = ValidateAssignment(request);
-        if (err != null) return BadRequest(new { error = err });
-
-        var a = new ClassAssignment
-        {
-            ClassId = classId,
-            Title = request.Title.Trim(),
-            Instructions = request.Instructions?.Trim(),
-            Destination = string.IsNullOrWhiteSpace(request.Destination) ? null : request.Destination.Trim(),
-            BudgetLimit = request.BudgetLimit,
-            DueAt = ParseUtc(request.DueAt),
-            Points = request.Points,
-            CreatedAt = DateTime.UtcNow,
-        };
-        _db.ClassAssignments.Add(a);
-        await _db.SaveChangesAsync();
-
-        var teacher = await _db.Users.FindAsync(CurrentUserId);
-        var teacherName = NotificationHelper.FullName(teacher);
-        var studentIds = await _db.ClassMembers.Where(m => m.ClassId == classId).Select(m => m.StudentId).ToListAsync();
-        foreach (var sid in studentIds)
-        {
-            await NotificationHelper.CreateAsync(
-                _db, sid, NotificationHelper.AssignmentPosted,
-                $"New assignment in {ClassLabel(cls)}: {a.Title}",
-                $"/classes/{classId}?tab=assignments",
-                new { actorName = teacherName, className = ClassLabel(cls), title = a.Title },
-                $"assignment_posted:{a.Id}");
-        }
-
-        return Ok(new { id = a.Id });
-    }
-
-    [HttpPut("/api/classes/{classId:int}/assignments/{assignmentId:int}")]
-    public async Task<IActionResult> UpdateAssignment(int classId, int assignmentId, [FromBody] SaveAssignmentRequest request)
-    {
-        var cls = await LoadMyClassAsTeacherAsync(classId);
-        if (cls is null) return NotFound();
-        var a = await _db.ClassAssignments.FirstOrDefaultAsync(x => x.Id == assignmentId && x.ClassId == classId);
-        if (a is null) return NotFound();
-        var err = ValidateAssignment(request);
-        if (err != null) return BadRequest(new { error = err });
-
-        a.Title = request.Title.Trim();
-        a.Instructions = request.Instructions?.Trim();
-        a.Destination = string.IsNullOrWhiteSpace(request.Destination) ? null : request.Destination.Trim();
-        a.BudgetLimit = request.BudgetLimit;
-        a.DueAt = ParseUtc(request.DueAt);
-        a.Points = request.Points;
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
-
-    [HttpDelete("/api/classes/{classId:int}/assignments/{assignmentId:int}")]
-    public async Task<IActionResult> DeleteAssignment(int classId, int assignmentId)
-    {
-        var cls = await LoadMyClassAsTeacherAsync(classId);
-        if (cls is null) return NotFound();
-        var a = await _db.ClassAssignments.FirstOrDefaultAsync(x => x.Id == assignmentId && x.ClassId == classId);
-        if (a is null) return NotFound();
-        _db.ClassAssignments.Remove(a);
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
-
-    // Teacher: every student in the class with their submission (if any).
-    [HttpGet("/api/classes/{classId:int}/assignments/{assignmentId:int}/submissions")]
-    public async Task<IActionResult> GetSubmissions(int classId, int assignmentId)
-    {
-        var cls = await LoadMyClassAsTeacherAsync(classId);
-        if (cls is null) return NotFound();
-        var a = await _db.ClassAssignments.FirstOrDefaultAsync(x => x.Id == assignmentId && x.ClassId == classId);
-        if (a is null) return NotFound();
-
-        var students = await _db.ClassMembers
-            .Where(m => m.ClassId == classId)
-            .Join(_db.Users, m => m.StudentId, u => u.Id, (m, u) => u)
-            .OrderBy(u => u.LastName).ThenBy(u => u.FirstName)
-            .ToListAsync();
-        var subs = await _db.AssignmentSubmissions.Where(s => s.AssignmentId == assignmentId).ToListAsync();
-        var tripIds = subs.Select(s => s.TripId).ToList();
-        var trips = await _db.Trips.Where(t => tripIds.Contains(t.Id)).ToListAsync();
-        var placeCounts = await _db.TripPlaces.Where(p => tripIds.Contains(p.TripId))
-            .GroupBy(p => p.TripId).Select(g => new { tripId = g.Key, count = g.Count() }).ToListAsync();
-        var spent = await _db.Expenses.Where(e => tripIds.Contains(e.TripId))
-            .GroupBy(e => e.TripId).Select(g => new { tripId = g.Key, total = g.Sum(e => e.Amount) }).ToListAsync();
-
-        return Ok(new
-        {
-            assignment = new
-            {
-                id = a.Id,
-                classId,
-                className = ClassLabel(cls),
-                title = a.Title,
-                instructions = a.Instructions,
-                destination = a.Destination,
-                budgetLimit = a.BudgetLimit,
-                dueAt = a.DueAt,
-                points = a.Points,
-            },
-            rows = students.Select(u =>
-            {
-                var s = subs.FirstOrDefault(x => x.StudentId == u.Id);
-                var t = s != null ? trips.FirstOrDefault(x => x.Id == s.TripId) : null;
-                int? days = t?.StartDate != null && t.EndDate != null
-                    ? t.EndDate.Value.DayNumber - t.StartDate.Value.DayNumber + 1
-                    : null;
-                return new
-                {
-                    student = new
-                    {
-                        userId = u.Id,
-                        firstName = u.FirstName,
-                        lastName = u.LastName,
-                        studentNumber = u.StudentNumber,
-                        avatarUrl = u.AvatarUrl,
-                    },
-                    submission = s == null ? null : new
-                    {
-                        id = s.Id,
-                        note = s.Note,
-                        submittedAt = s.SubmittedAt,
-                        late = a.DueAt != null && s.SubmittedAt > a.DueAt,
-                        score = s.Score,
-                        feedback = s.Feedback,
-                        gradedAt = s.GradedAt,
-                        trip = t == null ? null : new
-                        {
-                            id = t.Id,
-                            title = t.Title,
-                            destination = t.Destination,
-                            startDate = t.StartDate?.ToString("yyyy-MM-dd"),
-                            endDate = t.EndDate?.ToString("yyyy-MM-dd"),
-                            days,
-                            placesCount = placeCounts.FirstOrDefault(p => p.tripId == t.Id)?.count ?? 0,
-                            budgetTotal = t.BudgetTotal,
-                            spent = spent.FirstOrDefault(x => x.tripId == t.Id)?.total ?? 0,
-                        },
-                    },
-                };
-            }),
-        });
-    }
-
-    [HttpPut("/api/teacher/submissions/{submissionId:int}/grade")]
-    public async Task<IActionResult> GradeSubmission(int submissionId, [FromBody] GradeSubmissionRequest request)
-    {
-        if (!await IAmTeacherAsync()) return Forbid();
-        var s = await _db.AssignmentSubmissions.FirstOrDefaultAsync(x => x.Id == submissionId);
-        if (s is null) return NotFound();
-        var a = await _db.ClassAssignments.FirstOrDefaultAsync(x => x.Id == s.AssignmentId);
-        var cls = a == null ? null : await LoadMyClassAsTeacherAsync(a.ClassId);
-        if (a is null || cls is null) return NotFound();
-
-        if (request.Score is < 0 || request.Score > a.Points)
-            return BadRequest(new { error = "bad_score", max = a.Points });
-
-        s.Score = request.Score;
-        s.Feedback = string.IsNullOrWhiteSpace(request.Feedback) ? null : request.Feedback.Trim();
-        s.GradedAt = request.Score == null ? null : DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-
-        if (s.Score != null)
-        {
-            var teacher = await _db.Users.FindAsync(CurrentUserId);
-            var teacherName = NotificationHelper.FullName(teacher);
-            await NotificationHelper.CreateAsync(
-                _db, s.StudentId, NotificationHelper.AssignmentGraded,
-                $"{teacherName} graded your \"{a.Title}\": {s.Score:0.##}/{a.Points}",
-                $"/classes/{a.ClassId}?tab=assignments",
-                new { actorName = teacherName, title = a.Title, score = s.Score?.ToString("0.##"), points = a.Points },
-                $"assignment_graded:{s.Id}:{s.GradedAt:yyyyMMddHHmmss}");
-        }
-
-        return NoContent();
-    }
-
-    // Student hands in (or replaces, until it's graded) one of their own trips.
-    [HttpPost("/api/classes/{classId:int}/assignments/{assignmentId:int}/submit")]
-    public async Task<IActionResult> Submit(int classId, int assignmentId, [FromBody] SubmitAssignmentRequest request)
-    {
-        var (cls, role) = await LoadClassAsync(classId);
-        if (cls is null || role != "student") return NotFound();
-        var a = await _db.ClassAssignments.FirstOrDefaultAsync(x => x.Id == assignmentId && x.ClassId == classId);
-        if (a is null) return NotFound();
-
-        var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == request.TripId && t.UserId == CurrentUserId);
-        if (trip is null) return BadRequest(new { error = "not_your_trip" });
-
-        var s = await _db.AssignmentSubmissions.FirstOrDefaultAsync(x => x.AssignmentId == assignmentId && x.StudentId == CurrentUserId);
-        if (s?.GradedAt != null) return Conflict(new { error = "already_graded" });
-
-        if (s == null)
-        {
-            s = new AssignmentSubmission { AssignmentId = assignmentId, StudentId = CurrentUserId };
-            _db.AssignmentSubmissions.Add(s);
-        }
-        s.TripId = trip.Id;
-        s.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
-        s.SubmittedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-
-        var me = await _db.Users.FindAsync(CurrentUserId);
-        var myName = NotificationHelper.FullName(me);
-        await NotificationHelper.CreateAsync(
-            _db, cls.TeacherId, NotificationHelper.AssignmentSubmitted,
-            $"{myName} handed in \"{a.Title}\" ({ClassLabel(cls)}).",
-            $"/teacher/class/{classId}/assignment/{a.Id}",
-            new { actorName = myName, title = a.Title, className = ClassLabel(cls) },
-            $"assignment_submitted:{s.Id}:{s.SubmittedAt:yyyyMMddHHmmss}");
-
-        return Ok(new { id = s.Id });
-    }
-
-    [HttpDelete("/api/classes/{classId:int}/assignments/{assignmentId:int}/submit")]
-    public async Task<IActionResult> Unsubmit(int classId, int assignmentId)
-    {
-        var (cls, role) = await LoadClassAsync(classId);
-        if (cls is null || role != "student") return NotFound();
-        var s = await _db.AssignmentSubmissions.FirstOrDefaultAsync(x => x.AssignmentId == assignmentId && x.StudentId == CurrentUserId);
-        if (s is null) return NotFound();
-        if (s.GradedAt != null) return Conflict(new { error = "already_graded" });
-        _db.AssignmentSubmissions.Remove(s);
-        await _db.SaveChangesAsync();
-        return NoContent();
-    }
-
     // ================= STUDENT =================
 
     [HttpGet("/api/classes/mine")]
@@ -794,11 +456,6 @@ public class ClassesController : ControllerBase
         var classes = await _db.Classes.Where(c => classIds.Contains(c.Id)).OrderBy(c => c.Name).ToListAsync();
         var teacherIds = classes.Select(c => c.TeacherId).Distinct().ToList();
         var teachers = await _db.Users.Where(u => teacherIds.Contains(u.Id)).ToListAsync();
-        var assignments = await _db.ClassAssignments.Where(a => classIds.Contains(a.ClassId))
-            .Select(a => new { a.Id, a.ClassId }).ToListAsync();
-        var aIds = assignments.Select(a => a.Id).ToList();
-        var mySubs = await _db.AssignmentSubmissions.Where(s => s.StudentId == CurrentUserId && aIds.Contains(s.AssignmentId))
-            .Select(s => s.AssignmentId).ToListAsync();
 
         return Ok(classes.Select(c =>
         {
@@ -811,7 +468,6 @@ public class ClassesController : ControllerBase
                 term = c.Term,
                 teacherName = NotificationHelper.FullName(t),
                 teacherAvatar = t?.AvatarUrl,
-                todoCount = assignments.Count(a => a.ClassId == c.Id && !mySubs.Contains(a.Id)),
             };
         }));
     }

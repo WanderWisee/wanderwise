@@ -52,7 +52,6 @@ function TeacherHome() {
   };
 
   const totalStudents = (classes || []).reduce((n, c) => n + c.studentCount, 0);
-  const totalToGrade = (classes || []).reduce((n, c) => n + c.toGradeCount, 0);
 
   return (
     <main className="ww-portal-main">
@@ -73,7 +72,6 @@ function TeacherHome() {
         <div className="ww-portal-stats">
           <Stat icon="🏫" value={classes.length} label={t("statClasses")} />
           <Stat icon="👩‍🎓" value={totalStudents} label={t("statStudents")} />
-          <Stat icon="📝" value={totalToGrade} label={t("statToGrade")} tone={totalToGrade ? "warn" : ""} />
         </div>
       )}
 
@@ -128,15 +126,9 @@ function TeacherHome() {
               </span>
               <span className="ww-portal-class-meta">
                 <span>👩‍🎓 {c.studentCount}</span>
-                <span>📝 {c.assignmentCount}</span>
               </span>
               <span className="ww-portal-class-foot">
                 <code className="ww-portal-code">{c.joinCode}</code>
-                {c.toGradeCount > 0 && (
-                  <span className="ww-portal-badge warn">
-                    {c.toGradeCount} {t("toGrade")}
-                  </span>
-                )}
               </span>
             </button>
           ))}

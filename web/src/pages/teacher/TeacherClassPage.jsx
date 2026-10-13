@@ -4,12 +4,12 @@ import PortalHeader, { RoleGate } from "../../components/PortalHeader";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
-import { api, fullName, initials, peso, toLocalDate, fromDateTimeInput, toDateTimeInput } from "../../utils/portal";
+import { api, fullName, initials, toLocalDate } from "../../utils/portal";
 import "../../App.css";
 
-// One class in the Teacher portal (like a Canvas course):
-// Students · Announcements · Assignments
-const TABS = ["students", "announcements", "assignments"];
+// One class in the Teacher portal ("viewing only"):
+// Students (→ each student's itinerary, attendance, journals) · Announcements
+const TABS = ["students", "announcements"];
 
 export default function TeacherClassPage() {
   return (
@@ -150,7 +150,6 @@ function TeacherClass() {
 
       {tab === "students" && <StudentsTab cls={cls} reload={loadClass} />}
       {tab === "announcements" && <AnnouncementsTab classId={classId} canPost />}
-      {tab === "assignments" && <AssignmentsTab classId={classId} />}
     </main>
   );
 }
@@ -215,7 +214,6 @@ function StudentsTab({ cls, reload }) {
                   <th className="num">{t("colTrips")}</th>
                   <th className="num">{t("colCheckIns")}</th>
                   <th className="num">{t("colJournals")}</th>
-                  <th className="num">{t("colSubmitted")}</th>
                   <th />
                 </tr>
               </thead>
@@ -235,7 +233,6 @@ function StudentsTab({ cls, reload }) {
                     <td className="num">{s.tripsCount}</td>
                     <td className="num">{s.checkInsCount}</td>
                     <td className="num">{s.journalsCount}</td>
-                    <td className="num">{s.submittedCount}/{s.assignmentsCount}</td>
                     <td className="num">
                       <button type="button" className="ww-cost-remove" title={t("removeLabel")}
                         onClick={(e) => { e.stopPropagation(); remove(s); }}>✕</button>
@@ -335,171 +332,5 @@ export function AnnouncementsTab({ classId, canPost }) {
         </ul>
       )}
     </section>
-  );
-}
-
-// ---------------- Assignments ----------------
-const emptyAssignment = { title: "", instructions: "", destination: "", budgetLimit: "", dueAt: "", points: 100 };
-
-function AssignmentsTab({ classId }) {
-  const navigate = useNavigate();
-  const { t } = useLanguage();
-  const { confirm } = useDialog();
-  const [items, setItems] = useState(null);
-  const [editingId, setEditingId] = useState(null); // null | "new" | id
-  const [form, setForm] = useState(emptyAssignment);
-  const [error, setError] = useState("");
-
-  const load = useCallback(async () => {
-    const r = await api(`/api/classes/${classId}/assignments`);
-    setItems(r.ok ? r.data : []);
-  }, [classId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const startNew = () => {
-    setForm(emptyAssignment);
-    setEditingId("new");
-    setError("");
-  };
-
-  const startEdit = (a) => {
-    setForm({
-      title: a.title || "",
-      instructions: a.instructions || "",
-      destination: a.destination || "",
-      budgetLimit: a.budgetLimit ?? "",
-      dueAt: toDateTimeInput(a.dueAt),
-      points: a.points,
-    });
-    setEditingId(a.id);
-    setError("");
-  };
-
-  const save = async (e) => {
-    e.preventDefault();
-    const body = {
-      title: form.title,
-      instructions: form.instructions,
-      destination: form.destination,
-      budgetLimit: form.budgetLimit === "" ? null : Number(form.budgetLimit),
-      dueAt: fromDateTimeInput(form.dueAt),
-      points: Number(form.points) || 100,
-    };
-    const r = editingId === "new"
-      ? await api(`/api/classes/${classId}/assignments`, { method: "POST", body })
-      : await api(`/api/classes/${classId}/assignments/${editingId}`, { method: "PUT", body });
-    if (!r.ok) return setError(t("portalSaveFailed"));
-    setEditingId(null);
-    load();
-  };
-
-  const remove = async (a) => {
-    if (!(await confirm(t("confirmDeleteAssignment"), { danger: true, confirmLabel: t("dialogDelete") }))) return;
-    const r = await api(`/api/classes/${classId}/assignments/${a.id}`, { method: "DELETE" });
-    if (r.ok) load();
-  };
-
-  return (
-    <section className="ww-portal-card">
-      <div className="ww-portal-card-head">
-        <h2>📝 {t("tab_assignments")}</h2>
-        {editingId === null && (
-          <button type="button" className="ww-search-btn" onClick={startNew}>＋ {t("newAssignment")}</button>
-        )}
-      </div>
-
-      {editingId !== null && (
-        <form className="ww-portal-form ww-portal-subcard" onSubmit={save}>
-          <div className="ww-portal-form-grid">
-            <label className="wide">{t("assignmentTitleLabel")} *
-              <input className="ww-field-input" value={form.title} maxLength={150} autoFocus
-                onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("assignmentTitlePlaceholder")} />
-            </label>
-            <label className="wide">{t("instructionsLabel")}
-              <textarea className="ww-journal-tips-input" value={form.instructions}
-                onChange={(e) => setForm({ ...form, instructions: e.target.value })} placeholder={t("instructionsPlaceholder")} />
-            </label>
-            <label>{t("requiredDestination")}
-              <input className="ww-field-input" value={form.destination} maxLength={150}
-                onChange={(e) => setForm({ ...form, destination: e.target.value })} placeholder={t("optionalLabel")} />
-            </label>
-            <label>{t("budgetLimitLabel")}
-              <input type="number" min="0" step="any" className="ww-field-input" value={form.budgetLimit}
-                onChange={(e) => setForm({ ...form, budgetLimit: e.target.value })} placeholder="₱" />
-            </label>
-            <label>{t("dueLabel")}
-              <input type="datetime-local" className="ww-field-input" value={form.dueAt}
-                onChange={(e) => setForm({ ...form, dueAt: e.target.value })} />
-            </label>
-            <label>{t("pointsLabel")}
-              <input type="number" min="1" max="1000" className="ww-field-input" value={form.points}
-                onChange={(e) => setForm({ ...form, points: e.target.value })} />
-            </label>
-          </div>
-          {error && <p className="ww-portal-error">{error}</p>}
-          <div className="ww-portal-actions">
-            <button type="button" className="ww-booking-cancel" onClick={() => setEditingId(null)}>{t("cancel")}</button>
-            <button type="submit" className="ww-search-btn" disabled={!form.title.trim()}>
-              {editingId === "new" ? t("postAssignment") : t("save")}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {items === null ? (
-        <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
-      ) : items.length === 0 ? (
-        <div className="ww-portal-empty"><span>📝</span><p>{t("noAssignmentsYet")}</p></div>
-      ) : (
-        <div className="ww-portal-list">
-          {items.map((a) => (
-            <AssignmentRow key={a.id} a={a}
-              onOpen={() => navigate(`/teacher/class/${classId}/assignment/${a.id}`)}
-              actions={
-                <>
-                  <button type="button" className="ww-link-btn" onClick={(e) => { e.stopPropagation(); startEdit(a); }}>{t("edit")}</button>
-                  <button type="button" className="ww-link-btn danger" onClick={(e) => { e.stopPropagation(); remove(a); }}>{t("dialogDelete")}</button>
-                </>
-              }>
-              <span className="ww-portal-progress">
-                <span style={{ width: `${a.studentCount ? (100 * a.submittedCount) / a.studentCount : 0}%` }} />
-              </span>
-              <small>
-                {a.submittedCount}/{a.studentCount} {t("handedIn")} · {a.gradedCount} {t("gradedLabel")}
-              </small>
-            </AssignmentRow>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function AssignmentRow({ a, onOpen, actions, children }) {
-  const { t } = useLanguage();
-  const { formatDate, formatTime } = usePreferences();
-  const due = toLocalDate(a.dueAt);
-  const overdue = due && due < new Date();
-  return (
-    <div className={`ww-portal-row ${onOpen ? "clickable" : ""}`} onClick={onOpen}>
-      <div className="ww-portal-row-main">
-        <strong>{a.title}</strong>
-        <span className="ww-portal-row-meta">
-          {due && (
-            <span className={overdue ? "ww-portal-badge muted" : "ww-portal-badge"}>
-              ⏰ {t("dueLabel")}: {formatDate(due, { month: "short", day: "numeric" })} {formatTime ? formatTime(due) : ""}
-            </span>
-          )}
-          {a.destination && <span>📍 {a.destination}</span>}
-          {a.budgetLimit != null && <span>💰 ≤ {peso(a.budgetLimit)}</span>}
-          <span>🏅 {a.points} {t("pointsShort")}</span>
-        </span>
-        {children}
-      </div>
-      {actions && <div className="ww-portal-row-actions">{actions}</div>}
-    </div>
   );
 }

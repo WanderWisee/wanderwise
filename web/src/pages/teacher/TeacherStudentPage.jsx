@@ -10,8 +10,8 @@ import { Avatar } from "./TeacherClassPage";
 import { Stat } from "./TeacherHomePage";
 import "../../App.css";
 
-// Teacher: everything about one student in this class — grades, trips,
-// attendance (check-in photo + where they were) and journal posts.
+// Teacher (viewing only): one student in this class — trips (itinerary +
+// budget), attendance (check-in photo + where they were) and journal posts.
 export default function TeacherStudentPage() {
   return (
     <div className="ww-portal-page">
@@ -73,10 +73,6 @@ function StudentDetail() {
 
   const s = data.student;
   const present = data.attendance.filter((a) => a.present).length;
-  const gradedScores = data.grades.filter((g) => g.score != null);
-  const average = gradedScores.length
-    ? Math.round((100 * gradedScores.reduce((n, g) => n + g.score / g.points, 0)) / gradedScores.length)
-    : null;
   const when = (v) => {
     const d = toLocalDate(v);
     return d ? `${formatDate(d, { month: "short", day: "numeric" })} ${formatTime(d)}` : "";
@@ -106,49 +102,7 @@ function StudentDetail() {
         <Stat icon="🗺️" value={data.trips.length} label={t("colTrips")} />
         <Stat icon="✅" value={present} label={t("colCheckIns")} />
         <Stat icon="📖" value={data.journals.length} label={t("colJournals")} />
-        <Stat icon="🏅" value={average == null ? "—" : `${average}%`} label={t("averageGrade")} />
       </div>
-
-      {/* Grades */}
-      <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>🏅 {t("gradesTitle")}</h2></div>
-        {data.grades.length === 0 ? (
-          <p className="ww-expense-empty">{t("noAssignmentsYet")}</p>
-        ) : (
-          <div className="ww-portal-table-wrap">
-            <table className="ww-portal-table">
-              <thead>
-                <tr>
-                  <th>{t("tab_assignments")}</th>
-                  <th>{t("colStatus")}</th>
-                  <th className="num">{t("scoreLabel")}</th>
-                  <th>{t("feedbackLabel")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.grades.map((g) => (
-                  <tr key={g.assignmentId} className="clickable"
-                    onClick={() => navigate(`/teacher/class/${classId}/assignment/${g.assignmentId}`)}>
-                    <td><strong>{g.title}</strong></td>
-                    <td>
-                      {!g.submissionId ? (
-                        <span className="ww-portal-badge muted">{t("notSubmitted")}</span>
-                      ) : g.score != null ? (
-                        <span className="ww-portal-badge ok">{t("gradedLabel")}</span>
-                      ) : (
-                        <span className="ww-portal-badge warn">{t("toGrade")}</span>
-                      )}
-                      {g.late && <span className="ww-portal-badge danger">{t("lateLabel")}</span>}
-                    </td>
-                    <td className="num">{g.score != null ? `${g.score}/${g.points}` : "—"}</td>
-                    <td className="ww-portal-clip">{g.feedback || ""}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
 
       {/* Trips */}
       <section className="ww-portal-card">

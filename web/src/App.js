@@ -40,7 +40,6 @@ import AdminLoginPage from "./pages/auth/AdminLoginPage";
 import { StudentOnly } from "./components/PortalHeader";
 import TeacherHomePage from "./pages/teacher/TeacherHomePage";
 import TeacherClassPage from "./pages/teacher/TeacherClassPage";
-import TeacherAssignmentPage from "./pages/teacher/TeacherAssignmentPage";
 import TeacherStudentPage from "./pages/teacher/TeacherStudentPage";
 import MyClassesPage from "./pages/classes/MyClassesPage";
 import ClassViewPage from "./pages/classes/ClassViewPage";
@@ -97,7 +96,6 @@ function App() {
           <Route path="/register/teacher" element={<TeacherRegisterPage />} />
           <Route path="/teacher" element={<TeacherHomePage />} />
           <Route path="/teacher/class/:classId" element={<TeacherClassPage />} />
-          <Route path="/teacher/class/:classId/assignment/:assignmentId" element={<TeacherAssignmentPage />} />
           <Route path="/teacher/class/:classId/student/:studentId" element={<TeacherStudentPage />} />
           <Route path="/classes" element={<StudentOnly><MyClassesPage /></StudentOnly>} />
           <Route path="/classes/:classId" element={<StudentOnly><ClassViewPage /></StudentOnly>} />

@@ -121,6 +121,14 @@ export function AppDataProvider({ children }) {
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [profileBio, setProfileBio] = useState("");
   const [profileLocation, setProfileLocation] = useState("");
+  // "student", "teacher" or "admin" — null until /api/me answers.
+  const [profileRole, setProfileRole] = useState(null);
+  // Lets the CSS hide student-only links (Hotels, search, profile) for
+  // teachers on pages shared with students (Guides, Notifications…).
+  useEffect(() => {
+    if (profileRole) document.documentElement.setAttribute("data-ww-role", profileRole);
+    else document.documentElement.removeAttribute("data-ww-role");
+  }, [profileRole]);
 
   // Same for the profile: clear the previous account's details first, then
   // load the new one's.
@@ -131,14 +139,25 @@ export function AppDataProvider({ children }) {
     setProfileAvatar(null);
     setProfileBio("");
     setProfileLocation("");
+    setProfileRole(null);
     if (!authToken) return;
     let cancelled = false;
 
     fetch("/api/me", {
       headers: { Authorization: `Bearer ${authToken}` },
     })
-      .then((resp) => {
-        if (!resp.ok) throw new Error("Failed to load profile");
+      .then(async (resp) => {
+        if (!resp.ok) {
+          // An admin deactivated this account: log it out.
+          if (resp.status === 401) {
+            const body = await resp.json().catch(() => null);
+            if (body?.error === "account_inactive") {
+              localStorage.removeItem("wanderwise_token");
+              notifyAuthChanged();
+            }
+          }
+          throw new Error("Failed to load profile");
+        }
         return resp.json();
       })
       .then((data) => {
@@ -150,9 +169,11 @@ export function AppDataProvider({ children }) {
         setProfileAvatar(data.avatarUrl || null);
         setProfileBio(data.bio || "");
         setProfileLocation(data.location || "");
+        setProfileRole(data.role || "student");
       })
       .catch(() => {
-        // Token missing/expired — leave fields blank.
+        // Token missing/expired — leave fields blank ("" = role unknown).
+        if (!cancelled) setProfileRole("");
       });
     return () => {
       cancelled = true;
@@ -175,6 +196,7 @@ export function AppDataProvider({ children }) {
         setProfileBio,
         profileLocation,
         setProfileLocation,
+        profileRole,
       }}
     >
       {children}

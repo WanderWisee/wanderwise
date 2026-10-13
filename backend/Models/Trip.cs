@@ -43,6 +43,11 @@ public class Trip
     [Column("last_viewed_at")]
     public DateTime? LastViewedAt { get; set; }
 
+    // Set when a teacher made this trip as a class FIELD TRIP — every
+    // student in that class is added to it as crew.
+    [Column("class_id")]
+    public int? ClassId { get; set; }
+
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 

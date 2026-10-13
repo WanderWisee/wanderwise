@@ -32,7 +32,10 @@ public class ExpensesController : ControllerBase
         var isOwner = await _db.Trips.AnyAsync(t => t.Id == tripId && t.UserId == CurrentUserId);
         if (isOwner) return true;
 
-        return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId);
+        if (await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId)) return true;
+
+        // Teachers can see (not change) trips of students in their classes.
+        return await PortalAccess.CanTeacherViewTripAsync(_db, CurrentUserId, tripId);
     }
 
     // Adding/deleting is only for the owner and crew with edit access;

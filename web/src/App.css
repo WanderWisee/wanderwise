@@ -5736,6 +5736,1665 @@ input[type="time"]:focus {
 }
 
 /* ---------------------------------------------------------------------
+   16b. TOUR DAY (during the trip): meeting point + check-in,
+        attendance, announcements, activities
+   --------------------------------------------------------------------- */
+.ww-tour-page {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+  font-family: var(--ww-font-body);
+  color: var(--ww-text);
+}
+
+.ww-tour-main {
+  width: 100%;
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 32px var(--ww-gutter) 72px;
+}
+
+.ww-tour-title {
+  margin: 0 0 18px;
+  font-size: var(--ww-fs-2xl);
+  font-weight: 700;
+}
+
+.ww-tour-subtitle {
+  color: var(--ww-text-muted);
+  font-weight: 400;
+}
+
+/* Small teal chip button (used in the builder's day header too) */
+.ww-tour-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: var(--ww-r-pill);
+  border: 1px solid var(--ww-primary-200);
+  background: var(--ww-primary-50);
+  color: var(--ww-primary);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ww-t-fast), color var(--ww-t-fast), border-color var(--ww-t-fast);
+}
+
+.ww-tour-link:hover {
+  background: var(--ww-primary);
+  border-color: var(--ww-primary);
+  color: #ffffff;
+}
+
+/* Day picker */
+.ww-tour-days {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ww-tour-day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  min-width: 112px;
+  padding: 10px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  color: var(--ww-text);
+  font-family: var(--ww-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--ww-t-fast), background-color var(--ww-t-fast), box-shadow var(--ww-t-fast);
+}
+
+.ww-tour-day:hover {
+  border-color: var(--ww-accent);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-tour-day.active {
+  border-color: var(--ww-btn);
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+}
+
+.ww-tour-day-num {
+  font-family: var(--ww-font-head);
+  font-weight: 700;
+  font-size: var(--ww-fs-base);
+}
+
+.ww-tour-day-date {
+  font-size: var(--ww-fs-xs);
+  opacity: 0.8;
+}
+
+/* Cards grid */
+.ww-tour-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.ww-tour-card {
+  min-width: 0;
+  padding: 22px 24px;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-tour-card-wide {
+  grid-column: 1 / -1;
+}
+
+.ww-tour-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-tour-card-head h2 {
+  margin: 0;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+.ww-tour-count {
+  padding: 4px 12px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-size: var(--ww-fs-sm);
+  font-weight: 700;
+}
+
+.ww-tour-meeting-info {
+  margin: 0 0 12px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-hint {
+  margin: 6px 0 0;
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-xs);
+}
+
+/* Forms inside the cards */
+.ww-tour-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-tour-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+}
+
+.ww-tour-form select,
+.ww-tour-form input[type="number"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: var(--ww-r-md);
+  background: var(--ww-surface);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-base);
+  outline: none;
+}
+
+.ww-tour-form select:focus,
+.ww-tour-form input[type="number"]:focus {
+  border-color: var(--ww-primary);
+  box-shadow: var(--ww-ring);
+}
+
+.ww-tour-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ww-tour-form .ww-journal-tips-input {
+  min-height: 80px;
+}
+
+.ww-tour-activity-form {
+  display: grid;
+  grid-template-columns: 2fr 120px 1.5fr 1.5fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding-top: 16px;
+  border-top: 1px dashed var(--ww-border);
+}
+
+.ww-tour-activity-form input[type="time"] {
+  min-height: 44px;
+  width: 100%;
+}
+
+/* Map */
+.ww-tour-map {
+  overflow: hidden;
+  margin-bottom: 14px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-tour-popup-photo {
+  display: block;
+  width: 160px;
+  max-height: 160px;
+  margin-top: 6px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Check-in */
+.ww-tour-checkin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ww-tour-checked {
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-weight: 600;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-fence-status {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-tour-fence-status p {
+  margin: 0 0 10px;
+  font-weight: 600;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-fence-status.inside {
+  background: var(--ww-success-50);
+  border-color: #bfe3cc;
+}
+
+.ww-tour-fence-status.outside {
+  background: var(--ww-danger-50);
+  border-color: #efc5bc;
+}
+
+.ww-tour-fence-status .ww-tour-form-actions {
+  justify-content: flex-start;
+}
+
+/* Attendance list */
+.ww-tour-roster {
+  display: flex;
+  flex-direction: column;
+  max-height: 480px;
+  overflow-y: auto;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-tour-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-tour-person:last-child {
+  border-bottom: none;
+}
+
+.ww-tour-person.present {
+  background: var(--ww-success-50);
+}
+
+.ww-tour-person input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ww-tour-person input[type="checkbox"]:disabled {
+  cursor: default;
+}
+
+.ww-tour-person-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.ww-tour-person-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-weight: 600;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-person-status {
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-xs);
+}
+
+.ww-tour-person.present .ww-tour-person-status {
+  color: var(--ww-success);
+}
+
+.ww-tour-tag {
+  padding: 1px 8px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+  color: var(--ww-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ww-tour-photo-thumb {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px solid var(--ww-surface);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface-3) center / cover no-repeat;
+  box-shadow: var(--ww-shadow-sm);
+  cursor: pointer;
+  transition: transform var(--ww-t-fast);
+}
+
+.ww-tour-photo-thumb:hover {
+  transform: scale(1.06);
+}
+
+.ww-tour-photo-modal img {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-surface-2);
+}
+
+.ww-tour-photo-caption {
+  margin: 0 0 12px;
+  font-size: var(--ww-fs-sm);
+  color: var(--ww-text-muted);
+}
+
+/* Announcements */
+.ww-tour-announcements {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 480px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ww-tour-announcements li {
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-accent-100);
+  border-left: 4px solid var(--ww-accent);
+  background: var(--ww-accent-50);
+}
+
+.ww-tour-announcement-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--ww-fs-xs);
+  color: var(--ww-text-subtle);
+}
+
+.ww-tour-announcement-head strong {
+  color: var(--ww-text);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-announcement-head .ww-cost-remove {
+  margin-left: auto;
+}
+
+.ww-tour-announcements p {
+  margin: 6px 0 0;
+  white-space: pre-line;
+  word-break: break-word;
+  font-size: var(--ww-fs-base);
+}
+
+/* Activities */
+.ww-tour-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-tour-activities li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+}
+
+.ww-tour-activity-time {
+  min-width: 76px;
+  padding: 3px 10px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-tour-activity-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ww-tour-activity-place {
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-activity-body p {
+  margin: 2px 0 0;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+@media (max-width: 860px) {
+  .ww-tour-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-tour-activity-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ww-tour-activity-form > input:first-child,
+  .ww-tour-activity-form > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .ww-tour-card {
+    padding: 18px 16px;
+  }
+
+  .ww-tour-activity-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   16c. TEACHER PORTAL · STUDENT CLASSES · ADMIN PANEL
+        Same theme (cream + brown + teal), card-based, table-friendly.
+   --------------------------------------------------------------------- */
+.ww-portal-page {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+  font-family: var(--ww-font-body);
+  color: var(--ww-text);
+}
+
+.ww-portal-main {
+  width: 100%;
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 32px var(--ww-gutter) 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ww-portal-main > .ww-stories-back {
+  margin: 0;
+}
+
+.ww-portal-gate {
+  max-width: 480px;
+  margin: 80px auto;
+  padding: 0 var(--ww-gutter);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ---- Headings / text ---- */
+.ww-portal-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ww-portal-eyebrow {
+  margin: 0 0 4px;
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ww-portal-title {
+  margin: 0;
+  font-family: var(--ww-font-head);
+  font-size: var(--ww-fs-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ww-portal-muted {
+  margin: 6px 0 0;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-base);
+}
+
+.ww-portal-muted.small,
+.ww-portal-hint {
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-hint {
+  margin: 0;
+  color: var(--ww-text-subtle);
+}
+
+.ww-portal-error,
+.ww-portal-ok {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--ww-r-md);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+}
+
+.ww-portal-error {
+  background: var(--ww-danger-50);
+  color: var(--ww-danger);
+}
+
+.ww-portal-ok {
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+}
+
+.ww-portal-instructions {
+  margin: 12px 0 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--ww-accent);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-accent-50);
+  white-space: pre-line;
+  line-height: 1.55;
+}
+
+.ww-portal-note {
+  margin: 8px 0 0;
+  color: var(--ww-text-muted);
+  font-style: italic;
+  white-space: pre-line;
+}
+
+.ww-portal-clip {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--ww-text-muted);
+  max-width: 420px;
+}
+
+/* Text-only buttons and links */
+.ww-link-btn {
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  color: var(--ww-primary);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--ww-r-sm);
+  white-space: nowrap;
+}
+
+.ww-link-btn:hover {
+  background: var(--ww-primary-50);
+}
+
+.ww-link-btn.danger {
+  color: var(--ww-danger);
+}
+
+.ww-link-btn.danger:hover {
+  background: var(--ww-danger-50);
+}
+
+.ww-link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ww-link-text {
+  color: var(--ww-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ww-link-text:hover {
+  text-decoration: underline;
+}
+
+.ww-search-btn.small,
+.ww-booking-cancel.small {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Cards ---- */
+.ww-portal-card {
+  min-width: 0;
+  padding: 22px 24px;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-portal-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ww-portal-card-head h2 {
+  margin: 0;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+.ww-portal-subcard {
+  margin: 12px 0;
+  padding: 16px 18px;
+  border-radius: var(--ww-r-lg);
+  border: 1px dashed var(--ww-border-strong);
+  background: var(--ww-surface-2);
+}
+
+.ww-portal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--ww-text-muted);
+}
+
+.ww-portal-empty span {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.ww-portal-empty p {
+  margin: 0;
+  max-width: 420px;
+}
+
+.ww-portal-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ---- Stats ---- */
+.ww-portal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.ww-portal-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-xs);
+}
+
+.ww-portal-stat-icon {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-primary-50);
+  font-size: 20px;
+}
+
+.ww-portal-stat-value {
+  font-family: var(--ww-font-head);
+  font-size: var(--ww-fs-xl);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-stat-label {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+  font-weight: 600;
+}
+
+.ww-portal-stat.warn .ww-portal-stat-icon {
+  background: var(--ww-warning-50);
+}
+
+.ww-portal-stat.warn .ww-portal-stat-value {
+  color: var(--ww-warning);
+}
+
+/* ---- Class cards (teacher + student) ---- */
+.ww-portal-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.ww-portal-class-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 170px;
+  padding: 28px 20px 16px;
+  overflow: hidden;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+  color: var(--ww-text);
+  font-family: var(--ww-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--ww-t-fast), box-shadow var(--ww-t-fast), border-color var(--ww-t-fast);
+}
+
+.ww-portal-class-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ww-accent);
+  box-shadow: var(--ww-shadow-md);
+}
+
+.ww-portal-class-band {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 10px;
+  background: linear-gradient(90deg, var(--ww-btn), var(--ww-primary));
+}
+
+.ww-portal-class-name {
+  font-family: var(--ww-font-head);
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ww-portal-class-sub {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-class-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 10px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-class-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid var(--ww-border);
+}
+
+/* Join codes */
+.ww-portal-code,
+.ww-portal-table code,
+.ww-portal-muted code {
+  padding: 2px 8px;
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface-3);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: var(--ww-fs-sm);
+  letter-spacing: 0.06em;
+}
+
+.ww-portal-code.big {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-size: var(--ww-fs-xl);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.ww-portal-class-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 22px 24px;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  border-top: 6px solid var(--ww-btn);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-portal-class-head > form {
+  flex: 1;
+}
+
+.ww-portal-join {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ww-portal-join-label {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ww-portal-join-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.ww-portal-join-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ww-portal-code-input {
+  width: 160px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+/* ---- Tabs ---- */
+.ww-portal-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+  scrollbar-width: none;
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.ww-portal-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--ww-r-pill);
+  background: transparent;
+  color: var(--ww-text-muted);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ww-t-fast), color var(--ww-t-fast);
+}
+
+.ww-portal-tab:hover {
+  color: var(--ww-text);
+  background: var(--ww-surface);
+}
+
+.ww-portal-tab.active {
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+}
+
+.ww-portal-tab-count {
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: var(--ww-r-pill);
+  background: rgba(0, 0, 0, 0.08);
+  font-size: var(--ww-fs-xs);
+  text-align: center;
+}
+
+.ww-portal-tab.active .ww-portal-tab-count {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---- Forms ---- */
+.ww-portal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ww-portal-form h2 {
+  margin: 0;
+  font-size: var(--ww-fs-lg);
+}
+
+.ww-portal-form label,
+.ww-portal-grade label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+}
+
+.ww-portal-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.ww-portal-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.ww-portal-form .ww-field-input,
+.ww-portal-filters .ww-field-input,
+.ww-portal-inline-form .ww-field-input,
+.ww-portal-grade .ww-field-input,
+.ww-portal-join-form .ww-field-input {
+  margin: 0;
+  width: 100%;
+}
+
+.ww-portal-form .ww-journal-tips-input,
+.ww-portal-grade .ww-journal-tips-input,
+.ww-modal-card .ww-journal-tips-input {
+  min-height: 90px;
+  width: 100%;
+}
+
+.ww-portal-form label.ww-portal-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  min-height: 44px;
+}
+
+.ww-portal-check input {
+  width: 18px;
+  height: 18px;
+}
+
+.ww-portal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ww-portal-actions .ww-portal-hint {
+  margin-right: auto;
+}
+
+.ww-portal-inline-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ww-portal-inline-form .ww-field-input {
+  flex: 1;
+}
+
+.ww-portal-inline-form .ww-search-btn {
+  flex-shrink: 0;
+}
+
+.ww-portal-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-portal-filter {
+  margin: 12px 0 !important;
+}
+
+.ww-portal-select {
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Badges ---- */
+.ww-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-primary-50);
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.ww-portal-badge + .ww-portal-badge,
+strong .ww-portal-badge {
+  margin-left: 6px;
+}
+
+.ww-portal-badge.ok {
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+}
+
+.ww-portal-badge.warn {
+  background: var(--ww-warning-50);
+  color: var(--ww-warning);
+}
+
+.ww-portal-badge.danger {
+  background: var(--ww-danger-50);
+  color: var(--ww-danger);
+}
+
+.ww-portal-badge.muted {
+  background: var(--ww-surface-3);
+  color: var(--ww-text-muted);
+}
+
+.ww-portal-badge.role-admin {
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+}
+
+.ww-portal-badge.role-teacher {
+  background: var(--ww-accent-100);
+  color: var(--ww-btn);
+}
+
+/* ---- Lists / rows ---- */
+.ww-portal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ww-portal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  transition: border-color var(--ww-t-fast), box-shadow var(--ww-t-fast);
+}
+
+.ww-portal-row.clickable {
+  cursor: pointer;
+}
+
+.ww-portal-row.clickable:hover {
+  border-color: var(--ww-accent);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-portal-row.is-hidden {
+  background: var(--ww-surface-2);
+  opacity: 0.85;
+}
+
+.ww-portal-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ww-portal-row-main > strong {
+  font-size: var(--ww-fs-md);
+}
+
+.ww-portal-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-row-meta .ww-portal-badge + .ww-portal-badge {
+  margin-left: 0;
+}
+
+.ww-portal-row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ww-portal-btn-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ww-portal-progress {
+  display: block;
+  height: 6px;
+  max-width: 280px;
+  overflow: hidden;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+}
+
+.ww-portal-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ww-primary);
+}
+
+.ww-portal-row-main small {
+  color: var(--ww-text-subtle);
+}
+
+/* Person (avatar + name) */
+.ww-portal-person {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ww-portal-person > span:not(.ww-portal-avatar):not(.ww-portal-badge) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ww-portal-person small {
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-xs);
+}
+
+.ww-portal-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ww-primary-100);
+  color: var(--ww-primary-dark);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  border: 2px solid var(--ww-surface);
+  box-shadow: var(--ww-shadow-xs);
+}
+
+/* ---- Tables ---- */
+.ww-portal-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-table th {
+  position: sticky;
+  top: 0;
+  padding: 10px 12px;
+  background: var(--ww-surface-2);
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-portal-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ww-border);
+  vertical-align: middle;
+}
+
+.ww-portal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ww-portal-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-table .nowrap {
+  white-space: nowrap;
+}
+
+.ww-portal-table tr.clickable {
+  cursor: pointer;
+}
+
+.ww-portal-table tr.clickable:hover td {
+  background: var(--ww-primary-50);
+}
+
+.ww-portal-table tr.highlight td {
+  background: var(--ww-warning-50);
+}
+
+.ww-portal-log-details {
+  max-width: 460px;
+  word-break: break-word;
+  color: var(--ww-text-muted);
+}
+
+.ww-portal-table .ww-tour-photo-thumb {
+  width: 36px;
+  height: 36px;
+}
+
+/* ---- Grading ---- */
+.ww-portal-submission {
+  align-items: flex-start;
+}
+
+.ww-portal-grade {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  flex-shrink: 0;
+  padding-left: 16px;
+  border-left: 1px dashed var(--ww-border-strong);
+}
+
+.ww-portal-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ww-portal-score .ww-field-input {
+  width: 110px !important;
+}
+
+.ww-portal-trip-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-primary-100);
+  background: var(--ww-primary-50);
+  font-size: var(--ww-fs-sm);
+  cursor: pointer;
+  transition: border-color var(--ww-t-fast);
+}
+
+.ww-portal-trip-summary:hover {
+  border-color: var(--ww-primary);
+}
+
+.ww-portal-over {
+  color: var(--ww-danger);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ww-portal-assignment > .ww-portal-subcard {
+  margin-top: -4px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ww-portal-my-sub p {
+  margin: 0 0 8px;
+}
+
+.ww-portal-feedback {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-success-50);
+  border: 1px solid #bfe3cc;
+}
+
+.ww-portal-feedback p {
+  margin: 6px 0 0;
+  white-space: pre-line;
+}
+
+/* ---- Student profile (teacher view) ---- */
+.ww-portal-profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.ww-portal-profile > div {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ww-portal-map {
+  margin-bottom: 14px;
+}
+
+/* ---- Admin ---- */
+.ww-portal-callout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid #f0d9a8;
+  background: var(--ww-warning-50);
+  color: var(--ww-text);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ww-portal-callout span {
+  margin-left: auto;
+  color: var(--ww-primary);
+  font-weight: 700;
+}
+
+.ww-portal-health {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-portal-health li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-surface-2);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-health li strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-health li.ok {
+  background: var(--ww-success-50);
+}
+
+.ww-portal-health li.warn {
+  background: var(--ww-warning-50);
+}
+
+.ww-portal-health li.danger {
+  background: var(--ww-danger-50);
+  color: var(--ww-danger);
+}
+
+.ww-portal-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-portal-bars li {
+  display: grid;
+  grid-template-columns: minmax(90px, 140px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ww-portal-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+}
+
+.ww-portal-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ww-primary), var(--ww-accent));
+}
+
+.ww-portal-star {
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--ww-border-strong);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ww-portal-star.on {
+  color: #e0a526;
+}
+
+.ww-portal-journal-modal {
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.ww-portal-journal-places img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  margin: 8px 0;
+  object-fit: cover;
+  border-radius: var(--ww-r-md);
+}
+
+.ww-portal-journal-places p {
+  margin: 6px 0 0;
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Login / sign-up bits ---- */
+.ww-teacher-signup-link {
+  margin: 14px 0 0;
+  text-align: center;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-menu-item-strong {
+  font-weight: 700;
+  color: var(--ww-primary);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 860px) {
+  .ww-portal-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-portal-submission {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ww-portal-grade {
+    width: 100%;
+    padding: 14px 0 0;
+    border-left: none;
+    border-top: 1px dashed var(--ww-border-strong);
+  }
+
+  .ww-portal-join {
+    align-items: flex-start;
+  }
+
+  .ww-portal-join-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .ww-portal-main {
+    padding-top: 20px;
+  }
+
+  .ww-portal-card,
+  .ww-portal-class-head {
+    padding: 18px 16px;
+  }
+
+  .ww-portal-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-portal-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ww-portal-row-actions {
+    justify-content: flex-start;
+  }
+
+  .ww-portal-inline-form,
+  .ww-portal-join-form {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .ww-portal-code-input {
+    width: 100%;
+  }
+
+  .ww-portal-hero > .ww-search-btn {
+    width: 100%;
+  }
+}
+
+/* ---- Teachers on pages shared with students (Guides, Notifications,
+        a student's trip…): hide the student-only links — Hotels, search
+        and own profile. The portal's own header has none of these. ---- */
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/hotels"],
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:first-child,
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:last-child {
+  display: none;
+}
+
+.ww-login-eyebrow {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------------
    18. RESPONSIVE RULES
    Laptop ≤1024 · Tablet ≤860 · Mobile ≤560
    --------------------------------------------------------------------- */
@@ -6260,511 +7919,5 @@ input[type="time"]:focus {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-/* ---------------------------------------------------------------------
-   TOUR DAY (during the trip): meeting point + check-in,
-   attendance, announcements, activities
-   --------------------------------------------------------------------- */
-.ww-tour-page {
-  min-height: 100vh;
-  background-color: var(--ww-bg);
-  font-family: var(--ww-font-body);
-  color: var(--ww-text);
-}
-
-.ww-tour-main {
-  width: 100%;
-  max-width: var(--ww-container);
-  margin: 0 auto;
-  padding: 32px var(--ww-gutter) 72px;
-}
-
-.ww-tour-title {
-  margin: 0 0 18px;
-  font-size: var(--ww-fs-2xl);
-  font-weight: 700;
-}
-
-.ww-tour-subtitle {
-  color: var(--ww-text-muted);
-  font-weight: 400;
-}
-
-/* Small teal chip button (used in the builder's day header too) */
-.ww-tour-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 14px;
-  border-radius: var(--ww-r-pill);
-  border: 1px solid var(--ww-primary-200);
-  background: var(--ww-primary-50);
-  color: var(--ww-primary);
-  font-family: var(--ww-font-body);
-  font-size: var(--ww-fs-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background var(--ww-t-fast), color var(--ww-t-fast), border-color var(--ww-t-fast);
-}
-
-.ww-tour-link:hover {
-  background: var(--ww-primary);
-  border-color: var(--ww-primary);
-  color: #ffffff;
-}
-
-/* Day picker */
-.ww-tour-days {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 22px;
-  padding-bottom: 4px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.ww-tour-day {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex-shrink: 0;
-  min-width: 112px;
-  padding: 10px 14px;
-  border-radius: var(--ww-r-md);
-  border: 1px solid var(--ww-border);
-  background: var(--ww-surface);
-  color: var(--ww-text);
-  font-family: var(--ww-font-body);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color var(--ww-t-fast), background-color var(--ww-t-fast), box-shadow var(--ww-t-fast);
-}
-
-.ww-tour-day:hover {
-  border-color: var(--ww-accent);
-  box-shadow: var(--ww-shadow-sm);
-}
-
-.ww-tour-day.active {
-  border-color: var(--ww-btn);
-  background: var(--ww-btn);
-  color: var(--ww-on-btn);
-}
-
-.ww-tour-day-num {
-  font-family: var(--ww-font-head);
-  font-weight: 700;
-  font-size: var(--ww-fs-base);
-}
-
-.ww-tour-day-date {
-  font-size: var(--ww-fs-xs);
-  opacity: 0.8;
-}
-
-/* Cards grid */
-.ww-tour-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-.ww-tour-card {
-  min-width: 0;
-  padding: 22px 24px;
-  border-radius: var(--ww-r-xl);
-  border: 1px solid var(--ww-border);
-  background: var(--ww-surface);
-  box-shadow: var(--ww-shadow-sm);
-}
-
-.ww-tour-card-wide {
-  grid-column: 1 / -1;
-}
-
-.ww-tour-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.ww-tour-card-head h2 {
-  margin: 0;
-  font-size: var(--ww-fs-lg);
-  font-weight: 700;
-}
-
-.ww-tour-count {
-  padding: 4px 12px;
-  border-radius: var(--ww-r-pill);
-  background: var(--ww-success-50);
-  color: var(--ww-success);
-  font-size: var(--ww-fs-sm);
-  font-weight: 700;
-}
-
-.ww-tour-meeting-info {
-  margin: 0 0 12px;
-  color: var(--ww-text-muted);
-  font-size: var(--ww-fs-sm);
-}
-
-.ww-tour-hint {
-  margin: 6px 0 0;
-  color: var(--ww-text-subtle);
-  font-size: var(--ww-fs-xs);
-}
-
-/* Forms inside the cards */
-.ww-tour-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.ww-tour-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: var(--ww-fs-sm);
-  font-weight: 600;
-}
-
-.ww-tour-form select,
-.ww-tour-form input[type="number"] {
-  width: 100%;
-  min-height: 42px;
-  padding: 8px 12px;
-  border: 1px solid var(--ww-border-strong);
-  border-radius: var(--ww-r-md);
-  background: var(--ww-surface);
-  font-family: var(--ww-font-body);
-  font-size: var(--ww-fs-base);
-  outline: none;
-}
-
-.ww-tour-form select:focus,
-.ww-tour-form input[type="number"]:focus {
-  border-color: var(--ww-primary);
-  box-shadow: var(--ww-ring);
-}
-
-.ww-tour-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ww-tour-form .ww-journal-tips-input {
-  min-height: 80px;
-}
-
-.ww-tour-activity-form {
-  display: grid;
-  grid-template-columns: 2fr 120px 1.5fr 1.5fr auto;
-  align-items: center;
-  gap: 8px;
-  margin: 16px 0 0;
-  padding-top: 16px;
-  border-top: 1px dashed var(--ww-border);
-}
-
-.ww-tour-activity-form input[type="time"] {
-  min-height: 44px;
-  width: 100%;
-}
-
-/* Map */
-.ww-tour-map {
-  overflow: hidden;
-  margin-bottom: 14px;
-  border-radius: var(--ww-r-lg);
-  border: 1px solid var(--ww-border);
-}
-
-.ww-tour-popup-photo {
-  display: block;
-  width: 160px;
-  max-height: 160px;
-  margin-top: 6px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-/* Check-in */
-.ww-tour-checkin {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.ww-tour-checked {
-  margin: 0;
-  padding: 8px 14px;
-  border-radius: var(--ww-r-md);
-  background: var(--ww-success-50);
-  color: var(--ww-success);
-  font-weight: 600;
-  font-size: var(--ww-fs-sm);
-}
-
-.ww-tour-fence-status {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: var(--ww-r-md);
-  border: 1px solid var(--ww-border);
-}
-
-.ww-tour-fence-status p {
-  margin: 0 0 10px;
-  font-weight: 600;
-  font-size: var(--ww-fs-sm);
-}
-
-.ww-tour-fence-status.inside {
-  background: var(--ww-success-50);
-  border-color: #bfe3cc;
-}
-
-.ww-tour-fence-status.outside {
-  background: var(--ww-danger-50);
-  border-color: #efc5bc;
-}
-
-.ww-tour-fence-status .ww-tour-form-actions {
-  justify-content: flex-start;
-}
-
-/* Attendance list */
-.ww-tour-roster {
-  display: flex;
-  flex-direction: column;
-  max-height: 480px;
-  overflow-y: auto;
-  border-radius: var(--ww-r-md);
-  border: 1px solid var(--ww-border);
-}
-
-.ww-tour-person {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--ww-border);
-}
-
-.ww-tour-person:last-child {
-  border-bottom: none;
-}
-
-.ww-tour-person.present {
-  background: var(--ww-success-50);
-}
-
-.ww-tour-person input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.ww-tour-person input[type="checkbox"]:disabled {
-  cursor: default;
-}
-
-.ww-tour-person-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.ww-tour-person-name {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-weight: 600;
-  font-size: var(--ww-fs-sm);
-}
-
-.ww-tour-person-status {
-  color: var(--ww-text-subtle);
-  font-size: var(--ww-fs-xs);
-}
-
-.ww-tour-person.present .ww-tour-person-status {
-  color: var(--ww-success);
-}
-
-.ww-tour-tag {
-  padding: 1px 8px;
-  border-radius: var(--ww-r-pill);
-  background: var(--ww-surface-3);
-  color: var(--ww-text-muted);
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.ww-tour-photo-thumb {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  padding: 0;
-  border: 2px solid var(--ww-surface);
-  border-radius: var(--ww-r-sm);
-  background: var(--ww-surface-3) center / cover no-repeat;
-  box-shadow: var(--ww-shadow-sm);
-  cursor: pointer;
-  transition: transform var(--ww-t-fast);
-}
-
-.ww-tour-photo-thumb:hover {
-  transform: scale(1.06);
-}
-
-.ww-tour-photo-modal img {
-  display: block;
-  width: 100%;
-  max-height: 65vh;
-  object-fit: contain;
-  border-radius: var(--ww-r-md);
-  background: var(--ww-surface-2);
-}
-
-.ww-tour-photo-caption {
-  margin: 0 0 12px;
-  font-size: var(--ww-fs-sm);
-  color: var(--ww-text-muted);
-}
-
-/* Announcements */
-.ww-tour-announcements {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 480px;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  list-style: none;
-}
-
-.ww-tour-announcements li {
-  padding: 12px 14px;
-  border-radius: var(--ww-r-md);
-  border: 1px solid var(--ww-accent-100);
-  border-left: 4px solid var(--ww-accent);
-  background: var(--ww-accent-50);
-}
-
-.ww-tour-announcement-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--ww-fs-xs);
-  color: var(--ww-text-subtle);
-}
-
-.ww-tour-announcement-head strong {
-  color: var(--ww-text);
-  font-size: var(--ww-fs-sm);
-}
-
-.ww-tour-announcement-head .ww-cost-remove {
-  margin-left: auto;
-}
-
-.ww-tour-announcements p {
-  margin: 6px 0 0;
-  white-space: pre-line;
-  word-break: break-word;
-  font-size: var(--ww-fs-base);
-}
-
-/* Activities */
-.ww-tour-activities {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ww-tour-activities li {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 12px 14px;
-  border-radius: var(--ww-r-md);
-  border: 1px solid var(--ww-border);
-  background: var(--ww-surface);
-}
-
-.ww-tour-activity-time {
-  min-width: 76px;
-  padding: 3px 10px;
-  border-radius: var(--ww-r-pill);
-  background: var(--ww-btn);
-  color: var(--ww-on-btn);
-  font-size: var(--ww-fs-xs);
-  font-weight: 700;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.ww-tour-activity-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.ww-tour-activity-place {
-  color: var(--ww-primary);
-  font-size: var(--ww-fs-sm);
-}
-
-.ww-tour-activity-body p {
-  margin: 2px 0 0;
-  color: var(--ww-text-muted);
-  font-size: var(--ww-fs-sm);
-}
-
-@media (max-width: 860px) {
-  .ww-tour-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ww-tour-activity-form {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .ww-tour-activity-form > input:first-child,
-  .ww-tour-activity-form > button {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 560px) {
-  .ww-tour-card {
-    padding: 18px 16px;
-  }
-
-  .ww-tour-activity-form {
-    grid-template-columns: 1fr;
   }
 }

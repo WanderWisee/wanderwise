@@ -634,7 +634,7 @@ export default function TourDayPage() {
                   </div>
 
                   {/* My check-in */}
-                  {meeting && !editingMeeting && (
+                  {meeting && !editingMeeting && tour.canCheckIn !== false && (
                     <div className="ww-tour-checkin">
                       {me?.present && (
                         <p className="ww-tour-checked">

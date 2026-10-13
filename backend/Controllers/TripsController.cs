@@ -34,7 +34,10 @@ public class TripsController : ControllerBase
         if (trip.UserId == CurrentUserId) return trip;
 
         var isMember = await _db.TripMembers.AnyAsync(m => m.TripId == id && m.UserId == CurrentUserId);
-        return isMember ? trip : null;
+        if (isMember) return trip;
+
+        // Teachers can OPEN (never edit) trips of students in their classes.
+        return await PortalAccess.CanTeacherViewTripAsync(_db, CurrentUserId, id) ? trip : null;
     }
 
     // "owner", "editor" (crew allowed to edit) or "viewer" (crew, view only).
@@ -43,8 +46,9 @@ public class TripsController : ControllerBase
     {
         if (trip.UserId == CurrentUserId) return "owner";
         var member = await _db.TripMembers.FirstOrDefaultAsync(m => m.TripId == trip.Id && m.UserId == CurrentUserId);
-        if (member is null) return null;
-        return member.CanEdit ? "editor" : "viewer";
+        if (member is not null) return member.CanEdit ? "editor" : "viewer";
+        // Read-only teacher view (see GetAccessibleTripAsync).
+        return await PortalAccess.CanTeacherViewTripAsync(_db, CurrentUserId, trip.Id) ? "teacher" : null;
     }
 
     // Changing the trip (saving, adding crew, the invite link) is only for
@@ -60,6 +64,10 @@ public class TripsController : ControllerBase
     [HttpPost("/api/trips")]
     public async Task<IActionResult> CreateTrip([FromBody] SaveTripRequest request)
     {
+        // Teachers only review their students' trips; they don't make their own.
+        if (await PortalAccess.HasRoleAsync(_db, CurrentUserId, PortalAccess.RoleTeacher))
+            return Forbid();
+
         var trip = new Trip
         {
             UserId = CurrentUserId,
@@ -234,6 +242,7 @@ public class TripsController : ControllerBase
             TravelBuddiesCount = trip.TravelBuddiesCount,
             BudgetTotal = trip.BudgetTotal,
             MyRole = await GetMyRoleAsync(trip) ?? "viewer",
+            IsClassTrip = trip.ClassId != null,
         };
 
         response.Sections.Add(new SectionResponse
@@ -278,6 +287,8 @@ public class TripsController : ControllerBase
                 t.Destination,
                 t.StartDate,
                 t.EndDate,
+                // Used by Classes → hand in a trip (only your own trips).
+                IsOwner = t.UserId == CurrentUserId,
             })
             .ToListAsync();
 
@@ -463,6 +474,11 @@ public class TripsController : ControllerBase
 
         var member = await _db.TripMembers.FirstOrDefaultAsync(m => m.TripId == id && m.UserId == CurrentUserId);
         if (member is null) return NotFound();
+
+        // Class field trips are managed by the teacher (students are added
+        // and removed together with the class).
+        if (trip.ClassId != null)
+            return BadRequest(new { error = "This is a class field trip — ask your teacher to remove you." });
 
         _db.TripMembers.Remove(member);
         await _db.SaveChangesAsync();

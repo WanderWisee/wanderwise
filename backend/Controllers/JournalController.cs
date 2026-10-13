@@ -63,6 +63,8 @@ public class JournalController : ControllerBase
             .FirstOrDefaultAsync(j => j.Id == id);
 
         if (entry is null) return NotFound();
+        // Hidden by an admin: only the author can still open it.
+        if (entry.IsHidden && entry.UserId != CurrentUserId) return NotFound();
         return Ok(entry);
     }
 
@@ -74,7 +76,8 @@ public class JournalController : ControllerBase
     public async Task<IActionResult> GetFeed([FromQuery] string? q, [FromQuery] int limit = 50)
     {
         limit = Math.Clamp(limit, 1, 200);
-        var query = _db.JournalEntries.AsQueryable();
+        // Posts hidden by an admin (Admin → Journals) never show in Guides.
+        var query = _db.JournalEntries.Where(j => !j.IsHidden);
 
         if (!string.IsNullOrWhiteSpace(q))
         {

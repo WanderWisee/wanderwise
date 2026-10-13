@@ -53,6 +53,10 @@ public class TripResponse
     // What the person asking may do: "owner", "editor" or "viewer".
     // The Trip Plan Builder turns into view-only mode for "viewer".
     public string MyRole { get; set; } = "owner";
+    // "teacher" = a teacher of a student on this trip, viewing read-only.
+    // True when a teacher made this trip as a class field trip (students
+    // can't leave it on their own).
+    public bool IsClassTrip { get; set; }
     public List<SectionResponse> Sections { get; set; } = new();
 }
 

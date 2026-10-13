@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WanderWiseApi.Data;
+using WanderWiseApi.Controllers;
 using WanderWiseApi.Services;
+using WanderWiseApi.Models;
 
 // Load DB_*, JWT_SECRET, etc. from backend/.env (same convention as the
 // old Node.js backend).
@@ -40,12 +42,10 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 
 // Allows the React dev server (localhost:3000) to call this API.
-// localhost:8081 = the mobile app running as Expo web (`npx expo start --web`).
-// The native mobile app (Expo Go / APK) doesn't need CORS at all.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
-        policy.WithOrigins("http://localhost:3000", "http://localhost:8081")
+        policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -68,6 +68,58 @@ builder.Services.AddHostedService<WanderWiseApi.Controllers.TripReminderService>
 
 var app = builder.Build();
 
+
+// Built-in ADMIN account, from backend/.env (only the dev team knows it):
+//   ADMIN_EMAIL=admin@12345
+//   ADMIN_PASSWORD=yourpassword
+// Created on startup if missing; if it exists, it's kept an active admin
+// and its password follows .env. No sign-up needed for the admin.
+var seedAdminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL")?.Trim();
+var seedAdminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+if (!string.IsNullOrWhiteSpace(seedAdminEmail) && !string.IsNullOrWhiteSpace(seedAdminPassword))
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<WanderWiseDbContext>();
+        var admin = db.Users.FirstOrDefault(u => u.Email == seedAdminEmail);
+        if (admin is null)
+        {
+            db.Users.Add(new User
+            {
+                StudentNumber = "ADMIN",
+                Email = seedAdminEmail,
+                FirstName = "WanderWise",
+                LastName = "Admin",
+                DateOfBirth = new DateOnly(2000, 1, 1),
+                CellphoneNumber = "",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(seedAdminPassword),
+                Role = PortalAccess.RoleAdmin,
+                AccountStatus = PortalAccess.StatusActive,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            });
+        }
+        else
+        {
+            admin.Role = PortalAccess.RoleAdmin;
+            admin.AccountStatus = PortalAccess.StatusActive;
+            if (!BCrypt.Net.BCrypt.Verify(seedAdminPassword, admin.PasswordHash))
+            {
+                admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(seedAdminPassword);
+                admin.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        db.SaveChanges();
+        Console.WriteLine($"Admin account ready: {seedAdminEmail}");
+    }
+    catch (Exception ex)
+    {
+        // e.g. 3_roles_classes_admin.sql not run yet — the API still starts.
+        Console.WriteLine($"Admin account not created: {ex.Message}");
+    }
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -75,7 +127,52 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
+
+// Server errors are written to the activity log (Admin → Activity log),
+// so the admin can see what broke, when, and for whom.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        try
+        {
+            using var scope = context.RequestServices.CreateScope();
+            var logDb = scope.ServiceProvider.GetRequiredService<WanderWiseDbContext>();
+            int? userId = int.TryParse(context.User.FindFirst("sub")?.Value, out var uid) ? uid : null;
+            await ActivityLogger.LogAsync(logDb, userId, ActivityLogger.ServerError,
+                $"{context.Request.Method} {context.Request.Path}: {ex.GetType().Name}: {ex.Message}", context);
+        }
+        catch
+        {
+            // never hide the original error
+        }
+        throw;
+    }
+});
+
 app.UseAuthentication();
+
+// Deactivated accounts (Admin → Users) are logged out on their next
+// request, even if their login token hasn't expired yet.
+app.Use(async (context, next) =>
+{
+    if (int.TryParse(context.User.FindFirst("sub")?.Value, out var userId))
+    {
+        var db = context.RequestServices.GetRequiredService<WanderWiseDbContext>();
+        if (!await AccountGuard.IsActiveAsync(db, userId))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new { error = "account_inactive" });
+            return;
+        }
+    }
+    await next();
+});
+
 app.UseAuthorization();
 
 app.MapControllers();

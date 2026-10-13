@@ -29,11 +29,19 @@ public class WanderWiseDbContext : DbContext
     public DbSet<JournalEntryHotel> JournalEntryHotels => Set<JournalEntryHotel>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
     public DbSet<JournalComment> JournalComments => Set<JournalComment>();
-        // Tour Day (attendance, check-ins, announcements, activities)
+    // Tour Day (attendance, check-ins, announcements, activities)
     public DbSet<TripDaySetting> TripDaySettings => Set<TripDaySetting>();
     public DbSet<TripAttendance> TripAttendance => Set<TripAttendance>();
     public DbSet<TripAnnouncement> TripAnnouncements => Set<TripAnnouncement>();
-    public DbSet<TripActivity> TripActivities => Set<TripActivity>();    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public DbSet<TripActivity> TripActivities => Set<TripActivity>();
+    // Teacher portal + admin panel
+    public DbSet<SchoolClass> Classes => Set<SchoolClass>();
+    public DbSet<ClassMember> ClassMembers => Set<ClassMember>();
+    public DbSet<ClassAnnouncement> ClassAnnouncements => Set<ClassAnnouncement>();
+    public DbSet<ClassAssignment> ClassAssignments => Set<ClassAssignment>();
+    public DbSet<AssignmentSubmission> AssignmentSubmissions => Set<AssignmentSubmission>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.StudentNumber).IsUnique();
         modelBuilder.Entity<Trip>().HasIndex(t => t.ShareToken).IsUnique();

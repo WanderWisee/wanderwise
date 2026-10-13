@@ -23,6 +23,17 @@ public class JournalEntry
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
+    // Hidden by an admin (Admin → Journals). Hidden posts disappear from
+    // Guides and public profiles; the author still sees their own.
+    [Column("is_hidden")]
+    public bool IsHidden { get; set; }
+
+    [Column("hidden_reason")]
+    public string? HiddenReason { get; set; }
+
+    [Column("hidden_at")]
+    public DateTime? HiddenAt { get; set; }
+
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     public User? User { get; set; }

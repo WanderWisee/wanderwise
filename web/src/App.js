@@ -34,6 +34,16 @@ import JournalViewPage from './pages/journal/JournalViewPage';
 import JoinTripPage from "./pages/trip-plan-builder/JoinTripPage";
 import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
 import TourDayPage from "./pages/tour/TourDayPage";
+import TeacherRegisterPage from "./pages/auth/TeacherRegisterPage";
+import TeacherLoginPage from "./pages/auth/TeacherLoginPage";
+import { StudentOnly } from "./components/PortalHeader";
+import TeacherHomePage from "./pages/teacher/TeacherHomePage";
+import TeacherClassPage from "./pages/teacher/TeacherClassPage";
+import TeacherAssignmentPage from "./pages/teacher/TeacherAssignmentPage";
+import TeacherStudentPage from "./pages/teacher/TeacherStudentPage";
+import MyClassesPage from "./pages/classes/MyClassesPage";
+import ClassViewPage from "./pages/classes/ClassViewPage";
+import AdminPage from "./pages/admin/AdminPage";
 
 function App() {
   return (
@@ -53,32 +63,43 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/verify-otp" element={<VerifyResetOtpPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/trip-planning" element={<TripPlanningPage />} />
+          <Route path="/dashboard" element={<StudentOnly><DashboardPage /></StudentOnly>} />
+          <Route path="/trip-planning" element={<StudentOnly><TripPlanningPage /></StudentOnly>} />
           <Route path="/travel-tips" element={<TravelTipsPage />} />
           <Route path="/travel-tips/stories" element={<DestinationStoriesPage />} />
-          <Route path="/hotels" element={<HotelsPage />} />
+          <Route path="/hotels" element={<StudentOnly><HotelsPage /></StudentOnly>} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/guides/:destinationName" element={<TravelGuidePage />} />
-          <Route path="/hotels/results" element={<HotelSearchResultsPage />} />
+          <Route path="/hotels/results" element={<StudentOnly><HotelSearchResultsPage /></StudentOnly>} />
           <Route path="/trip-plan" element={<TripPlanBuilderPage />} />
-          <Route path="/trip-plan/invite" element={<InviteCrewPage />} />
-          <Route path="/budget/breakdown" element={<BudgetBreakdownPage />} />
-          <Route path="/budget/add-expense" element={<AddExpensePage />} />
-          <Route path="/directions" element={<DirectionsPage />} />
-          <Route path="/add-expense" element={<AddExpensePage />} />
-          <Route path="/breakdown" element={<BudgetBreakdownPage />} />
-          <Route path="/invite-crew" element={<InviteCrewPage />} />
+          <Route path="/trip-plan/invite" element={<StudentOnly><InviteCrewPage /></StudentOnly>} />
+          <Route path="/budget/breakdown" element={<StudentOnly><BudgetBreakdownPage /></StudentOnly>} />
+          <Route path="/budget/add-expense" element={<StudentOnly><AddExpensePage /></StudentOnly>} />
+          <Route path="/directions" element={<StudentOnly><DirectionsPage /></StudentOnly>} />
+          <Route path="/add-expense" element={<StudentOnly><AddExpensePage /></StudentOnly>} />
+          <Route path="/breakdown" element={<StudentOnly><BudgetBreakdownPage /></StudentOnly>} />
+          <Route path="/invite-crew" element={<StudentOnly><InviteCrewPage /></StudentOnly>} />
           <Route path="/travel-guide" element={<TravelGuidePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<StudentOnly><ProfilePage /></StudentOnly>} />
           <Route path="/profile/view/:userId" element={<PublicProfilePage />} />
-          <Route path="/journal/new" element={<JournalNewPostPage />} />
+          <Route path="/journal/new" element={<StudentOnly><JournalNewPostPage /></StudentOnly>} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/history" element={<StudentOnly><HistoryPage /></StudentOnly>} />
           <Route path="/journal/view/:id" element={<JournalViewPage />} />
-          <Route path="/trip-plan/join/:shareToken" element={<JoinTripPage />} />
+          <Route path="/trip-plan/join/:shareToken" element={<StudentOnly><JoinTripPage /></StudentOnly>} />
           <Route path="/trip-plan/shared/:shareToken" element={<SharedTripViewPage />} />
           <Route path="/trip-plan/tour" element={<TourDayPage />} />
+          {/* Teacher portal, student classes, admin panel.
+              <StudentOnly> pages send a teacher to /teacher instead. */}
+          <Route path="/teacher/login" element={<TeacherLoginPage />} />
+          <Route path="/register/teacher" element={<TeacherRegisterPage />} />
+          <Route path="/teacher" element={<TeacherHomePage />} />
+          <Route path="/teacher/class/:classId" element={<TeacherClassPage />} />
+          <Route path="/teacher/class/:classId/assignment/:assignmentId" element={<TeacherAssignmentPage />} />
+          <Route path="/teacher/class/:classId/student/:studentId" element={<TeacherStudentPage />} />
+          <Route path="/classes" element={<StudentOnly><MyClassesPage /></StudentOnly>} />
+          <Route path="/classes/:classId" element={<StudentOnly><ClassViewPage /></StudentOnly>} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </BrowserRouter>
     </AppDataProvider>

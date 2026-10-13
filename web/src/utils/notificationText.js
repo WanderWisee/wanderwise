@@ -49,6 +49,23 @@ export function notificationText(n, t, formatTime) {
       return `📢 ${d.actorName} ${t("notifTextAnnounced")} ${trip}: ${d.message}`;
     case "password_changed":
       return t("notifTextPasswordChanged");
+    // Teacher portal / admin panel
+    case "class_added":
+      return `${d.actorName} ${t("notifTextClassAdded")} ${d.className}.`;
+    case "class_announcement":
+      return `📢 ${d.actorName} (${d.className}): ${d.message}`;
+    case "assignment_posted":
+      return `${t("notifTextAssignmentPosted")} ${d.className}: ${d.title}`;
+    case "assignment_submitted":
+      return `${d.actorName} ${t("notifTextAssignmentSubmitted")} "${d.title}" (${d.className}).`;
+    case "assignment_graded":
+      return `${d.actorName} ${t("notifTextAssignmentGraded")} "${d.title}": ${d.score}/${d.points}`;
+    case "teacher_pending":
+      return `${d.actorName} ${t("notifTextTeacherPending")}`;
+    case "teacher_approved":
+      return t("notifTextTeacherApproved");
+    case "journal_hidden":
+      return `${t("notifTextJournalHidden")} "${d.title}"${d.reason ? `: ${d.reason}` : "."}`;
     default:
       return n.message || "";
   }
@@ -85,6 +102,20 @@ export function notificationIcon(type) {
       return "📢";
     case "password_changed":
       return "🔒";
+    case "class_added":
+    case "teacher_approved":
+      return "🎓";
+    case "class_announcement":
+      return "📢";
+    case "assignment_posted":
+    case "assignment_submitted":
+      return "📝";
+    case "assignment_graded":
+      return "✅";
+    case "teacher_pending":
+      return "🧑‍🏫";
+    case "journal_hidden":
+      return "🚫";
     default:
       return "🔔";
   }

@@ -43,8 +43,12 @@ public class TourController : ControllerBase
         if (trip.UserId == CurrentUserId) return (trip, "owner");
 
         var member = await _db.TripMembers.FirstOrDefaultAsync(m => m.TripId == tripId && m.UserId == CurrentUserId);
-        if (member is null) return (null, null);
-        return (trip, member.CanEdit ? "editor" : "viewer");
+        if (member is not null) return (trip, member.CanEdit ? "editor" : "viewer");
+
+        // A teacher of a student on this trip: read-only, but may see
+        // everyone's check-in photos and locations.
+        if (await PortalAccess.CanTeacherViewTripAsync(_db, CurrentUserId, tripId)) return (trip, "teacher");
+        return (null, null);
     }
 
     private static bool IsManager(string? role) => role == "owner" || role == "editor";
@@ -90,7 +94,9 @@ public class TourController : ControllerBase
             .Join(_db.Users, m => m.UserId, u => u.Id, (m, u) => u)
             .ToListAsync();
         var people = new List<User>();
-        if (owner != null) people.Add(owner);
+        // On a class field trip the owner is the teacher — the attendance
+        // list is just the students.
+        if (owner != null && trip.ClassId == null) people.Add(owner);
         people.AddRange(crew.Where(u => u.Id != trip.UserId));
 
         var attendance = await _db.TripAttendance
@@ -102,7 +108,7 @@ public class TourController : ControllerBase
             var a = attendance.FirstOrDefault(x => x.UserId == u.Id);
             // Photos/locations are shown to managers, and to each student
             // for their own check-in only.
-            var canSeeProof = manager || u.Id == CurrentUserId;
+            var canSeeProof = manager || role == "teacher" || u.Id == CurrentUserId;
             return new
             {
                 userId = u.Id,
@@ -154,6 +160,9 @@ public class TourController : ControllerBase
             date = day.Value.ToString("yyyy-MM-dd"),
             myRole = role,
             canManage = manager,
+            // Teachers only watch; the teacher who owns a field trip runs it
+            // but doesn't check in themselves.
+            canCheckIn = role != "teacher" && !(trip.ClassId != null && role == "owner"),
             meetingPoint = setting == null ? null : new
             {
                 name = setting.MeetingPlaceName,
@@ -241,8 +250,10 @@ public class TourController : ControllerBase
     [HttpPost("/api/trips/{tripId:int}/tour/checkin")]
     public async Task<IActionResult> CheckIn(int tripId, [FromBody] CheckInRequest request)
     {
-        var (trip, _) = await LoadTripAsync(tripId);
+        var (trip, myRole) = await LoadTripAsync(tripId);
         if (trip is null) return NotFound();
+        // Teachers only watch; the teacher who owns a class field trip runs it.
+        if (myRole == "teacher" || (trip.ClassId != null && myRole == "owner")) return Forbid();
         var day = ParseDate(request.Date);
         if (day is null) return BadRequest(new { error = "bad_date" });
 

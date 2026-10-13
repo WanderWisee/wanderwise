@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
@@ -47,6 +47,35 @@ export default function TravelGuidePage() {
   // (e.g. someone opens this page directly without clicking a card).
   const destination = location.state?.destination || "Boracay Islands";
 
+  // Guide sections written by the admin (Admin → Destinations & guides).
+  // Until one exists for this destination, the sample sections below show.
+  const [dbSections, setDbSections] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const lines = (text) => (text || "").split("\n").map((x) => x.trim()).filter(Boolean);
+    fetch(`/api/guides?destination=${encodeURIComponent(destination)}`)
+      .then((resp) => (resp.ok ? resp.json() : []))
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        setDbSections(
+          rows.map((g) => ({
+            pinLabel: g.pinLabel || g.subtitle || destination,
+            subtitle: g.subtitle || "",
+            description: g.description || "",
+            pros: lines(g.pros),
+            cons: lines(g.cons),
+            image: g.imageUrl || "",
+            hotels: (g.hotels || []).map((h) => ({ name: h.name, description: h.description || "" })),
+          }))
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [destination]);
+  const sections = dbSections || guideSections;
+
   return (
     <div className="ww-guide-page">
       <header className="ww-navbar ww-navbar-compact">
@@ -70,7 +99,7 @@ export default function TravelGuidePage() {
       <main className="ww-guide-main">
         <h1 className="ww-guide-title">{destination} {t("travelJourneySuffix")}</h1>
 
-        {guideSections.map((section) => (
+        {sections.map((section) => (
           <section className="ww-guide-section" key={section.pinLabel}>
             <div className="ww-guide-intro">
               <div className="ww-guide-text">
@@ -78,20 +107,28 @@ export default function TravelGuidePage() {
                 <p className="ww-guide-subtitle">{section.subtitle}</p>
                 <p className="ww-guide-description">{section.description}</p>
 
-                <p className="ww-guide-list-title">{t("prosOfStayingIn")} {section.pinLabel}:</p>
-                <ul className="ww-guide-list">
-                  {section.pros.map((p) => <li key={p}>{p}</li>)}
-                </ul>
+                {section.pros.length > 0 && (
+                  <>
+                    <p className="ww-guide-list-title">{t("prosOfStayingIn")} {section.pinLabel}:</p>
+                    <ul className="ww-guide-list">
+                      {section.pros.map((p) => <li key={p}>{p}</li>)}
+                    </ul>
+                  </>
+                )}
 
-                <p className="ww-guide-list-title">{t("consOfStayingIn")} {section.pinLabel}:</p>
-                <ul className="ww-guide-list">
-                  {section.cons.map((c) => <li key={c}>{c}</li>)}
-                </ul>
+                {section.cons.length > 0 && (
+                  <>
+                    <p className="ww-guide-list-title">{t("consOfStayingIn")} {section.pinLabel}:</p>
+                    <ul className="ww-guide-list">
+                      {section.cons.map((c) => <li key={c}>{c}</li>)}
+                    </ul>
+                  </>
+                )}
               </div>
-              <img src={section.image} alt={section.pinLabel} className="ww-guide-image" />
+              {section.image && <img src={section.image} alt={section.pinLabel} className="ww-guide-image" />}
             </div>
 
-            <h3 className="ww-guide-hotel-heading">{t("hotelOption")}</h3>
+            {section.hotels.length > 0 && <h3 className="ww-guide-hotel-heading">{t("hotelOption")}</h3>}
             <div className="ww-guide-hotels-grid">
               {section.hotels.map((h) => (
                 <div className="ww-guide-hotel-card" key={h.name}>

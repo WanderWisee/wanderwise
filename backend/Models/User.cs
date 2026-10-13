@@ -53,6 +53,16 @@ public class User
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
+    // "student" (default), "teacher" or "admin". Teachers keep their
+    // employee ID in StudentNumber.
+    [Column("role")]
+    public string Role { get; set; } = "student";
+
+    // "active", "pending" (teacher waiting for admin approval) or
+    // "deactivated" (blocked by an admin). Only active accounts can log in.
+    [Column("account_status")]
+    public string AccountStatus { get; set; } = "active";
+
     public ICollection<Trip> Trips { get; set; } = new List<Trip>();
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public ICollection<JournalEntry> JournalEntries { get; set; } = new List<JournalEntry>();

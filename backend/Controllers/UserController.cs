@@ -34,6 +34,7 @@ public class UsersController : ControllerBase
 
         var results = await _db.Users
             .Where(u => u.Id != CurrentUserId)
+            .Where(u => u.AccountStatus == "active")
             .Where(u =>
                 (u.FirstName != null && u.FirstName.Contains(term)) ||
                 (u.LastName != null && u.LastName.Contains(term)))
@@ -66,7 +67,7 @@ public class UsersController : ControllerBase
             .ToListAsync();
 
         var journalEntries = await _db.JournalEntries
-            .Where(j => j.UserId == id)
+            .Where(j => j.UserId == id && !j.IsHidden)
             .OrderByDescending(j => j.CreatedAt)
             .Select(j => new { id = j.Id, title = j.Title, coverImage = j.CoverImage })
             .ToListAsync();

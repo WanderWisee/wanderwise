@@ -447,7 +447,10 @@ export default function TripPlanBuilderPage() {
   // viewers: they can open the trip but not change it, until the owner
   // allows editing on the Add Crew page.
   const [myRole, setMyRole] = useState("owner");
-  const canEdit = myRole !== "viewer";
+  // "teacher" = a teacher checking a student's trip (read-only).
+  const canEdit = myRole !== "viewer" && myRole !== "teacher";
+  // Class field trip (made by a teacher): students can't leave it.
+  const [isClassTrip, setIsClassTrip] = useState(false);
   const canEditRef = useRef(true);
   canEditRef.current = canEdit;
   const saveStatusLabel =
@@ -571,6 +574,7 @@ export default function TripPlanBuilderPage() {
             const data = await resp.json();
             setTripId(data.id);
             setMyRole(data.myRole || "owner");
+            setIsClassTrip(!!data.isClassTrip);
             setDestination(data.destination || "");
             setStartDate(data.startDate || "");
             setEndDate(data.endDate || "");
@@ -1941,7 +1945,7 @@ export default function TripPlanBuilderPage() {
 
           {!canEdit && (
             <div className="ww-hotels-trip-banner" style={{ margin: "0 0 16px" }}>
-              <span>👁 {t("viewOnlyNotice")}</span>
+              <span>👁 {myRole === "teacher" ? t("teacherViewNotice") : t("viewOnlyNotice")}</span>
             </div>
           )}
 
@@ -1953,6 +1957,9 @@ export default function TripPlanBuilderPage() {
             />
           </div>
 
+          {/* Teachers only review the trip — no booking or crew changes. */}
+          {myRole !== "teacher" && (
+          <>
           <button
             className="ww-browse-btn"
             onClick={() =>
@@ -1973,8 +1980,9 @@ export default function TripPlanBuilderPage() {
           >
             👥 {t("addCrew")}
           </button>
+          </>
+          )}
 
-          
           {tripId && startDate && endDate && (
             <button
               className="ww-trip-plan-btn"
@@ -1985,7 +1993,7 @@ export default function TripPlanBuilderPage() {
             </button>
           )}
 
-          {myRole !== "owner" && (
+          {myRole !== "owner" && myRole !== "teacher" && !isClassTrip && (
             <button
               type="button"
               className="ww-booking-cancel"
@@ -2357,7 +2365,6 @@ export default function TripPlanBuilderPage() {
                           🧭 {t("tourDayLink")}
                         </button>
                       )}
-
                       {routablePlaces >= 3 && (
                         <button
                           type="button"

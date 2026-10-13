@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { translations } from "../i18n/translations";
+import { portalTranslations } from "../i18n/portalTranslations";
 
 const LanguageContext = createContext(null);
 
@@ -29,7 +30,13 @@ export function LanguageProvider({ children }) {
   // breaks the page — it just shows the untranslated key as a reminder
   // to add it.
   const t = (key) => {
-    return translations[language]?.[key] ?? translations.en?.[key] ?? key;
+    return (
+      translations[language]?.[key] ??
+      portalTranslations[language]?.[key] ??
+      translations.en?.[key] ??
+      portalTranslations.en?.[key] ??
+      key
+    );
   };
 
   return (

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
+import { homeForRole } from "../../utils/portal";
 import "../../App.css";
 
 export default function LoginPage() {
@@ -17,10 +18,11 @@ export default function LoginPage() {
   // SharedTripViewPage saved the invite's shareToken before redirecting.
   // Once logged in, finish that join automatically instead of sending
   // them to the plain Dashboard and making them re-find the link.
-  const continuePendingInvite = async () => {
+  const continuePendingInvite = async (role) => {
     const pendingToken = localStorage.getItem("wanderwise_pending_invite_token");
     if (!pendingToken) {
-      navigate("/dashboard");
+      // Teachers open the Teacher portal, admins the Admin panel.
+      navigate(homeForRole(role));
       return;
     }
     localStorage.removeItem("wanderwise_pending_invite_token");
@@ -52,11 +54,11 @@ export default function LoginPage() {
       const resp = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password, portal: "student" }),
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || t("loginErrFailed"));
+        setError(data?.code === "use_teacher_login" ? t("useTeacherLogin") : data?.error || t("loginErrFailed"));
         return;
       }
       if (data?.token) {
@@ -65,7 +67,7 @@ export default function LoginPage() {
         // showing the previous account's until the page is refreshed.
         notifyAuthChanged();
       }
-      await continuePendingInvite();
+      await continuePendingInvite(data?.role);
     } catch (err) {
       setError(t("networkError"));
     } finally {
@@ -139,6 +141,12 @@ export default function LoginPage() {
               {t("registerAccount")}
             </a>
           </div>
+          <p className="ww-teacher-signup-link">
+            {t("areYouTeacher")}{" "}
+            <a href="/teacher/login" className="ww-bottom-link">
+              {t("teacherLoginHere")}
+            </a>
+          </p>
         </div>
       </main>
     </div>

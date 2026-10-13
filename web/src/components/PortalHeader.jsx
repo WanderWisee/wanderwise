@@ -98,3 +98,18 @@ export function StudentOnly({ children, allowTeacher = false }) {
   if (profileRole === "admin") return <Navigate to="/admin" replace />;
   return children;
 }
+
+// Pages that students, teachers (and the admin) share — Guides, a
+// student's trip / Tour Day, journals, Notifications, Settings. For a
+// teacher or admin, the page's own (student) top bar is swapped for the
+// portal top bar, so the navigation and design stay the same everywhere.
+export function StaffShell({ children }) {
+  const { profileRole } = useAppData();
+  if (profileRole !== "teacher" && profileRole !== "admin") return children;
+  return (
+    <div className="ww-staff-shell">
+      <PortalHeader />
+      {children}
+    </div>
+  );
+}

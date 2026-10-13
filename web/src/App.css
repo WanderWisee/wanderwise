@@ -7932,3 +7932,14 @@ html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:l
     scroll-behavior: auto !important;
   }
 }
+
+/* Shared pages opened by a teacher or the admin: the portal top bar
+   replaces the page's own student top bar (see StaffShell). */
+.ww-staff-shell {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+}
+
+.ww-staff-shell header.ww-navbar:not(.ww-portal-nav) {
+  display: none;
+}

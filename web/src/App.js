@@ -37,7 +37,7 @@ import TourDayPage from "./pages/tour/TourDayPage";
 import TeacherRegisterPage from "./pages/auth/TeacherRegisterPage";
 import TeacherLoginPage from "./pages/auth/TeacherLoginPage";
 import AdminLoginPage from "./pages/auth/AdminLoginPage";
-import { StudentOnly } from "./components/PortalHeader";
+import { StudentOnly, StaffShell } from "./components/PortalHeader";
 import TeacherHomePage from "./pages/teacher/TeacherHomePage";
 import TeacherClassPage from "./pages/teacher/TeacherClassPage";
 import TeacherStudentPage from "./pages/teacher/TeacherStudentPage";
@@ -65,11 +65,11 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/dashboard" element={<StudentOnly><DashboardPage /></StudentOnly>} />
           <Route path="/trip-planning" element={<StudentOnly><TripPlanningPage /></StudentOnly>} />
-          <Route path="/travel-tips" element={<StudentOnly allowTeacher><TravelTipsPage /></StudentOnly>} />
-          <Route path="/travel-tips/stories" element={<StudentOnly allowTeacher><DestinationStoriesPage /></StudentOnly>} />
+          <Route path="/travel-tips" element={<StudentOnly allowTeacher><StaffShell><TravelTipsPage /></StaffShell></StudentOnly>} />
+          <Route path="/travel-tips/stories" element={<StudentOnly allowTeacher><StaffShell><DestinationStoriesPage /></StaffShell></StudentOnly>} />
           <Route path="/hotels" element={<StudentOnly><HotelsPage /></StudentOnly>} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/guides/:destinationName" element={<StudentOnly allowTeacher><TravelGuidePage /></StudentOnly>} />
+          <Route path="/notifications" element={<StaffShell><NotificationsPage /></StaffShell>} />
+          <Route path="/guides/:destinationName" element={<StudentOnly allowTeacher><StaffShell><TravelGuidePage /></StaffShell></StudentOnly>} />
           <Route path="/hotels/results" element={<StudentOnly><HotelSearchResultsPage /></StudentOnly>} />
           <Route path="/trip-plan" element={<TripPlanBuilderPage />} />
           <Route path="/trip-plan/invite" element={<StudentOnly><InviteCrewPage /></StudentOnly>} />
@@ -79,16 +79,16 @@ function App() {
           <Route path="/add-expense" element={<StudentOnly><AddExpensePage /></StudentOnly>} />
           <Route path="/breakdown" element={<StudentOnly><BudgetBreakdownPage /></StudentOnly>} />
           <Route path="/invite-crew" element={<StudentOnly><InviteCrewPage /></StudentOnly>} />
-          <Route path="/travel-guide" element={<StudentOnly allowTeacher><TravelGuidePage /></StudentOnly>} />
+          <Route path="/travel-guide" element={<StudentOnly allowTeacher><StaffShell><TravelGuidePage /></StaffShell></StudentOnly>} />
           <Route path="/profile" element={<StudentOnly><ProfilePage /></StudentOnly>} />
-          <Route path="/profile/view/:userId" element={<PublicProfilePage />} />
+          <Route path="/profile/view/:userId" element={<StaffShell><PublicProfilePage /></StaffShell>} />
           <Route path="/journal/new" element={<StudentOnly><JournalNewPostPage /></StudentOnly>} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<StaffShell><SettingsPage /></StaffShell>} />
           <Route path="/history" element={<StudentOnly><HistoryPage /></StudentOnly>} />
-          <Route path="/journal/view/:id" element={<JournalViewPage />} />
+          <Route path="/journal/view/:id" element={<StaffShell><JournalViewPage /></StaffShell>} />
           <Route path="/trip-plan/join/:shareToken" element={<StudentOnly><JoinTripPage /></StudentOnly>} />
           <Route path="/trip-plan/shared/:shareToken" element={<SharedTripViewPage />} />
-          <Route path="/trip-plan/tour" element={<TourDayPage />} />
+          <Route path="/trip-plan/tour" element={<StaffShell><TourDayPage /></StaffShell>} />
           {/* Teacher portal, student classes, admin panel.
               <StudentOnly> pages send a teacher to /teacher instead. */}
           <Route path="/teacher/login" element={<TeacherLoginPage />} />

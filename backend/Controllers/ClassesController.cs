@@ -386,6 +386,139 @@ public class ClassesController : ControllerBase
         });
     }
 
+    // ================= TEACHER: class summary =================
+
+    // How the whole class is doing at a glance: who has a trip, who checked
+    // in on each tour day, who has written a journal. The same rows feed the
+    // CSV exports (roster and attendance) on the teacher's Summary tab.
+    [HttpGet("/api/teacher/classes/{classId:int}/summary")]
+    public async Task<IActionResult> GetSummary(int classId)
+    {
+        var cls = await LoadMyClassAsTeacherAsync(classId);
+        if (cls is null) return NotFound();
+
+        var students = await _db.ClassMembers
+            .Where(m => m.ClassId == classId)
+            .Join(_db.Users, m => m.StudentId, u => u.Id, (m, u) => u)
+            .OrderBy(u => u.LastName).ThenBy(u => u.FirstName)
+            .ToListAsync();
+        var ids = students.Select(u => u.Id).ToList();
+
+        // Which trips each student is on (as the owner or as crew).
+        var owned = await _db.Trips.Where(t => ids.Contains(t.UserId))
+            .Select(t => new { t.Id, t.UserId }).ToListAsync();
+        var crew = await _db.TripMembers.Where(m => ids.Contains(m.UserId))
+            .Select(m => new { Id = m.TripId, m.UserId }).ToListAsync();
+        var onTrip = owned.Concat(crew).Distinct().ToList();
+        var tripIds = onTrip.Select(x => x.Id).Distinct().ToList();
+
+        var trips = await _db.Trips.Where(t => tripIds.Contains(t.Id))
+            .Select(t => new { t.Id, t.Title, t.Destination, t.ClassId }).ToListAsync();
+
+        var journals = await _db.JournalEntries.Where(j => ids.Contains(j.UserId))
+            .GroupBy(j => j.UserId)
+            .Select(g => new { userId = g.Key, count = g.Count(), last = g.Max(j => j.CreatedAt) })
+            .ToListAsync();
+
+        // No photos here — the summary only needs who/when/how far.
+        var attendance = await _db.TripAttendance
+            .Where(a => tripIds.Contains(a.TripId) && ids.Contains(a.UserId))
+            .Select(a => new { a.TripId, a.DayDate, a.UserId, a.Present, a.CheckedInAt, a.DistanceMeters })
+            .ToListAsync();
+
+        var daySettings = await _db.TripDaySettings.Where(d => tripIds.Contains(d.TripId))
+            .Select(d => new { d.TripId, d.DayDate, d.MeetingPlaceName })
+            .ToListAsync();
+
+        // A tour day = a day with a meeting point set, or with any check-in.
+        var days = daySettings.Select(d => (d.TripId, d.DayDate))
+            .Concat(attendance.Select(a => (a.TripId, a.DayDate)))
+            .Distinct()
+            .OrderByDescending(d => d.DayDate).ThenBy(d => d.TripId)
+            .ToList();
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8)); // Philippine time
+
+        // One row per tour day per class student who is on that trip.
+        var rows = days.SelectMany(d =>
+        {
+            var trip = trips.FirstOrDefault(t => t.Id == d.TripId);
+            return onTrip.Where(o => o.Id == d.TripId).Select(o => o.UserId).Distinct()
+                .Select(uid =>
+                {
+                    var s = students.First(u => u.Id == uid);
+                    var a = attendance.FirstOrDefault(x => x.TripId == d.TripId && x.DayDate == d.DayDate && x.UserId == uid);
+                    var present = a != null && a.Present;
+                    return new
+                    {
+                        tripId = d.TripId,
+                        tripTitle = trip?.Title ?? trip?.Destination,
+                        date = d.DayDate.ToString("yyyy-MM-dd"),
+                        upcoming = d.DayDate > today,
+                        userId = uid,
+                        firstName = s.FirstName,
+                        lastName = s.LastName,
+                        studentNumber = s.StudentNumber,
+                        present,
+                        checkedInAt = present ? a!.CheckedInAt : null,
+                        distanceMeters = present ? a!.DistanceMeters : null,
+                        markedManually = present && a!.CheckedInAt == null,
+                    };
+                });
+        }).ToList();
+
+        var tourDays = days.Select(d =>
+        {
+            var trip = trips.FirstOrDefault(t => t.Id == d.TripId);
+            var date = d.DayDate.ToString("yyyy-MM-dd");
+            var dayRows = rows.Where(r => r.tripId == d.TripId && r.date == date).ToList();
+            return new
+            {
+                tripId = d.TripId,
+                tripTitle = trip?.Title ?? trip?.Destination,
+                destination = trip?.Destination,
+                isClassTrip = trip?.ClassId != null,
+                date,
+                upcoming = d.DayDate > today,
+                meetingPlace = daySettings.FirstOrDefault(x => x.TripId == d.TripId && x.DayDate == d.DayDate)?.MeetingPlaceName,
+                expected = dayRows.Count,
+                present = dayRows.Count(r => r.present),
+                absentIds = dayRows.Where(r => !r.present).Select(r => r.userId).ToList(),
+            };
+        }).ToList();
+
+        var studentRows = students.Select(u =>
+        {
+            var j = journals.FirstOrDefault(x => x.userId == u.Id);
+            var myRows = rows.Where(r => r.userId == u.Id && !r.upcoming).ToList();
+            return new
+            {
+                userId = u.Id,
+                firstName = u.FirstName,
+                lastName = u.LastName,
+                studentNumber = u.StudentNumber,
+                email = u.Email,
+                avatarUrl = u.AvatarUrl,
+                tripsCount = onTrip.Where(o => o.UserId == u.Id).Select(o => o.Id).Distinct().Count(),
+                tourDaysSoFar = myRows.Count,
+                presentDays = myRows.Count(r => r.present),
+                missedDays = myRows.Count(r => !r.present),
+                lastCheckInAt = myRows.Where(r => r.present).Max(r => r.checkedInAt),
+                journalsCount = j?.count ?? 0,
+                lastJournalAt = j?.last,
+            };
+        }).ToList();
+
+        return Ok(new
+        {
+            classId,
+            className = ClassLabel(cls),
+            students = studentRows,
+            tourDays,
+            attendance = rows,
+        });
+    }
+
     // ================= Announcements =================
 
     [HttpGet("/api/classes/{classId:int}/announcements")]

@@ -7405,6 +7405,78 @@ html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:l
   font-weight: 700;
 }
 
+/* Shared pages opened by a teacher or the admin: the portal top bar
+   replaces the page's own student top bar (see StaffShell). */
+.ww-staff-shell {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+}
+
+.ww-staff-shell header.ww-navbar:not(.ww-portal-nav) {
+  display: none;
+}
+
+/* ---- Class summary (teacher) ---- */
+.ww-portal-day-present {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 170px;
+}
+
+.ww-portal-day-present strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-day-caret {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+}
+
+.ww-portal-table tr.ww-portal-day-detail td {
+  background: var(--ww-surface-2);
+}
+
+.ww-portal-day-detail td {
+  line-height: 2.2;
+}
+
+.ww-portal-day-detail .ww-portal-muted {
+  margin-right: 8px;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-name-chip {
+  margin: 0 6px 0 0;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ww-portal-name-chip:hover {
+  text-decoration: underline;
+}
+
+.ww-portal-row-actions .ww-portal-badge + .ww-portal-badge {
+  margin-left: 0;
+}
+
+.ww-portal-table td .ww-portal-badge {
+  margin-left: 8px;
+}
+
+@media (max-width: 600px) {
+  .ww-portal-export-actions {
+    width: 100%;
+  }
+
+  .ww-portal-export-actions > button {
+    flex: 1 1 0;
+    white-space: nowrap;
+  }
+}
+
 /* ---------------------------------------------------------------------
    18. RESPONSIVE RULES
    Laptop ≤1024 · Tablet ≤860 · Mobile ≤560
@@ -7931,15 +8003,4 @@ html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:l
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* Shared pages opened by a teacher or the admin: the portal top bar
-   replaces the page's own student top bar (see StaffShell). */
-.ww-staff-shell {
-  min-height: 100vh;
-  background-color: var(--ww-bg);
-}
-
-.ww-staff-shell header.ww-navbar:not(.ww-portal-nav) {
-  display: none;
 }

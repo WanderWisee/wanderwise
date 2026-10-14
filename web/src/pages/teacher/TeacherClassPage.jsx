@@ -5,11 +5,13 @@ import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
 import { api, fullName, initials, toLocalDate } from "../../utils/portal";
+import ClassSummaryTab from "./ClassSummaryTab";
 import "../../App.css";
 
 // One class in the Teacher portal ("viewing only"):
-// Students (→ each student's itinerary, attendance, journals) · Announcements
-const TABS = ["students", "announcements"];
+// Summary (class at a glance + CSV export) · Students (→ each student's
+// itinerary, attendance, journals) · Announcements
+const TABS = ["summary", "students", "announcements"];
 
 export default function TeacherClassPage() {
   return (
@@ -28,7 +30,7 @@ function TeacherClass() {
   const { t } = useLanguage();
   const { confirm } = useDialog();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "students";
+  const tab = TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "summary";
 
   const [cls, setCls] = useState(null);
   const [notFound, setNotFound] = useState(false);
@@ -48,7 +50,7 @@ function TeacherClass() {
     loadClass();
   }, [loadClass]);
 
-  const setTab = (next) => setSearchParams(next === "students" ? {} : { tab: next }, { replace: true });
+  const setTab = (next) => setSearchParams(next === "summary" ? {} : { tab: next }, { replace: true });
 
   const saveClass = async (e) => {
     e.preventDefault();
@@ -148,6 +150,7 @@ function TeacherClass() {
         ))}
       </div>
 
+      {tab === "summary" && <ClassSummaryTab classId={classId} className={cls.name} />}
       {tab === "students" && <StudentsTab cls={cls} reload={loadClass} />}
       {tab === "announcements" && <AnnouncementsTab classId={classId} canPost />}
     </main>

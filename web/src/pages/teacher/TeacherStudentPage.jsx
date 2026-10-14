@@ -59,7 +59,10 @@ function StudentDetail() {
   );
   const mapPoints = useMemo(() => checkInPoints.map((a) => [a.latitude, a.longitude]), [checkInPoints]);
 
-  const back = () => navigate(`/teacher/class/${classId}`);
+  // Back to wherever they came from (Summary or Students tab); if the page
+  // was opened directly, go to the class's student list.
+  const back = () =>
+    window.history.state?.idx > 0 ? navigate(-1) : navigate(`/teacher/class/${classId}?tab=students`);
 
   if (notFound) {
     return (

@@ -277,6 +277,17 @@ public class ClassesController : ControllerBase
         if (member is null) return NotFound();
         _db.ClassMembers.Remove(member);
         await _db.SaveChangesAsync();
+
+        // Let the student know they're no longer in the class.
+        var teacher = await _db.Users.FindAsync(CurrentUserId);
+        var teacherName = NotificationHelper.FullName(teacher);
+        await NotificationHelper.CreateAsync(
+            _db, studentId, NotificationHelper.ClassRemoved,
+            $"{teacherName} removed you from the class {ClassLabel(cls)}.",
+            "/classes",
+            new { actorName = teacherName, className = ClassLabel(cls) },
+            $"class_removed:{cls.Id}:{studentId}:{DateTime.UtcNow:yyyyMMddHHmmss}");
+
         return NoContent();
     }
 
@@ -483,6 +494,18 @@ public class ClassesController : ControllerBase
         var cls = await _db.Classes.FirstOrDefaultAsync(c => c.JoinCode == code);
         if (cls is null) return NotFound(new { error = "bad_code" });
 
-        return await AddStudentToClassAsync(cls, me);
+        var result = await AddStudentToClassAsync(cls, me);
+        if (result is OkObjectResult)
+        {
+            // Let the teacher know who joined.
+            var studentName = NotificationHelper.FullName(me);
+            await NotificationHelper.CreateAsync(
+                _db, cls.TeacherId, NotificationHelper.StudentJoined,
+                $"{studentName} joined your class {ClassLabel(cls)}.",
+                $"/teacher/class/{cls.Id}",
+                new { actorName = studentName, className = ClassLabel(cls) },
+                $"student_joined:{cls.Id}:{me.Id}");
+        }
+        return result;
     }
 }

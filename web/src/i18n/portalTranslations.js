@@ -239,6 +239,8 @@ export const portalTranslations = {
 
     // ===== Notifications =====
     notifTextClassAdded: "added you to the class",
+    notifTextStudentJoined: "joined your class",
+    notifTextClassRemoved: "removed you from the class",
     notifTextJournalHidden: "An admin hid your journal post",
   },
 
@@ -479,6 +481,8 @@ export const portalTranslations = {
 
     // ===== Notifications =====
     notifTextClassAdded: "ay nagdagdag sa iyo sa klaseng",
+    notifTextStudentJoined: "ay sumali sa klase mong",
+    notifTextClassRemoved: "ay nag-alis sa iyo sa klaseng",
     notifTextJournalHidden: "Itinago ng admin ang journal post mo",
   },
 };

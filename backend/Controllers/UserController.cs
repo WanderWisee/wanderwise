@@ -35,6 +35,7 @@ public class UsersController : ControllerBase
         var results = await _db.Users
             .Where(u => u.Id != CurrentUserId)
             .Where(u => u.AccountStatus == "active")
+            .Where(u => u.Role == "student")
             .Where(u =>
                 (u.FirstName != null && u.FirstName.Contains(term)) ||
                 (u.LastName != null && u.LastName.Contains(term)))

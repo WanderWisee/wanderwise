@@ -36,6 +36,10 @@ public static class NotificationHelper
     // Teacher portal — always sent (school work)
     public const string ClassAdded = "class_added";
     public const string ClassAnnouncement = "class_announcement";
+    // To the teacher: a student joined the class with the join code.
+    public const string StudentJoined = "student_joined";
+    // To the student: the teacher removed them from a class.
+    public const string ClassRemoved = "class_removed";
     // Admin panel — always sent
     public const string TeacherPending = "teacher_pending";
     public const string TeacherApproved = "teacher_approved";
@@ -53,7 +57,7 @@ public static class NotificationHelper
             Comment => s.NotifComments,
             TripUpdated or ExpenseAdded or BookingAdded or BudgetWarning or BudgetOver => s.NotifTripUpdates,
             PasswordChanged or Announcement => true,
-            ClassAdded or ClassAnnouncement => true,
+            ClassAdded or ClassAnnouncement or StudentJoined or ClassRemoved => true,
             TeacherPending or TeacherApproved or JournalHidden => true,
             _ => true,
         };

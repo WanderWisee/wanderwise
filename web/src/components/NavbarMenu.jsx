@@ -69,8 +69,9 @@ export default function NavbarMenu() {
               {t("history")}
             </p>
           )}
-          {/* For the admin, Settings is just the language — no need for both. */}
-          {profileRole !== "admin" && (
+          {/* Students only — for teachers and the admin the language is
+              right in Settings, so no need for both. */}
+          {profileRole === "student" && (
             <p
               className="ww-menu-item"
               onClick={() => goTo("/settings", { section: "preferences" })}

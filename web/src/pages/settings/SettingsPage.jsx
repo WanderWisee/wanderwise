@@ -36,6 +36,9 @@ export default function SettingsPage() {
   // The admin only gets Preferences (language) — no student profile and no
   // notification settings.
   const isAdmin = profileRole === "admin";
+  // Teachers: profile picture (name/email shown, not edited), language and
+  // date/time format. No bio/location, distance or notification switches.
+  const isTeacher = profileRole === "teacher";
   const avatarInputRef = useRef(null);
 
   const handleAvatarClick = () => avatarInputRef.current?.click();
@@ -72,7 +75,11 @@ export default function SettingsPage() {
   const [chosenSection, setActiveSection] = useState(
     location.state?.section || "account"
   );
-  const activeSection = isAdmin ? "preferences" : chosenSection;
+  const activeSection = isAdmin
+    ? "preferences"
+    : isTeacher && chosenSection === "notifications"
+      ? "account"
+      : chosenSection;
   const [name, setName] = useState(profileName);
   const [email, setEmail] = useState(profileEmail);
   const [bio, setBio] = useState(profileBio);
@@ -177,7 +184,7 @@ export default function SettingsPage() {
           >
             {t("settingsPreferences")}
           </p>
-          {!isAdmin && (
+          {!isAdmin && !isTeacher && (
             <p
               className={`ww-settings-nav-item ${activeSection === "notifications" ? "active" : ""}`}
               onClick={() => setActiveSection("notifications")}
@@ -217,14 +224,17 @@ export default function SettingsPage() {
 
               <label className="ww-settings-field">
                 <span>{t("accountName")}</span>
-                <input value={name} onChange={(e) => setName(e.target.value)} />
+                <input value={name} onChange={(e) => setName(e.target.value)} readOnly={isTeacher} />
               </label>
 
               <label className="ww-settings-field">
                 <span>{t("accountEmail")}</span>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} readOnly={isTeacher} />
               </label>
 
+              {/* Bio + location are for the student's public profile. */}
+              {!isTeacher && (
+              <>
               <label className="ww-settings-field">
                 <span>{t("accountBio")}</span>
                 <input
@@ -248,6 +258,8 @@ export default function SettingsPage() {
               <button className="ww-settings-save-btn" onClick={handleSaveAccount} disabled={savingAccount}>
                 {savingAccount ? t("saving") : t("save")}
               </button>
+              </>
+              )}
             </div>
           )}
 
@@ -288,19 +300,24 @@ export default function SettingsPage() {
                     <option value="24h">{t("hour24")}</option>
                   </select>
 
-                  <p className="ww-settings-field-label">{t("distanceFormat")}</p>
-                  <select
-                    className="ww-settings-plain-select"
-                    value={prefs.distanceFormat}
-                    onChange={(e) => savePref({ distanceFormat: e.target.value })}
-                  >
-                    <option value="km">{t("kilometers")}</option>
-                    <option value="mi">{t("miles")}</option>
-                  </select>
+                  {!isTeacher && (
+                    <>
+                      <p className="ww-settings-field-label">{t("distanceFormat")}</p>
+                      <select
+                        className="ww-settings-plain-select"
+                        value={prefs.distanceFormat}
+                        onChange={(e) => savePref({ distanceFormat: e.target.value })}
+                      >
+                        <option value="km">{t("kilometers")}</option>
+                        <option value="mi">{t("miles")}</option>
+                      </select>
+                    </>
+                  )}
 
                   {/* Live preview so the student sees the effect right away. */}
                   <p className="ww-settings-preview">
-                    {t("formatPreview")}: {formatDate("2026-04-17")} · {formatTime("14:30")} · {formatDistance(2300)}
+                    {t("formatPreview")}: {formatDate("2026-04-17")} · {formatTime("14:30")}
+                    {!isTeacher && ` · ${formatDistance(2300)}`}
                   </p>
                 </>
               )}

@@ -31,7 +31,7 @@ export default function NotificationSettingsScreen() {
       <ScreenHeader title={t('settingsNotifications')} onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>{t('pushNotification')}</Text>
+        <Text style={styles.sectionTitle}>{t('notificationsInbox')}</Text>
         {OPTIONS.map(({ key, hintKey }) => (
           <View key={key} style={styles.row}>
             <View style={{ flex: 1 }}>

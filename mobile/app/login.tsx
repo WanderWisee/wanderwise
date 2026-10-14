@@ -33,7 +33,7 @@ export default function LoginScreen() {
       await signIn();
       // Kung may invite link na binuksan bago mag-login, ituloy ito.
       const joinedTripId = await consumePendingJoin();
-      router.replace(joinedTripId ? `/trip/${joinedTripId}` : '/(tabs)/home');
+      router.replace(joinedTripId === 'retry' ? '/join' : joinedTripId ? `/trip/${joinedTripId}` : '/(tabs)/home');
     } catch (e) {
       setError(e.message || t('loginErrFailed'));
     } finally {

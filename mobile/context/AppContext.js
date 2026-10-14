@@ -15,6 +15,7 @@ import { startLiveSync } from '../utils/liveSync';
 import { STORAGE_KEYS } from '../constants/config';
 import { translations } from '../i18n/translations';
 import { mobileTranslations } from '../i18n/mobileStrings';
+import { studentTranslations } from '../i18n/studentStrings';
 
 import {
   getToken,
@@ -105,6 +106,8 @@ export function AppProvider({ children }) {
   const prefsRef = useRef(DEFAULT_PREFS);
   const prefsRevisionRef = useRef(0);
   const pendingPrefsRef = useRef(0);
+  const prefsWriteRef = useRef(Promise.resolve());
+  const confirmedPrefsRef = useRef(DEFAULT_PREFS);
 
   useEffect(() => {
     prefsRef.current = prefs;
@@ -123,12 +126,13 @@ export function AppProvider({ children }) {
 
       setUser(me);
 
-      if (settings) {
+      if (settings && !pendingPrefsRef.current) {
         const merged = {
           ...DEFAULT_PREFS,
           ...settings,
         };
 
+        confirmedPrefsRef.current = merged;
         setPrefs(merged);
 
         AsyncStorage.setItem(
@@ -236,6 +240,7 @@ export function AppProvider({ children }) {
           ...settings,
         };
 
+        confirmedPrefsRef.current = merged;
         setPrefs(merged);
 
         AsyncStorage.setItem(
@@ -307,6 +312,8 @@ export function AppProvider({ children }) {
   const updatePrefs = useCallback(
     async (changes) => {
       prefsRevisionRef.current += 1;
+      const revision = prefsRevisionRef.current;
+
 
       const next = {
         ...prefsRef.current,
@@ -326,9 +333,17 @@ export function AppProvider({ children }) {
       pendingPrefsRef.current += 1;
 
       try {
-        await updateSettings(changes);
+        const write = prefsWriteRef.current.then(() => updateSettings(next));
+        prefsWriteRef.current = write.catch(() => {});
+        await write;
+        confirmedPrefsRef.current = next;
         return true;
       } catch {
+        if (prefsRevisionRef.current === revision) {
+          prefsRef.current = confirmedPrefsRef.current;
+          setPrefs(confirmedPrefsRef.current);
+          await AsyncStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(confirmedPrefsRef.current)).catch(() => {});
+        }
         return false;
       } finally {
         pendingPrefsRef.current -= 1;
@@ -337,23 +352,12 @@ export function AppProvider({ children }) {
     [token]
   );
 
+  const t = useCallback((key) => {
+    return studentTranslations[language]?.[key] ?? mobileTranslations[language]?.[key] ?? translations[language]?.[key]
+      ?? studentTranslations.en[key] ?? mobileTranslations.en[key] ?? translations.en[key] ?? key;
+  }, [language]);
+
   const value = useMemo(() => {
-    const dict = {
-      ...translations.en,
-      ...mobileTranslations.en,
-    };
-
-    const langDict =
-      language === 'en'
-        ? dict
-        : {
-            ...translations[language],
-            ...mobileTranslations[language],
-          };
-
-    const t = (key) =>
-      langDict[key] ?? dict[key] ?? key;
-
     const dmy = prefs.dateFormat === 'dmy';
 
     const formatDate = (val, style = 'long') => {
@@ -531,6 +535,7 @@ export function AppProvider({ children }) {
     setLanguage,
     prefs,
     updatePrefs,
+    t,
   ]);
 
   return (

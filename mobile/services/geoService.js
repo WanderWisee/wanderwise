@@ -66,7 +66,7 @@ async function geocodeOnce(query) {
       result = await geocodeViaBackend(query);
       geocodeCache[query] = result;
       return result;
-    } catch (err) {
+    } catch {
       // Hindi maabot ang backend: diretso na sa Nominatim sa mga susunod.
       backendGeocodeAvailable = false;
     }
@@ -74,7 +74,7 @@ async function geocodeOnce(query) {
 
   try {
     result = await geocodeViaNominatim(query);
-  } catch (err) {
+  } catch {
     result = null;
   }
   geocodeCache[query] = result;
@@ -138,7 +138,7 @@ export async function getRoute(from, to, mode = 'walking') {
       routeCache[key] = result;
       return result;
     }
-  } catch (err) {
+  } catch {
     // tuloy sa tantiya sa ibaba
   }
 
@@ -188,7 +188,7 @@ export async function fetchDestinationImage(name) {
         if (!res.ok) continue;
         const data = await res.json();
         if (data && data.found && data.url) return data.url;
-      } catch (err) {
+      } catch {
         // subukan ang susunod
       }
     }

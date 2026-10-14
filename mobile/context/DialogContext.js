@@ -15,7 +15,7 @@ const DialogContext = createContext(null);
 export function DialogProvider({ children }) {
   const [dialog, setDialog] = useState(null);
   const [toastText, setToastText] = useState(null);
-  const toastAnim = useRef(new Animated.Value(0)).current;
+  const [toastAnim] = useState(() => new Animated.Value(0));
   const toastTimer = useRef(null);
 
   const close = useCallback((result) => {

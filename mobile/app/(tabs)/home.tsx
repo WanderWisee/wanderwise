@@ -28,7 +28,7 @@ const BOOKING_SITES = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { t, user } = useApp();
+  const { t, user, prefs } = useApp();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,7 +65,6 @@ export default function HomeScreen() {
     let alive = true;
     const names = [...new Set(trips.map((tr) => tr.destination).filter(Boolean))].slice(0, 6);
     if (names.length === 0) {
-      setTripPins([]);
       return;
     }
     (async () => {
@@ -107,8 +106,9 @@ export default function HomeScreen() {
   }
 
   const latestTrip = trips[0];
-  const mapMarkers = tripPins.length > 0
-    ? tripPins
+  const visiblePins = tripPins.filter((pin) => trips.some((tr) => tr.destination === pin.label));
+  const mapMarkers = visiblePins.length > 0
+    ? visiblePins
     : GUIDE_DESTINATIONS.map((d) => ({ latitude: d.lat, longitude: d.lon, label: d.name }));
 
   return (
@@ -151,7 +151,7 @@ export default function HomeScreen() {
               <>
                 <View style={styles.continueHeaderRow}>
                   <Text style={styles.sectionTitle}>{t('continuePlanning')}</Text>
-                  <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+                  <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/profile', params: { tab: 'trips' } })}>
                     <Text style={styles.seeAllText}>{t('seeAll')}</Text>
                   </TouchableOpacity>
                 </View>
@@ -178,10 +178,10 @@ export default function HomeScreen() {
               markers={mapMarkers}
               height={190}
               style={{ marginBottom: 8 }}
-              numbered={tripPins.length > 0}
+              numbered={visiblePins.length > 0}
             />
             <Text style={styles.mapCaption}>
-              {tripPins.length > 0 ? t('mapYourTrips') : t('mapTopDestinations')}
+              {visiblePins.length > 0 ? t('mapYourTrips') : t('mapTopDestinations')}
             </Text>
 
             <View style={styles.hotelSearchCard}>
@@ -199,7 +199,7 @@ export default function HomeScreen() {
               <TouchableOpacity style={styles.dateRangeField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
                 <Text style={dateRange ? styles.dateRangeText : styles.dateRangePlaceholder}>
                   {dateRange
-                    ? `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`
+                    ? `${formatDate(dateRange.start, prefs.dateFormat)} — ${formatDate(dateRange.end, prefs.dateFormat)}`
                     : t('selectDates')}
                 </Text>
               </TouchableOpacity>
@@ -211,7 +211,7 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.counterButtonText}>−</Text>
                 </TouchableOpacity>
-                <Text style={styles.counterValue}>{travelers}</Text>
+                <Text accessibilityLabel={t('travelBuddies')} style={styles.counterValue}>{travelers} {t('travelBuddies')}</Text>
                 <TouchableOpacity
                   style={styles.counterButton}
                   onPress={() => setTravelers((n) => n + 1)}

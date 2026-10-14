@@ -45,7 +45,21 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "WanderWise uses your location to check in at your trip meeting point."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "WanderWise uses your camera for Tour Day check-in photos.",
+          "photosPermission": "WanderWise uses your photos for your profile and travel stories.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

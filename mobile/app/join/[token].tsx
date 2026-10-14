@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../../constants/config';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { joinTripByToken } from '../../services/tripService';
@@ -12,13 +14,18 @@ import { Loading, OutlineButton, PrimaryButton } from '../../components/ui';
 // Binubuksan ng invite link (wanderwise://join/<token>) o ng "Join with
 // a link" sa Profile. Kapareho ng JoinTripPage ng web.
 export default function JoinTripScreen() {
+  const [attempt, setAttempt] = useState(0);
+  return <JoinContent key={attempt} onRetry={() => setAttempt((n) => n + 1)} />;
+}
+
+function JoinContent({ onRetry }) {
   const router = useRouter();
   const { token } = useLocalSearchParams();
   const shareToken = String(token || '');
   const { t, isLoggedIn } = useApp();
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let alive = true;
     if (!shareToken) {
       setError(t('inviteLinkInvalid'));
@@ -31,14 +38,16 @@ export default function JoinTripScreen() {
     joinTripByToken(shareToken)
       .then((data) => {
         if (!alive) return;
-        if (data && data.tripId) router.replace(`/trip/${data.tripId}`);
-        else setError(t('inviteLinkInvalid'));
+        if (data && data.tripId) {
+          void AsyncStorage.removeItem(STORAGE_KEYS.pendingJoin);
+          router.replace(`/trip/${data.tripId}`);
+        } else setError(t('inviteLinkInvalid'));
       })
       .catch((e) => alive && setError(e.status === 404 ? t('tripNotFoundOrLinkInvalid') : e.message));
     return () => {
       alive = false;
     };
-  }, [shareToken, isLoggedIn]);
+  }, [shareToken, isLoggedIn, router, t]));
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -55,6 +64,7 @@ export default function JoinTripScreen() {
         ) : error ? (
           <>
             <Text style={styles.title}>{error}</Text>
+            <PrimaryButton label={t('tryAgain')} onPress={onRetry} style={styles.button} />
             <OutlineButton label={t('goHome')} onPress={() => router.replace('/(tabs)/home')} style={styles.button} />
           </>
         ) : (

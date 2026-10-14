@@ -102,7 +102,7 @@ export default function SignupScreen() {
       await register({ ...form, otpCode });
       await signIn();
       const joinedTripId = await consumePendingJoin();
-      router.replace(joinedTripId ? `/trip/${joinedTripId}` : '/(tabs)/home');
+      router.replace(joinedTripId === 'retry' ? '/join' : joinedTripId ? `/trip/${joinedTripId}` : '/(tabs)/home');
     } catch (e) {
       setError(e.message || t('otpErrVerifyFailed'));
     } finally {

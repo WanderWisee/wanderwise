@@ -12,9 +12,11 @@ function enqueue(task) {
 // Binabantayan ang trip: kapag may place na walang coordinates, hahanapin
 // ito sa background at tatawagin ang onCoordsFound(name, coords).
 export function useAutoGeocode(trip, onCoordsFound) {
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
   const handledRef = useRef(new Set());
   const callbackRef = useRef(onCoordsFound);
-  callbackRef.current = onCoordsFound;
+  useEffect(() => { callbackRef.current = onCoordsFound; }, [onCoordsFound]);
 
   useEffect(() => {
     if (!trip) return;
@@ -29,8 +31,9 @@ export function useAutoGeocode(trip, onCoordsFound) {
         handledRef.current.add(id);
 
         enqueue(async () => {
+          if (!mountedRef.current) return;
           const coords = await geocodePlace(place.name, destination);
-          if (coords) callbackRef.current(place.name, coords);
+          if (coords && mountedRef.current) callbackRef.current(place.name, coords);
         });
       });
   }, [trip]);

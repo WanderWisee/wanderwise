@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, Linking, Modal, Pressable,
 } from 'react-native';
@@ -11,12 +11,12 @@ import { HOTEL_DESTINATIONS } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
 import {
-  createBooking, deleteBooking, fetchMyBookings, fetchTripBookings, fetchTrips,
+  createBooking, deleteBooking, fetchMyBookings, fetchTripBookings, fetchTrips, fetchTripById,
 } from '../../services/tripService';
 import Backdrop from '../../components/Backdrop';
 import MeshBlobs from '../../components/MeshBlobs';
 import CalendarPicker, { formatDate as formatParts } from '../../components/CalendarPicker';
-import { ChoiceChips, PrimaryButton, Wordmark } from '../../components/ui';
+import { ChoiceChips, PrimaryButton, Wordmark, ErrorState } from '../../components/ui';
 import { partsToISO, rangeFromISO } from '../../utils/dates';
 
 // Parehong HotelsPage ng web: walang sariling hotel database ang
@@ -32,9 +32,13 @@ const agodaUrl = (dest, start, end) =>
 const klookUrl = (dest) => `https://www.klook.com/search/result/?query=${encodeURIComponent(dest)}`;
 
 export default function HotelsScreen() {
-  const router = useRouter();
   const params = useLocalSearchParams();
-  const { t, formatDate } = useApp();
+  return <HotelsContent key={JSON.stringify([params.tripId, params.destination, params.search, params.startDate, params.endDate, params.buddies])} params={params} />;
+}
+
+function HotelsContent({ params }) {
+  const router = useRouter();
+  const { t, formatDate, prefs } = useApp();
   const { alert, confirm, toast } = useDialog();
 
   // "Trip mode": binuksan mula sa "Book a hotel" ng isang trip.
@@ -47,40 +51,31 @@ export default function HotelsScreen() {
       }
     : null;
 
-  const [search, setSearch] = useState('');
-  const [dateRange, setDateRange] = useState(null);
-  const [travelers, setTravelers] = useState(0);
+  const [search, setSearch] = useState(String(params.search || params.destination || ''));
+  const [dateRange, setDateRange] = useState(() => rangeFromISO(String(params.startDate || ''), String(params.endDate || '')));
+  const [travelers, setTravelers] = useState(Number(params.buddies) || 0);
   const [pickerFor, setPickerFor] = useState(null); // 'search' | 'booking'
-  const [optionsFor, setOptionsFor] = useState(null); // destination na hinahanap
+  const [optionsFor, setOptionsFor] = useState(!params.tripId && params.search ? String(params.search) : null); // destination na hinahanap
 
   const [bookings, setBookings] = useState([]);
   const [trips, setTrips] = useState([]);
-  const [form, setForm] = useState({ tripId: null, placeName: '', bookingSite: 'Agoda', confirmationNumber: '', range: null });
+  const [form, setForm] = useState({ tripId: tripMode?.id || null, placeName: '', bookingSite: 'Agoda', confirmationNumber: '', range: rangeFromISO(String(params.startDate || ''), String(params.endDate || '')) });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [tripRole, setTripRole] = useState('viewer');
 
-  // Kunin ang mga value na ipinasa ng Home o ng Trip.
-  useEffect(() => {
-    setSearch(String(params.search || params.destination || ''));
-    setDateRange(rangeFromISO(String(params.startDate || ''), String(params.endDate || '')));
-    if (params.buddies) setTravelers(Number(params.buddies) || 0);
-    setForm((f) => ({
-      ...f,
-      tripId: tripMode ? tripMode.id : f.tripId,
-      range: rangeFromISO(String(params.startDate || ''), String(params.endDate || '')),
-    }));
-    // Kapag galing sa Home na may laman ang search, buksan agad ang mga pagpipilian.
-    if (!params.tripId && params.search) setOptionsFor(String(params.search));
-  }, [params.search, params.startDate, params.endDate, params.buddies, params.tripId]);
-
+  const tripModeId = tripMode?.id;
   const loadBookings = useCallback(async () => {
     try {
-      setBookings(tripMode ? await fetchTripBookings(tripMode.id) : await fetchMyBookings());
-    } catch {
-      setBookings([]);
+      setBookings(tripModeId ? await fetchTripBookings(tripModeId) : await fetchMyBookings());
+      if (tripModeId) setTripRole((await fetchTripById(tripModeId)).myRole || 'viewer');
+      setLoadError('');
+    } catch (e) {
+      setLoadError(e.message);
     }
-    if (!tripMode) fetchTrips().then(setTrips).catch(() => setTrips([]));
-  }, [tripMode?.id]);
+    if (!tripModeId) fetchTrips().then(setTrips).catch((e) => setLoadError(e.message));
+  }, [tripModeId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,6 +103,7 @@ export default function HotelsScreen() {
   }
 
   async function saveBooking() {
+    if (saving) return;
     setFormError('');
     const placeName = form.placeName.trim();
     const tripId = tripMode ? tripMode.id : form.tripId;
@@ -121,6 +117,8 @@ export default function HotelsScreen() {
     }
     setSaving(true);
     try {
+      const detail = await fetchTripById(tripId);
+      if (!['owner', 'editor'].includes(detail.myRole)) { setFormError(t('viewOnlyNotice')); return; }
       await createBooking(tripId, {
         placeName,
         bookingSite: form.bookingSite,
@@ -139,6 +137,7 @@ export default function HotelsScreen() {
   }
 
   async function removeBooking(b) {
+    if (tripMode && !['owner', 'editor'].includes(tripRole)) { toast(t('viewOnlyNotice')); return; }
     const ok = await confirm({
       title: t('deleteBookingTitle'),
       message: t('confirmDeleteBooking'),
@@ -210,7 +209,7 @@ export default function HotelsScreen() {
           <TouchableOpacity style={styles.inputWrap} onPress={() => setPickerFor('search')} activeOpacity={0.7}>
             <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <Text style={dateRange ? styles.dateRangeText : styles.dateRangePlaceholder}>
-              {dateRange ? `${formatParts(dateRange.start)} — ${formatParts(dateRange.end)}` : t('selectDates')}
+              {dateRange ? `${formatParts(dateRange.start, prefs.dateFormat)} — ${formatParts(dateRange.end, prefs.dateFormat)}` : t('selectDates')}
             </Text>
           </TouchableOpacity>
 
@@ -232,6 +231,7 @@ export default function HotelsScreen() {
             <Text style={styles.searchButtonText}>{t('search')}</Text>
           </TouchableOpacity>
 
+          {!!loadError && <ErrorState message={loadError} onRetry={loadBookings} retryLabel={t('tryAgain')} />}
           {/* ===== Destinations ===== */}
           <View style={styles.sectionHeaderRow}>
             <View style={[styles.sectionIconBadge, { backgroundColor: '#C9D9C4' }]}>
@@ -264,6 +264,7 @@ export default function HotelsScreen() {
           <Text style={styles.hint}>{t('recordBookingHint')}</Text>
 
           <View style={styles.formCard}>
+            {!!tripMode && !['owner', 'editor'].includes(tripRole) && <Text style={styles.hint}>{t('viewOnlyNotice')}</Text>}
             {!tripMode && (
               <>
                 <Text style={styles.formLabel}>{t('bookingForTrip')}</Text>
@@ -323,12 +324,12 @@ export default function HotelsScreen() {
             </Text>
             <TouchableOpacity style={styles.formInput} onPress={() => setPickerFor('booking')} activeOpacity={0.7}>
               <Text style={form.range ? styles.dateRangeText : styles.dateRangePlaceholder}>
-                {form.range ? `${formatParts(form.range.start)} — ${formatParts(form.range.end)}` : t('selectDates')}
+                {form.range ? `${formatParts(form.range.start, prefs.dateFormat)} — ${formatParts(form.range.end, prefs.dateFormat)}` : t('selectDates')}
               </Text>
             </TouchableOpacity>
 
             {!!formError && <Text style={styles.errorText}>{formError}</Text>}
-            <PrimaryButton label={t('save')} onPress={saveBooking} loading={saving} style={{ marginTop: 4 }} />
+            <PrimaryButton label={t('save')} onPress={saveBooking} disabled={!!tripMode && !['owner', 'editor'].includes(tripRole)} loading={saving} style={{ marginTop: 4 }} />
           </View>
 
           {/* ===== Bookings ===== */}

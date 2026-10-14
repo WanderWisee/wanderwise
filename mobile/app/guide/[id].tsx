@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { DESTINATIONS, keywordFor } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
@@ -29,20 +29,19 @@ export default function GuideDetailScreen() {
   const known = DESTINATIONS.find((d) => keywordFor(d.name).toLowerCase() === place.toLowerCase());
   const hasOfficialGuide = place.toLowerCase() === 'boracay';
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       setStories(await fetchJournalFeed({ q: place }));
       setError(null);
     } catch (e) {
       setError(e.message);
     }
-  }
-
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-    if (known) setCoords({ latitude: known.lat, longitude: known.lon });
-    else geocodeDestination(heading).then((c) => c && setCoords(c));
   }, [place]);
+
+  useFocusEffect(useCallback(() => {
+    load().finally(() => setLoading(false));
+    if (!known) geocodeDestination(heading).then((c) => c && setCoords(c));
+  }, [load, known, heading]));
 
   async function onRefresh() {
     setRefreshing(true);
@@ -62,7 +61,7 @@ export default function GuideDetailScreen() {
 
         <Text style={styles.sectionTitle}>{t('exploreTheArea')}</Text>
         <OsmMap
-          markers={coords ? [{ ...coords, label: heading }] : []}
+          markers={known ? [{ latitude: known.lat, longitude: known.lon, label: heading }] : coords ? [{ ...coords, label: heading }] : []}
           height={170}
           singleZoom={11}
           numbered={false}

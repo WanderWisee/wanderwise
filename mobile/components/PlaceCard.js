@@ -18,6 +18,7 @@ const COST_CATEGORY_KEYS = {
 
 export default function PlaceCard({
   place,
+  readOnly = false,
   index,
   expanded,
   selecting = false,
@@ -115,6 +116,8 @@ export default function PlaceCard({
       {expanded && !selecting && (
         <View style={styles.details}>
           <TextInput
+            editable={!readOnly}
+            accessibilityLabel={t('addNotesPlaceholder')}
             style={styles.notesInput}
             placeholder={t('addNotesPlaceholder')}
             placeholderTextColor={GREY_PLACEHOLDER}
@@ -124,7 +127,7 @@ export default function PlaceCard({
             multiline
           />
 
-          <View style={styles.actionsRow}>
+          <View pointerEvents={readOnly ? 'none' : 'auto'} style={[styles.actionsRow, readOnly && { display: 'none' }]}>
             <TouchableOpacity onPress={onToggleVisited} style={styles.actionButton}>
               <Text style={[styles.actionText, place.visited && styles.actionTextActive]}>
                 {place.visited ? `✓ ${t('unmarkVisited')}` : `✓ ${t('markVisited')}`}
@@ -148,7 +151,7 @@ export default function PlaceCard({
                 <View key={c.id} style={styles.costRow}>
                   <Text style={styles.costCategory}>{catLabel(c.category)}</Text>
                   <Text style={styles.costAmount}>{formatPeso(c.amount)}</Text>
-                  <TouchableOpacity onPress={() => onRemoveCost(c.id)} style={styles.costRemove}>
+                  <TouchableOpacity disabled={readOnly} onPress={() => onRemoveCost(c.id)} style={styles.costRemove}>
                     <Text style={styles.costRemoveText}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -157,7 +160,7 @@ export default function PlaceCard({
             </View>
           )}
 
-          {addingCost && (
+          {addingCost && !readOnly && (
             <View style={styles.costForm}>
               <View style={styles.categoryRow}>
                 {COST_CATEGORIES.map((cat) => (

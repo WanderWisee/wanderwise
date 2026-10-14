@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity, ActivityIndicator,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
@@ -28,7 +28,7 @@ export default function JournalViewScreen() {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchJournalEntry(id);
@@ -41,11 +41,11 @@ export default function JournalViewScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id, t]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     load();
-  }, [id]);
+  }, [load]));
 
   async function send() {
     const body = text.trim();

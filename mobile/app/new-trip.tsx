@@ -16,7 +16,7 @@ import { partsToISO as toISO } from '../utils/dates';
 
 export default function NewTripScreen() {
   const router = useRouter();
-  const { t } = useApp();
+  const { t, prefs } = useApp();
   const [destination, setDestination] = useState('');
   const [allDestinations, setAllDestinations] = useState([]);
   const [focused, setFocused] = useState(false);
@@ -122,7 +122,7 @@ export default function NewTripScreen() {
         <TouchableOpacity style={styles.dateField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
           <Text style={dateRange ? styles.dateFieldText : styles.dateFieldPlaceholder}>
             {dateRange
-              ? `${formatDate(dateRange.start)} — ${formatDate(dateRange.end)}`
+              ? `${formatDate(dateRange.start, prefs.dateFormat)} — ${formatDate(dateRange.end, prefs.dateFormat)}`
               : t('selectDates')}
           </Text>
         </TouchableOpacity>

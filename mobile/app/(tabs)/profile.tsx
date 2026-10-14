@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Share, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { WEB_URL } from '../../constants/config';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
@@ -21,9 +22,10 @@ const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { t, user, refreshUser } = useApp();
   const { confirm, toast } = useDialog();
-  const [activeTab, setActiveTab] = useState('trips');
+  const [activeTab, setActiveTab] = useState(params.tab === 'journal' ? 'journal' : 'trips');
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [trips, setTrips] = useState([]);
@@ -35,22 +37,23 @@ export default function ProfileScreen() {
   const [actionsTrip, setActionsTrip] = useState(null);
   const [inviteTripId, setInviteTripId] = useState(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     refreshUser();
     try {
-      const [tripData, journalData] = await Promise.all([fetchTrips(), fetchMyJournal().catch(() => [])]);
+      const [tripData, journalData] = await Promise.all([fetchTrips(), fetchMyJournal()]);
       setTrips(tripData);
       setJournal(journalData);
       setError(null);
     } catch (e) {
       setError(e.message);
     }
-  }
+  }, [refreshUser]);
 
   useFocusEffect(
     useCallback(() => {
+      if (params.tab === 'trips' || params.tab === 'journal') setActiveTab(params.tab);
       load().finally(() => setLoading(false));
-    }, [])
+    }, [params.tab, load])
   );
 
   async function onRefresh() {
@@ -99,7 +102,7 @@ export default function ProfileScreen() {
     const name = fullName(user, t('student'));
     try {
       await Share.share({
-        message: `${name} — WanderWise\n${user?.bio || ''}\n${trips.length} ${t('trips')} · ${journal.length} ${t('journalPosts')}`.trim(),
+        message: `${WEB_URL}/profile/view/${user?.userId}\n${name} — WanderWise\n${user?.bio || ''}\n${trips.length} ${t('trips')} · ${journal.length} ${t('journalPosts')}`.trim(),
       });
     } catch {
       // kinansela ng user
@@ -217,6 +220,8 @@ export default function ProfileScreen() {
                 </View>
                 {loading ? (
                   <Loading />
+                ) : error ? (
+                  <ErrorState message={error} onRetry={onRefresh} retryLabel={t('tryAgain')} />
                 ) : journal.length === 0 ? (
                   <EmptyState icon="📖" title={t('noJournalPostsYet')} subtitle={t('journalEmptyHint')} />
                 ) : (

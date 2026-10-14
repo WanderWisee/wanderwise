@@ -6,8 +6,8 @@ export const Colors = {
   brown900: '#331C08',
   brown800: '#3D2814',
   brown600: '#5F4E3A',
-  // Mint = text/accents on the dark brown (buttons, tab bar, badges)
-  mint: '#A9E4DC',
+  // Match the mint sampled from the supplied logo (buttons, tabs, badges).
+  mint: '#89D4D0',
   // Teal = links and highlights on light backgrounds
   teal: '#2F6F5F',
   line: 'rgba(51, 28, 8, 0.14)',
@@ -22,8 +22,10 @@ export const Colors = {
 };
 
 export const Fonts = {
-  regular: 'Lora_400Regular',
-  semibold: 'Lora_600SemiBold',
+  regular: 'Poppins_400Regular',
+  medium: 'Poppins_500Medium',
+  bold: 'Poppins_700Bold',
+  semibold: 'Poppins_600SemiBold',
 };
 
 // Parehong anino ng mga puting card sa app

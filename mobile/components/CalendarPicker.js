@@ -1,5 +1,7 @@
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
@@ -82,11 +84,11 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
         <Pressable style={styles.calendarCard} onPress={(e) => e.stopPropagation()}>
           <View style={styles.calendarHeader}>
             <TouchableOpacity onPress={goPrevMonth} style={styles.calendarNavButton}>
-              <Text style={styles.calendarNavText}>←</Text>
+              <AppIcon name="arrow-left" style={styles.calendarNavText} />
             </TouchableOpacity>
             <Text style={styles.calendarMonthLabel}>{MONTH_NAMES[viewMonth]} {viewYear}</Text>
             <TouchableOpacity onPress={goNextMonth} style={styles.calendarNavButton}>
-              <Text style={styles.calendarNavText}>→</Text>
+              <AppIcon name="arrow-right" style={styles.calendarNavText} />
             </TouchableOpacity>
           </View>
 
@@ -173,10 +175,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   calendarNavText: { fontSize: 16, color: Colors.brown900 },
-  calendarMonthLabel: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900 },
+  calendarMonthLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900 },
   weekdayRow: { flexDirection: 'row', marginBottom: 6 },
   weekdayText: {
-    flex: 1, textAlign: 'center', fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600,
+    flex: 1, textAlign: 'center', fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600,
   },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayCell: {
@@ -187,22 +189,22 @@ const styles = StyleSheet.create({
   },
   dayCellInnerRange: { backgroundColor: Colors.brown900, opacity: 0.55 },
   dayCellInnerSelected: { backgroundColor: Colors.brown900, opacity: 1 },
-  dayCellText: { fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown900 },
-  dayCellTextSelected: { fontFamily: 'Lora_600SemiBold', color: Colors.mint },
+  dayCellText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900 },
+  dayCellTextSelected: { fontFamily: 'Poppins_600SemiBold', color: Colors.mint },
   calendarSummary: {
     marginTop: 14, paddingVertical: 10, alignItems: 'center',
     backgroundColor: Colors.cream2, borderRadius: 10,
   },
-  calendarSummaryText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown900 },
+  calendarSummaryText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown900 },
   dateCardActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
   dateCancelButton: {
     flex: 1, height: 44, borderRadius: 12, borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  dateCancelButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  dateCancelButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
   dateConfirmButton: {
     flex: 1, height: 44, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  dateConfirmButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  dateConfirmButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
 });

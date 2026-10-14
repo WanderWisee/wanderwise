@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import AppIcon from '../components/AppIcon';
+import { Text } from '../components/Typography';
+import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -44,7 +46,7 @@ export default function LanguageScreen() {
                 </View>
                 {isSelected && (
                   <View style={styles.checkCircle}>
-                    <Text style={styles.checkmark}>✓</Text>
+                    <AppIcon name="check" style={styles.checkmark} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
-  sectionLabel: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginBottom: 12 },
+  sectionLabel: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginBottom: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
   initialBadge: {
@@ -68,13 +70,13 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.line,
   },
   initialBadgeSelected: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
-  initialText: { fontFamily: 'Lora_600SemiBold', fontSize: 11.5, color: Colors.brown900 },
+  initialText: { fontFamily: 'Poppins_600SemiBold', fontSize: 11.5, color: Colors.brown900 },
   initialTextSelected: { color: Colors.mint },
-  rowLabel: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
-  rowSub: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
+  rowLabel: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  rowSub: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
   checkCircle: {
     width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkmark: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.mint },
+  checkmark: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.mint },
 });

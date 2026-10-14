@@ -1,5 +1,7 @@
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
@@ -51,11 +53,11 @@ function TimePickerContent({ visible, initial, onClose, onSave }) {
           <View style={styles.columnsRow}>
             <View style={styles.column}>
               <TouchableOpacity style={styles.stepper} onPress={() => setHour((h) => (h === 12 ? 1 : h + 1))}>
-                <Text style={styles.stepperText}>▲</Text>
+                <AppIcon name="arrow-up" style={styles.stepperText} />
               </TouchableOpacity>
               <Text style={styles.value}>{hour}</Text>
               <TouchableOpacity style={styles.stepper} onPress={() => setHour((h) => (h === 1 ? 12 : h - 1))}>
-                <Text style={styles.stepperText}>▼</Text>
+                <AppIcon name="arrow-down" style={styles.stepperText} />
               </TouchableOpacity>
             </View>
 
@@ -63,11 +65,11 @@ function TimePickerContent({ visible, initial, onClose, onSave }) {
 
             <View style={styles.column}>
               <TouchableOpacity style={styles.stepper} onPress={() => setMinute((m) => (m + 5) % 60)}>
-                <Text style={styles.stepperText}>▲</Text>
+                <AppIcon name="arrow-up" style={styles.stepperText} />
               </TouchableOpacity>
               <Text style={styles.value}>{String(minute).padStart(2, '0')}</Text>
               <TouchableOpacity style={styles.stepper} onPress={() => setMinute((m) => (m - 5 + 60) % 60)}>
-                <Text style={styles.stepperText}>▼</Text>
+                <AppIcon name="arrow-down" style={styles.stepperText} />
               </TouchableOpacity>
             </View>
 
@@ -105,7 +107,7 @@ const styles = StyleSheet.create({
   },
   card: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 22 },
   title: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900,
     textAlign: 'center', marginBottom: 18,
   },
   columnsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
@@ -116,26 +118,26 @@ const styles = StyleSheet.create({
   },
   stepperText: { fontSize: 13, color: Colors.brown900 },
   value: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 28, color: Colors.brown900,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 28, color: Colors.brown900,
     marginVertical: 8, minWidth: 48, textAlign: 'center',
   },
-  colon: { fontFamily: 'Lora_600SemiBold', fontSize: 28, color: Colors.brown900 },
+  colon: { fontFamily: 'Poppins_600SemiBold', fontSize: 28, color: Colors.brown900 },
   periodColumn: { gap: 8, marginLeft: 8 },
   periodButton: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.cream2,
   },
   periodButtonActive: { backgroundColor: Colors.brown900 },
-  periodText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  periodText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
   periodTextActive: { color: Colors.mint },
   actions: { flexDirection: 'row', gap: 10, marginTop: 22 },
   clearButton: {
     flex: 1, height: 44, borderRadius: 12, borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  clearText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  clearText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
   saveButton: {
     flex: 1, height: 44, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  saveText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  saveText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
 });

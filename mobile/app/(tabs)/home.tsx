@@ -1,7 +1,7 @@
+import AppIcon, { IconLabel } from '../../components/AppIcon';
+import { Text, TextInput } from '../../components/Typography';
 import { useState, useCallback, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, RefreshControl, Linking, Image,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -120,7 +120,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <Wordmark />
           <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.bellButton} accessibilityLabel={t('notificationsTitle')}>
-            <Text style={{ fontSize: 16 }}>🔔</Text>
+            <AppIcon name="bell" style={{ fontSize: 16 }} />
             {unread > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
@@ -139,7 +139,7 @@ export default function HomeScreen() {
           >
             {!!user?.firstName && (
               <Text style={styles.greeting}>
-                {t('helloPrefix')} {user.firstName}! 👋
+                {t('helloPrefix')} {user.firstName}!
               </Text>
             )}
 
@@ -165,10 +165,10 @@ export default function HomeScreen() {
               </>
             ) : (
               <TouchableOpacity style={[styles.continueCard, styles.startCard]} onPress={() => router.push('/new-trip')} activeOpacity={0.8}>
-                <Text style={{ fontSize: 30 }}>🧳</Text>
+                <AppIcon name="suitcase" style={{ fontSize: 30 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.startTitle}>{t('noTripsYetStartPlanning')}</Text>
-                  <Text style={styles.startLink}>{t('startPlanning')} →</Text>
+                  <IconLabel trailing name="arrow-right" textStyle={styles.startLink}>{t('startPlanning')}</IconLabel>
                 </View>
               </TouchableOpacity>
             )}
@@ -209,7 +209,7 @@ export default function HomeScreen() {
                   onPress={() => setTravelers((n) => Math.max(0, n - 1))}
                   accessibilityLabel="−"
                 >
-                  <Text style={styles.counterButtonText}>−</Text>
+                  <AppIcon name="minus" style={styles.counterButtonText} />
                 </TouchableOpacity>
                 <Text accessibilityLabel={t('travelBuddies')} style={styles.counterValue}>{travelers} {t('travelBuddies')}</Text>
                 <TouchableOpacity
@@ -217,7 +217,7 @@ export default function HomeScreen() {
                   onPress={() => setTravelers((n) => n + 1)}
                   accessibilityLabel="+"
                 >
-                  <Text style={styles.counterButtonText}>+</Text>
+                  <AppIcon name="plus" style={styles.counterButtonText} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.searchButton} onPress={searchHotels}>
                   <Text style={styles.searchButtonText}>{t('search')}</Text>
@@ -292,27 +292,27 @@ const styles = StyleSheet.create({
     position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9,
     backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
   },
-  badgeText: { fontFamily: 'Lora_600SemiBold', fontSize: 10, color: '#FFFFFF' },
+  badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: '#FFFFFF' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
-  greeting: { fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 18 },
+  greeting: { fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 18 },
 
   continueHeaderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
   },
-  seeAllText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900, textDecorationLine: 'underline' },
+  seeAllText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, textDecorationLine: 'underline' },
   continueCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16, marginBottom: 26,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
   startCard: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 18 },
-  startTitle: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900, lineHeight: 20 },
-  startLink: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.teal, marginTop: 4 },
+  startTitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, lineHeight: 20 },
+  startLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.teal, marginTop: 4 },
 
   sectionTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,
   },
-  mapCaption: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 24 },
+  mapCaption: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 24 },
 
   hotelSearchCard: {
     borderRadius: 16, padding: 20, marginBottom: 30, overflow: 'hidden',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     zIndex: 1,
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
     borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
@@ -331,39 +331,39 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
   },
-  dateRangeText: { fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown900 },
-  dateRangePlaceholder: { fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown600 },
+  dateRangeText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900 },
+  dateRangePlaceholder: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown600 },
   travelersRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 1 },
   counterButton: {
     width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center', justifyContent: 'center',
   },
-  counterButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
+  counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
   counterValue: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, minWidth: 20, textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, minWidth: 20, textAlign: 'center',
   },
   searchButton: {
     flex: 1, backgroundColor: Colors.brown900, borderRadius: 10, height: 40,
     alignItems: 'center', justifyContent: 'center',
   },
-  searchButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
 
   horizontalListContent: { gap: 14, paddingRight: 6 },
   destinationCardHorizontal: { width: 200 },
   destinationImage: {
     width: 200, height: 160, borderRadius: 12, marginBottom: 10, backgroundColor: Colors.cream2,
   },
-  destinationName: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 10 },
+  destinationName: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 10 },
   itineraryButton: {
     backgroundColor: Colors.brown900, borderRadius: 20, height: 40,
     alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 20,
   },
-  itineraryButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
 
   bookingCardHorizontal: {
     width: 160, height: 90, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
-  bookingCardText: { fontFamily: 'Lora_600SemiBold', fontSize: 22, color: '#FFFFFF' },
+  bookingCardText: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: '#FFFFFF' },
 });

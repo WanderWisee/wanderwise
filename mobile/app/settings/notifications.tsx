@@ -1,4 +1,6 @@
-import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
+import { IconLabel } from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
+import { View, StyleSheet, Switch, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -46,7 +48,7 @@ export default function NotificationSettingsScreen() {
             />
           </View>
         ))}
-        <Text style={styles.always}>🔒 {t('notifSecurityAlwaysOn')}</Text>
+        <IconLabel name="lock" textStyle={styles.always}>{t('notifSecurityAlwaysOn')}</IconLabel>
       </ScrollView>
     </SafeAreaView>
   );
@@ -55,12 +57,12 @@ export default function NotificationSettingsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
-  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 8 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 8 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.line,
   },
-  rowLabel: { fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown900 },
-  rowHint: { fontFamily: 'Lora_400Regular', fontSize: 12, lineHeight: 17, color: Colors.brown600, marginTop: 3 },
-  always: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginTop: 18 },
+  rowLabel: { fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900 },
+  rowHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 17, color: Colors.brown600, marginTop: 3 },
+  always: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginTop: 18 },
 });

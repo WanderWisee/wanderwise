@@ -1,5 +1,6 @@
+import { Text } from '../components/Typography';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../constants/theme';
 
 // In-app dialogs (parehong ideya ng DialogContext ng web): kapareho ng
@@ -119,25 +120,25 @@ const styles = StyleSheet.create({
     shadowColor: Colors.brown900, shadowOpacity: 0.25, shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 }, elevation: 10,
   },
-  title: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900, marginBottom: 8 },
-  message: { fontFamily: 'Lora_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown600, marginBottom: 6 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, marginBottom: 8 },
+  message: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown600, marginBottom: 6 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 },
   cancelButton: {
     height: 42, paddingHorizontal: 18, borderRadius: 12, borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  cancelText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  cancelText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
   confirmButton: {
     height: 42, paddingHorizontal: 20, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
   dangerButton: { backgroundColor: Colors.error },
-  confirmText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  confirmText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
   dangerText: { color: '#FFFFFF' },
   toast: {
     position: 'absolute', bottom: 96, alignSelf: 'center',
     backgroundColor: Colors.brown900, borderRadius: 22, paddingHorizontal: 20, paddingVertical: 11,
     shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8,
   },
-  toastText: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  toastText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
 });

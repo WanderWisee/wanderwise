@@ -1,5 +1,7 @@
+import AppIcon from '../../components/AppIcon';
+import { Text, TextInput } from '../../components/Typography';
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, RefreshControl } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -112,11 +114,12 @@ export default function GuidesScreen() {
         >
           <Text style={styles.pageTitle}>{t('discoverTravelTips')}</Text>
 
-          <View style={styles.searchWrap}>
+          <View style={[styles.searchWrap, { flexDirection: 'row', alignItems: 'center', paddingLeft: 12 }]}>
+            <AppIcon name="search" size={20} color={Colors.brown600} />
             <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <TextInput
-              style={styles.searchInput}
-              placeholder={`🔍  ${t('discoverWhereToGo')}`}
+              style={[styles.searchInput, { flex: 1 }]}
+              placeholder={t('discoverWhereToGo')}
               placeholderTextColor={Colors.brown600}
               value={search}
               onChangeText={setSearch}
@@ -131,7 +134,7 @@ export default function GuidesScreen() {
             <>
               <View style={styles.sectionHeaderRow}>
                 <View style={[styles.sectionIconBadge, { backgroundColor: '#F4D9A8' }]}>
-                  <Text style={{ fontSize: 14 }}>✨</Text>
+                  <AppIcon name="sparkles" style={{ fontSize: 14 }} />
                 </View>
                 <Text style={styles.sectionTitle}>{t('newTravelTips')}</Text>
               </View>
@@ -151,7 +154,7 @@ export default function GuidesScreen() {
                         <Image source={{ uri: j.coverImage }} style={styles.cardImage} />
                       ) : (
                         <View style={[styles.cardImage, styles.imagePlaceholder]}>
-                          <Text style={{ fontSize: 40 }}>📖</Text>
+                          <AppIcon name="book" style={{ fontSize: 40 }} />
                         </View>
                       )}
                       <View style={styles.cardBody}>
@@ -173,7 +176,7 @@ export default function GuidesScreen() {
           {destinations.length > 0 && (
             <View style={styles.sectionHeaderRow}>
               <View style={[styles.sectionIconBadge, { backgroundColor: '#C9D9C4' }]}>
-                <Text style={{ fontSize: 14 }}>🗺️</Text>
+                <AppIcon name="map" style={{ fontSize: 14 }} />
               </View>
               <Text style={styles.sectionTitle}>{t('exploreDestinations')}</Text>
             </View>
@@ -199,7 +202,7 @@ export default function GuidesScreen() {
           </View>
 
           {nothingFound && (
-            <EmptyState icon="🔎" title={t('noPlaceMatches')} subtitle={t('guidesSearchHint')} />
+            <EmptyState icon="search" title={t('noPlaceMatches')} subtitle={t('guidesSearchHint')} />
           )}
         </ScrollView>
       </SafeAreaView>
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 40 },
   pageTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 16,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 16,
   },
   searchWrap: {
     borderRadius: 10, overflow: 'hidden', marginBottom: 22,
@@ -221,14 +224,14 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     zIndex: 1,
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: 'rgba(255,255,255,0.3)',
     paddingHorizontal: 16, paddingVertical: 14,
   },
-  offlineNote: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 14 },
+  offlineNote: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 19, color: Colors.brown900 },
   horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
   card: {
     width: 220,
@@ -240,15 +243,15 @@ const styles = StyleSheet.create({
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
   cardBody: { padding: 16 },
   destinationName: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 8,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 8,
   },
   authorsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  authorsText: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600 },
+  authorsText: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
   itineraryButton: {
     backgroundColor: Colors.brown900, borderRadius: 20, height: 40,
     alignItems: 'center', justifyContent: 'center',
   },
-  itineraryButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
   gridCard: {
     width: '48%', backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden',
@@ -257,6 +260,6 @@ const styles = StyleSheet.create({
   },
   gridImage: { width: '100%', height: 110, backgroundColor: Colors.cream2 },
   gridBody: { padding: 12, minHeight: 82 },
-  gridName: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900, marginBottom: 8 },
-  noStories: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600 },
+  gridName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900, marginBottom: 8 },
+  noStories: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
 });

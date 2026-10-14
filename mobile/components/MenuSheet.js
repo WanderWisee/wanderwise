@@ -1,5 +1,7 @@
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Dimensions } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -11,13 +13,13 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
 
 const MENU_ITEMS = [
-  { key: 'classes', labelKey: 'myClasses', icon: '🎓', tint: '#C9D9C4', route: '/classes' },
-  { key: 'notifications', labelKey: 'notificationsTitle', icon: '🔔', tint: '#F4D9A8', route: '/notifications' },
-  { key: 'settings', labelKey: 'settingsTitle', icon: '⚙️', tint: '#C9D9C4', route: '/settings' },
-  { key: 'history', labelKey: 'history', icon: '🕘', tint: '#D9C4D0', route: '/history' },
-  { key: 'language', labelKey: 'language', icon: '🌐', tint: '#B8D4D9', route: '/language' },
-  { key: 'join', labelKey: 'joinWithLink', icon: '🔗', tint: '#F4D9A8', route: '/join' },
-  { key: 'about', labelKey: 'aboutUs', icon: 'ℹ️', tint: '#C9D9C4', route: '/about' },
+  { key: 'classes', labelKey: 'myClasses', icon: 'graduation', tint: '#C9D9C4', route: '/classes' },
+  { key: 'notifications', labelKey: 'notificationsTitle', icon: 'bell', tint: '#F4D9A8', route: '/notifications' },
+  { key: 'settings', labelKey: 'settingsTitle', icon: 'settings', tint: '#C9D9C4', route: '/settings' },
+  { key: 'history', labelKey: 'history', icon: 'clock', tint: '#D9C4D0', route: '/history' },
+  { key: 'language', labelKey: 'language', icon: 'globe', tint: '#B8D4D9', route: '/language' },
+  { key: 'join', labelKey: 'joinWithLink', icon: 'link', tint: '#F4D9A8', route: '/join' },
+  { key: 'about', labelKey: 'aboutUs', icon: 'info', tint: '#C9D9C4', route: '/about' },
 ];
 
 export default function MenuSheet({ visible, onClose }) {
@@ -102,7 +104,7 @@ export default function MenuSheet({ visible, onClose }) {
                   activeOpacity={0.6}
                 >
                   <View style={[styles.iconBadge, { backgroundColor: item.tint }]}>
-                    <Text style={{ fontSize: 15 }}>{item.icon}</Text>
+                    <AppIcon name={item.icon} size={20} />
                   </View>
                   <Text style={styles.menuLabel}>{t(item.labelKey)}</Text>
                   {item.key === 'notifications' && unread > 0 && (
@@ -110,13 +112,13 @@ export default function MenuSheet({ visible, onClose }) {
                       <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
                     </View>
                   )}
-                  <Text style={styles.chevron}>›</Text>
+                  <AppIcon name="chevron-right" style={styles.chevron} />
                 </TouchableOpacity>
               ))}
             </View>
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-              <Text style={styles.logoutIcon}>⏻</Text>
+              <AppIcon name="logout" style={styles.logoutIcon} />
               <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
           </View>
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 26, color: Colors.brown900, marginBottom: 22,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 26, color: Colors.brown900, marginBottom: 22,
   },
   profileRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18,
@@ -159,9 +161,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line,
     alignItems: 'center', justifyContent: 'center',
   },
-  profileName: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  profileName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
   profileLink: {
-    fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600,
+    fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600,
     textDecorationLine: 'underline', marginTop: 2,
   },
   divider: { height: 1, backgroundColor: Colors.line, marginBottom: 18 },
@@ -174,13 +176,13 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
-  menuLabel: { flex: 1, fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown900 },
+  menuLabel: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900 },
   chevron: { fontSize: 17, color: Colors.brown600 },
   badge: {
     minWidth: 20, height: 20, borderRadius: 10, backgroundColor: Colors.error,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5,
   },
-  badgeText: { fontFamily: 'Lora_600SemiBold', fontSize: 10.5, color: '#FFFFFF' },
+  badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, color: '#FFFFFF' },
   logoutButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Colors.brown900, borderRadius: 14, height: 50, marginBottom: 30,
@@ -188,5 +190,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 }, elevation: 3,
   },
   logoutIcon: { fontSize: 14, color: Colors.mint },
-  logoutText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.mint },
+  logoutText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
 });

@@ -1,5 +1,7 @@
+import AppIcon from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -40,7 +42,7 @@ export default function JoinWithLinkScreen() {
     <SafeAreaView style={styles.screen}>
       <ScreenHeader title={t('joinWithLink')} onBack={() => router.back()} />
       <View style={styles.content}>
-        <Text style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>🔗</Text>
+        <AppIcon name="link" style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }} />
         <Text style={styles.subtitle}>{t('joinWithLinkHint')}</Text>
         <Field
           label={t('inviteLink')}
@@ -63,8 +65,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingHorizontal: 24, paddingTop: 20 },
   subtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 13.5, lineHeight: 20, color: Colors.brown600,
+    fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 20, color: Colors.brown600,
     textAlign: 'center', marginBottom: 22,
   },
-  error: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12 },
+  error: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12 },
 });

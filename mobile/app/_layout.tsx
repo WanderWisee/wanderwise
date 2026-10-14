@@ -1,5 +1,5 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { useFonts, Lora_400Regular, Lora_600SemiBold } from '@expo-google-fonts/lora';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -47,7 +47,7 @@ function AuthGate() {
 
 function Root() {
   const { ready } = useApp();
-  const [fontsLoaded] = useFonts({ Lora_400Regular, Lora_600SemiBold });
+  const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold });
 
   useEffect(() => {
     if (fontsLoaded && ready) SplashScreen.hideAsync();

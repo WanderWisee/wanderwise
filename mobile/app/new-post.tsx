@@ -1,8 +1,7 @@
+import AppIcon, { IconLabel } from '../components/AppIcon';
+import { Text, TextInput } from '../components/Typography';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -204,7 +203,7 @@ export default function NewPostScreen() {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <AppIcon name="arrow-left" style={styles.backText} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('newJournalEntry')}</Text>
         <View style={{ width: 34 }} />
@@ -230,7 +229,7 @@ export default function NewPostScreen() {
 
               {entries.length > 1 && (
                 <TouchableOpacity onPress={() => removeEntry(entry.id)} style={styles.removePageButton}>
-                  <Text style={styles.removePageText}>✕</Text>
+                  <AppIcon name="x" style={styles.removePageText} />
                 </TouchableOpacity>
               )}
 
@@ -243,7 +242,7 @@ export default function NewPostScreen() {
                   <Image source={{ uri: entry.photoUri }} style={styles.photo} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Text style={{ fontSize: 30 }}>📷</Text>
+                    <AppIcon name="camera" style={{ fontSize: 30 }} />
                     <Text style={styles.photoPlaceholderText}>{t('tapToAddPhoto')}</Text>
                   </View>
                 )}
@@ -262,7 +261,7 @@ export default function NewPostScreen() {
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((n) => (
                   <TouchableOpacity key={n} onPress={() => updateEntry(entry.id, { rating: n })}>
-                    <Text style={styles.star}>{n <= entry.rating ? '★' : '☆'}</Text>
+                    <AppIcon name="star" size={28} filled={n <= entry.rating} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -289,14 +288,14 @@ export default function NewPostScreen() {
                   onSubmitEditing={() => addPro(entry)}
                 />
                 <TouchableOpacity onPress={() => addPro(entry)} style={styles.addMark}>
-                  <Text style={styles.addMarkText}>+</Text>
+                  <AppIcon name="plus" style={styles.addMarkText} />
                 </TouchableOpacity>
               </View>
               {entry.pros.length > 0 && (
                 <View style={styles.chipsWrap}>
                   {entry.pros.map((p, i) => (
                     <TouchableOpacity key={i} onPress={() => removePro(entry, i)} style={styles.chip}>
-                      <Text style={styles.chipText}>{p} ✕</Text>
+                      <IconLabel trailing name="x" textStyle={styles.chipText}>{p}</IconLabel>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -313,14 +312,14 @@ export default function NewPostScreen() {
                   onSubmitEditing={() => addCon(entry)}
                 />
                 <TouchableOpacity onPress={() => addCon(entry)} style={styles.addMark}>
-                  <Text style={styles.addMarkText}>+</Text>
+                  <AppIcon name="plus" style={styles.addMarkText} />
                 </TouchableOpacity>
               </View>
               {entry.cons.length > 0 && (
                 <View style={styles.chipsWrap}>
                   {entry.cons.map((c, i) => (
                     <TouchableOpacity key={i} onPress={() => removeCon(entry, i)} style={styles.chip}>
-                      <Text style={styles.chipText}>{c} ✕</Text>
+                      <IconLabel trailing name="x" textStyle={styles.chipText}>{c}</IconLabel>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -345,7 +344,7 @@ export default function NewPostScreen() {
           onChangeText={setHotelDesc}
         />
         <TouchableOpacity onPress={addHotel} style={styles.addHotelLink}>
-          <Text style={styles.addHotelLinkText}>+ {t('addHotel')}</Text>
+          <IconLabel name="plus" textStyle={styles.addHotelLinkText}>{t('addHotel')}</IconLabel>
         </TouchableOpacity>
 
         {hotels.map((h, i) => (
@@ -380,20 +379,20 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900 },
+  headerTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900 },
   content: { paddingHorizontal: 20, paddingBottom: 50 },
 
   handLabelOutside: {
-    fontFamily: 'Lora_400Regular', fontStyle: 'italic', fontSize: 13.5,
+    fontFamily: 'Poppins_400Regular', fontStyle: 'italic', fontSize: 13.5,
     color: Colors.brown600, marginBottom: 6,
   },
   destinationInputOutside: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900,
     borderBottomWidth: 1, borderBottomColor: Colors.brown900, borderStyle: 'dotted',
     paddingVertical: 6, marginBottom: 8,
   },
   lineInputOutside: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     borderBottomWidth: 1, borderBottomColor: Colors.brown600, borderStyle: 'dotted',
     paddingVertical: 8,
   },
@@ -445,24 +444,24 @@ const styles = StyleSheet.create({
     width: 220, height: 160, borderRadius: 3, backgroundColor: Colors.card,
     alignItems: 'center', justifyContent: 'center', gap: 6,
   },
-  photoPlaceholderText: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown900 },
+  photoPlaceholderText: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown900 },
 
   handLabel: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: 'Poppins_400Regular',
     fontStyle: 'italic',
     fontSize: 13.5,
     color: Colors.brown600,
     marginBottom: 6,
   },
   sectionHandLabel: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: 'Poppins_400Regular',
     fontStyle: 'italic',
     fontSize: 14.5,
     color: Colors.brown900,
     marginBottom: 8,
   },
   lineInput: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     borderBottomWidth: 1, borderBottomColor: Colors.brown600, borderStyle: 'dotted',
     paddingVertical: 6,
   },
@@ -476,21 +475,21 @@ const styles = StyleSheet.create({
     width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', marginBottom: 4,
   },
-  addMarkText: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.mint },
+  addMarkText: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.mint },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   chip: {
     backgroundColor: Colors.cream2, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6,
   },
-  chipText: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown900 },
+  chipText: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown900 },
 
   addHotelLink: { marginTop: 8, alignSelf: 'flex-start' },
   addHotelLinkText: {
-    fontFamily: 'Lora_400Regular', fontStyle: 'italic', fontSize: 12.5,
+    fontFamily: 'Poppins_400Regular', fontStyle: 'italic', fontSize: 12.5,
     color: Colors.brown600, textDecorationLine: 'underline',
   },
   hotelEntry: { marginTop: 8 },
-  hotelEntryName: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
-  hotelEntryDesc: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
+  hotelEntryName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
+  hotelEntryDesc: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
 
   postButton: {
     backgroundColor: Colors.brown900, borderRadius: 14, height: 52,
@@ -498,5 +497,5 @@ const styles = StyleSheet.create({
     shadowColor: Colors.brown900, shadowOpacity: 0.2, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
-  postButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.mint },
+  postButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
 });

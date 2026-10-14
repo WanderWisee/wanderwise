@@ -65,39 +65,39 @@ export function notificationText(n, t, formatTime) {
 export function notificationIcon(type) {
   switch (type) {
     case 'announcement':
-    case 'class_announcement': return '📢';
+    case 'class_announcement': return 'message';
     case 'class_added':
-    case 'class_removed': return '🎓';
-    case 'journal_hidden': return '🚫';
+    case 'class_removed': return 'graduation';
+    case 'journal_hidden': return 'ban';
     case "trip_start":
-      return "🧳";
+      return "suitcase";
     case "activity":
-      return "⏰";
+      return "clock";
     case "checkin":
-      return "🏨";
+      return "hotel";
     case "crew_added":
     case "crew_joined":
     case "crew_removed":
     case "crew_left":
-      return "👥";
+      return "users";
     case "comment":
-      return "💬";
+      return "message";
     case "trip_updated":
-      return "✏️";
+      return "pencil";
     case "expense_added":
-      return "💸";
+      return "wallet";
     case "booking_added":
-      return "🏨";
+      return "hotel";
     case "budget_80":
-      return "⚠️";
+      return "warning";
     case "budget_over":
-      return "🚨";
+      return "warning";
     case "trip_ended":
-      return "📖";
+      return "book";
     case "password_changed":
-      return "🔒";
+      return "lock";
     default:
-      return "🔔";
+      return "bell";
   }
 }
 // Ang "link" ng notification ay para sa web ("/trip-plan?tripId=5",

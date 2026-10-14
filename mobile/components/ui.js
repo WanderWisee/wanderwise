@@ -1,22 +1,26 @@
+import AppIcon from './AppIcon';
+import { Text, TextInput } from './Typography';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Svg, { Image as SvgImage } from 'react-native-svg';
 import { Colors, Fonts, cardShadow } from '../constants/theme';
 import { initials } from '../services/userService';
 import { fetchDestinationImage } from '../services/geoService';
 import { localImageFor } from '../constants/destinations';
 
 // Maliliit na piraso ng UI na paulit-ulit sa mga screen — pareho ang
-// itsura ng dati (cream/brown/mint, Lora), pinag-isa lang para consistent.
+// itsura ng dati (cream/brown/mint, Poppins), pinag-isa lang para consistent.
 
 export function Wordmark() {
   return (
-    <View style={styles.wordmarkRow}>
-      <View style={styles.logo}>
-        <Text style={{ fontSize: 16 }}>🧭</Text>
-      </View>
-      <Text style={styles.wordmark}>
-        Wander<Text style={styles.wordmarkLight}>Wise</Text>
-      </Text>
+    <View style={styles.wordmarkRow} accessible accessibilityRole="image" accessibilityLabel="WanderWise">
+      {/* Frame the artwork within the transparent 3000px source canvases. */}
+      <Svg width={34} height={42} viewBox="795 637 1410 1726" accessible={false}>
+        <SvgImage href={require('../assets/brand/logo.png')} width={3000} height={3000} />
+      </Svg>
+      <Svg width={156} height={18} viewBox="617 1425 1758 165" accessible={false}>
+        <SvgImage href={require('../assets/brand/wordmark.png')} width={3000} height={3000} />
+      </Svg>
     </View>
   );
 }
@@ -27,7 +31,7 @@ export function ScreenHeader({ title, onBack, right = null, titleSize = 20 }) {
     <View style={styles.header}>
       {onBack ? (
         <TouchableOpacity onPress={onBack} style={styles.squareButton} hitSlop={8} accessibilityLabel="Back">
-          <Text style={styles.backText}>←</Text>
+          <AppIcon name="arrow-left" style={styles.backText} />
         </TouchableOpacity>
       ) : (
         <View style={{ width: 34 }} />
@@ -43,7 +47,7 @@ export function ScreenHeader({ title, onBack, right = null, titleSize = 20 }) {
 export function SquareButton({ children, onPress, style = null, accessibilityLabel = undefined }) {
   return (
     <TouchableOpacity onPress={onPress} style={[styles.squareButton, style]} hitSlop={6} accessibilityLabel={accessibilityLabel}>
-      {typeof children === 'string' ? <Text style={styles.backText}>{children}</Text> : children}
+      {typeof children === 'string' ? <AppIcon name={children} size={18} /> : children}
     </TouchableOpacity>
   );
 }
@@ -109,7 +113,7 @@ export function SectionTitle({ icon = null, tint = Colors.tintSand, children, ri
     <View style={[styles.sectionRow, style]}>
       {!!icon && (
         <View style={[styles.sectionIconBadge, { backgroundColor: tint }]}>
-          <Text style={{ fontSize: 14 }}>{icon}</Text>
+          <AppIcon name={icon} size={18} />
         </View>
       )}
       <Text style={styles.sectionTitle} numberOfLines={2}>
@@ -123,7 +127,7 @@ export function SectionTitle({ icon = null, tint = Colors.tintSand, children, ri
 export function EmptyState({ icon, title, subtitle = null, action = null, style = null }) {
   return (
     <View style={[styles.empty, style]}>
-      <Text style={{ fontSize: 38 }}>{icon}</Text>
+      <AppIcon name={icon} size={38} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {!!subtitle && <Text style={styles.emptySubtitle}>{subtitle}</Text>}
       {action}
@@ -135,7 +139,7 @@ export function EmptyState({ icon, title, subtitle = null, action = null, style 
 export function ErrorState({ message, onRetry, retryLabel = 'Try again' }) {
   return (
     <View style={styles.empty}>
-      <Text style={{ fontSize: 34 }}>📡</Text>
+      <AppIcon name="radio" style={{ fontSize: 34 }} />
       <Text style={styles.emptySubtitle}>{message}</Text>
       {onRetry && <OutlineButton label={retryLabel} onPress={onRetry} small style={{ marginTop: 14, paddingHorizontal: 22 }} />}
     </View>
@@ -176,8 +180,8 @@ export function Avatar({ person = null, uri = null, size = 40, style = null }) {
 }
 
 // Larawan ng isang destination: lokal na larawan muna (parehong assets ng
-// web), tapos Wikipedia sa pamamagitan ng backend, tapos emoji.
-export function DestinationImage({ name, style, emoji = '🏝️', emojiSize = 34 }) {
+// web), tapos Wikipedia sa pamamagitan ng backend, tapos vector icon.
+export function DestinationImage({ name, style, icon = 'map', iconSize = 34 }) {
   const local = localImageFor(name);
   const [remote, setRemote] = useState(null);
 
@@ -197,7 +201,7 @@ export function DestinationImage({ name, style, emoji = '🏝️', emojiSize = 3
   if (source) return <Image source={source} style={[{ backgroundColor: Colors.cream2 }, style]} resizeMode="cover" />;
   return (
     <View style={[{ backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <Text style={{ fontSize: emojiSize }}>{emoji}</Text>
+      <AppIcon name={icon} size={iconSize} />
     </View>
   );
 }
@@ -211,10 +215,11 @@ export function ChoiceChips({ options, value, onChange, style = null }) {
         return (
           <TouchableOpacity
             key={String(opt.value)}
-            style={[styles.chip, active && styles.chipActive]}
+            style={[styles.chip, { flexDirection: 'row', gap: 6 }, active && styles.chipActive]}
             onPress={() => onChange(opt.value)}
             activeOpacity={0.7}
           >
+            {!!opt.icon && <AppIcon name={opt.icon} size={16} color={active ? Colors.mint : Colors.brown900} />}
             <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</Text>
           </TouchableOpacity>
         );
@@ -235,12 +240,6 @@ export const ui = StyleSheet.create({
 
 const styles = StyleSheet.create({
   wordmarkRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logo: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  wordmark: { fontFamily: Fonts.semibold, fontSize: 19, color: Colors.brown900 },
-  wordmarkLight: { fontFamily: Fonts.regular, color: Colors.brown600 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,

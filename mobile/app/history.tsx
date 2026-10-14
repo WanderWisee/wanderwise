@@ -1,5 +1,7 @@
+import AppIcon, { IconLabel } from '../components/AppIcon';
+import { Text } from '../components/Typography';
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -79,7 +81,7 @@ export default function HistoryScreen() {
           }
           ListEmptyComponent={
             <View style={{ flex: 1, justifyContent: 'center' }}>
-              <EmptyState icon="🕘" title={t('historyEmpty')} />
+              <EmptyState icon="clock" title={t('historyEmpty')} />
             </View>
           }
           renderItem={({ item }) => {
@@ -92,7 +94,7 @@ export default function HistoryScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.iconBadge, { backgroundColor: isTrip ? Colors.tintSand : Colors.tintSage }]}>
-                  <Text style={{ fontSize: 16 }}>{isTrip ? '🧳' : '📖'}</Text>
+                  <AppIcon name={isTrip ? 'suitcase' : 'book'} size={22} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle} numberOfLines={1}>
@@ -104,7 +106,7 @@ export default function HistoryScreen() {
                     {isTrip ? t('historyTypeTrip') : t('historyTypeJournal')} · {t('historyColViewed')} {timeAgo(item.lastViewed)}
                   </Text>
                   {isTrip && (item.startDate || item.endDate) && (
-                    <Text style={styles.rowSubtitle}>📅 {formatDateRange(item.startDate, item.endDate)}</Text>
+                    <IconLabel name="calendar" textStyle={styles.rowSubtitle}>{formatDateRange(item.startDate, item.endDate)}</IconLabel>
                   )}
                   {!!viewers && (
                     <Text style={styles.viewers}>
@@ -114,7 +116,7 @@ export default function HistoryScreen() {
                     </Text>
                   )}
                 </View>
-                <Text style={styles.chevron}>›</Text>
+                <AppIcon name="chevron-right" style={styles.chevron} />
               </TouchableOpacity>
             );
           }}
@@ -136,8 +138,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
   iconBadge: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 14.5, color: Colors.brown900 },
-  rowSubtitle: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 3 },
-  viewers: { fontFamily: 'Lora_400Regular', fontSize: 11, lineHeight: 16, color: Colors.placeholder, marginTop: 6 },
+  rowTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14.5, color: Colors.brown900 },
+  rowSubtitle: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 3 },
+  viewers: { fontFamily: 'Poppins_400Regular', fontSize: 11, lineHeight: 16, color: Colors.placeholder, marginTop: 6 },
   chevron: { fontSize: 20, color: Colors.brown600 },
 });

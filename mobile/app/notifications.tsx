@@ -1,5 +1,7 @@
+import AppIcon, { IconLabel } from '../components/AppIcon';
+import { Text } from '../components/Typography';
 import { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -68,7 +70,7 @@ export default function NotificationsScreen() {
         onBack={() => router.back()}
         right={
           <TouchableOpacity onPress={() => router.push('/settings/notifications')} style={styles.gear} accessibilityLabel={t('notificationSettings')}>
-            <Text style={{ fontSize: 15 }}>⚙️</Text>
+            <AppIcon name="settings" style={{ fontSize: 15 }} />
           </TouchableOpacity>
         }
       />
@@ -86,22 +88,22 @@ export default function NotificationsScreen() {
           ListHeaderComponent={
             unread > 0 ? (
               <TouchableOpacity onPress={readAll} style={styles.readAll}>
-                <Text style={styles.readAllText}>✓ {t('markAllRead')} ({unread})</Text>
+                <IconLabel name="check" textStyle={styles.readAllText}>{t('markAllRead')} ({unread})</IconLabel>
               </TouchableOpacity>
             ) : null
           }
           ListEmptyComponent={
             <View style={{ flex: 1, justifyContent: 'center' }}>
-              <EmptyState icon="🔔" title={t('noUpdatesRightNow')} subtitle={t('notifEmptySubtitle')} />
+              <EmptyState icon="bell" title={t('noUpdatesRightNow')} subtitle={t('notifEmptySubtitle')} />
             </View>
           }
           renderItem={({ item: n }) => (
             <TouchableOpacity style={[styles.row, !n.isRead && styles.rowUnread]} onPress={() => open(n)} activeOpacity={0.7}>
               <View style={styles.iconBadge}>
-                <Text style={{ fontSize: 17 }}>{notificationIcon(n.type)}</Text>
+                <AppIcon name={notificationIcon(n.type)} size={22} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.text, !n.isRead && { fontFamily: 'Lora_600SemiBold' }]}>
+                <Text style={[styles.text, !n.isRead && { fontFamily: 'Poppins_600SemiBold' }]}>
                   {notificationText(n, t, formatTime)}
                 </Text>
                 <Text style={styles.time}>{timeAgo(n.createdAt)}</Text>
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
   },
   list: { paddingHorizontal: 20, paddingBottom: 30 },
   readAll: { alignSelf: 'flex-end', paddingVertical: 6, marginBottom: 8 },
-  readAllText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
+  readAllText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 10,
@@ -135,7 +137,7 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 12, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
   },
-  text: { fontFamily: 'Lora_400Regular', fontSize: 13.5, lineHeight: 19, color: Colors.brown900 },
-  time: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 3 },
+  text: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 19, color: Colors.brown900 },
+  time: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 3 },
   dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.teal },
 });

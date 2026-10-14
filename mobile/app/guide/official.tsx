@@ -1,5 +1,7 @@
+import { IconLabel, RatingStars } from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, StyleSheet, Image, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -15,7 +17,7 @@ const DESTINATION = 'Boracay Islands';
 const GUIDE_SECTIONS = [
   {
     pinLabel: 'White Beach',
-    subtitle: 'The Main Strip ★★★★★',
+    subtitle: 'The Main Strip',
     description:
       "White Beach is Boracay's four-kilometer stretch of powder-white sand and the island's main hub. Divided into Stations 1, 2, and 3, it's lined with resorts, beach bars, and restaurants right on the shore.",
     pros: [
@@ -66,17 +68,18 @@ function GuideSection({ section }) {
       {!!section.image && (
         <Image source={typeof section.image === 'string' ? { uri: section.image } : section.image} style={styles.image} />
       )}
-      <Text style={styles.pin}>📍 {section.pinLabel}</Text>
+      <IconLabel name="pin" textStyle={styles.pin}>{section.pinLabel}</IconLabel>
       <Text style={styles.subtitle}>{section.subtitle}</Text>
+      {section.pinLabel === 'White Beach' && <RatingStars rating={5} />}
       <Text style={styles.description}>{section.description}</Text>
 
       <Text style={styles.listTitle}>{t('prosOfStayingIn')} {section.pinLabel}:</Text>
       {section.pros.map((p) => (
-        <Text key={p} style={styles.listItem}>✓  {p}</Text>
+        <IconLabel key={p} name="check" textStyle={styles.listItem}>{p}</IconLabel>
       ))}
       <Text style={styles.listTitle}>{t('consOfStayingIn')} {section.pinLabel}:</Text>
       {section.cons.map((c) => (
-        <Text key={c} style={styles.listItem}>✕  {c}</Text>
+        <IconLabel key={c} name="x" textStyle={styles.listItem}>{c}</IconLabel>
       ))}
 
       <Text style={styles.subheading}>{t('hotelOption')}</Text>
@@ -84,7 +87,7 @@ function GuideSection({ section }) {
         const open = openHotel === h.name;
         return (
           <View key={h.name} style={styles.hotelCard}>
-            <Text style={styles.hotelName}>🏨 {h.name}</Text>
+            <IconLabel name="hotel" textStyle={styles.hotelName}>{h.name}</IconLabel>
             <Text style={styles.hotelDesc} numberOfLines={open ? undefined : 2}>{h.description}</Text>
             <View style={styles.hotelActions}>
               <TouchableOpacity onPress={() => setOpenHotel(open ? null : h.name)}>
@@ -152,18 +155,18 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   section: { marginBottom: 34 },
   image: { width: '100%', height: 190, borderRadius: 16, marginBottom: 14, backgroundColor: Colors.cream2 },
-  pin: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900 },
-  subtitle: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 2, marginBottom: 10 },
-  description: { fontFamily: 'Lora_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown900 },
-  listTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900, marginTop: 16, marginBottom: 6 },
-  listItem: { fontFamily: 'Lora_400Regular', fontSize: 13.5, lineHeight: 20, color: Colors.brown800, marginBottom: 4 },
-  subheading: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, marginTop: 22, marginBottom: 10 },
+  pin: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900 },
+  subtitle: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 2, marginBottom: 10 },
+  description: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown900 },
+  listTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900, marginTop: 16, marginBottom: 6 },
+  listItem: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 20, color: Colors.brown800, marginBottom: 4 },
+  subheading: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900, marginTop: 22, marginBottom: 10 },
   hotelCard: {
     backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
     borderWidth: 1, borderColor: Colors.line,
   },
-  hotelName: { fontFamily: 'Lora_600SemiBold', fontSize: 14.5, color: Colors.brown900, marginBottom: 4 },
-  hotelDesc: { fontFamily: 'Lora_400Regular', fontSize: 13, lineHeight: 19, color: Colors.brown600 },
+  hotelName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14.5, color: Colors.brown900, marginBottom: 4 },
+  hotelDesc: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 19, color: Colors.brown600 },
   hotelActions: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  hotelLink: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.teal },
+  hotelLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.teal },
 });

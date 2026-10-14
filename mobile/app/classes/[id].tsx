@@ -1,5 +1,6 @@
+import { Text } from '../../components/Typography';
 import { useCallback, useState } from 'react';
-import { RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useApp } from '../../context/AppContext';
 import { fetchClass, fetchClassAnnouncements } from '../../services/studentService';
@@ -30,7 +31,7 @@ export default function ClassScreen() {
           <View style={styles.row}><Avatar person={cls.teacher} size={44} /><Text style={styles.text}>{fullName(cls.teacher)}</Text></View>
         </StudentCard>
         <Text style={styles.title}>{t('announcements')}</Text>
-        {!items.length && <EmptyState icon="📢" title={t('noAnnouncements')} />}
+        {!items.length && <EmptyState icon="message" title={t('noAnnouncements')} />}
         {items.map((item) => <StudentCard key={item.id} title={item.authorName}>
           <Text style={styles.text}>{item.message}</Text>
           <Text style={styles.text}>{timeAgo(item.createdAt)}</Text>

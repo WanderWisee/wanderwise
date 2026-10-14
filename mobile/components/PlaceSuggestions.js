@@ -1,5 +1,7 @@
+import { IconLabel } from './AppIcon';
+import { Text } from './Typography';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
 import { fetchSuggestedPlaces } from '../services/tripService';
 import { useApp } from '../context/AppContext';
 import { Colors, Fonts } from '../constants/theme';
@@ -36,7 +38,7 @@ export default function PlaceSuggestions({ destination, sectionName = '', query 
   return <View style={{ gap: 8, marginBottom: 14 }}>
     <Text style={{ fontFamily: Fonts.semibold, color: Colors.brown600, fontSize: 13 }}>{t('suggestedPlaces')}</Text>
     {loading ? <ActivityIndicator color={Colors.brown600} /> : error ? <TouchableOpacity accessibilityRole="button" onPress={() => { setLoading(true); setAttempt((n) => n + 1); }}><Text style={{ color: Colors.error }}>{t('tryAgain')}</Text></TouchableOpacity> : !shown.length ? <Text style={{ color: Colors.brown600, fontSize: 12 }}>{t('noSuggestions')}</Text> : <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-      {shown.map((item) => <TouchableOpacity accessibilityRole="button" key={`${item.name}-${item.lat}-${item.lon}`} onPress={() => onSelect(item)} style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: Colors.cream2, borderRadius: 14, borderWidth: 1, borderColor: Colors.line }}><Text style={{ fontFamily: Fonts.regular, color: Colors.brown900 }}>+ {item.name}</Text></TouchableOpacity>)}
+      {shown.map((item) => <TouchableOpacity accessibilityRole="button" key={`${item.name}-${item.lat}-${item.lon}`} onPress={() => onSelect(item)} style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: Colors.cream2, borderRadius: 14, borderWidth: 1, borderColor: Colors.line }}><IconLabel name="plus" textStyle={{ fontFamily: Fonts.regular, color: Colors.brown900 }}>{item.name}</IconLabel></TouchableOpacity>)}
     </ScrollView>}
   </View>;
 }

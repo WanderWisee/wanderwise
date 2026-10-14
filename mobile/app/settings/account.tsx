@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,11 @@ import { Avatar, Field, PrimaryButton, ScreenHeader } from '../../components/ui'
 // registration at hindi pa nababago sa backend, kaya naka-lock dito;
 // ang larawan, bio at location ay nase-save sa account.
 export default function AccountScreen() {
+  const { user } = useApp();
+  return <AccountContent key={user?.userId || 'loading'} />;
+}
+
+function AccountContent() {
   const router = useRouter();
   const { t, user, setUser, refreshUser } = useApp();
   const { toast, alert } = useDialog();
@@ -20,12 +25,6 @@ export default function AccountScreen() {
   const [location, setLocation] = useState(user?.location || '');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  // Kapag dumating ang /api/me pagkatapos magbukas ang screen.
-  useEffect(() => {
-    setBio(user?.bio || '');
-    setLocation(user?.location || '');
-  }, [user?.userId]);
 
   async function pickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();

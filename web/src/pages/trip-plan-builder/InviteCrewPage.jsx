@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function InviteCrewPage() {
   const location = useLocation();
@@ -172,6 +173,33 @@ export default function InviteCrewPage() {
   // Only the owner can remove people; a crew member can only leave.
   const iAmOwner = crew.some((c) => c.isOwner && c.userId === myUserId);
   const iAmCrewMember = crew.some((c) => !c.isOwner && c.userId === myUserId);
+  // Crew join as viewers. Only the owner and crew the owner allowed to
+  // edit can invite more people (link + search below).
+  const iCanEdit = iAmOwner || crew.some((c) => c.userId === myUserId && c.canEdit);
+
+  // Owner-only: switch a crew member between "can edit" and "view only".
+  const [updatingMemberId, setUpdatingMemberId] = useState(null);
+  const handleTogglePermission = async (member) => {
+    if (!tripId || updatingMemberId) return;
+    setUpdatingMemberId(member.id);
+    try {
+      const resp = await fetch(`/api/trips/${tripId}/crew/${member.id}/permission`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ canEdit: !member.canEdit }),
+      });
+      if (resp.ok) {
+        setCrew((prev) => prev.map((c) => (c.id === member.id && !c.isOwner ? { ...c, canEdit: !member.canEdit } : c)));
+      } else {
+        alert(t("permissionUpdateFailed"));
+      }
+    } catch (err) {
+      console.warn("Failed to update permission:", err);
+      alert(t("permissionUpdateFailed"));
+    } finally {
+      setUpdatingMemberId(null);
+    }
+  };
   const [leaving, setLeaving] = useState(false);
 
   const handleLeaveTrip = async () => {
@@ -217,19 +245,27 @@ export default function InviteCrewPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-invite-main">
         <h1 className="ww-invite-title" onClick={handleBack} style={{ cursor: "pointer" }}>
-          ← {t("inviteYourCrew")}
+          <Icon name="arrow-left" /> {t("inviteYourCrew")}
         </h1>
 
+        {!loadingCrew && !iCanEdit && (
+          <div className="ww-hotels-trip-banner" style={{ margin: "0 0 20px" }}>
+            <span><Icon name="eye" /> {t("viewOnlyNotice")}</span>
+          </div>
+        )}
+
+        {(loadingCrew || iCanEdit) && (
+        <>
         <div className="ww-invite-link-row">
-          <span>🔗 {loadingLink ? t("loadingEllipsis") : shareLink || t("linkUnavailable")}</span>
+          <span><Icon name="link" /> {loadingLink ? t("loadingEllipsis") : shareLink || t("linkUnavailable")}</span>
           <button className="ww-copy-btn" onClick={handleCopy} disabled={!shareLink}>
             {copied ? t("linkCopied") : t("copy")}
           </button>
@@ -238,7 +274,7 @@ export default function InviteCrewPage() {
         <div className="ww-invite-search-wrap" ref={searchBoxRef} style={{ position: "relative" }}>
           <input
             className="ww-invite-user-input"
-            placeholder={`👤 ${t("searchForAStudent")}`}
+            placeholder={t("searchForAStudent")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
@@ -271,6 +307,8 @@ export default function InviteCrewPage() {
             </div>
           )}
         </div>
+        </>
+        )}
 
         <h2 className="ww-builder-section-title" style={{ marginTop: 24 }}>
           {t("crewOnThisTrip")}
@@ -295,14 +333,33 @@ export default function InviteCrewPage() {
                   {c.firstName} {c.lastName} {c.isOwner ? `(${t("tripOwner")})` : ""}
                   {c.userId === myUserId ? ` · ${t("historyYouTag")}` : ""}
                 </span>
+                {/* Owner: button to allow/stop editing. Everyone else: just a label. */}
+                {!c.isOwner && (
+                  iAmOwner ? (
+                    <button
+                      type="button"
+                      className="ww-optimize-btn"
+                      onClick={() => handleTogglePermission(c)}
+                      disabled={updatingMemberId === c.id}
+                      title={t("permissionToggleHint")}
+                      style={{ marginLeft: "auto" }}
+                    >
+                      {c.canEdit ? <><Icon name="pencil" /> {t("canEditLabel")}</> : <><Icon name="eye" /> {t("viewOnlyLabel")}</>}
+                    </button>
+                  ) : (
+                    <span className="ww-expense-desc" style={{ marginLeft: "auto" }}>
+                      {c.canEdit ? <><Icon name="pencil" /> {t("canEditLabel")}</> : <><Icon name="eye" /> {t("viewOnlyLabel")}</>}
+                    </span>
+                  )
+                )}
                 {!c.isOwner && iAmOwner && (
                   <span
                     className="ww-cost-remove"
                     onClick={() => handleRemoveCrew(c.id)}
-                    style={{ cursor: "pointer", marginLeft: "auto" }}
+                    style={{ cursor: "pointer" }}
                     title={t("removeCrewMemberTitle")}
                   >
-                    ✕
+                    <Icon name="x" />
                   </span>
                 )}
               </div>
@@ -319,7 +376,7 @@ export default function InviteCrewPage() {
             onClick={handleLeaveTrip}
             disabled={leaving}
           >
-            🚪 {leaving ? t("leavingTrip") : t("leaveTrip")}
+            <Icon name="log-out" /> {leaving ? t("leavingTrip") : t("leaveTrip")}
           </button>
         )}
       </main>

@@ -7,6 +7,7 @@ import { useApp } from '../../context/AppContext';
 import { geocodePlace } from '../../services/geoService';
 import OsmMap from '../../components/OsmMap';
 import { ScreenHeader } from '../../components/ui';
+import { api } from '../../services/api';
 
 // Ang built-in na Boracay guide — parehong laman ng TravelGuidePage ng web.
 const DESTINATION = 'Boracay Islands';
@@ -62,7 +63,9 @@ function GuideSection({ section }) {
 
   return (
     <View style={styles.section}>
-      <Image source={section.image} style={styles.image} />
+      {!!section.image && (
+        <Image source={typeof section.image === 'string' ? { uri: section.image } : section.image} style={styles.image} />
+      )}
       <Text style={styles.pin}>📍 {section.pinLabel}</Text>
       <Text style={styles.subtitle}>{section.subtitle}</Text>
       <Text style={styles.description}>{section.description}</Text>
@@ -108,11 +111,35 @@ function GuideSection({ section }) {
 export default function OfficialGuideScreen() {
   const router = useRouter();
   const { t } = useApp();
+  // Guide sections from the database (same as the web Guides page); the
+  // built-in Boracay guide is shown when there are none.
+  const [dbSections, setDbSections] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const lines = (text) => String(text || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    api.get(`/guides?destination=${encodeURIComponent(DESTINATION)}`)
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        setDbSections(rows.map((g) => ({
+          pinLabel: g.pinLabel || g.subtitle || DESTINATION,
+          subtitle: g.subtitle || '',
+          description: g.description || '',
+          pros: lines(g.pros),
+          cons: lines(g.cons),
+          image: g.imageUrl || null,
+          fallback: null,
+          hotels: (g.hotels || []).map((h) => ({ name: h.name, description: h.description || '' })),
+        })));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  const sections = dbSections || GUIDE_SECTIONS;
   return (
     <SafeAreaView style={styles.screen}>
       <ScreenHeader title={`${DESTINATION} ${t('travelJourneySuffix')}`} onBack={() => router.back()} titleSize={17} />
       <ScrollView contentContainerStyle={styles.content}>
-        {GUIDE_SECTIONS.map((s) => (
+        {sections.map((s) => (
           <GuideSection key={s.pinLabel} section={s} />
         ))}
       </ScrollView>
@@ -138,5 +165,5 @@ const styles = StyleSheet.create({
   hotelName: { fontFamily: 'Lora_600SemiBold', fontSize: 14.5, color: Colors.brown900, marginBottom: 4 },
   hotelDesc: { fontFamily: 'Lora_400Regular', fontSize: 13, lineHeight: 19, color: Colors.brown600 },
   hotelActions: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  hotelLink: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  hotelLink: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.teal },
 });

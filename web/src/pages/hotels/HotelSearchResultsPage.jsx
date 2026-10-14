@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // NOTE: verify these URL patterns against a real manual search on
 // agoda.com / klook.com — their query params can change over time.
@@ -69,9 +70,9 @@ export default function HotelSearchResultsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -88,7 +89,7 @@ export default function HotelSearchResultsPage() {
               </div>
             </div>
             <button className="ww-date-btn">
-              📅 {startDate && endDate ? `${startDate} - ${endDate}` : t("selectDates")}
+              <Icon name="calendar" /> {startDate && endDate ? `${startDate} - ${endDate}` : t("selectDates")}
             </button>
           </div>
         </div>
@@ -96,17 +97,17 @@ export default function HotelSearchResultsPage() {
         <div className="ww-maps-cta">
           <p>{t("seeLiveHotelsNear")} {destination}:</p>
           <button className="ww-search-btn" onClick={handleOpenGoogleMaps}>
-            🗺️ {t("viewHotelsOnGoogleMaps")}
+            <Icon name="map" /> {t("viewHotelsOnGoogleMaps")}
           </button>
         </div>
 
         <div className="ww-external-search-row">
           <span>{t("wantMoreOptions")}</span>
           <button className="ww-external-search-btn" onClick={handleSearchOnAgoda}>
-            🔗 {t("searchOnAgoda")}
+            <Icon name="link" /> {t("searchOnAgoda")}
           </button>
           <button className="ww-external-search-btn" onClick={handleSearchOnKlook}>
-            🔗 {t("searchOnKlook")}
+            <Icon name="link" /> {t("searchOnKlook")}
           </button>
         </div>
       </main>

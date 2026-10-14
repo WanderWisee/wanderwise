@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { fetchPublicProfile, fullName } from '../../services/userService';
@@ -17,22 +17,22 @@ export default function PublicProfileScreen() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('journal');
 
-  async function load() {
+  const load = useCallback(async () => {
     setError(null);
     try {
       setProfile(await fetchPublicProfile(id));
     } catch (e) {
       setError(e.status === 404 ? t('studentNotFound') : e.message);
     }
-  }
+  }, [id, t]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (user && String(user.userId) === String(id)) {
       router.replace('/(tabs)/profile');
       return;
     }
     load();
-  }, [id]);
+  }, [id, user, router, load]));
 
   return (
     <SafeAreaView style={styles.screen}>

@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
@@ -31,20 +34,60 @@ function makeEmptyEntry() {
 export default function NewPostScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { t } = useApp();
-  const { alert, toast } = useDialog();
+  const { t, user, isLoggedIn } = useApp();
+  const { alert, toast, confirm } = useDialog();
   const [place, setPlace] = useState(String(params.place || ''));
   const [entries, setEntries] = useState([makeEmptyEntry()]);
   const [hotels, setHotels] = useState([]);
   const [hotelName, setHotelName] = useState('');
   const [hotelDesc, setHotelDesc] = useState('');
   const [posting, setPosting] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftError, setDraftError] = useState('');
+  const [leaving, setLeaving] = useState(false);
+  const postingRef = useRef(false);
+  const navigation = useNavigation();
+  const draftKey = `wanderwise_journal_draft_${user?.userId}`;
+  const hasContent = entries.some((e) => e.photoData || e.description || e.placeName) || !!place.trim() || hotels.length > 0 || !!hotelName.trim();
+  const restoredNotice = useEffectEvent(() => toast(t('draftRestored')));
+  useEffect(() => {
+    if (!user?.userId) return;
+    let alive = true;
+    AsyncStorage.getItem(draftKey).then((raw) => {
+      if (!alive || !raw) return;
+      try {
+        const draft = JSON.parse(raw);
+        if (!Array.isArray(draft.entries) || !draft.entries.length) return;
+        setPlace(draft.place || ''); setEntries(draft.entries); setHotels(draft.hotels || []);
+        setHotelName(draft.hotelName || ''); setHotelDesc(draft.hotelDesc || '');
+        restoredNotice();
+      } catch { /* Ignore an invalid draft. */ }
+    }).catch(() => {}).finally(() => { if (alive) setDraftReady(true); });
+    return () => { alive = false; };
+  }, [draftKey, user?.userId]);
+  useEffect(() => {
+    if (!draftReady || leaving) return;
+    const timer = setTimeout(() => {
+      AsyncStorage.setItem(draftKey, JSON.stringify({ place, entries, hotels, hotelName, hotelDesc })).then(() => setDraftError('')).catch(() => setDraftError(t('draftSaveFailed')));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [draftReady, leaving, draftKey, place, entries, hotels, hotelName, hotelDesc, t]);
+  usePreventRemove(isLoggedIn && !leaving && hasContent, ({ data }) => {
+    if (postingRef.current) return;
+    void confirm({ title: t('leaveDraft'), message: t('draftKept'), confirmLabel: t('leave'), cancelLabel: t('keepEditing') }).then(async (ok) => {
+      if (!ok) return;
+      try { await AsyncStorage.setItem(draftKey, JSON.stringify({ place, entries, hotels, hotelName, hotelDesc })); }
+      catch { await alert(t('draftSaveFailed')); return; }
+      setLeaving(true); setTimeout(() => navigation.dispatch(data.action), 0);
+    });
+  });
 
   function updateEntry(id, changes) {
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...changes } : e)));
   }
 
   async function pickPhotoFor(id, isLastEntry) {
+    try {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       alert(t('photoPermissionTitle'), t('photoPermissionMessage'));
@@ -65,11 +108,13 @@ export default function NewPostScreen() {
       return;
     }
 
-    updateEntry(id, { photoUri: asset.uri, photoData: `data:image/jpeg;base64,${asset.base64}` });
+    const resized = await manipulateAsync(asset.uri, [{ resize: asset.width > asset.height ? { width: 1280 } : { height: 1280 } }], { compress: 0.6, format: SaveFormat.JPEG, base64: true });
+    updateEntry(id, { photoUri: resized.uri, photoData: `data:image/jpeg;base64,${resized.base64}` });
 
     if (isLastEntry) {
       setEntries((prev) => [...prev, makeEmptyEntry()]);
     }
+    } catch (e) { await alert(t('couldntReadPhoto'), e.message); }
   }
 
   function removeEntry(id) {
@@ -103,6 +148,7 @@ export default function NewPostScreen() {
   }
 
   async function handlePost() {
+    if (postingRef.current || !draftReady) return;
     const where = place.trim();
     if (!where) {
       alert(t('missingPlaceTitle'), t('missingPlaceMessage'));
@@ -129,21 +175,24 @@ export default function NewPostScreen() {
         rating: e.rating,
         description: e.description.trim(),
         sortOrder: idx,
-        pros: e.pros,
-        cons: e.cons,
+        pros: e.prosInput.trim() ? [...e.pros, e.prosInput.trim()] : e.pros,
+        cons: e.consInput.trim() ? [...e.cons, e.consInput.trim()] : e.cons,
         hotels: idx === 0 ? allHotels.map((h) => ({ name: h.name, description: h.description || null })) : [],
       })),
     };
 
+    postingRef.current = true;
     setPosting(true);
     try {
       const created = await createJournalEntry(payload);
       toast(t('postedBanner'));
-      if (created && created.id) router.replace(`/journal/${created.id}`);
-      else router.back();
+      setLeaving(true);
+      await AsyncStorage.removeItem(draftKey).catch(() => {});
+      setTimeout(() => { if (created?.id) router.replace(`/journal/${created.id}`); else router.back(); }, 0);
     } catch (e) {
       alert(t('journalSaveError'), e.message);
     } finally {
+      postingRef.current = false;
       setPosting(false);
     }
   }
@@ -163,6 +212,7 @@ export default function NewPostScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {!!draftError && <Text accessibilityRole="alert" style={{ color: Colors.error, marginBottom: 12 }}>{draftError}</Text>}
         <Text style={styles.handLabelOutside}>{t('whereWasThisTrip')}</Text>
         <TextInput
           style={styles.destinationInputOutside}

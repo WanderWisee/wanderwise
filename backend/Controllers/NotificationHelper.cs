@@ -30,6 +30,20 @@ public static class NotificationHelper
     public const string TripEnded = "trip_ended";
     // Security — always sent, can't be turned off in Settings
     public const string PasswordChanged = "password_changed";
+    // Tour Day announcement from the trip owner (pick-up time, what to
+    // bring…). Always sent — the group needs it during the trip.
+    public const string Announcement = "announcement";
+    // Teacher portal — always sent (school work)
+    public const string ClassAdded = "class_added";
+    public const string ClassAnnouncement = "class_announcement";
+    // To the teacher: a student joined the class with the join code.
+    public const string StudentJoined = "student_joined";
+    // To the student: the teacher removed them from a class.
+    public const string ClassRemoved = "class_removed";
+    // Admin panel — always sent
+    public const string TeacherPending = "teacher_pending";
+    public const string TeacherApproved = "teacher_approved";
+    public const string JournalHidden = "journal_hidden";
 
     public static async Task<bool> IsEnabledAsync(WanderWiseDbContext db, int userId, string type)
     {
@@ -42,7 +56,9 @@ public static class NotificationHelper
             CrewAdded or CrewJoined or CrewRemoved or CrewLeft => s.NotifTripInvites,
             Comment => s.NotifComments,
             TripUpdated or ExpenseAdded or BookingAdded or BudgetWarning or BudgetOver => s.NotifTripUpdates,
-            PasswordChanged => true,
+            PasswordChanged or Announcement => true,
+            ClassAdded or ClassAnnouncement or StudentJoined or ClassRemoved => true,
+            TeacherPending or TeacherApproved or JournalHidden => true,
             _ => true,
         };
     }

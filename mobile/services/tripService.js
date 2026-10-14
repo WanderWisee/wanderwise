@@ -136,3 +136,11 @@ export function createBooking(tripId, { placeName, bookingSite, confirmationNumb
 export function deleteBooking(tripId, bookingId) {
   return api.del(`/trips/${tripId}/bookings/${bookingId}`);
 }
+
+export const updateCrewPermission = (tripId, memberId, canEdit) =>
+  api.put(`/trips/${tripId}/crew/${memberId}/permission`, { canEdit });
+
+export async function fetchSuggestedPlaces(destination, category = '') {
+  const data = await api.get(`/places?destination=${encodeURIComponent(destination)}&category=${encodeURIComponent(category)}`, { auth: false, timeout: 60000 });
+  return Array.isArray(data?.places) ? data.places : [];
+}

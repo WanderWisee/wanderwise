@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
+import { homeForRole } from "../../utils/portal";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,10 +19,13 @@ export default function LoginPage() {
   // SharedTripViewPage saved the invite's shareToken before redirecting.
   // Once logged in, finish that join automatically instead of sending
   // them to the plain Dashboard and making them re-find the link.
-  const continuePendingInvite = async () => {
+  const continuePendingInvite = async (role) => {
     const pendingToken = localStorage.getItem("wanderwise_pending_invite_token");
-    if (!pendingToken) {
-      navigate("/dashboard");
+    // One log in page for everyone: students go to the Dashboard,
+    // teachers to the Teacher portal, the admin to the Admin panel.
+    // (Trip invites are for students only.)
+    if (!pendingToken || (role && role !== "student")) {
+      navigate(homeForRole(role));
       return;
     }
     localStorage.removeItem("wanderwise_pending_invite_token");
@@ -52,11 +57,13 @@ export default function LoginPage() {
       const resp = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        // "web" = any account type can log in here; the role in the
+        // answer decides which pages open.
+        body: JSON.stringify({ email: email.trim(), password, portal: "web" }),
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(data?.error || t("loginErrFailed"));
+        setError(resp.status === 401 ? t("loginErrInvalid") : data?.error || t("loginErrFailed"));
         return;
       }
       if (data?.token) {
@@ -65,7 +72,7 @@ export default function LoginPage() {
         // showing the previous account's until the page is refreshed.
         notifyAuthChanged();
       }
-      await continuePendingInvite();
+      await continuePendingInvite(data?.role);
     } catch (err) {
       setError(t("networkError"));
     } finally {
@@ -93,18 +100,20 @@ export default function LoginPage() {
             aria-label="Go back"
             onClick={() => navigate('/')}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-login-title">{t("loginTitle")}</h1>
 
-          <label className="ww-field-label">{t("studentEmail")}</label>
+          <label className="ww-field-label">{t("loginUsername")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder={t("enterStudentEmail")}
+            placeholder={t("enterLoginUsername")}
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
 
           <label className="ww-field-label">{t("password")}</label>
@@ -113,8 +122,10 @@ export default function LoginPage() {
               type={showPassword ? "text" : "password"}
               className="ww-field-input"
               placeholder={t("enterPassword")}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             />
             <button
               type="button"
@@ -122,7 +133,7 @@ export default function LoginPage() {
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? "👁" : "🙈"}
+              <Icon name={showPassword ? "eye" : "eye-off"} />
             </button>
           </div>
 
@@ -139,6 +150,12 @@ export default function LoginPage() {
               {t("registerAccount")}
             </a>
           </div>
+          <p className="ww-teacher-signup-link">
+            {t("areYouTeacher")}{" "}
+            <a href="/register/teacher" className="ww-bottom-link">
+              {t("registerAsTeacher")}
+            </a>
+          </p>
         </div>
       </main>
     </div>

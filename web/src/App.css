@@ -383,9 +383,7 @@ a {
   line-height: 1;
   cursor: pointer;
   padding: 0;
-  filter: grayscale(1);
-  opacity: 0.72;
-  transition: background-color var(--ww-t-fast), opacity var(--ww-t-fast), filter var(--ww-t-fast);
+  transition: background-color var(--ww-t-fast), transform var(--ww-t-fast);
 }
 
 .ww-nav-icons > span:hover,
@@ -394,15 +392,41 @@ a {
 .ww-navbar-search-anchor > span:hover,
 .ww-nav-icon-btn:hover {
   background-color: var(--ww-surface-2);
-  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* Red badge on the bell (2nd navbar icon on every page) when there are
+   unread notifications. NotificationWatcher sets data-ww-unread and the
+   --ww-unread-label count on <html>. */
+.ww-nav-icons > :nth-child(2) {
+  position: relative;
+}
+
+html[data-ww-unread] .ww-nav-icons > :nth-child(2)::after {
+  content: var(--ww-unread-label, "");
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--ww-r-pill);
+  background: #d93025;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--ww-surface);
+  pointer-events: none;
+  animation: ww-pop-in 0.2s var(--ww-ease);
 }
 
 /* Icon of the current page (notifications / profile) */
 .ww-notifications-page .ww-nav-icons > span:nth-last-child(2),
 .ww-profile-page .ww-nav-icons > span:last-child {
-  background-color: var(--ww-primary-50);
-  filter: none;
-  opacity: 1;
+  background-color: var(--ww-surface-3);
 }
 
 /* Navbar "Menu" dropdown */
@@ -696,8 +720,8 @@ a {
 .ww-journal-post-btn:disabled,
 .ww-journal-upload-btn:disabled,
 .ww-copy-btn:disabled {
-  background-color: var(--ww-border-strong);
-  color: #ffffff;
+  background-color: var(--ww-surface-3);
+  color: var(--ww-text-subtle);
   box-shadow: none;
   transform: none;
   cursor: not-allowed;
@@ -1906,7 +1930,9 @@ input[type="time"]:focus {
 
 .ww-destinations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  /* auto-fit: the cards stretch to fill the row instead of leaving
+     empty columns on the right */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin: 0;
 }
@@ -1918,7 +1944,7 @@ input[type="time"]:focus {
 
 .ww-booking-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
   margin: 0;
 }
@@ -3173,6 +3199,77 @@ input[type="time"]:focus {
   min-height: 32px;
   padding: 0 14px;
   font-size: var(--ww-fs-sm);
+}
+
+/* Sidebar links scroll here — keep the target below the sticky top bar */
+.ww-day-block,
+.ww-custom-section {
+  scroll-margin-top: calc(var(--ww-topbar-h) + 16px);
+}
+
+@media (max-width: 860px) {
+  .ww-day-block,
+  .ww-custom-section {
+    scroll-margin-top: calc(var(--ww-topbar-h) + 72px);
+  }
+}
+
+/* ---- View-only crew (Trip Plan Builder) ----
+   Crew join as viewers: every control that changes the trip is hidden,
+   and what's left (notes, times) is shown as plain text. */
+.ww-builder-readonly .ww-undo-redo,
+.ww-builder-readonly .ww-builder-saved,
+.ww-builder-readonly .ww-edit-icon,
+.ww-builder-readonly .ww-more-icon,
+.ww-builder-readonly .ww-suggested-places-panel,
+.ww-builder-readonly .ww-show-more-btn,
+.ww-builder-readonly .ww-add-place-input,
+.ww-builder-readonly .ww-day-add-wrap,
+.ww-builder-readonly .ww-day-suggest,
+.ww-builder-readonly .ww-new-list-btn,
+.ww-builder-readonly .ww-optimize-btn,
+.ww-builder-readonly .ww-mark-visited,
+.ww-builder-readonly .ww-visited-checkbox,
+.ww-builder-readonly .ww-browse-btn,
+.ww-builder-readonly .ww-add-expense-btn,
+.ww-builder-readonly .ww-cost-remove,
+.ww-builder-readonly .ww-cost-add-row,
+.ww-builder-readonly .ww-unverified-warning-link,
+.ww-builder-readonly .ww-builder-main > .ww-field-label,
+.ww-builder-readonly .ww-place-actions > span:nth-child(2) {
+  display: none !important;
+}
+
+.ww-builder-readonly .ww-place-card,
+.ww-builder-readonly .ww-place-actions {
+  cursor: default !important;
+}
+
+.ww-builder-readonly .ww-place-actions,
+.ww-builder-readonly .ww-itinerary-place .ww-visited-checkbox,
+.ww-builder-readonly .ww-place-notes-input {
+  pointer-events: none;
+}
+
+.ww-builder-readonly .ww-place-notes-input {
+  padding-left: 0;
+  background: transparent;
+  border-color: transparent;
+}
+
+.ww-builder-readonly .ww-place-notes-input:placeholder-shown {
+  display: none;
+}
+
+/* The Add Crew button stays (to see who's on the trip) */
+.ww-builder-readonly .ww-trip-plan-btn[style] {
+  margin-left: 0 !important;
+}
+
+/* Add Crew / Leave trip buttons under the map: same spacing as Book a Hotel */
+.ww-builder-main > .ww-trip-plan-btn,
+.ww-builder-main > .ww-booking-cancel {
+  margin-bottom: 28px;
 }
 
 /* ---------------------------------------------------------------------
@@ -5639,6 +5736,1748 @@ input[type="time"]:focus {
 }
 
 /* ---------------------------------------------------------------------
+   16b. TOUR DAY (during the trip): meeting point + check-in,
+        attendance, announcements, activities
+   --------------------------------------------------------------------- */
+.ww-tour-page {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+  font-family: var(--ww-font-body);
+  color: var(--ww-text);
+}
+
+.ww-tour-main {
+  width: 100%;
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 32px var(--ww-gutter) 72px;
+}
+
+.ww-tour-title {
+  margin: 0 0 18px;
+  font-size: var(--ww-fs-2xl);
+  font-weight: 700;
+}
+
+.ww-tour-subtitle {
+  color: var(--ww-text-muted);
+  font-weight: 400;
+}
+
+/* Small teal chip button (used in the builder's day header too) */
+.ww-tour-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: var(--ww-r-pill);
+  border: 1px solid var(--ww-primary-200);
+  background: var(--ww-primary-50);
+  color: var(--ww-primary);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ww-t-fast), color var(--ww-t-fast), border-color var(--ww-t-fast);
+}
+
+.ww-tour-link:hover {
+  background: var(--ww-primary);
+  border-color: var(--ww-primary);
+  color: #ffffff;
+}
+
+/* Day picker */
+.ww-tour-days {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ww-tour-day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  min-width: 112px;
+  padding: 10px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  color: var(--ww-text);
+  font-family: var(--ww-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--ww-t-fast), background-color var(--ww-t-fast), box-shadow var(--ww-t-fast);
+}
+
+.ww-tour-day:hover {
+  border-color: var(--ww-accent);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-tour-day.active {
+  border-color: var(--ww-btn);
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+}
+
+.ww-tour-day-num {
+  font-family: var(--ww-font-head);
+  font-weight: 700;
+  font-size: var(--ww-fs-base);
+}
+
+.ww-tour-day-date {
+  font-size: var(--ww-fs-xs);
+  opacity: 0.8;
+}
+
+/* Cards grid */
+.ww-tour-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.ww-tour-card {
+  min-width: 0;
+  padding: 22px 24px;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-tour-card-wide {
+  grid-column: 1 / -1;
+}
+
+.ww-tour-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-tour-card-head h2 {
+  margin: 0;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+.ww-tour-count {
+  padding: 4px 12px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-size: var(--ww-fs-sm);
+  font-weight: 700;
+}
+
+.ww-tour-meeting-info {
+  margin: 0 0 12px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-hint {
+  margin: 6px 0 0;
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-xs);
+}
+
+/* Forms inside the cards */
+.ww-tour-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-tour-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+}
+
+.ww-tour-form select,
+.ww-tour-form input[type="number"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: var(--ww-r-md);
+  background: var(--ww-surface);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-base);
+  outline: none;
+}
+
+.ww-tour-form select:focus,
+.ww-tour-form input[type="number"]:focus {
+  border-color: var(--ww-primary);
+  box-shadow: var(--ww-ring);
+}
+
+.ww-tour-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ww-tour-form .ww-journal-tips-input {
+  min-height: 80px;
+}
+
+.ww-tour-activity-form {
+  display: grid;
+  grid-template-columns: 2fr 120px 1.5fr 1.5fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding-top: 16px;
+  border-top: 1px dashed var(--ww-border);
+}
+
+.ww-tour-activity-form input[type="time"] {
+  min-height: 44px;
+  width: 100%;
+}
+
+/* Map */
+.ww-tour-map {
+  overflow: hidden;
+  margin-bottom: 14px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-tour-popup-photo {
+  display: block;
+  width: 160px;
+  max-height: 160px;
+  margin-top: 6px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Check-in */
+.ww-tour-checkin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ww-tour-checked {
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-weight: 600;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-fence-status {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-tour-fence-status p {
+  margin: 0 0 10px;
+  font-weight: 600;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-fence-status.inside {
+  background: var(--ww-success-50);
+  border-color: #bfe3cc;
+}
+
+.ww-tour-fence-status.outside {
+  background: var(--ww-danger-50);
+  border-color: #efc5bc;
+}
+
+.ww-tour-fence-status .ww-tour-form-actions {
+  justify-content: flex-start;
+}
+
+/* Attendance list */
+.ww-tour-roster {
+  display: flex;
+  flex-direction: column;
+  max-height: 480px;
+  overflow-y: auto;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-tour-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-tour-person:last-child {
+  border-bottom: none;
+}
+
+.ww-tour-person.present {
+  background: var(--ww-success-50);
+}
+
+.ww-tour-person input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ww-tour-person input[type="checkbox"]:disabled {
+  cursor: default;
+}
+
+.ww-tour-person-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.ww-tour-person-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-weight: 600;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-person-status {
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-xs);
+}
+
+.ww-tour-person.present .ww-tour-person-status {
+  color: var(--ww-success);
+}
+
+.ww-tour-tag {
+  padding: 1px 8px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+  color: var(--ww-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ww-tour-photo-thumb {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px solid var(--ww-surface);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface-3) center / cover no-repeat;
+  box-shadow: var(--ww-shadow-sm);
+  cursor: pointer;
+  transition: transform var(--ww-t-fast);
+}
+
+.ww-tour-photo-thumb:hover {
+  transform: scale(1.06);
+}
+
+.ww-tour-photo-modal img {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-surface-2);
+}
+
+.ww-tour-photo-caption {
+  margin: 0 0 12px;
+  font-size: var(--ww-fs-sm);
+  color: var(--ww-text-muted);
+}
+
+/* Announcements */
+.ww-tour-announcements {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 480px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ww-tour-announcements li {
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-accent-100);
+  border-left: 4px solid var(--ww-accent);
+  background: var(--ww-accent-50);
+}
+
+.ww-tour-announcement-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--ww-fs-xs);
+  color: var(--ww-text-subtle);
+}
+
+.ww-tour-announcement-head strong {
+  color: var(--ww-text);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-announcement-head .ww-cost-remove {
+  margin-left: auto;
+}
+
+.ww-tour-announcements p {
+  margin: 6px 0 0;
+  white-space: pre-line;
+  word-break: break-word;
+  font-size: var(--ww-fs-base);
+}
+
+/* Activities */
+.ww-tour-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-tour-activities li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+}
+
+.ww-tour-activity-time {
+  min-width: 76px;
+  padding: 3px 10px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-tour-activity-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ww-tour-activity-place {
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-tour-activity-body p {
+  margin: 2px 0 0;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+@media (max-width: 860px) {
+  .ww-tour-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-tour-activity-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ww-tour-activity-form > input:first-child,
+  .ww-tour-activity-form > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .ww-tour-card {
+    padding: 18px 16px;
+  }
+
+  .ww-tour-activity-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   16c. TEACHER PORTAL · STUDENT CLASSES · ADMIN PANEL
+        Same theme (cream + brown + teal), card-based, table-friendly.
+   --------------------------------------------------------------------- */
+.ww-portal-page {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+  font-family: var(--ww-font-body);
+  color: var(--ww-text);
+}
+
+.ww-portal-main {
+  width: 100%;
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 32px var(--ww-gutter) 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ww-portal-main > .ww-stories-back {
+  margin: 0;
+}
+
+.ww-portal-gate {
+  max-width: 480px;
+  margin: 80px auto;
+  padding: 0 var(--ww-gutter);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ---- Headings / text ---- */
+.ww-portal-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ww-portal-eyebrow {
+  margin: 0 0 4px;
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ww-portal-title {
+  margin: 0;
+  font-family: var(--ww-font-head);
+  font-size: var(--ww-fs-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ww-portal-muted {
+  margin: 6px 0 0;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-base);
+}
+
+.ww-portal-muted.small,
+.ww-portal-hint {
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-hint {
+  margin: 0;
+  color: var(--ww-text-subtle);
+}
+
+.ww-portal-error,
+.ww-portal-ok {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--ww-r-md);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+}
+
+.ww-portal-error {
+  background: var(--ww-danger-50);
+  color: var(--ww-danger);
+}
+
+.ww-portal-ok {
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+}
+
+.ww-portal-instructions {
+  margin: 12px 0 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--ww-accent);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-accent-50);
+  white-space: pre-line;
+  line-height: 1.55;
+}
+
+.ww-portal-note {
+  margin: 8px 0 0;
+  color: var(--ww-text-muted);
+  font-style: italic;
+  white-space: pre-line;
+}
+
+.ww-portal-clip {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--ww-text-muted);
+  max-width: 420px;
+}
+
+/* Text-only buttons and links */
+.ww-link-btn {
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  color: var(--ww-primary);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--ww-r-sm);
+  white-space: nowrap;
+}
+
+.ww-link-btn:hover {
+  background: var(--ww-primary-50);
+}
+
+.ww-link-btn.danger {
+  color: var(--ww-danger);
+}
+
+.ww-link-btn.danger:hover {
+  background: var(--ww-danger-50);
+}
+
+.ww-link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ww-link-text {
+  color: var(--ww-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ww-link-text:hover {
+  text-decoration: underline;
+}
+
+.ww-search-btn.small,
+.ww-booking-cancel.small {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Cards ---- */
+.ww-portal-card {
+  min-width: 0;
+  padding: 22px 24px;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-portal-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ww-portal-card-head h2 {
+  margin: 0;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+.ww-portal-subcard {
+  margin: 12px 0;
+  padding: 16px 18px;
+  border-radius: var(--ww-r-lg);
+  border: 1px dashed var(--ww-border-strong);
+  background: var(--ww-surface-2);
+}
+
+.ww-portal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--ww-text-muted);
+}
+
+.ww-portal-empty span {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.ww-portal-empty p {
+  margin: 0;
+  max-width: 420px;
+}
+
+.ww-portal-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ---- Stats ---- */
+.ww-portal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.ww-portal-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-xs);
+}
+
+.ww-portal-stat-icon {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-primary-50);
+  font-size: 20px;
+}
+
+.ww-portal-stat-value {
+  font-family: var(--ww-font-head);
+  font-size: var(--ww-fs-xl);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-stat-label {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+  font-weight: 600;
+}
+
+.ww-portal-stat.warn .ww-portal-stat-icon {
+  background: var(--ww-warning-50);
+}
+
+.ww-portal-stat.warn .ww-portal-stat-value {
+  color: var(--ww-warning);
+}
+
+/* ---- Class cards (teacher + student) ---- */
+.ww-portal-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.ww-portal-class-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 170px;
+  padding: 28px 20px 16px;
+  overflow: hidden;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+  color: var(--ww-text);
+  font-family: var(--ww-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--ww-t-fast), box-shadow var(--ww-t-fast), border-color var(--ww-t-fast);
+}
+
+.ww-portal-class-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ww-accent);
+  box-shadow: var(--ww-shadow-md);
+}
+
+.ww-portal-class-band {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 10px;
+  background: linear-gradient(90deg, var(--ww-btn), var(--ww-primary));
+}
+
+.ww-portal-class-name {
+  font-family: var(--ww-font-head);
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ww-portal-class-sub {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-class-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 10px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-class-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid var(--ww-border);
+}
+
+/* Join codes */
+.ww-portal-code,
+.ww-portal-table code,
+.ww-portal-muted code {
+  padding: 2px 8px;
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface-3);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: var(--ww-fs-sm);
+  letter-spacing: 0.06em;
+}
+
+.ww-portal-code.big {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-size: var(--ww-fs-xl);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.ww-portal-class-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 22px 24px;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border);
+  border-top: 6px solid var(--ww-btn);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-portal-class-head > form {
+  flex: 1;
+}
+
+.ww-portal-join {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ww-portal-join-label {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ww-portal-join-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.ww-portal-join-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ww-portal-code-input {
+  width: 160px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+/* ---- Tabs ---- */
+.ww-portal-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+  scrollbar-width: none;
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.ww-portal-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--ww-r-pill);
+  background: transparent;
+  color: var(--ww-text-muted);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ww-t-fast), color var(--ww-t-fast);
+}
+
+.ww-portal-tab:hover {
+  color: var(--ww-text);
+  background: var(--ww-surface);
+}
+
+.ww-portal-tab.active {
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+}
+
+.ww-portal-tab-count {
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: var(--ww-r-pill);
+  background: rgba(0, 0, 0, 0.08);
+  font-size: var(--ww-fs-xs);
+  text-align: center;
+}
+
+.ww-portal-tab.active .ww-portal-tab-count {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---- Forms ---- */
+.ww-portal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ww-portal-form h2 {
+  margin: 0;
+  font-size: var(--ww-fs-lg);
+}
+
+.ww-portal-form label,
+.ww-portal-grade label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+}
+
+.ww-portal-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.ww-portal-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.ww-portal-form .ww-field-input,
+.ww-portal-filters .ww-field-input,
+.ww-portal-inline-form .ww-field-input,
+.ww-portal-grade .ww-field-input,
+.ww-portal-join-form .ww-field-input {
+  margin: 0;
+  width: 100%;
+}
+
+.ww-portal-form .ww-journal-tips-input,
+.ww-portal-grade .ww-journal-tips-input,
+.ww-modal-card .ww-journal-tips-input {
+  min-height: 90px;
+  width: 100%;
+}
+
+.ww-portal-form label.ww-portal-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  min-height: 44px;
+}
+
+.ww-portal-check input {
+  width: 18px;
+  height: 18px;
+}
+
+.ww-portal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ww-portal-actions .ww-portal-hint {
+  margin-right: auto;
+}
+
+.ww-portal-inline-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ww-portal-inline-form .ww-field-input {
+  flex: 1;
+}
+
+.ww-portal-inline-form .ww-search-btn {
+  flex-shrink: 0;
+}
+
+.ww-portal-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-portal-filter {
+  margin: 12px 0 !important;
+}
+
+.ww-portal-select {
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Badges ---- */
+.ww-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-primary-50);
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.ww-portal-badge + .ww-portal-badge,
+strong .ww-portal-badge {
+  margin-left: 6px;
+}
+
+.ww-portal-badge.ok {
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+}
+
+.ww-portal-badge.warn {
+  background: var(--ww-warning-50);
+  color: var(--ww-warning);
+}
+
+.ww-portal-badge.danger {
+  background: var(--ww-danger-50);
+  color: var(--ww-danger);
+}
+
+.ww-portal-badge.muted {
+  background: var(--ww-surface-3);
+  color: var(--ww-text-muted);
+}
+
+.ww-portal-badge.role-admin {
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+}
+
+.ww-portal-badge.role-teacher {
+  background: var(--ww-accent-100);
+  color: var(--ww-btn);
+}
+
+/* ---- Lists / rows ---- */
+.ww-portal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ww-portal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  transition: border-color var(--ww-t-fast), box-shadow var(--ww-t-fast);
+}
+
+.ww-portal-row.clickable {
+  cursor: pointer;
+}
+
+.ww-portal-row.clickable:hover {
+  border-color: var(--ww-accent);
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-portal-row.is-hidden {
+  background: var(--ww-surface-2);
+  opacity: 0.85;
+}
+
+.ww-portal-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ww-portal-row-main > strong {
+  font-size: var(--ww-fs-md);
+}
+
+.ww-portal-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-row-meta .ww-portal-badge + .ww-portal-badge {
+  margin-left: 0;
+}
+
+.ww-portal-row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ww-portal-btn-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ww-portal-progress {
+  display: block;
+  height: 6px;
+  max-width: 280px;
+  overflow: hidden;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+}
+
+.ww-portal-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ww-primary);
+}
+
+.ww-portal-row-main small {
+  color: var(--ww-text-subtle);
+}
+
+/* Person (avatar + name) */
+.ww-portal-person {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ww-portal-person > span:not(.ww-portal-avatar):not(.ww-portal-badge) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ww-portal-person small {
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-xs);
+}
+
+.ww-portal-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ww-primary-100);
+  color: var(--ww-primary-dark);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  border: 2px solid var(--ww-surface);
+  box-shadow: var(--ww-shadow-xs);
+}
+
+/* ---- Tables ---- */
+.ww-portal-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+}
+
+.ww-portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-table th {
+  position: sticky;
+  top: 0;
+  padding: 10px 12px;
+  background: var(--ww-surface-2);
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-portal-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ww-border);
+  vertical-align: middle;
+}
+
+.ww-portal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ww-portal-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-table .nowrap {
+  white-space: nowrap;
+}
+
+.ww-portal-table tr.clickable {
+  cursor: pointer;
+}
+
+.ww-portal-table tr.clickable:hover td {
+  background: var(--ww-primary-50);
+}
+
+.ww-portal-table tr.highlight td {
+  background: var(--ww-warning-50);
+}
+
+.ww-portal-log-details {
+  max-width: 460px;
+  word-break: break-word;
+  color: var(--ww-text-muted);
+}
+
+.ww-portal-table .ww-tour-photo-thumb {
+  width: 36px;
+  height: 36px;
+}
+
+/* ---- Grading ---- */
+.ww-portal-submission {
+  align-items: flex-start;
+}
+
+.ww-portal-grade {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  flex-shrink: 0;
+  padding-left: 16px;
+  border-left: 1px dashed var(--ww-border-strong);
+}
+
+.ww-portal-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ww-portal-score .ww-field-input {
+  width: 110px !important;
+}
+
+.ww-portal-trip-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-primary-100);
+  background: var(--ww-primary-50);
+  font-size: var(--ww-fs-sm);
+  cursor: pointer;
+  transition: border-color var(--ww-t-fast);
+}
+
+.ww-portal-trip-summary:hover {
+  border-color: var(--ww-primary);
+}
+
+.ww-portal-over {
+  color: var(--ww-danger);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ww-portal-assignment > .ww-portal-subcard {
+  margin-top: -4px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ww-portal-my-sub p {
+  margin: 0 0 8px;
+}
+
+.ww-portal-feedback {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-success-50);
+  border: 1px solid #bfe3cc;
+}
+
+.ww-portal-feedback p {
+  margin: 6px 0 0;
+  white-space: pre-line;
+}
+
+/* ---- Student profile (teacher view) ---- */
+.ww-portal-profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.ww-portal-profile > div {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ww-portal-map {
+  margin-bottom: 14px;
+}
+
+/* ---- Admin ---- */
+.ww-portal-callout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid #f0d9a8;
+  background: var(--ww-warning-50);
+  color: var(--ww-text);
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ww-portal-callout span {
+  margin-left: auto;
+  color: var(--ww-primary);
+  font-weight: 700;
+}
+
+.ww-portal-health {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-portal-health li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-surface-2);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-health li strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-health li.ok {
+  background: var(--ww-success-50);
+}
+
+.ww-portal-health li.warn {
+  background: var(--ww-warning-50);
+}
+
+.ww-portal-health li.danger {
+  background: var(--ww-danger-50);
+  color: var(--ww-danger);
+}
+
+.ww-portal-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-portal-bars li {
+  display: grid;
+  grid-template-columns: minmax(90px, 140px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ww-portal-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+}
+
+.ww-portal-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ww-primary), var(--ww-accent));
+}
+
+.ww-portal-star {
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--ww-border-strong);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ww-portal-star.on {
+  color: #e0a526;
+}
+
+.ww-portal-journal-modal {
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.ww-portal-journal-places img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  margin: 8px 0;
+  object-fit: cover;
+  border-radius: var(--ww-r-md);
+}
+
+.ww-portal-journal-places p {
+  margin: 6px 0 0;
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Login / sign-up bits ---- */
+.ww-teacher-signup-link {
+  margin: 14px 0 0;
+  text-align: center;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-menu-item-strong {
+  font-weight: 700;
+  color: var(--ww-primary);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 860px) {
+  .ww-portal-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-portal-submission {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ww-portal-grade {
+    width: 100%;
+    padding: 14px 0 0;
+    border-left: none;
+    border-top: 1px dashed var(--ww-border-strong);
+  }
+
+  .ww-portal-join {
+    align-items: flex-start;
+  }
+
+  .ww-portal-join-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .ww-portal-main {
+    padding-top: 20px;
+  }
+
+  .ww-portal-card,
+  .ww-portal-class-head {
+    padding: 18px 16px;
+  }
+
+  .ww-portal-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-portal-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ww-portal-row-actions {
+    justify-content: flex-start;
+  }
+
+  .ww-portal-inline-form,
+  .ww-portal-join-form {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .ww-portal-code-input {
+    width: 100%;
+  }
+
+  .ww-portal-hero > .ww-search-btn {
+    width: 100%;
+  }
+}
+
+/* ---- Teachers on pages shared with students (Guides, Notifications,
+        a student's trip…): hide the student-only links — Hotels, search
+        and own profile. The portal's own header has none of these. ---- */
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/hotels"],
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/dashboard"],
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:first-child,
+html[data-ww-role="teacher"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:last-child,
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/hotels"],
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-links a[href="/dashboard"],
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:first-child,
+html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:last-child {
+  display: none;
+}
+
+.ww-login-eyebrow {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.ww-portal-section-title {
+  margin: 4px 0 -8px;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+/* Shared pages opened by a teacher or the admin: the portal top bar
+   replaces the page's own student top bar (see StaffShell). */
+.ww-staff-shell {
+  min-height: 100vh;
+  background-color: var(--ww-bg);
+}
+
+.ww-staff-shell header.ww-navbar:not(.ww-portal-nav) {
+  display: none;
+}
+
+/* ---- Class summary (teacher) ---- */
+.ww-portal-day-present {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 170px;
+}
+
+.ww-portal-day-present strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.ww-portal-day-caret {
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-xs);
+}
+
+.ww-portal-table tr.ww-portal-day-detail td {
+  background: var(--ww-surface-2);
+}
+
+.ww-portal-day-detail td {
+  line-height: 2.2;
+}
+
+.ww-portal-day-detail .ww-portal-muted {
+  margin-right: 8px;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-portal-name-chip {
+  margin: 0 6px 0 0;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ww-portal-name-chip:hover {
+  text-decoration: underline;
+}
+
+.ww-portal-row-actions .ww-portal-badge + .ww-portal-badge {
+  margin-left: 0;
+}
+
+.ww-portal-table td .ww-portal-badge {
+  margin-left: 8px;
+}
+
+@media (max-width: 600px) {
+  .ww-portal-export-actions {
+    width: 100%;
+  }
+
+  .ww-portal-export-actions > button {
+    flex: 1 1 0;
+    white-space: nowrap;
+  }
+}
+
+/* ---------------------------------------------------------------------
    18. RESPONSIVE RULES
    Laptop ≤1024 · Tablet ≤860 · Mobile ≤560
    --------------------------------------------------------------------- */
@@ -6164,4 +8003,1248 @@ input[type="time"]:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ---------------------------------------------------------------------
+   18. SAFE AREA (phones with a notch, a camera hole or a home bar)
+   With viewport-fit=cover (public/index.html) the page is drawn under
+   the notch and the home bar, so everything below keeps the content
+   out of those areas. On devices without them every inset is 0, so
+   nothing changes there.
+   --------------------------------------------------------------------- */
+:root {
+  --ww-safe-top: env(safe-area-inset-top, 0px);
+  --ww-safe-right: env(safe-area-inset-right, 0px);
+  --ww-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ww-safe-left: env(safe-area-inset-left, 0px);
+
+  /* Top bars grow by the notch height; everything that sticks under
+     them (settings menu, builder section bar) uses these same values. */
+  --ww-nav-h: calc(68px + var(--ww-safe-top));
+}
+
+.ww-builder-page {
+  --ww-topbar-h: calc(64px + var(--ww-safe-top));
+}
+
+html {
+  background-color: var(--ww-bg);
+}
+
+/* Landscape notch on the left/right, and the home bar at the bottom. */
+body {
+  padding-left: var(--ww-safe-left);
+  padding-right: var(--ww-safe-right);
+  padding-bottom: var(--ww-safe-bottom);
+}
+
+/* Top bars: the notch strip gets the bar's own color and the bar's
+   contents start below it. A border (not padding) so it adds to every
+   page's own padding rules instead of replacing them. */
+.ww-navbar,
+.ww-builder-topbar {
+  border-top: var(--ww-safe-top) solid var(--ww-surface);
+}
+
+/* Full-screen layers: keep dialogs and windows clear of the notch and
+   the home bar. */
+.ww-modal-overlay {
+  padding:
+    max(20px, var(--ww-safe-top))
+    max(20px, var(--ww-safe-right))
+    max(20px, var(--ww-safe-bottom))
+    max(20px, var(--ww-safe-left));
+}
+
+.ww-dialog-overlay {
+  padding:
+    max(16px, var(--ww-safe-top))
+    max(16px, var(--ww-safe-right))
+    max(16px, var(--ww-safe-bottom))
+    max(16px, var(--ww-safe-left));
+}
+
+/* Mobile browsers: 100vh is taller than the visible area while the
+   address bar shows; dvh is the visible height. */
+@supports (height: 100dvh) {
+  .ww-profile-page,
+  .ww-journal-page,
+  .ww-settings-page,
+  .ww-history-page,
+  .ww-tour-page,
+  .ww-portal-page,
+  .ww-staff-shell {
+    min-height: 100dvh;
+  }
+
+  .ww-modal-card {
+    max-height: calc(90dvh - var(--ww-safe-top) - var(--ww-safe-bottom));
+  }
+
+  .ww-portal-journal-modal {
+    max-height: calc(85dvh - var(--ww-safe-top) - var(--ww-safe-bottom));
+  }
+
+  @media (min-width: 861px) {
+    .ww-builder-sidebar {
+      min-height: calc(100dvh - var(--ww-topbar-h));
+      max-height: calc(100dvh - var(--ww-topbar-h));
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .ww-navbar-search-popover {
+    top: calc(64px + var(--ww-safe-top));
+    left: max(12px, var(--ww-safe-left));
+    right: max(12px, var(--ww-safe-right));
+  }
+}
+
+/* Bigger tap targets need no hover; avoid the grey flash on tap. */
+@media (hover: none) {
+  button,
+  a,
+  [role="button"],
+  .ww-sidebar-item,
+  .ww-menu-item {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ---- Small phones: a few layouts that didn't wrap well ---- */
+@media (max-width: 560px) {
+  /* Trip builder: Book a Hotel / Add Crew / Tour Day line up when they
+     wrap, instead of the wrapped one keeping its left gap. */
+  .ww-builder-main > .ww-browse-btn,
+  .ww-builder-main > .ww-trip-plan-btn {
+    margin-left: 0 !important;
+    margin-right: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* Hotel results: buddies counter and dates share one full-width row. */
+  .ww-results-controls {
+    width: 100%;
+    align-items: flex-end;
+  }
+
+  .ww-results-controls > * {
+    flex: 1 1 140px;
+  }
+}
+
+/* ---- Trip builder: trip name + dates ---- */
+.ww-builder-trip-title .ww-trip-name-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+button.ww-builder-dates-edit {
+  border: 1px solid transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--ww-t-fast), background var(--ww-t-fast);
+}
+
+button.ww-builder-dates-edit:hover {
+  border-color: var(--ww-primary);
+}
+
+button.ww-builder-dates-edit > span {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+/* ---------------------------------------------------------------------
+   19. WELCOME PAGE (landing): hero + features + who it's for + how it
+       works + About Us. Same cream / brown / teal theme as the app.
+   --------------------------------------------------------------------- */
+.ww-landing {
+  min-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .ww-landing {
+    min-height: 100dvh;
+  }
+}
+
+/* Sections land below the sticky top bar when a link is clicked. */
+.ww-landing section[id] {
+  scroll-margin-top: calc(var(--ww-nav-h) + 16px);
+}
+
+/* ---- Top bar ---- */
+.ww-landing .ww-lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  flex-wrap: nowrap;
+  gap: 24px;
+  background: rgba(255, 253, 244, 0.92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-landing .ww-lp-nav .ww-brand {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ww-lp-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ww-lp-links a {
+  padding: 8px 14px;
+  border-radius: var(--ww-r-pill);
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-md);
+  text-decoration: none;
+  transition: background var(--ww-t-fast), color var(--ww-t-fast);
+}
+
+.ww-lp-links a:hover {
+  background: var(--ww-surface-2);
+  color: var(--ww-text);
+}
+
+.ww-lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ww-lp-text-btn {
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--ww-r-pill);
+  background: none;
+  color: var(--ww-text);
+  font-family: inherit;
+  font-size: var(--ww-fs-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ww-lp-text-btn:hover {
+  background: var(--ww-surface-2);
+}
+
+.ww-landing .ww-lp-nav-cta {
+  min-height: 42px;
+  padding: 0 20px;
+}
+
+/* ---- Hero ---- */
+.ww-lp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 56px;
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 88px var(--ww-gutter) 96px;
+}
+
+.ww-lp-eyebrow {
+  margin: 0 0 14px;
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ww-lp-title {
+  margin: 0 0 22px;
+  color: var(--ww-text);
+  font-size: clamp(38px, 5.4vw, 64px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+}
+
+.ww-lp-lead {
+  max-width: 560px;
+  margin: 0 0 32px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-lg);
+  line-height: 1.7;
+}
+
+.ww-lp-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.ww-landing .ww-lp-ctas .ww-signup-btn,
+.ww-landing .ww-lp-ctas .ww-login-btn {
+  min-height: 52px;
+  padding: 0 32px;
+  font-size: var(--ww-fs-md);
+}
+
+.ww-lp-note {
+  margin: 22px 0 0;
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-lp-note a {
+  color: var(--ww-primary);
+  font-weight: 700;
+}
+
+/* ---- Hero picture (sample app window) ---- */
+.ww-lp-preview {
+  margin: 0;
+}
+
+.ww-lp-preview figcaption {
+  margin-top: 12px;
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-sm);
+  text-align: right;
+}
+
+.ww-lp-window {
+  overflow: hidden;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border-strong);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-lg);
+}
+
+.ww-lp-window-bar {
+  display: flex;
+  gap: 7px;
+  padding: 12px 16px;
+  background: var(--ww-surface-2);
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-lp-window-bar span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ww-border-strong);
+}
+
+.ww-lp-app-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-lp-app-top img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.ww-lp-app-top strong {
+  flex: 1;
+  font-size: var(--ww-fs-md);
+}
+
+.ww-lp-app-top em {
+  padding: 3px 10px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-size: var(--ww-fs-xs);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ww-lp-app-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.ww-lp-map {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  border-radius: var(--ww-r-md);
+  background:
+    radial-gradient(rgba(47, 111, 95, 0.12) 1px, transparent 1.4px) 0 0 / 14px 14px,
+    linear-gradient(135deg, #e3efe7 0%, #d4e8e2 55%, #cfe3ea 100%);
+}
+
+.ww-lp-map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ww-lp-map path {
+  fill: none;
+  stroke: var(--ww-primary);
+  stroke-width: 3;
+  stroke-dasharray: 7 6;
+  stroke-linecap: round;
+}
+
+.ww-lp-map i {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-lp-day {
+  padding: 14px 16px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-bg);
+}
+
+.ww-lp-day-title {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.ww-lp-day ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-lp-day li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: var(--ww-text-muted);
+}
+
+.ww-lp-day li b {
+  min-width: 70px;
+  color: var(--ww-text);
+}
+
+.ww-lp-day .ok {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+}
+
+.ww-lp-budget {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-lp-budget span {
+  color: var(--ww-text-subtle);
+}
+
+.ww-lp-budget strong {
+  justify-self: end;
+}
+
+.ww-lp-bar {
+  grid-column: 1 / -1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+}
+
+.ww-lp-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ww-primary), var(--ww-accent));
+}
+
+/* ---- Sections ---- */
+.ww-lp-section {
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 72px var(--ww-gutter);
+  border-top: 1px solid var(--ww-border);
+}
+
+.ww-lp-h2 {
+  margin: 0 0 12px;
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.ww-lp-sub {
+  max-width: 620px;
+  margin: 0 0 36px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-lg);
+  line-height: 1.6;
+}
+
+.ww-lp-h2 + .ww-lp-grid,
+.ww-lp-h2 + .ww-lp-steps {
+  margin-top: 32px;
+}
+
+.ww-lp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ww-lp-card {
+  padding: 24px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-xs);
+  transition: transform var(--ww-t), box-shadow var(--ww-t);
+}
+
+.ww-lp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ww-shadow-md);
+}
+
+.ww-lp-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 16px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-primary-50);
+  font-size: 22px;
+}
+
+.ww-lp-card h3,
+.ww-lp-steps h3,
+.ww-lp-about-item h3 {
+  margin: 0 0 8px;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+.ww-lp-card p,
+.ww-lp-steps p,
+.ww-lp-about-item p {
+  margin: 0;
+  color: var(--ww-text-muted);
+  line-height: 1.65;
+}
+
+.ww-lp-card-who {
+  border-top: 4px solid var(--ww-accent);
+}
+
+/* ---- How it works ---- */
+.ww-lp-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.ww-lp-steps li {
+  position: relative;
+  padding: 24px 22px;
+  border-radius: var(--ww-r-lg);
+  background: var(--ww-surface-2);
+}
+
+.ww-lp-step-no {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-weight: 700;
+}
+
+/* ---- About Us ---- */
+.ww-lp-about-head {
+  text-align: center;
+}
+
+.ww-lp-about-head .ww-lp-sub {
+  margin: 0 auto 40px;
+}
+
+.ww-lp-about-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface-2);
+  font-size: 34px;
+}
+
+.ww-lp-about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+.ww-lp-about-item {
+  padding: 24px 26px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+}
+
+.ww-lp-team {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ww-text-muted);
+}
+
+.ww-lp-team li::before {
+  content: "👤 ";
+}
+
+/* ---- Last call to action ---- */
+.ww-lp-band {
+  max-width: calc(var(--ww-container) - 2 * var(--ww-gutter));
+  margin: 24px auto 72px;
+  padding: 48px 40px;
+  border-radius: var(--ww-r-xl);
+  background: linear-gradient(135deg, var(--ww-btn) 0%, #5a3a22 100%);
+  color: #fff8ec;
+  text-align: center;
+}
+
+.ww-lp-band h2 {
+  margin: 0 0 10px;
+  color: #fff8ec;
+  font-size: clamp(26px, 3vw, 36px);
+}
+
+.ww-lp-band p {
+  margin: 0 0 26px;
+  color: rgba(255, 248, 236, 0.8);
+  font-size: var(--ww-fs-lg);
+}
+
+.ww-lp-band .ww-lp-ctas {
+  justify-content: center;
+}
+
+.ww-lp-band-primary,
+.ww-lp-band-secondary {
+  min-height: 50px;
+  padding: 0 30px;
+  border-radius: var(--ww-r-pill);
+  font-family: inherit;
+  font-size: var(--ww-fs-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ww-lp-band-primary {
+  border: none;
+  background: var(--ww-on-btn);
+  color: var(--ww-btn);
+}
+
+.ww-lp-band-secondary {
+  border: 1px solid rgba(255, 248, 236, 0.5);
+  background: transparent;
+  color: #fff8ec;
+}
+
+.ww-lp-band-primary:hover {
+  filter: brightness(1.05);
+}
+
+.ww-lp-band-secondary:hover {
+  background: rgba(255, 248, 236, 0.1);
+}
+
+/* ---- Footer ---- */
+.ww-lp-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 24px var(--ww-gutter) calc(24px + var(--ww-safe-bottom, 0px));
+  border-top: 1px solid var(--ww-border);
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Tablet ---- */
+@media (max-width: 1024px) {
+  .ww-lp-hero {
+    grid-template-columns: 1fr;
+    gap: 44px;
+    padding-top: 56px;
+  }
+
+  .ww-lp-hero-copy {
+    max-width: 680px;
+  }
+
+  .ww-lp-preview {
+    max-width: 620px;
+  }
+
+  .ww-lp-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  /* Brand + buttons on top, section links on a second, scrollable row */
+  .ww-landing .ww-lp-nav {
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding-bottom: 0;
+  }
+
+  .ww-landing .ww-lp-nav > .ww-brand {
+    order: 1;
+  }
+
+  .ww-lp-nav-actions {
+    order: 2;
+    margin-left: auto;
+  }
+
+  /* Taller top bar here (two rows) */
+  .ww-landing section[id] {
+    scroll-margin-top: calc(var(--ww-nav-h) + 60px);
+  }
+
+  .ww-lp-links {
+    order: 3;
+    width: 100%;
+    margin: 8px calc(-1 * var(--ww-gutter)) 0;
+    padding: 6px var(--ww-gutter);
+    overflow-x: auto;
+    border-top: 1px solid var(--ww-border);
+    scrollbar-width: none;
+  }
+
+  .ww-lp-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ww-lp-links a {
+    flex-shrink: 0;
+    font-size: var(--ww-fs-sm);
+  }
+
+  .ww-lp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ww-lp-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-lp-section {
+    padding: 56px var(--ww-gutter);
+  }
+}
+
+/* ---- Phones ---- */
+@media (max-width: 560px) {
+  .ww-landing .ww-lp-nav .ww-brand-name {
+    font-size: var(--ww-fs-md);
+  }
+
+  .ww-lp-text-btn {
+    padding: 8px 10px;
+    font-size: var(--ww-fs-sm);
+  }
+
+  .ww-landing .ww-lp-nav-cta {
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: var(--ww-fs-sm);
+  }
+
+  .ww-lp-hero {
+    padding: 40px var(--ww-gutter) 56px;
+  }
+
+  .ww-lp-lead,
+  .ww-lp-sub {
+    font-size: var(--ww-fs-md);
+  }
+
+  .ww-lp-ctas > button {
+    flex: 1 1 140px;
+  }
+
+  .ww-lp-grid,
+  .ww-lp-steps,
+  .ww-lp-about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-lp-preview figcaption {
+    text-align: center;
+  }
+
+  .ww-lp-band {
+    margin: 8px var(--ww-gutter) 48px;
+    padding: 36px 22px;
+  }
+
+  .ww-lp-footer {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .ww-landing .ww-lp-nav .ww-brand-name {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-lp-card,
+  .ww-lp-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   20. PROFESSIONAL POLISH (applies to every page)
+   Poppins type, line icons instead of emoji, calmer surfaces and one
+   consistent button style. Same WanderWise colors: cream, dark brown,
+   teal and sand.
+   --------------------------------------------------------------------- */
+:root {
+  --ww-font-body: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ww-font-head: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Poppins runs wider than the old serif, so the scale is a step smaller */
+  --ww-fs-xs: 11.5px;
+  --ww-fs-sm: 12.5px;
+  --ww-fs-base: 14px;
+  --ww-fs-md: 15px;
+  --ww-fs-lg: 17px;
+  --ww-fs-xl: 20px;
+  --ww-fs-2xl: 25px;
+  --ww-fs-3xl: 30px;
+
+  /* Calmer surfaces: white cards on a soft cream page */
+  --ww-bg: #f7f4ea;
+  --ww-surface: #ffffff;
+  --ww-surface-2: #f6f2e6;
+  --ww-surface-3: #ece6d4;
+  --ww-border: #e7e0cc;
+  --ww-border-strong: #d6cbb0;
+  --ww-text: #2b1c12;
+  --ww-text-muted: #5f4e3a;
+  --ww-text-subtle: #8c7a5e;
+
+  /* Buttons: deep brown with the original mint text */
+  --ww-btn: #331c08;
+  --ww-btn-hover: #2a1606;
+  --ww-btn-active: #211104;
+  --ww-on-btn: #a9e4dc;
+
+  --ww-r-sm: 6px;
+  --ww-r-md: 10px;
+  --ww-r-lg: 14px;
+  --ww-r-xl: 18px;
+
+  --ww-shadow-xs: 0 1px 2px rgba(43, 28, 18, 0.04);
+  --ww-shadow-sm: 0 1px 3px rgba(43, 28, 18, 0.06), 0 1px 2px rgba(43, 28, 18, 0.03);
+  --ww-shadow-md: 0 8px 20px -8px rgba(43, 28, 18, 0.14), 0 2px 4px -2px rgba(43, 28, 18, 0.05);
+  --ww-shadow-lg: 0 24px 48px -16px rgba(43, 28, 18, 0.22);
+  --ww-ring: 0 0 0 3px rgba(47, 111, 95, 0.18);
+}
+
+body {
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-base);
+  line-height: 1.6;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--ww-font-head);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--ww-primary-100);
+  color: var(--ww-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ww-primary);
+  outline-offset: 2px;
+}
+
+/* ---- Icons ---- */
+.ww-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.18em;
+}
+
+button .ww-icon,
+a .ww-icon {
+  vertical-align: -0.16em;
+}
+
+/* Rating stars */
+.ww-stars {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: -0.1em;
+}
+
+.ww-icon-star {
+  color: #d9a521;
+}
+
+.ww-icon-star:not(.filled) {
+  color: var(--ww-border-strong);
+}
+
+.ww-journal-stars span {
+  display: inline-flex;
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* ---- Top bar ---- */
+.ww-navbar {
+  background-color: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+  backdrop-filter: saturate(160%) blur(10px);
+  border-bottom-color: var(--ww-border);
+  box-shadow: none;
+}
+
+.ww-brand-name {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ww-nav-links a,
+.ww-menu-dropdown {
+  font-weight: 500;
+}
+
+.ww-nav-icons {
+  gap: 2px;
+}
+
+.ww-nav-icons > span,
+.ww-nav-icons > button,
+.ww-nav-icons > a,
+.ww-navbar-search-anchor > span {
+  color: var(--ww-text-muted);
+  font-size: 20px;
+}
+
+.ww-nav-icons > span:hover,
+.ww-nav-icons > button:hover,
+.ww-nav-icons > a:hover,
+.ww-navbar-search-anchor > span:hover,
+.ww-nav-icon-btn:hover {
+  color: var(--ww-text);
+  transform: none;
+}
+
+.ww-nav-icons .ww-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.ww-menu-panel {
+  border-radius: var(--ww-r-lg);
+  box-shadow: var(--ww-shadow-lg);
+}
+
+.ww-menu-item {
+  font-weight: 500;
+}
+
+/* ---- Buttons: one shape everywhere ---- */
+.ww-signup-btn,
+.ww-login-submit,
+.ww-register-submit,
+.ww-reset-submit,
+.ww-start-planning-btn,
+.ww-search-btn,
+.ww-itinerary-btn,
+.ww-lets-go-btn,
+.ww-view-deal-btn,
+.ww-browse-btn,
+.ww-new-list-btn,
+.ww-add-expense-btn,
+.ww-save-expense-btn,
+.ww-copy-btn,
+.ww-send-invite-btn,
+.ww-profile-edit-btn,
+.ww-profile-new-btn,
+.ww-journal-gallery-btn,
+.ww-journal-upload-btn,
+.ww-journal-post-btn,
+.ww-settings-save-btn,
+.ww-section-add-btn,
+.ww-itinerary-hotel-btn,
+.ww-warning-modal-ok-btn {
+  border-radius: var(--ww-r-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  box-shadow: 0 1px 2px rgba(43, 28, 18, 0.18);
+}
+
+.ww-signup-btn:hover,
+.ww-login-submit:hover,
+.ww-register-submit:hover,
+.ww-reset-submit:hover,
+.ww-start-planning-btn:hover,
+.ww-search-btn:hover,
+.ww-lets-go-btn:hover,
+.ww-browse-btn:hover,
+.ww-new-list-btn:hover,
+.ww-add-expense-btn:hover,
+.ww-save-expense-btn:hover,
+.ww-copy-btn:hover,
+.ww-send-invite-btn:hover,
+.ww-profile-edit-btn:hover,
+.ww-profile-new-btn:hover,
+.ww-journal-post-btn:hover,
+.ww-settings-save-btn:hover {
+  transform: none;
+  box-shadow: 0 4px 12px -4px rgba(43, 28, 18, 0.35);
+}
+
+.ww-trip-plan-btn,
+.ww-external-search-btn,
+.ww-modal-cancel-btn,
+.ww-booking-cancel,
+.ww-filter-pill,
+.ww-journal-choose-file-btn,
+.ww-assign-day-btn,
+.ww-login-btn,
+.ww-profile-share-btn {
+  border-radius: var(--ww-r-md);
+  border-color: var(--ww-border-strong);
+  background-color: var(--ww-surface);
+  color: var(--ww-text);
+  font-weight: 600;
+}
+
+.ww-trip-plan-btn:hover,
+.ww-external-search-btn:hover,
+.ww-modal-cancel-btn:hover,
+.ww-booking-cancel:hover,
+.ww-journal-choose-file-btn:hover,
+.ww-assign-day-btn:hover,
+.ww-login-btn:hover,
+.ww-profile-share-btn:hover {
+  border-color: var(--ww-primary);
+  background-color: var(--ww-primary-50);
+  color: var(--ww-primary-dark);
+}
+
+.ww-link-btn {
+  font-weight: 600;
+}
+
+/* Inputs */
+.ww-field-input,
+.ww-portal-form input,
+.ww-portal-form select,
+.ww-portal-form textarea,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.ww-field-input:focus,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--ww-primary);
+  box-shadow: var(--ww-ring);
+  outline: none;
+}
+
+/* ---- Clean backgrounds (no dotted map grid) ---- */
+.wanderwise-home,
+.wanderwise-login,
+.wanderwise-register,
+.wanderwise-reset {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200, 172, 130, 0.22) 0%, rgba(200, 172, 130, 0) 70%),
+    var(--ww-bg);
+  background-attachment: scroll;
+}
+
+.ww-profile-cover {
+  background: linear-gradient(120deg, #3a2416 0%, #5a3a22 55%, #2f6f5f 130%);
+}
+
+.ww-profile-cover::before,
+.ww-profile-cover::after {
+  display: none;
+}
+
+/* Cards: white, thin border, soft shadow */
+.ww-portal-card,
+.ww-portal-stat,
+.ww-portal-row,
+.ww-login-card,
+.ww-lp-card,
+.ww-lp-about-item,
+.ww-modal-card,
+.ww-dialog {
+  border-color: var(--ww-border);
+  box-shadow: var(--ww-shadow-xs);
+}
+
+.ww-login-card,
+.ww-modal-card,
+.ww-dialog {
+  box-shadow: var(--ww-shadow-md);
+}
+
+/* Icon tiles (stats, landing features, notifications) */
+.ww-portal-stat-icon,
+.ww-lp-icon,
+.ww-notif-icon {
+  color: var(--ww-primary);
+}
+
+.ww-portal-stat-icon .ww-icon,
+.ww-lp-icon .ww-icon {
+  width: 21px;
+  height: 21px;
+}
+
+.ww-portal-stat.warn .ww-portal-stat-icon {
+  color: var(--ww-warning);
+}
+
+.ww-notif-icon .ww-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.ww-portal-stat-value {
+  font-weight: 600;
+}
+
+/* Badges and eyebrows read cleaner in Poppins with less tracking */
+.ww-portal-badge {
+  font-weight: 600;
+}
+
+.ww-lp-eyebrow,
+.ww-portal-eyebrow,
+.ww-portal-table th {
+  letter-spacing: 0.08em;
+}
+
+/* Landing tweaks for Poppins */
+.ww-lp-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.ww-lp-h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.ww-lp-about-badge {
+  color: var(--ww-primary);
+}
+
+.ww-lp-about-badge .ww-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.ww-lp-team li::before {
+  content: none;
+}
+
+.ww-lp-band-primary {
+  background: var(--ww-on-btn);
+}
+
+/* Small "×" buttons */
+.ww-cost-remove .ww-icon {
+  width: 14px;
+  height: 14px;
 }

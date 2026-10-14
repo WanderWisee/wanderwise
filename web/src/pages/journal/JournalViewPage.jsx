@@ -5,6 +5,7 @@ import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 function normalizeJournalEntry(serverEntry) {
   return {
@@ -31,6 +32,14 @@ function normalizeJournalEntry(serverEntry) {
 export default function JournalViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Back to wherever the journal was opened from (Profile, a classmate's
+  // profile, Destination Stories…). If it was opened directly from a
+  // link, there's no page to go back to, so go to the Profile instead.
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) navigate(-1);
+    else navigate("/profile");
+  };
   const { journalEntries } = useAppData();
   const { t, language } = useLanguage();
 
@@ -145,13 +154,17 @@ export default function JournalViewPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-guide-main">
+        <p className="ww-stories-back" onClick={handleBack}>
+          <Icon name="arrow-left" /> {t("back")}
+        </p>
+
         {loadingRemote && !journal ? (
           <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
         ) : !journal ? (
@@ -168,9 +181,12 @@ export default function JournalViewPage() {
                   <div className="ww-guide-intro">
                     <div className="ww-guide-text">
                       <p className="ww-guide-pin">
-                        📍{entry.place || t("unnamedPlace")}{" "}
-                        {"★".repeat(entry.rating)}
-                        {"☆".repeat(5 - entry.rating)}
+                        <Icon name="map-pin" />{entry.place || t("unnamedPlace")}{" "}
+                        <span className="ww-stars">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <Icon key={i} name="star" className={i <= entry.rating ? "filled" : ""} />
+                          ))}
+                        </span>
                       </p>
                       {entry.description && (
                         <p className="ww-guide-description">{entry.description}</p>
@@ -215,7 +231,7 @@ export default function JournalViewPage() {
                       <div className="ww-guide-hotels-grid">
                         {entry.hotels.map((h) => (
                           <div className="ww-guide-hotel-card" key={h.id}>
-                            <p className="ww-guide-hotel-name">🏨 {h.name}</p>
+                            <p className="ww-guide-hotel-name"><Icon name="bed" /> {h.name}</p>
                             {h.description && (
                               <p className="ww-guide-hotel-desc">{h.description}</p>
                             )}

@@ -18,6 +18,7 @@ const COST_CATEGORY_KEYS = {
 
 export default function PlaceCard({
   place,
+  readOnly = false,
   index,
   expanded,
   selecting = false,
@@ -115,6 +116,8 @@ export default function PlaceCard({
       {expanded && !selecting && (
         <View style={styles.details}>
           <TextInput
+            editable={!readOnly}
+            accessibilityLabel={t('addNotesPlaceholder')}
             style={styles.notesInput}
             placeholder={t('addNotesPlaceholder')}
             placeholderTextColor={GREY_PLACEHOLDER}
@@ -124,7 +127,7 @@ export default function PlaceCard({
             multiline
           />
 
-          <View style={styles.actionsRow}>
+          <View pointerEvents={readOnly ? 'none' : 'auto'} style={[styles.actionsRow, readOnly && { display: 'none' }]}>
             <TouchableOpacity onPress={onToggleVisited} style={styles.actionButton}>
               <Text style={[styles.actionText, place.visited && styles.actionTextActive]}>
                 {place.visited ? `✓ ${t('unmarkVisited')}` : `✓ ${t('markVisited')}`}
@@ -148,7 +151,7 @@ export default function PlaceCard({
                 <View key={c.id} style={styles.costRow}>
                   <Text style={styles.costCategory}>{catLabel(c.category)}</Text>
                   <Text style={styles.costAmount}>{formatPeso(c.amount)}</Text>
-                  <TouchableOpacity onPress={() => onRemoveCost(c.id)} style={styles.costRemove}>
+                  <TouchableOpacity disabled={readOnly} onPress={() => onRemoveCost(c.id)} style={styles.costRemove}>
                     <Text style={styles.costRemoveText}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -157,7 +160,7 @@ export default function PlaceCard({
             </View>
           )}
 
-          {addingCost && (
+          {addingCost && !readOnly && (
             <View style={styles.costForm}>
               <View style={styles.categoryRow}>
                 {COST_CATEGORIES.map((cat) => (
@@ -243,10 +246,10 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chip: { backgroundColor: Colors.cream2, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   chipText: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown600 },
-  chipDay: { backgroundColor: 'rgba(46,27,14,0.08)' },
+  chipDay: { backgroundColor: 'rgba(51,28,8,0.08)' },
   chipDayText: { color: Colors.brown900, fontFamily: 'Lora_600SemiBold' },
-  chipVisited: { backgroundColor: 'rgba(63,169,138,0.15)' },
-  chipVisitedText: { color: Colors.mint, fontFamily: 'Lora_600SemiBold' },
+  chipVisited: { backgroundColor: 'rgba(47,111,95,0.12)' },
+  chipVisitedText: { color: Colors.teal, fontFamily: 'Lora_600SemiBold' },
   thumb: {
     width: 56, height: 56, borderRadius: 12, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
@@ -262,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
   actionText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.brown900 },
-  actionTextActive: { color: Colors.mint },
+  actionTextActive: { color: Colors.teal },
 
   costList: { marginTop: 12 },
   costRow: {

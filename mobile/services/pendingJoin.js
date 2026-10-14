@@ -18,16 +18,20 @@ export async function consumePendingJoin() {
   let token = null;
   try {
     token = await AsyncStorage.getItem(STORAGE_KEYS.pendingJoin);
-    if (token) await AsyncStorage.removeItem(STORAGE_KEYS.pendingJoin);
+
   } catch {
     return null;
   }
   if (!token) return null;
   try {
     const data = await joinTripByToken(token);
-    return data && data.tripId ? data.tripId : null;
-  } catch {
+    if (data?.tripId) {
+      await AsyncStorage.removeItem(STORAGE_KEYS.pendingJoin);
+      return data.tripId;
+    }
     return null;
+  } catch {
+    return 'retry';
   }
 }
 

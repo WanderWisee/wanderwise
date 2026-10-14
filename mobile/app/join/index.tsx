@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../../constants/config';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { extractShareToken } from '../../services/pendingJoin';
@@ -14,6 +16,9 @@ export default function JoinWithLinkScreen() {
   const { t } = useApp();
   const [link, setLink] = useState('');
   const [error, setError] = useState('');
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEYS.pendingJoin).then((token) => { if (token) { setLink(token); setError(t('networkError')); } }).catch(() => {});
+  }, [t]);
 
   function join(text = link) {
     const token = extractShareToken(text);

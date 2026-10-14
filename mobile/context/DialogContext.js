@@ -15,7 +15,7 @@ const DialogContext = createContext(null);
 export function DialogProvider({ children }) {
   const [dialog, setDialog] = useState(null);
   const [toastText, setToastText] = useState(null);
-  const toastAnim = useRef(new Animated.Value(0)).current;
+  const [toastAnim] = useState(() => new Animated.Value(0));
   const toastTimer = useRef(null);
 
   const close = useCallback((result) => {
@@ -110,7 +110,7 @@ export function useDialog() {
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: 'rgba(46,27,14,0.45)',
+    flex: 1, backgroundColor: 'rgba(51,28,8,0.45)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32,
   },
   box: {

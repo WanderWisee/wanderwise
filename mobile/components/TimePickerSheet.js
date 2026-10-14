@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
@@ -24,20 +24,17 @@ function parseInitial(hhmm) {
   };
 }
 
-export default function TimePickerSheet({ visible, initial, onClose, onSave }) {
-  const [hour, setHour] = useState(9);
-  const [minute, setMinute] = useState(0);
-  const [period, setPeriod] = useState('AM');
+export default function TimePickerSheet(props) {
+  return props.visible ? <TimePickerContent {...props} /> : null;
+}
+
+function TimePickerContent({ visible, initial, onClose, onSave }) {
+  const [hour, setHour] = useState(() => parseInitial(initial).hour);
+  const [minute, setMinute] = useState(() => parseInitial(initial).minute);
+  const [period, setPeriod] = useState(() => parseInitial(initial).period);
   const { t } = useApp();
 
-  useEffect(() => {
-    if (visible) {
-      const p = parseInitial(initial);
-      setHour(p.hour);
-      setMinute(p.minute);
-      setPeriod(p.period);
-    }
-  }, [visible]);
+
 
   function handleSave() {
     let h24 = hour % 12;
@@ -46,7 +43,7 @@ export default function TimePickerSheet({ visible, initial, onClose, onSave }) {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.title}>{t('selectTime')}</Text>
@@ -103,7 +100,7 @@ export default function TimePickerSheet({ visible, initial, onClose, onSave }) {
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: 'rgba(46,27,14,0.45)',
+    flex: 1, backgroundColor: 'rgba(51,28,8,0.45)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30,
   },
   card: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 22 },

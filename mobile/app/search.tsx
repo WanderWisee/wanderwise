@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useStudentSearch } from '../hooks/useStudentSearch';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
-import { fullName, searchUsers } from '../services/userService';
+import { fullName } from '../services/userService';
 import { Avatar, EmptyState, Loading, ScreenHeader } from '../components/ui';
 
 // Paghahanap ng kapwa estudyante (parehong /api/users/search ng web Profile).
@@ -12,30 +13,7 @@ export default function SearchStudentsScreen() {
   const router = useRouter();
   const { t } = useApp();
   const [q, setQ] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const term = q.trim();
-    if (term.length < 2) {
-      setResults([]);
-      setError(null);
-      return;
-    }
-    let alive = true;
-    setLoading(true);
-    const timer = setTimeout(() => {
-      searchUsers(term)
-        .then((data) => alive && (setResults(data), setError(null)))
-        .catch((e) => alive && setError(e.message))
-        .finally(() => alive && setLoading(false));
-    }, 300);
-    return () => {
-      alive = false;
-      clearTimeout(timer);
-    };
-  }, [q]);
+  const { results, loading, error } = useStudentSearch(q);
 
   return (
     <SafeAreaView style={styles.screen}>

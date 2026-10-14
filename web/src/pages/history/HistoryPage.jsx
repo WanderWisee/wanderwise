@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Everyone ELSE who's viewed this trip (the backend already excludes
 // your own entry — you're shown as the Author on the main row instead)
@@ -75,9 +76,9 @@ export default function HistoryPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -123,7 +124,7 @@ export default function HistoryPage() {
                       {item.type === "Trip" ? formatTravelDate(item.startDate, item.endDate, t) || "—" : "—"}
                     </span>
                     <span className="ww-history-col-viewed">{formatLastViewed(item.lastViewed, t)}</span>
-                    <span className="ww-history-col-author">👤 {item.author}</span>
+                    <span className="ww-history-col-author"><Icon name="user" /> {item.author}</span>
                   </div>
 
                   {/* One sub-row per person who's viewed this trip —
@@ -141,7 +142,7 @@ export default function HistoryPage() {
                       <span className="ww-history-col-traveldate" />
                       <span className="ww-history-col-viewed">{formatLastViewed(v.viewedAt, t)}</span>
                       <span className="ww-history-col-author">
-                        👀 {v.name || t("historyAnonymousViewer")} ({viewerTag(v, t)})
+                        <Icon name="eye" /> {v.name || t("historyAnonymousViewer")} ({viewerTag(v, t)})
                       </span>
                     </div>
                   ))}

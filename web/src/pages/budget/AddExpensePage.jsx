@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 let nextExpenseId = 1;
 
@@ -12,14 +13,14 @@ export default function AddExpensePage() {
   const { t } = useLanguage();
 
   const categories = [
-    { icon: "🍽️", label: "Food and Drinks", key: "catFood" },
-    { icon: "🚌", label: "Transit", key: "catTransit" },
-    { icon: "🎟️", label: "Activities", key: "catActivities" },
-    { icon: "🛍️", label: "Shopping", key: "catShopping" },
-    { icon: "🚗", label: "Car Rental", key: "catCarRental" },
-    { icon: "🛏️", label: "Lodging", key: "catLodging" },
-    { icon: "⛽", label: "Gas", key: "catGas" },
-    { icon: "✈️", label: "Flights", key: "catFlights" },
+    { icon: "utensils", label: "Food and Drinks", key: "catFood" },
+    { icon: "bus", label: "Transit", key: "catTransit" },
+    { icon: "ticket", label: "Activities", key: "catActivities" },
+    { icon: "shopping-bag", label: "Shopping", key: "catShopping" },
+    { icon: "car", label: "Car Rental", key: "catCarRental" },
+    { icon: "bed", label: "Lodging", key: "catLodging" },
+    { icon: "fuel", label: "Gas", key: "catGas" },
+    { icon: "plane", label: "Flights", key: "catFlights" },
   ];
 
   // Data handed off by TripPlanBuilderPage's "+ Add Expense" button.
@@ -44,6 +45,20 @@ export default function AddExpensePage() {
   const dayLabelForPlace = (placeId) => {
     const day = (tripState.days || []).find((d) => (d.placeIds || []).includes(placeId));
     return day ? day.label : null;
+  };
+
+  // Back to the trip builder without saving — passes the same tripState
+  // back (same as the Breakdown page) so nothing on the trip is lost.
+  const handleBack = () => {
+    navigate(returnPath, {
+      state: {
+        destination,
+        startDate,
+        endDate,
+        people,
+        restoredTripState: tripState,
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -96,7 +111,7 @@ export default function AddExpensePage() {
       id: savedExpense?.id ?? nextExpenseId++,
       amount: numericAmount,
       label: categoryToSave,
-      icon: pickedPlace ? "📍" : categories.find((c) => c.label === selectedCategory)?.icon,
+      icon: pickedPlace ? "map-pin" : categories.find((c) => c.label === selectedCategory)?.icon,
       description: description.trim(),
       dayLabel: pickedPlace ? dayLabelForPlace(pickedPlace.id) : null,
     };
@@ -131,17 +146,25 @@ export default function AddExpensePage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-add-expense-main">
-        <h1 className="ww-add-expense-title">{t("addExpenseTitle")}</h1>
+        {/* Click the title to go back (same as the Breakdown page) */}
+        <h1
+          className="ww-add-expense-title"
+          onClick={handleBack}
+          title={t("back")}
+          style={{ cursor: "pointer" }}
+        >
+          <Icon name="arrow-left" /> {t("addExpenseTitle")}
+        </h1>
 
         <div className="ww-amount-input">
-          <span className="ww-amount-caret">⌄</span>
+          <span className="ww-amount-caret"><Icon name="chevron-down" /></span>
           <span className="ww-amount-peso">₱</span>
           <input
             type="number"
@@ -163,7 +186,7 @@ export default function AddExpensePage() {
                 setSelectedItem(null);
               }}
             >
-              {c.icon} {t(c.key)}
+              <Icon name={c.icon} /> {t(c.key)}
             </button>
           ))}
         </div>
@@ -181,7 +204,7 @@ export default function AddExpensePage() {
                     setSelectedCategory(null);
                   }}
                 >
-                  📍 {item.name}
+                  <Icon name="map-pin" /> {item.name}
                 </button>
               ))}
             </div>

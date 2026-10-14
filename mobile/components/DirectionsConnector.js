@@ -17,20 +17,21 @@ function formatDuration(mins) {
 export default function DirectionsConnector({ from, to, destination }) {
   const { t, formatDistance } = useApp();
   const [mode, setMode] = useState('walking');
-  const [route, setRoute] = useState(null);
+  const [result, setResult] = useState(null);
+  const routeKey = `${from.latitude},${from.longitude}:${to.latitude},${to.longitude}:${mode}`;
+  const route = result?.key === routeKey ? result.route : null;
   const bothLocated = hasCoords(from) && hasCoords(to);
 
   useEffect(() => {
     let cancelled = false;
-    setRoute(null);
     if (!bothLocated) return undefined;
     getRoute(from, to, mode).then((result) => {
-      if (!cancelled) setRoute(result);
+      if (!cancelled) setResult({ key: routeKey, route: result });
     });
     return () => {
       cancelled = true;
     };
-  }, [from.latitude, from.longitude, to.latitude, to.longitude, mode]);
+  }, [from, to, mode, routeKey, bothLocated]);
 
   let summary = null;
   if (route) {

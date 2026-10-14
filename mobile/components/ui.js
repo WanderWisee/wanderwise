@@ -53,6 +53,9 @@ export function PrimaryButton({ label, onPress, loading = false, disabled = fals
     <TouchableOpacity
       style={[styles.primaryButton, small && styles.primaryButtonSmall, (disabled || loading) && { opacity: 0.6 }, style]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      accessibilityLabel={label}
       disabled={disabled || loading}
       activeOpacity={0.85}
     >
@@ -92,6 +95,7 @@ export function Field({ label, style = null, inputStyle = null, hint = null, edi
       <TextInput
         style={[styles.fieldInput, !editable && styles.fieldInputLocked, inputStyle]}
         placeholderTextColor={Colors.placeholder}
+        accessibilityLabel={label}
         editable={editable}
         {...inputProps}
       />
@@ -179,10 +183,9 @@ export function DestinationImage({ name, style, emoji = '🏝️', emojiSize = 3
 
   useEffect(() => {
     let alive = true;
-    setRemote(null);
     if (!local && name) {
       fetchDestinationImage(name).then((url) => {
-        if (alive && url) setRemote(url);
+        if (alive && url) setRemote({ name, url });
       });
     }
     return () => {
@@ -190,7 +193,7 @@ export function DestinationImage({ name, style, emoji = '🏝️', emojiSize = 3
     };
   }, [name, local]);
 
-  const source = local || (remote ? { uri: remote } : null);
+  const source = local || (remote?.name === name ? { uri: remote.url } : null);
   if (source) return <Image source={source} style={[{ backgroundColor: Colors.cream2 }, style]} resizeMode="cover" />;
   return (
     <View style={[{ backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center' }, style]}>
@@ -249,13 +252,13 @@ const styles = StyleSheet.create({
   backText: { fontSize: 18, color: Colors.brown900 },
   headerTitle: { flex: 1, textAlign: 'center', fontFamily: Fonts.semibold, color: Colors.brown900 },
   primaryButton: {
-    height: 48, borderRadius: 12, backgroundColor: Colors.brown900,
+    minHeight: 48, paddingVertical: 12, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
   },
   primaryButtonSmall: { height: 38, borderRadius: 10, paddingHorizontal: 14 },
   primaryButtonText: { fontFamily: Fonts.semibold, fontSize: 15, color: Colors.mint },
   outlineButton: {
-    height: 48, borderRadius: 12, borderWidth: 1.4, borderColor: Colors.brown900,
+    minHeight: 48, paddingVertical: 12, borderRadius: 12, borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
   },
   outlineButtonText: { fontFamily: Fonts.semibold, fontSize: 15, color: Colors.brown900 },

@@ -39,7 +39,20 @@ public class BookingsController : ControllerBase
         var isOwner = await _db.Trips.AnyAsync(t => t.Id == tripId && t.UserId == CurrentUserId);
         if (isOwner) return true;
 
-        return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId);
+        if (await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId)) return true;
+
+        // Teachers can see (not change) trips of students in their classes.
+        return await PortalAccess.CanTeacherViewTripAsync(_db, CurrentUserId, tripId);
+    }
+
+    // Adding/deleting is only for the owner and crew with edit access;
+    // view-only crew can still see the list (GET above).
+    private async Task<bool> CanEditTripAsync(int tripId)
+    {
+        var isOwner = await _db.Trips.AnyAsync(t => t.Id == tripId && t.UserId == CurrentUserId);
+        if (isOwner) return true;
+
+        return await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == CurrentUserId && m.CanEdit);
     }
 
     // Plain shape for the frontend — no Trip navigation property, so the
@@ -90,7 +103,7 @@ public class BookingsController : ControllerBase
             // Sent separately so the frontend can say "Trip to" or
             // "Byahe patungong" depending on the chosen language.
             tripDestination = b.Trip?.Destination,
-            tripTitle = b.Trip?.Title,
+            tripTitle = b.Trip == null ? null : Trip.DisplayName(b.Trip.TripName, b.Trip.Destination),
             placeName = b.PlaceName,
             bookingSite = b.BookingSite,
             confirmationNumber = b.ConfirmationNumber,
@@ -103,6 +116,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> AddBooking(int tripId, [FromBody] CreateBookingRequest request)
     {
         if (!await CanAccessTripAsync(tripId)) return NotFound();
+        if (!await CanEditTripAsync(tripId)) return Forbid();
 
         var placeName = (request.PlaceName ?? "").Trim();
         if (placeName.Length == 0)
@@ -145,6 +159,7 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> DeleteBooking(int tripId, int bookingId)
     {
         if (!await CanAccessTripAsync(tripId)) return NotFound();
+        if (!await CanEditTripAsync(tripId)) return Forbid();
 
         var booking = await _db.TripBookings.FirstOrDefaultAsync(b => b.Id == bookingId && b.TripId == tripId);
         if (booking is null) return NotFound();

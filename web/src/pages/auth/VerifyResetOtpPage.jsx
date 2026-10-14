@@ -2,12 +2,16 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function VerifyResetOtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
   const email = location.state?.email || "";
+    // "teacher" when this started from the Teacher log in page.
+  const portal = location.state?.portal || "student";
+  const forgotPath = portal === "teacher" ? "/forgot-password?for=teacher" : "/forgot-password";
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -27,7 +31,7 @@ export default function VerifyResetOtpPage() {
             <p className="ww-field-label" style={{ fontWeight: 400 }}>
               {t("resetAgainPrompt")}
             </p>
-            <button className="ww-reset-submit" onClick={() => navigate("/forgot-password")}>
+            <button className="ww-reset-submit" onClick={() => navigate(forgotPath)}>
               {t("back")}
             </button>
           </div>
@@ -44,7 +48,7 @@ export default function VerifyResetOtpPage() {
     }
     // The actual OTP check happens together with the new password on the
     // next page, so we just carry it forward here.
-    navigate("/reset-password", { state: { email, otp: otp.trim() } });
+    navigate("/reset-password", { state: { email, otp: otp.trim(), portal } });
   };
 
   const handleResend = async () => {
@@ -82,7 +86,7 @@ export default function VerifyResetOtpPage() {
             aria-label="Go back"
             onClick={() => navigate("/forgot-password")}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-reset-title">{t("enterVerificationCodeTitle")}</h1>

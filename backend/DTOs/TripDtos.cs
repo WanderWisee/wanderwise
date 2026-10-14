@@ -3,6 +3,8 @@ namespace WanderWiseApi.DTOs;
 public class SaveTripRequest
 {
     public string? Title { get; set; }
+    // The trip's own name (✎ next to "Trip to …"); empty = "Trip to <destination>".
+    public string? TripName { get; set; }
     public string Destination { get; set; } = string.Empty;
     public string? StartDate { get; set; }   // "yyyy-MM-dd"
     public string? EndDate { get; set; }     // "yyyy-MM-dd"
@@ -45,11 +47,19 @@ public class TripResponse
 {
     public int Id { get; set; }
     public string? Title { get; set; }
+    public string? TripName { get; set; }
     public string? Destination { get; set; }
     public string? StartDate { get; set; }
     public string? EndDate { get; set; }
     public int TravelBuddiesCount { get; set; }
     public decimal BudgetTotal { get; set; }
+    // What the person asking may do: "owner", "editor" or "viewer".
+    // The Trip Plan Builder turns into view-only mode for "viewer".
+    public string MyRole { get; set; } = "owner";
+    // "teacher" = a teacher of a student on this trip, viewing read-only.
+    // True when a teacher made this trip as a class field trip (students
+    // can't leave it on their own).
+    public bool IsClassTrip { get; set; }
     public List<SectionResponse> Sections { get; set; } = new();
 }
 

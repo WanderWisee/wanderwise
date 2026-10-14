@@ -1,10 +1,13 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { useLiveSync } from '../../hooks/useLiveSync';
+import { useQueuedSave } from '../../hooks/useQueuedSave';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
@@ -12,7 +15,9 @@ import {
   fetchTripById, saveTrip, deleteTrip, leaveTrip, markTripViewed,
   fetchExpenses, createExpense, deleteExpense, fetchCrew, fetchTripBookings,
 } from '../../services/tripService';
-import { hasCoords } from '../../services/geoService';
+import { nearestRoute } from '../../utils/routeOptimization';
+import PlaceSuggestions from '../../components/PlaceSuggestions';
+import { hasCoords, getRoute } from '../../services/geoService';
 import SwipeToDelete from '../../components/SwipeToDelete';
 import PlaceCard from '../../components/PlaceCard';
 import DirectionsConnector from '../../components/DirectionsConnector';
@@ -99,9 +104,12 @@ function hydrateTrip(data) {
   }
 
   return {
+    myRole: data.myRole || 'viewer',
     id: data.id,
     // Sa web, ang trip.title ay ang pangalan ng "Where to go?" list.
     title: data.title || '',
+    // Ang sariling pangalan ng trip (✎ sa tabi ng "Trip to …"). Walang laman = "Trip to <destination>".
+    tripName: data.tripName || '',
     destination: data.destination || '',
     startDate: data.startDate,
     endDate: data.endDate,
@@ -114,6 +122,8 @@ function hydrateTrip(data) {
 function buildSaveBody(trip) {
   return {
     title: trip.title,
+    // Kasama palagi, para hindi mabura ang pangalang itinakda sa web.
+    tripName: (trip.tripName || '').trim() || null,
     destination: trip.destination,
     startDate: trip.startDate,
     endDate: trip.endDate,
@@ -150,21 +160,45 @@ function sortStops(stops) {
 }
 
 export default function TripDetailScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { t, user, formatDate, formatDateRange } = useApp();
+  return <TripDetailContent key={String(id)} id={id} />;
+}
+
+function TripDetailContent({ id }) {
+  const router = useRouter();
+  const { t, user, formatDate, formatDateRange, isLoggedIn } = useApp();
   const { confirm, alert, toast } = useDialog();
 
-  const [trip, setTrip] = useState(null);
+  const [trip, setTripState] = useState(null);
+  const tripRef = useRef(null);
+  function setTrip(next) {
+    tripRef.current = next;
+    setTripState(next);
+  }
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [saving, setSaving] = useState(false);
+  const persistence = useQueuedSave((body) => saveTrip(id, body));
+  const canEdit = trip?.myRole === 'owner' || trip?.myRole === 'editor';
+  const navigation = useNavigation();
+  const dirty = !!trip && canEdit && (!!persistence.savedBody && JSON.stringify(buildSaveBody(trip)) !== persistence.savedBody || persistence.status !== 'saved');
+  const [discarding, setDiscarding] = useState(false);
+  usePreventRemove(isLoggedIn && !discarding && dirty, ({ data }) => {
+    if (persistence.status === 'saving') { toast(t('savingLabel')); return; }
+    void confirm({ title: t('pendingSave'), message: persistence.error, confirmLabel: t('discardChanges'), cancelLabel: t('keepEditing'), danger: true }).then((discard) => {
+      if (discard) { setDiscarding(true); setTimeout(() => navigation.dispatch(data.action), 0); }
+    });
+  });
+  const [sectionError, setSectionError] = useState(false);
+  const [optimizing, setOptimizing] = useState<string | null>(null);
+  const [expensePlace, setExpensePlace] = useState('');
 
   const [crew, setCrew] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [activeDayKey, setActiveDayKey] = useState(null);
@@ -188,14 +222,12 @@ export default function TripDetailScreen() {
   const scrollLockRef = useRef(false);
   const scrollYRef = useRef(0);
 
-  const tripRef = useRef(null);
-  tripRef.current = trip;
 
   // Kapag nahanap ang coordinates ng isang place, i-save sa lahat ng
   // place na may parehong pangalan at wala pang coordinates.
-  useAutoGeocode(trip, (name, coords) => {
+  useAutoGeocode(canEdit ? trip : null, (name, coords) => {
     const base = tripRef.current;
-    if (!base) return;
+    if (!base || !['owner', 'editor'].includes(base.myRole)) return;
     persist(
       {
         ...base,
@@ -207,53 +239,58 @@ export default function TripDetailScreen() {
               : p
           ),
         })),
-      },
-      { silent: true }
+      }
     );
   });
 
-  async function loadTrip() {
-    try {
-      const data = await fetchTripById(id);
-      const hydrated = hydrateTrip(data);
-      setTrip(hydrated);
-      setLoadError(null);
-      markTripViewed(id);
+  const dirtyRef = useRef(false);
+  useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
 
-      const days = buildDaysFromRange(hydrated.startDate, hydrated.endDate);
-      setActiveDayKey((prev) => prev || (days[0] && days[0].key));
-
-      fetchExpenses(id).then((list) => setExpenses(list.filter((e) => !e.placeId))).catch(() => {});
-      fetchCrew(id).then(setCrew).catch(() => {});
-      fetchTripBookings(id).then(setBookings).catch(() => {});
-    } catch (e) {
-      setTrip(null);
-      setLoadError(e.status === 404 ? t('tripNotFoundOrLinkInvalid') : e.message);
-    }
+  async function loadResources() {
+    const results = await Promise.allSettled([fetchExpenses(id), fetchCrew(id), fetchTripBookings(id)]);
+    if (results[0].status === 'fulfilled') setExpenses(results[0].value.filter((e) => !e.placeId));
+    if (results[1].status === 'fulfilled') setCrew(results[1].value);
+    if (results[2].status === 'fulfilled') setBookings(results[2].value);
+    setSectionError(results.some((r) => r.status === 'rejected'));
   }
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!tripRef.current) setLoading(true);
-      loadTrip().finally(() => setLoading(false));
-    }, [id])
-  );
-
-  async function persist(nextTrip, { silent = false } = {}) {
-    setTrip(nextTrip);
-    setSaving(true);
+  async function loadTrip(isCurrent = () => true) {
+    if (dirtyRef.current) { await loadResources(); return; }
+    const snapshot = tripRef.current;
     try {
-      await saveTrip(id, buildSaveBody(nextTrip));
+      const data = await fetchTripById(id);
+      if (!isCurrent() || dirtyRef.current || tripRef.current !== snapshot) return;
+      const hydrated = hydrateTrip(data);
+      if (!snapshot || JSON.stringify(buildSaveBody(snapshot)) !== JSON.stringify(buildSaveBody(hydrated)) || snapshot.myRole !== hydrated.myRole) {
+        setTrip(hydrated); tripRef.current = hydrated;
+      }
+      persistence.accept(buildSaveBody(hydrated));
+      setLoadError(null);
+      void markTripViewed(id);
+      const days = buildDaysFromRange(hydrated.startDate, hydrated.endDate);
+      setActiveDayKey((prev) => days.some((d) => d.key === prev) ? prev : days[0]?.key);
+      await loadResources();
     } catch (e) {
-      if (!silent) alert(t('saveFailed'), e.message);
-    } finally {
-      setSaving(false);
-    }
+      if (!isCurrent()) return;
+      if (tripRef.current) setSectionError(true);
+      else setLoadError(e.status === 404 ? t('tripNotFoundOrLinkInvalid') : e.message);
+    } finally { if (isCurrent()) setLoading(false); }
+  }
+
+  useLiveSync((isCurrent) => loadTrip(isCurrent), { resourceKey: String(id), interval: 15000 });
+
+  async function persist(nextTrip) {
+    if (!nextTrip || !['owner', 'editor'].includes(nextTrip.myRole)) return false;
+    tripRef.current = nextTrip;
+    setTrip(nextTrip);
+    dirtyRef.current = true;
+    return persistence.save(buildSaveBody(nextTrip));
   }
 
   const isOwner = crew.some((m) => m.isOwner && user && m.userId === user.userId);
 
   function updateSectionField(sectionKey, field, value) {
+    if (!canEdit) return;
     setTrip({
       ...trip,
       sections: trip.sections.map((s) => (s.key === sectionKey ? { ...s, [field]: value } : s)),
@@ -272,6 +309,7 @@ export default function TripDetailScreen() {
   }
 
   function updatePlaceLocal(sectionKey, placeKey, changes) {
+    if (!canEdit) return;
     setTrip(withPlaceChanged(trip, sectionKey, placeKey, (p) => ({ ...p, ...changes })));
   }
 
@@ -309,6 +347,7 @@ export default function TripDetailScreen() {
   }
 
   function addNewList() {
+    if (!canEdit) return;
     setTrip({
       ...trip,
       sections: [...trip.sections, { key: newKey('section'), isDefault: false, name: '', placeInput: '', places: [] }],
@@ -332,6 +371,7 @@ export default function TripDetailScreen() {
   }
 
   function startSelecting(placeKey = null) {
+    if (!canEdit) return;
     setExpandedPlaceKey(null);
     setIsSelecting(true);
     setSelectedPlaceKeys(placeKey ? [placeKey] : []);
@@ -370,8 +410,7 @@ export default function TripDetailScreen() {
     };
     setSelectedPlaceKeys([]);
     setIsSelecting(false);
-    await persist(nextTrip);
-    toast(t('addedToDay'));
+    if (await persist(nextTrip)) toast(t('addedToDay'));
   }
 
   async function deletePlace(sectionKey, placeKey) {
@@ -444,6 +483,45 @@ export default function TripDetailScreen() {
     });
   }
 
+  async function optimizeDay(dayKey) {
+    if (!canEdit || optimizing) return;
+    const snapshot = tripRef.current;
+    const stops = sortStops(snapshot.sections.flatMap((s) => s.places).filter((p) => p.itineraryDate === dayKey));
+    if (stops.length < 3) return;
+    if (stops.length > 12) { toast(t('optimizeLimit')); return; }
+    if (stops.some((p) => !hasCoords(p))) { toast(t('locateAllStops')); return; }
+    setOptimizing(dayKey);
+    try {
+      const candidate = nearestRoute(stops);
+      if (candidate.every((p, i) => p.key === stops[i].key)) { toast(t('routeUnchanged')); return; }
+      const duration = async (list) => {
+        let total = 0;
+        for (let i = 1; i < list.length; i++) {
+          const route = await getRoute(list[i - 1], list[i], 'driving');
+          if (route.estimated) throw new Error(t('networkError'));
+          total += route.durationMin;
+        }
+        return total;
+      };
+      const [before, after] = await Promise.all([duration(stops), duration(candidate)]);
+      if (after >= before) { toast(t('routeUnchanged')); return; }
+      if (!(await confirm({ title: t('optimizeDay'), message: `${before} min → ${after} min`, confirmLabel: t('save'), cancelLabel: t('cancel') }))) return;
+      if (tripRef.current !== snapshot) { toast(t('tryAgain')); return; }
+      const order = Object.fromEntries(candidate.map((p, i) => [p.key, i]));
+      const ok = await persist({ ...snapshot, sections: snapshot.sections.map((section) => ({ ...section, places: section.places.map((p) => p.key in order ? { ...p, itineraryOrder: order[p.key] } : p) })) });
+      if (ok) toast(t('routeUpdated'));
+    } catch (e) { toast(e.message); }
+    finally { setOptimizing(null); }
+  }
+
+  async function addSuggestion(sectionKey, item) {
+    if (!canEdit) return;
+    const base = tripRef.current;
+    const place = { ...makePlace(item.name), latitude: Number(item.lat), longitude: Number(item.lon) };
+    if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) return;
+    await persist({ ...base, sections: base.sections.map((section) => section.key === sectionKey ? { ...section, placeInput: '', places: [...section.places, place] } : section) });
+  }
+
   async function toggleVisited(sectionKey, placeKey) {
     await updatePlaceAndSave(sectionKey, placeKey, (p) => ({ ...p, visited: !p.visited }));
   }
@@ -482,6 +560,7 @@ export default function TripDetailScreen() {
   }
 
   async function handleAddExpense() {
+    if (!canEdit || saving) return;
     const amount = parseFloat(String(expenseAmount).replace(/,/g, ''));
     if (!expenseCategory || isNaN(amount) || amount <= 0) {
       toast(t('expenseAmountRequired'));
@@ -489,14 +568,17 @@ export default function TripDetailScreen() {
     }
     setSaving(true);
     try {
+      const selected = tripRef.current.sections.flatMap((s) => s.places).find((p) => p.key === expensePlace);
       const created = await createExpense(id, {
-        category: expenseCategory,
+        category: selected ? selected.name.slice(0, 50) : expenseCategory,
+        expenseDate: selected?.itineraryDate || null,
         amount,
         description: expenseDesc.trim(),
       });
       setExpenses((prev) => [...prev, created]);
       setExpenseAmount('');
       setExpenseDesc('');
+      setExpensePlace('');
       toast(t('expenseAdded'));
     } catch (e) {
       alert(t('saveFailed'), e.message);
@@ -506,6 +588,7 @@ export default function TripDetailScreen() {
   }
 
   async function handleDeleteExpense(expense) {
+    if (!canEdit) return;
     const ok = await confirm({
       title: t('deleteThisExpenseTitle'),
       message: t('confirmDeleteExpense'),
@@ -573,6 +656,7 @@ export default function TripDetailScreen() {
 
   function placeCardHandlers(sectionKey, place) {
     return {
+      readOnly: !canEdit,
       onChangeNotes: (text) => updatePlaceLocal(sectionKey, place.key, { notes: text }),
       onEndNotes: () => persist(tripRef.current),
       onToggleVisited: () => toggleVisited(sectionKey, place.key),
@@ -657,7 +741,16 @@ export default function TripDetailScreen() {
   const bookingsOnDay = (dayKey) =>
     bookings.filter((b) => b.checkIn <= dayKey && (b.checkOut ? dayKey < b.checkOut : dayKey === b.checkIn));
 
-  const tripName = trip.destination ? `${t('tripToPrefix')} ${trip.destination}` : t('untitledTrip');
+  // "Trip to Lucena" hangga't hindi pinapalitan ng student ang pangalan.
+  const defaultTripName = trip.destination ? `${t('tripToPrefix')} ${trip.destination}` : t('untitledTrip');
+  const tripName = (trip.tripName || '').trim() || defaultTripName;
+  const finishRename = () => {
+    setEditingName(false);
+    const current = tripRef.current;
+    // Ibinalik sa default? Susunod ulit ang pangalan sa destinasyon.
+    const next = (current.tripName || '').trim() === defaultTripName ? { ...current, tripName: '' } : current;
+    persist(next);
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -694,11 +787,30 @@ export default function TripDetailScreen() {
         {/* 1: Title card */}
         <View style={styles.titleCard}>
           <View style={styles.titleRow}>
-            <Text style={styles.tripName} numberOfLines={2}>{tripName}</Text>
+            {editingName ? (
+              <TextInput
+                style={[styles.tripName, styles.tripNameInput]}
+                value={trip.tripName || defaultTripName}
+                onChangeText={(text) => setTrip({ ...trip, tripName: text })}
+                onBlur={finishRename}
+                onSubmitEditing={finishRename}
+                maxLength={150}
+                autoFocus
+                selectTextOnFocus
+                returnKeyType="done"
+              />
+            ) : (
+              <Text style={styles.tripName} numberOfLines={2}>{tripName}</Text>
+            )}
+            {canEdit && !editingName && (
+              <TouchableOpacity onPress={() => setEditingName(true)} hitSlop={10} accessibilityLabel={t('renameTrip')}>
+                <Text style={styles.editHint}>✎</Text>
+              </TouchableOpacity>
+            )}
             {saving && <ActivityIndicator size="small" color={Colors.brown600} />}
           </View>
 
-          <TouchableOpacity onPress={() => setDatesOpen(true)} style={styles.metaButton} activeOpacity={0.7}>
+          <TouchableOpacity disabled={!canEdit} onPress={() => setDatesOpen(true)} style={styles.metaButton} activeOpacity={0.7}>
             <Text style={styles.tripDates}>
               📅 {trip.startDate || trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : t('setTripDates')}
             </Text>
@@ -708,11 +820,11 @@ export default function TripDetailScreen() {
           <View style={styles.metaRow}>
             <View style={styles.buddiesRow}>
               <Text style={styles.tripDates}>👤 {t('travelBuddies')}</Text>
-              <TouchableOpacity style={styles.miniCounter} onPress={() => changeBuddies(-1)} hitSlop={6}>
+              <TouchableOpacity style={styles.miniCounter} disabled={!canEdit} onPress={() => changeBuddies(-1)} hitSlop={6}>
                 <Text style={styles.miniCounterText}>−</Text>
               </TouchableOpacity>
               <Text style={styles.buddiesValue}>{trip.travelBuddiesCount}</Text>
-              <TouchableOpacity style={styles.miniCounter} onPress={() => changeBuddies(1)} hitSlop={6}>
+              <TouchableOpacity style={styles.miniCounter} disabled={!canEdit} onPress={() => changeBuddies(1)} hitSlop={6}>
                 <Text style={styles.miniCounterText}>+</Text>
               </TouchableOpacity>
             </View>
@@ -726,6 +838,15 @@ export default function TripDetailScreen() {
               </TouchableOpacity>
             )}
           </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 20, paddingBottom: 12, gap: 10 }}>
+          {!canEdit && <Text style={styles.emptyTextSmall}>{t('viewOnlyNotice')}</Text>}
+          {canEdit && <TouchableOpacity accessibilityRole="button" disabled={persistence.status === 'saving'} onPress={() => persist(tripRef.current)}>
+            <Text style={[styles.linkAction, persistence.status === 'failed' && { color: Colors.error }]}>{t(persistence.status === 'failed' ? 'saveFailedRetry' : persistence.status === 'saving' ? 'savingLabel' : dirty ? 'unsavedLabel' : 'savedLabel')}</Text>
+          </TouchableOpacity>}
+          {!!sectionError && <TouchableOpacity onPress={loadResources}><Text style={{ color: Colors.error }}>{t('sectionLoadFailed')}</Text></TouchableOpacity>}
+          <TouchableOpacity style={styles.newListButtonMinimal} onPress={() => router.push({ pathname: '/tour/[id]', params: { id: String(id) } } as any)}><Text style={styles.newListButtonMinimalText}>{t('tourDay')} ?</Text></TouchableOpacity>
         </View>
 
         {/* 2: Sticky header — tabs, at day pills kapag nasa Itinerary */}
@@ -823,6 +944,7 @@ export default function TripDetailScreen() {
                     </View>
                     {section.isDefault ? (
                       <TextInput
+                        editable={canEdit}
                         style={styles.listTitleInput}
                         placeholder={t('whereToGoDefault')}
                         placeholderTextColor={GREY_PLACEHOLDER}
@@ -833,6 +955,7 @@ export default function TripDetailScreen() {
                     ) : (
                       <>
                         <TextInput
+                        editable={canEdit}
                           style={styles.listTitleInput}
                           placeholder={t('nameThisSectionPlaceholder')}
                           placeholderTextColor={GREY_PLACEHOLDER}
@@ -840,7 +963,7 @@ export default function TripDetailScreen() {
                           onChangeText={(text) => updateSectionField(section.key, 'name', text)}
                           onEndEditing={() => persist(tripRef.current)}
                         />
-                        <TouchableOpacity onPress={() => deleteList(section.key)} hitSlop={8} accessibilityLabel={t('deleteThisListTitle')}>
+                        <TouchableOpacity disabled={!canEdit} onPress={() => deleteList(section.key)} hitSlop={8} accessibilityLabel={t('deleteThisListTitle')}>
                           <Text style={{ fontSize: 14, color: Colors.brown600 }}>🗑</Text>
                         </TouchableOpacity>
                       </>
@@ -856,7 +979,7 @@ export default function TripDetailScreen() {
                       <View key={place.key} style={{ marginBottom: 10 }}>
                         <SwipeToDelete
                           label={t('dialogDelete')}
-                          disabled={isSelecting || isExpanded}
+                          disabled={!canEdit || isSelecting || isExpanded}
                           onDelete={() => deletePlace(section.key, place.key)}
                         >
                           <PlaceCard
@@ -871,7 +994,7 @@ export default function TripDetailScreen() {
                               else setExpandedPlaceKey(isExpanded ? null : place.key);
                             }}
                             onLongPress={() => {
-                              if (!isSelecting) startSelecting(place.key);
+                              if (canEdit && !isSelecting) startSelecting(place.key);
                             }}
                             {...placeCardHandlers(section.key, place)}
                           />
@@ -880,8 +1003,10 @@ export default function TripDetailScreen() {
                     );
                   })}
 
-                  <View style={styles.addPlaceRow}>
+                  {canEdit && <PlaceSuggestions destination={trip.destination} sectionName={section.name} query={section.placeInput} onSelect={(item) => addSuggestion(section.key, item)} />}
+                  <View pointerEvents={canEdit ? 'auto' : 'none'} style={[styles.addPlaceRow, !canEdit && { display: 'none' }]}>
                     <TextInput
+                        editable={canEdit}
                       style={styles.addPlaceInput}
                       placeholder={t('addNewPlacePlaceholder')}
                       placeholderTextColor={GREY_PLACEHOLDER}
@@ -908,7 +1033,7 @@ export default function TripDetailScreen() {
                 </View>
               ))}
 
-              <TouchableOpacity style={styles.newListButtonMinimal} onPress={addNewList}>
+              <TouchableOpacity disabled={!canEdit} style={[styles.newListButtonMinimal, !canEdit && { display: 'none' }]} onPress={addNewList}>
                 <Text style={styles.newListButtonMinimalText}>+ {t('newListBtn')}</Text>
               </TouchableOpacity>
 
@@ -948,7 +1073,7 @@ export default function TripDetailScreen() {
                   <Text style={{ fontSize: 30 }}>🗓️</Text>
                   <Text style={styles.emptyStateTitle}>{t('noDatesSetYet')}</Text>
                   <Text style={[styles.emptyText, { textAlign: 'center' }]}>{t('setDatesForDays')}</Text>
-                  <TouchableOpacity style={[styles.addExpenseButton, { paddingHorizontal: 20, marginTop: 8 }]} onPress={() => setDatesOpen(true)}>
+                  <TouchableOpacity style={[styles.addExpenseButton, { paddingHorizontal: 20, marginTop: 8 }]} disabled={!canEdit} onPress={() => setDatesOpen(true)}>
                     <Text style={styles.addExpenseButtonText}>📅 {t('setTripDates')}</Text>
                   </TouchableOpacity>
                 </View>
@@ -963,6 +1088,7 @@ export default function TripDetailScreen() {
                       onLayout={(e) => (dayOffsetsRef.current[day.key] = e.nativeEvent.layout.y)}
                     >
                       <Text style={styles.dayHeading}>{day.label}</Text>
+                      {canEdit && stops.length >= 3 && <TouchableOpacity accessibilityRole="button" disabled={!!optimizing} onPress={() => optimizeDay(day.key)} style={{ paddingVertical: 12 }}><Text style={styles.linkAction}>{t(optimizing === day.key ? 'optimizing' : 'optimizeDay')}</Text></TouchableOpacity>}
 
                       {stays.map((b) => (
                         <View key={`stay-${b.id}`} style={styles.stayBanner}>
@@ -982,7 +1108,7 @@ export default function TripDetailScreen() {
                             <View style={{ marginBottom: 10 }}>
                               <SwipeToDelete
                                 label={t('remove')}
-                                disabled={isExpanded}
+                                disabled={!canEdit || isExpanded}
                                 onDelete={() => removeFromDay(place.sectionKey, place.key)}
                               >
                                 <PlaceCard
@@ -993,7 +1119,7 @@ export default function TripDetailScreen() {
                                   {...placeCardHandlers(place.sectionKey, place)}
                                 />
                               </SwipeToDelete>
-                              {isExpanded && stops.length > 1 && (
+                              {canEdit && isExpanded && stops.length > 1 && (
                                 <View style={styles.reorderRow}>
                                   <TouchableOpacity disabled={index === 0} onPress={() => moveStop(day.key, place.key, -1)} style={[styles.reorderButton, index === 0 && { opacity: 0.35 }]}>
                                     <Text style={styles.reorderText}>↑ {t('moveUp')}</Text>
@@ -1009,8 +1135,10 @@ export default function TripDetailScreen() {
                         );
                       })}
 
-                      <View style={styles.addPlaceRow}>
+
+                  <View pointerEvents={canEdit ? 'auto' : 'none'} style={[styles.addPlaceRow, !canEdit && { display: 'none' }]}>
                         <TextInput
+                        editable={canEdit}
                           style={styles.addPlaceInput}
                           placeholder={t('addNewPlacePlaceholder')}
                           placeholderTextColor={GREY_PLACEHOLDER}
@@ -1040,6 +1168,7 @@ export default function TripDetailScreen() {
                   <View style={styles.budgetEditRow}>
                     <Text style={styles.budgetPeso}>₱</Text>
                     <TextInput
+                        editable={canEdit}
                       style={styles.budgetInput}
                       value={budgetInput}
                       onChangeText={setBudgetInput}
@@ -1051,7 +1180,7 @@ export default function TripDetailScreen() {
                   </View>
                 ) : (
                   <TouchableOpacity
-                    onPress={() => {
+                    disabled={!canEdit} onPress={() => {
                       setBudgetInput(budget ? String(budget) : '');
                       setEditingBudget(true);
                     }}
@@ -1082,8 +1211,12 @@ export default function TripDetailScreen() {
                 </Text>
               </View>
 
-              <Text style={styles.sectionTitle}>{t('addExpenseTitle')}</Text>
-              <View style={styles.addExpenseCard}>
+              {canEdit && <Text style={styles.sectionTitle}>{t('addExpenseTitle')}</Text>}
+              <View pointerEvents={canEdit ? 'auto' : 'none'} style={[styles.addExpenseCard, !canEdit && { display: 'none' }]}>
+                <Text style={styles.emptyTextSmall}>{t('expenseFor')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                  <ChoiceChips style={{ flexWrap: 'nowrap' }} options={[{ value: '', label: t('categoryExpense') }, ...allPlaces.map((p) => ({ value: p.key, label: p.name }))]} value={expensePlace} onChange={setExpensePlace} />
+                </ScrollView>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                   <ChoiceChips
                     style={{ flexWrap: 'nowrap' }}
@@ -1093,6 +1226,7 @@ export default function TripDetailScreen() {
                   />
                 </ScrollView>
                 <TextInput
+                        editable={canEdit}
                   style={styles.expenseInput}
                   placeholder={`${t('amount')} (₱)`}
                   placeholderTextColor={GREY_PLACEHOLDER}
@@ -1101,6 +1235,7 @@ export default function TripDetailScreen() {
                   keyboardType="decimal-pad"
                 />
                 <TextInput
+                        editable={canEdit}
                   style={styles.expenseInput}
                   placeholder={t('writeDescription')}
                   placeholderTextColor={GREY_PLACEHOLDER}
@@ -1137,6 +1272,16 @@ export default function TripDetailScreen() {
                 </>
               )}
 
+              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t('dailyBreakdown')}</Text>
+              <View style={styles.breakdownCard}>
+                {days.length === 0 && <Text style={styles.emptyTextSmall}>{t('noDayExpenses')}</Text>}
+                {days.map((day) => {
+                  const expected = allPlaces.filter((p) => p.itineraryDate === day.key).reduce((sum, p) => sum + (p.costs || []).reduce((n, c) => n + Number(c.amount || 0), 0), 0);
+                  const actual = expenses.filter((e) => String(e.expenseDate || '').slice(0, 10) === day.key).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                  return <View key={day.key} style={styles.breakdownRow}><Text style={styles.breakdownLabel}>{formatDate(day.key, 'short')}</Text><Text style={styles.breakdownAmount}>{formatPeso(actual + expected)}</Text><Text style={styles.emptyTextSmall}>{t('expensesHeader')}: {formatPeso(actual)} ? {t('expectedCost')}: {formatPeso(expected)}</Text></View>;
+                })}
+              </View>
+
               <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t('expensesHeader')}</Text>
               {expenses.length === 0 ? (
                 <Text style={styles.emptyText}>{t('noExpensesYetAddOne')}</Text>
@@ -1149,7 +1294,7 @@ export default function TripDetailScreen() {
                       {!!e.description && <Text style={styles.expenseDesc}>{e.description}</Text>}
                     </View>
                     <Text style={styles.expenseAmount}>{formatPeso(e.amount)}</Text>
-                    <TouchableOpacity onPress={() => handleDeleteExpense(e)} hitSlop={8} accessibilityLabel={t('dialogDelete')}>
+                    <TouchableOpacity disabled={!canEdit} onPress={() => handleDeleteExpense(e)} hitSlop={8} accessibilityLabel={t('dialogDelete')}>
                       <Text style={{ fontSize: 14, color: Colors.brown600 }}>✕</Text>
                     </TouchableOpacity>
                   </View>
@@ -1201,7 +1346,7 @@ export default function TripDetailScreen() {
               <Text style={styles.sheetIcon}>👥</Text>
               <Text style={styles.sheetLabel}>{t('inviteYourCrew')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sheetRow} onPress={() => { setMenuOpen(false); setDatesOpen(true); }}>
+            <TouchableOpacity style={styles.sheetRow} disabled={!canEdit} onPress={() => { setMenuOpen(false); setDatesOpen(true); }}>
               <Text style={styles.sheetIcon}>📅</Text>
               <Text style={styles.sheetLabel}>{t('changeDates')}</Text>
             </TouchableOpacity>
@@ -1246,7 +1391,7 @@ const styles = StyleSheet.create({
   backLink: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
 
   hero: { height: 190, backgroundColor: Colors.cream2, position: 'relative', overflow: 'hidden' },
-  heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(46,27,14,0.18)' },
+  heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(51,28,8,0.18)' },
   heroTopRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingTop: 12,
@@ -1264,6 +1409,7 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   tripName: { flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900 },
+  tripNameInput: { paddingVertical: 2, borderBottomWidth: 1, borderBottomColor: Colors.line },
   metaButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, alignSelf: 'flex-start' },
   editHint: { fontSize: 12, color: Colors.brown600 },
   tripDates: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
@@ -1299,7 +1445,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   mapCaption: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 18 },
-  linkAction: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  linkAction: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.teal },
 
   bookingCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 24,
@@ -1347,7 +1493,7 @@ const styles = StyleSheet.create({
     width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
-  iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.mint },
+  iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.teal },
   emptyText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
   emptyTextSmall: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: GREY_PLACEHOLDER, paddingVertical: 4, marginBottom: 6 },
 
@@ -1418,7 +1564,7 @@ const styles = StyleSheet.create({
   expenseDesc: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
   expenseAmount: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(46,27,14,0.45)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34,

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, Fonts } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 
 // Totoong mapa gamit ang OpenStreetMap tiles — walang dagdag na library
 // (gumagana sa Expo Go). Kinukuwenta ang zoom para magkasya lahat ng pin,
@@ -71,6 +72,8 @@ export default function OsmMap({
   onPress = null,
 }) {
   const [width, setWidth] = useState(0);
+  const [failedTile, setFailedTile] = useState('');
+  const { t } = useApp();
 
   const points = useMemo(
     () =>
@@ -130,6 +133,7 @@ export default function OsmMap({
           <Image
             key={tile.key}
             source={{ uri: tile.uri, headers: TILE_HEADERS }}
+            onError={() => setFailedTile(tile.key)}
             style={[styles.tile, { left: tile.left, top: tile.top }]}
           />
         ))}
@@ -155,6 +159,11 @@ export default function OsmMap({
       </View>
       <View style={styles.expandBadge} pointerEvents="none">
         <Text style={styles.expandText}>⤢</Text>
+      </View>
+      <View style={{ position: 'absolute', top: 8, left: 8, right: 44, backgroundColor: 'rgba(246,241,220,0.94)', borderRadius: 8, padding: 6 }} pointerEvents="none">
+        <Text style={{ fontFamily: Fonts.regular, color: Colors.brown900, fontSize: 11 }}>
+          {layout?.tiles.some((tile) => tile.key === failedTile) ? t('mapUnavailable') : t('mapPreview')}
+        </Text>
       </View>
     </Pressable>
   );

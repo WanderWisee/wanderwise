@@ -316,6 +316,7 @@ CREATE TABLE `trip_members` (
   `trip_id` int NOT NULL,
   `user_id` int DEFAULT NULL,
   `joined_at` datetime DEFAULT NULL,
+  `can_edit` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `trip_id` (`trip_id`),
   KEY `fk_trip_members_user` (`user_id`),

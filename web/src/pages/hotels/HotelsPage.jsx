@@ -6,6 +6,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Google Maps can't carry check-in/check-out dates in the URL, so this
 // just opens a live map search for "hotels in <destination>" — real
@@ -199,12 +200,12 @@ export default function HotelsPage() {
 
   const bookingLine = (b) => (
     <>
-      🏨 <strong>{b.placeName}</strong>
+      <Icon name="bed" /> <strong>{b.placeName}</strong>
       {b.bookingSite && <> · {b.bookingSite}</>}
       {b.confirmationNumber && <> · #{b.confirmationNumber}</>}
       {" · "}
       {formatShortDate(b.checkIn)}
-      {b.checkOut && <> → {formatShortDate(b.checkOut)}</>}
+      {b.checkOut && <> <Icon name="arrow-right" /> {formatShortDate(b.checkOut)}</>}
     </>
   );
 
@@ -222,9 +223,9 @@ export default function HotelsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -241,7 +242,7 @@ export default function HotelsPage() {
             className="ww-booking-cancel"
             onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
           >
-            ← {t("backToTrip")}
+            <Icon name="arrow-left" /> {t("backToTrip")}
           </button>
         </div>
       )}
@@ -255,22 +256,22 @@ export default function HotelsPage() {
           // straight to the three places to look and book.
           <div className="ww-hotels-trip-actions">
             <button className="ww-search-btn" onClick={() => openInNewTab(buildGoogleMapsHotelUrl(trip.destination))}>
-              🗺️ {t("viewHotelsOnGoogleMaps")}
+              <Icon name="map" /> {t("viewHotelsOnGoogleMaps")}
             </button>
             <button
               className="ww-external-search-btn"
               onClick={() => openInNewTab(buildAgodaSearchUrl(trip.destination, trip.startDate, trip.endDate))}
             >
-              🔗 {t("searchOnAgoda")}
+              <Icon name="link" /> {t("searchOnAgoda")}
             </button>
             <button className="ww-external-search-btn" onClick={() => openInNewTab(buildKlookSearchUrl(trip.destination))}>
-              🔗 {t("searchOnKlook")}
+              <Icon name="link" /> {t("searchOnKlook")}
             </button>
           </div>
         ) : (
           <div className="ww-hotels-search-bar">
             <div className="ww-hotels-search-input">
-              <span>🔍</span>
+              <span><Icon name="search" /></span>
               <input
                 type="text"
                 placeholder={t("hotelsSearchPlaceholder")}
@@ -321,7 +322,7 @@ export default function HotelsPage() {
                   title={t("deleteBookingTitle")}
                   style={{ cursor: "pointer" }}
                 >
-                  ✕
+                  <Icon name="x" />
                 </span>
               </div>
             ))}
@@ -379,8 +380,8 @@ export default function HotelsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, checkOut: e.target.value }))}
                 />
               </label>
-              {formError && <p className="ww-booking-error">⚠️ {formError}</p>}
-              {justSaved && <p className="ww-optimize-result">✓ {t("bookingSaved")}</p>}
+              {formError && <p className="ww-booking-error"><Icon name="alert-triangle" /> {formError}</p>}
+              {justSaved && <p className="ww-optimize-result"><Icon name="check" /> {t("bookingSaved")}</p>}
               <div className="ww-booking-actions">
                 <button type="button" className="ww-optimize-btn" onClick={handleSaveBooking} disabled={saving}>
                   {saving ? t("saving") : t("save")}
@@ -412,7 +413,7 @@ export default function HotelsPage() {
                           : b.tripTitle || t("untitledTrip")}
                       </span>
                     </span>
-                    <span className="ww-booking-open">{t("view")} →</span>
+                    <span className="ww-booking-open">{t("view")} <Icon name="arrow-right" /></span>
                   </div>
                 ))
               )}

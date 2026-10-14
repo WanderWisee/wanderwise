@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
@@ -9,9 +9,11 @@ const MONTH_NAMES = [
 ];
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-export function formatDate(d) {
+export function formatDate(d, dateFormat = 'mdy') {
   if (!d) return null;
-  return `${String(d.month + 1).padStart(2, '0')}/${String(d.day).padStart(2, '0')}/${d.year}`;
+  const month = String(d.month + 1).padStart(2, '0');
+  const day = String(d.day).padStart(2, '0');
+  return dateFormat === 'dmy' ? `${day}/${month}/${d.year}` : `${month}/${day}/${d.year}`;
 }
 
 function dateKey(d) {
@@ -24,24 +26,17 @@ function isBefore(a, b) {
   return a.day < b.day;
 }
 
-export default function CalendarPicker({ visible, onClose, onConfirm, initialRange }) {
+export default function CalendarPicker(props) {
+  return props.visible ? <CalendarContent {...props} /> : null;
+}
+
+function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(initialRange?.start?.year || today.getFullYear());
   const [viewMonth, setViewMonth] = useState(initialRange?.start?.month ?? today.getMonth());
   const [start, setStart] = useState(initialRange?.start || null);
   const [end, setEnd] = useState(initialRange?.end || null);
-  const { t } = useApp();
-
-  // Tuwing bubuksan, simulan sa kasalukuyang napiling range.
-  useEffect(() => {
-    if (!visible) return;
-    setStart(initialRange?.start || null);
-    setEnd(initialRange?.end || null);
-    if (initialRange?.start) {
-      setViewYear(initialRange.start.year);
-      setViewMonth(initialRange.start.month);
-    }
-  }, [visible]);
+  const { t, prefs } = useApp();
 
   function goPrevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
@@ -82,7 +77,7 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <Pressable style={styles.calendarCard} onPress={(e) => e.stopPropagation()}>
           <View style={styles.calendarHeader}>
@@ -107,6 +102,9 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
               return (
                 <TouchableOpacity
                   key={i}
+                  accessibilityRole="button"
+                  accessibilityLabel={day ? formatDate({ year: viewYear, month: viewMonth, day }, prefs.dateFormat) : undefined}
+                  accessibilityState={{ selected: status === 'selected' || status === 'range-start' || status === 'range-end' }}
                   disabled={!day}
                   onPress={() => day && handleDayPress(day)}
                   style={styles.dayCell}
@@ -132,7 +130,7 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
 
           <View style={styles.calendarSummary}>
             <Text style={styles.calendarSummaryText}>
-              {start ? formatDate(start) : t('startDate')} — {end ? formatDate(end) : t('endDate')}
+              {start ? formatDate(start, prefs.dateFormat) : t('startDate')} — {end ? formatDate(end, prefs.dateFormat) : t('endDate')}
             </Text>
           </View>
 
@@ -159,7 +157,7 @@ export default function CalendarPicker({ visible, onClose, onConfirm, initialRan
 
 const styles = StyleSheet.create({
   modalBackdrop: {
-    flex: 1, backgroundColor: 'rgba(46,27,14,0.45)',
+    flex: 1, backgroundColor: 'rgba(51,28,8,0.45)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20,
   },
   calendarCard: {

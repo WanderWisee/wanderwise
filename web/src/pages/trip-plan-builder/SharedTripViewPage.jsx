@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // The public, read-only version of a trip — reached via an invite/share
 // link when the visitor has no WanderWise account (or isn't logged in).
@@ -78,7 +79,7 @@ export default function SharedTripViewPage() {
               gap: 12,
             }}
           >
-            <p style={{ margin: 0 }}>🎒 {t("signUpToJoinBanner")}</p>
+            <p style={{ margin: 0 }}><Icon name="backpack" /> {t("signUpToJoinBanner")}</p>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="ww-profile-new-btn" onClick={handleSignUpToJoin}>
                 {t("signUp")}
@@ -97,10 +98,10 @@ export default function SharedTripViewPage() {
         ) : (
           <>
             <h1 className="ww-builder-trip-title">
-              {t("tripToPrefix")} {trip.destination}
+              {trip.tripName || `${t("tripToPrefix")} ${trip.destination}`}
             </h1>
             {trip.startDate && trip.endDate && (
-              <p className="ww-builder-dates">📅 {trip.startDate} - {trip.endDate}</p>
+              <p className="ww-builder-dates"><Icon name="calendar" /> {trip.startDate} - {trip.endDate}</p>
             )}
 
             {trip.sections.map((section) => (
@@ -111,7 +112,7 @@ export default function SharedTripViewPage() {
                 ) : (
                   section.places.map((p) => (
                     <div className="ww-place-card" key={p.id}>
-                      <p className="ww-place-name">📍 {p.name}</p>
+                      <p className="ww-place-name"><Icon name="map-pin" /> {p.name}</p>
                       {p.notes && <p className="ww-guide-description">{p.notes}</p>}
                     </div>
                   ))
@@ -119,7 +120,7 @@ export default function SharedTripViewPage() {
               </div>
             ))}
 
-            <p className="ww-budget-total" style={{ marginTop: 16 }}>
+            <p className="ww-budget-total" style={{ marginTop: 16, color: "var(--ww-text-muted)" }}>
               {t("budgetLabel")}: ₱{Number(trip.budgetTotal || 0).toLocaleString()}.00
             </p>
           </>

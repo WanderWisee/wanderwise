@@ -6,3 +6,10 @@ public class AddCrewMemberRequest
 {
     public int UserId { get; set; }
 }
+
+// Body for PUT /api/trips/{id}/crew/{memberId}/permission — the owner
+// turning a crew member's edit access on or off.
+public class SetCrewPermissionRequest
+{
+    public bool CanEdit { get; set; }
+}

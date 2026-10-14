@@ -17,6 +17,16 @@ export function notificationText(n, t, formatTime) {
   const when = d.when === "today" ? t("notifWhenToday") : t("notifWhenTomorrow");
 
   switch (n.type) {
+    case 'announcement':
+      return `${d.actorName} ${t('notifAnnouncement')}: ${d.message || ''}`;
+    case 'class_added':
+      return `${d.actorName} ${t('notifClassAdded')} ${d.className}.`;
+    case 'class_removed':
+      return `${d.actorName} ${t('notifClassRemoved')} ${d.className}.`;
+    case 'journal_hidden':
+      return `${t('notifJournalHidden')} "${d.title || ''}"${d.reason ? `: ${d.reason}` : '.'}`;
+    case 'class_announcement':
+      return `${d.actorName} (${d.className}): ${d.message || ''}`;
     case "trip_start":
       return `${trip} ${t("notifTextTripStarts")} ${when}.`;
     case "activity":
@@ -54,6 +64,11 @@ export function notificationText(n, t, formatTime) {
 
 export function notificationIcon(type) {
   switch (type) {
+    case 'announcement':
+    case 'class_announcement': return '📢';
+    case 'class_added':
+    case 'class_removed': return '🎓';
+    case 'journal_hidden': return '🚫';
     case "trip_start":
       return "🧳";
     case "activity":
@@ -89,11 +104,19 @@ export function notificationIcon(type) {
 // "/journal/view/9"). Isinasalin ito sa route ng mobile app.
 export function notificationRoute(n) {
   const link = String(n?.link || '');
+  const cls = link.match(/\/classes\/(\d+)/);
+  if (cls) return `/classes/${cls[1]}`;
+  if (link === '/classes') return '/classes';
   const trip = link.match(/tripId=(\d+)/);
+  if (trip && link.includes('/tour')) {
+    const day = link.match(/[?&]date=(\d{4}-\d{2}-\d{2})/);
+    return `/tour/${trip[1]}${day ? `?date=${day[1]}` : ''}`;
+  }
   if (trip) return `/trip/${trip[1]}`;
   const journal = link.match(/\/journal\/view\/(\d+)/);
   if (journal) return `/journal/${journal[1]}`;
   const d = parseNotificationData(n);
+  if (d.classId) return `/classes/${d.classId}`;
   if (d.tripId) return `/trip/${d.tripId}`;
   return null;
 }

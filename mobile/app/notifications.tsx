@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 10,
     borderWidth: 1, borderColor: Colors.line,
   },
-  rowUnread: { borderColor: Colors.mint, backgroundColor: '#FBFDF9' },
+  rowUnread: { borderColor: Colors.teal, backgroundColor: '#FBFDF9' },
   iconBadge: {
     width: 38, height: 38, borderRadius: 12, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
   },
   text: { fontFamily: 'Lora_400Regular', fontSize: 13.5, lineHeight: 19, color: Colors.brown900 },
   time: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 3 },
-  dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.mint },
+  dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.teal },
 });

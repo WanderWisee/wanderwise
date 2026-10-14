@@ -1,8 +1,8 @@
 import { api, getToken as readToken, setToken } from './api';
 
 // Parehong mga endpoint na gamit ng web (AuthController.cs).
-// Ang login ay gamit ang school email (@student.mseuf.edu.ph), hindi
-// student number — ang student number ay kinukuha ng backend mula sa email.
+// Ang login ay gamit ang school email (@student.mseuf.edu.ph) o ang
+// student number — pareho itong tinatanggap ng backend.
 
 export const SCHOOL_EMAIL_REGEX = /^[^@\s]+@student\.mseuf\.edu\.ph$/i;
 

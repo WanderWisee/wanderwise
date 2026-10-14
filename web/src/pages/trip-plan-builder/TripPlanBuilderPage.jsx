@@ -6,6 +6,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 let nextPlaceId = 1;
 let nextSectionId = 1;
@@ -45,6 +46,101 @@ function addDaysIso(startDateStr, daysToAdd) {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
+// ===== Per-section suggestions =====
+// A custom section's name decides which kind of places to suggest for it,
+// e.g. a section named "Lamon" or "Food trip" gets food spots from
+// OpenStreetMap (via /api/places?category=food). Words are matched by how
+// they start, so "kainan", "restaurants" or "beaches" also count. A name
+// with none of these words simply shows no suggestions.
+const SECTION_CATEGORY_KEYWORDS = {
+  food: [
+    "food", "lamon", "lamunan", "kain", "pagkain", "eat", "resto", "restaurant",
+    "cafe", "coffee", "kape", "kapihan", "snack", "merienda", "meryenda", "ulam",
+    "dining", "breakfast", "lunch", "dinner", "almusal", "tanghalian", "hapunan",
+  ],
+  hotel: [
+    "hotel", "stay", "tulugan", "matutuluyan", "tutuluyan", "accommodation",
+    "lodging", "hostel", "resort", "inn", "transient",
+  ],
+  shopping: [
+    "shop", "pasalubong", "mall", "market", "palengke", "tiangge", "souvenir",
+    "bilihan", "pamilihan",
+  ],
+  beach: ["beach", "dagat", "swim", "langoy", "island", "isla", "snorkel", "dive", "diving"],
+  nature: [
+    "nature", "hike", "hiking", "falls", "talon", "bundok", "mountain", "park",
+    "trek", "kalikasan", "cave", "kweba", "view",
+  ],
+  heritage: [
+    "church", "simbahan", "heritage", "histor", "museum", "kasaysayan",
+    "landmark", "pamana", "culture", "kultura",
+  ],
+};
+
+function detectSectionCategory(sectionName) {
+  const words = (sectionName || "").toLowerCase().split(/[^a-z\u00f1]+/).filter(Boolean);
+  if (words.length === 0) return null;
+  for (const [category, keywords] of Object.entries(SECTION_CATEGORY_KEYWORDS)) {
+    if (words.some((w) => keywords.some((k) => w.startsWith(k)))) return category;
+  }
+  return null;
+}
+
+// ===== Suggested places lookup =====
+// One shared request per destination (+ category). In development React
+// runs effects twice (StrictMode), which used to send two identical
+// lookups at the same moment; the free OpenStreetMap servers often reject
+// the second one, so "Where to go" came back empty until the page was
+// refreshed. Now both runs share one request, and an empty/failed answer
+// is retried a couple of times before giving up.
+const placesRequests = new Map();
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function fetchSuggestedPlaces(destination, category) {
+  const key = `${destination.trim().toLowerCase()}|${category || ""}`;
+  if (placesRequests.has(key)) return placesRequests.get(key);
+
+  const url =
+    `/api/places?destination=${encodeURIComponent(destination)}` +
+    (category ? `&category=${encodeURIComponent(category)}` : "");
+  // The server gives up after ~30s; one retry is enough (each retry used
+  // to add another long wait while "Loading suggested places..." showed).
+  const MAX_RETRIES = 1;
+
+  const attempt = (n) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 40000);
+    return fetch(url, { signal: controller.signal })
+      .finally(() => clearTimeout(timer))
+      .then((resp) => resp.json())
+      .then((data) => {
+        const found = Array.isArray(data?.places) ? data.places : [];
+        if (found.length === 0 && n < MAX_RETRIES) {
+          return wait(1500 * (n + 1)).then(() => attempt(n + 1));
+        }
+        return found;
+      })
+      .catch(() => (n < MAX_RETRIES ? wait(1500 * (n + 1)).then(() => attempt(n + 1)) : []));
+  };
+
+  const request = attempt(0).then((found) => {
+    // Don't keep an empty answer, so "Try again" can ask again.
+    if (found.length === 0) placesRequests.delete(key);
+    return found;
+  });
+  placesRequests.set(key, request);
+  return request;
+}
+
+const SECTION_SUGGESTION_LABEL_KEYS = {
+  food: "sectionSuggestFood",
+  hotel: "sectionSuggestHotel",
+  shopping: "sectionSuggestShopping",
+  beach: "sectionSuggestBeach",
+  nature: "sectionSuggestNature",
+  heritage: "sectionSuggestHeritage",
+};
 
 // ===== Smart Route Optimization helpers =====
 // Total length of visiting the points in `order`, one after another,
@@ -164,7 +260,7 @@ function serializePlace(p, itineraryDateMap, sortOrder, itineraryOrderMap = {}) 
   };
 }
 
-function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState }) {
+function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripName, tripState }) {
   const itineraryDateMap = buildItineraryDateMap(tripState.days, startDate);
   const itineraryOrderMap = buildItineraryOrderMap(tripState.days);
 
@@ -185,6 +281,8 @@ function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTi
 
   return {
     title: whereToGoTitle,
+    // The trip's own name (✎ next to "Trip to …"); empty = "Trip to <destination>".
+    tripName: (tripName || "").trim() || null,
     destination,
     startDate: startDate || null,
     endDate: endDate || null,
@@ -270,14 +368,14 @@ function hydrateTripState(tripResponse, defaultTitle) {
 // backend expense record into the shape the UI already expects
 // (label/icon/dayLabel), same look as before but now actually persisted.
 const EXPENSE_CATEGORIES = [
-  { icon: "🍽️", label: "Food and Drinks" },
-  { icon: "🚌", label: "Transit" },
-  { icon: "🎟️", label: "Activities" },
-  { icon: "🛍️", label: "Shopping" },
-  { icon: "🚗", label: "Car Rental" },
-  { icon: "🛏️", label: "Lodging" },
-  { icon: "⛽", label: "Gas" },
-  { icon: "✈️", label: "Flights" },
+  { icon: "utensils", label: "Food and Drinks" },
+  { icon: "bus", label: "Transit" },
+  { icon: "ticket", label: "Activities" },
+  { icon: "shopping-bag", label: "Shopping" },
+  { icon: "car", label: "Car Rental" },
+  { icon: "bed", label: "Lodging" },
+  { icon: "fuel", label: "Gas" },
+  { icon: "plane", label: "Flights" },
 ];
 
 function findPlaceNameById(tripStateLike, placeId) {
@@ -311,7 +409,7 @@ function mapExpenseFromApi(e, tripStateLike) {
     id: e.id,
     amount: e.amount,
     label: placeName || e.category || "Expense",
-    icon: categoryMatch ? categoryMatch.icon : placeName || isPlaceExpense ? "📍" : "💰",
+    icon: categoryMatch ? categoryMatch.icon : placeName || isPlaceExpense ? "map-pin" : "wallet",
     description: e.description || "",
     dayLabel: e.placeId
       ? findDayLabelForPlace(tripStateLike, e.placeId)
@@ -337,7 +435,7 @@ export default function TripPlanBuilderPage() {
   const navigate = useNavigate();
   const tripInfo = location.state || {};
   const { t } = useLanguage();
-  const { confirm } = useDialog();
+  const { confirm, alert } = useDialog();
   // Date/time/distance formats from Settings → Formatting.
   const { formatDateRange, formatTime, formatDistance } = usePreferences();
 
@@ -353,6 +451,17 @@ export default function TripPlanBuilderPage() {
     urlTripId ? Number(urlTripId) : tripInfo.tripId || null
   );
   const [saveStatus, setSaveStatus] = useState("Saved");
+
+  // "owner", "editor" or "viewer" (from GET /api/trips/{id}). Crew join as
+  // viewers: they can open the trip but not change it, until the owner
+  // allows editing on the Add Crew page.
+  const [myRole, setMyRole] = useState("owner");
+  // "teacher" = a teacher checking a student's trip (read-only).
+  const canEdit = myRole !== "viewer" && myRole !== "teacher";
+  // Class field trip (made by a teacher): students can't leave it.
+  const [isClassTrip, setIsClassTrip] = useState(false);
+  const canEditRef = useRef(true);
+  canEditRef.current = canEdit;
   const saveStatusLabel =
     saveStatus === "Saving..." ? t("savingEllipsis")
     : saveStatus === "Save failed" ? t("saveFailed")
@@ -398,6 +507,10 @@ export default function TripPlanBuilderPage() {
 
   const [whereToGoTitle, setWhereToGoTitle] = useState(t("whereToGoDefault"));
   const [editingWhereToGoTitle, setEditingWhereToGoTitle] = useState(false);
+  // The trip's name. Empty = "Trip to <destination>" (follows the
+  // destination); ✎ only renames the trip — the destination stays.
+  const [tripName, setTripName] = useState("");
+  const [editingTripName, setEditingTripName] = useState(false);
 
   const [tripState, setTripState] = useState(
     tripInfo.restoredTripState || {
@@ -413,6 +526,8 @@ export default function TripPlanBuilderPage() {
   const [future, setFuture] = useState([]);
 
   const applyChange = (updater) => {
+    // View-only crew can't change the trip.
+    if (!canEditRef.current) return;
     setTripState((prevState) => {
       setPast((p) => [...p, prevState]);
       setFuture([]);
@@ -437,6 +552,11 @@ export default function TripPlanBuilderPage() {
   };
 
   const { places, customSections, days, budgetTotal, expenses = [] } = tripState;
+  // Read-only view: skip the blank "Name this section" list a new trip
+  // starts with — there's nothing in it to look at.
+  const visibleSections = canEdit
+    ? customSections
+    : customSections.filter((s) => s.name?.trim() || s.places.length > 0);
 
   // Load (existing trip) or create (fresh trip) exactly once on mount.
   // Whichever tripId we end up with is written back into the URL so a
@@ -471,11 +591,14 @@ export default function TripPlanBuilderPage() {
           if (resp.ok) {
             const data = await resp.json();
             setTripId(data.id);
+            setMyRole(data.myRole || "owner");
+            setIsClassTrip(!!data.isClassTrip);
             setDestination(data.destination || "");
             setStartDate(data.startDate || "");
             setEndDate(data.endDate || "");
             setPeople(data.travelBuddiesCount || 0);
             setWhereToGoTitle(data.title || t("whereToGoDefault"));
+            setTripName(data.tripName || "");
             const hydrated = hydrateTripState(data);
             setTripState(hydrated);
 
@@ -559,6 +682,8 @@ export default function TripPlanBuilderPage() {
 
   useEffect(() => {
     if (!hasLoadedRef.current || !tripId) return;
+    // View-only crew never save (the server would refuse it anyway).
+    if (!canEditRef.current) return;
 
     const token = localStorage.getItem("wanderwise_token");
     if (!token) return;
@@ -568,7 +693,7 @@ export default function TripPlanBuilderPage() {
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const body = buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState });
+        const body = buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripName, tripState });
         const resp = await fetch(`/api/trips/${tripId}`, {
           method: "PUT",
           headers: {
@@ -587,7 +712,7 @@ export default function TripPlanBuilderPage() {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripState, destination, startDate, endDate, people, whereToGoTitle, tripId]);
+  }, [tripState, destination, startDate, endDate, people, whereToGoTitle, tripName, tripId]);
 
   // --- Top-right "⋯" menu (Home / Guides / Profile) ---
   // The "Book a Hotel" button lower on the page already covers Hotels,
@@ -622,6 +747,14 @@ export default function TripPlanBuilderPage() {
       .then((data) => setDestinationOptions(Array.isArray(data) ? data : []))
       .catch(() => setDestinationOptions([]));
   }, []);
+
+  // "Trip to Lucena" until the student renames the trip.
+  const defaultTripName = `${t("tripToPrefix")} ${destination || t("yourNextDestination")}`;
+  const finishTripNameEdit = () => {
+    setEditingTripName(false);
+    // Typed back the default? Keep following the destination.
+    if (tripName.trim() === defaultTripName) setTripName("");
+  };
 
   const openEditTrip = () => {
     setEditForm({ destination, startDate, endDate, people });
@@ -683,6 +816,8 @@ export default function TripPlanBuilderPage() {
   const newPlaceInputRef = useRef(null);
 
   const [suggestedPlaces, setSuggestedPlaces] = useState([]);
+  // Bumped by the "Try again" buttons to re-run the suggestion lookups.
+  const [suggestionsRetry, setSuggestionsRetry] = useState(0);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   // Whether to reveal every fetched suggestion instead of just the first
   // 12 — clicking a chip is the accurate, no-typing way to add a place, so
@@ -739,13 +874,9 @@ export default function TripPlanBuilderPage() {
     }
     let cancelled = false;
     setLoadingSuggestions(true);
-    fetch(`/api/places?destination=${encodeURIComponent(destination)}`)
-      .then((resp) => resp.json())
-      .then((data) => {
-        if (!cancelled) setSuggestedPlaces(Array.isArray(data.places) ? data.places : []);
-      })
-      .catch(() => {
-        if (!cancelled) setSuggestedPlaces([]);
+    fetchSuggestedPlaces(destination)
+      .then((found) => {
+        if (!cancelled) setSuggestedPlaces(found);
       })
       .finally(() => {
         if (!cancelled) setLoadingSuggestions(false);
@@ -753,7 +884,46 @@ export default function TripPlanBuilderPage() {
     return () => {
       cancelled = true;
     };
-  }, [destination]);
+  }, [destination, suggestionsRetry]);
+
+  // Suggestions for custom sections, keyed by "destination|category" so a
+  // category is fetched once per destination and shared by every section
+  // with that kind of name. Each value: { loading, places }.
+  const [sectionSuggestions, setSectionSuggestions] = useState({});
+  // Which sections have "Show more" open, keyed by section id.
+  const [expandedSectionSuggestions, setExpandedSectionSuggestions] = useState({});
+  // Keys already requested, so the same category isn't fetched twice.
+  const requestedSectionKeysRef = useRef(new Set());
+
+  const sectionSuggestionKey = (category) =>
+    `${destination.trim().toLowerCase()}|${category}`;
+
+  // Comma-joined list of the categories the current section names ask for.
+  // Only changes when a name starts or stops matching a category, so typing
+  // a section name doesn't fire a request on every keystroke.
+  const sectionCategoriesKey = useMemo(
+    () =>
+      [...new Set(customSections.map((s) => detectSectionCategory(s.name)).filter(Boolean))]
+        .sort()
+        .join(","),
+    [customSections]
+  );
+
+  useEffect(() => {
+    if (!destination.trim() || !sectionCategoriesKey) return;
+    sectionCategoriesKey.split(",").forEach((category) => {
+      const key = sectionSuggestionKey(category);
+      if (requestedSectionKeysRef.current.has(key)) return;
+      requestedSectionKeysRef.current.add(key);
+      setSectionSuggestions((prev) => ({ ...prev, [key]: { loading: true, places: [] } }));
+      fetchSuggestedPlaces(destination, category).then((found) => {
+        // Nothing found: allow "Try again" to ask again.
+        if (found.length === 0) requestedSectionKeysRef.current.delete(key);
+        setSectionSuggestions((prev) => ({ ...prev, [key]: { loading: false, places: found } }));
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionCategoriesKey, destination, suggestionsRetry]);
 
   const generatedDays = useMemo(
     () => buildDaysFromRange(startDate, endDate),
@@ -818,7 +988,34 @@ export default function TripPlanBuilderPage() {
     );
   }, []);
 
-  const budgetSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+  // "$ Add Cost" entries on a place also count as expenses: they show in
+  // the Expenses list, are added to the budget total, and go to the
+  // Breakdown charts. They're built from each place's costs (not stored a
+  // second time), so they stay in sync when a cost is added or removed.
+  const placeCostExpenses = useMemo(() => {
+    const list = [];
+    [...places, ...customSections.flatMap((s) => s.places)].forEach((p) => {
+      (p.costs || []).forEach((c) => {
+        list.push({
+          id: `cost-${p.id}-${c.id}`,
+          costId: c.id,
+          placeId: p.id,
+          fromPlaceCost: true,
+          amount: Number(c.amount) || 0,
+          label: p.name,
+          icon: "map-pin",
+          description: COST_CATEGORY_KEYS[c.category] ? t(COST_CATEGORY_KEYS[c.category]) : c.category,
+          dayLabel: findDayLabelForPlace({ days }, p.id),
+        });
+      });
+    });
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [places, customSections, days, t]);
+
+  const allExpenses = [...expenses, ...placeCostExpenses];
+
+  const budgetSpent = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // A "match" here just means the words in what the user typed actually
   // show up in the name OSM returned — catches the "Hotel Dolores" typed
@@ -961,9 +1158,14 @@ export default function TripPlanBuilderPage() {
       const idsToRemove = new Set((section?.places || []).map((p) => p.id));
       return {
         ...prev,
-        customSections: prev.customSections.map((s) =>
-          s.id === sectionId ? { ...s, places: [] } : s
-        ),
+        // Keep at least one (empty) section on the page; extra sections
+        // made with "New List" are removed completely.
+        customSections:
+          prev.customSections.length > 1
+            ? prev.customSections.filter((s) => s.id !== sectionId)
+            : prev.customSections.map((s) =>
+                s.id === sectionId ? { ...s, places: [] } : s
+              ),
         days: prev.days.map((day) => ({
           ...day,
           placeIds: day.placeIds.filter((id) => !idsToRemove.has(id)),
@@ -996,7 +1198,7 @@ export default function TripPlanBuilderPage() {
         };
         newlyCreated.push(place);
         return { ...s, places: [...s.places, place], placeInput: "" };
-      }),
+      }).concat([{ id: nextSectionId++, name: "", placeInput: "", places: [] }]),
     }));
     newlyCreated.forEach(geocodePlace);
   };
@@ -1042,6 +1244,107 @@ export default function TripPlanBuilderPage() {
   };
 
   const handleDeleteSection = (sectionId) => setPendingDelete({ type: "section", id: sectionId });
+
+  // Adds a place to one custom section. `coords` comes from a suggestion
+  // chip (already a real OpenStreetMap location); a typed name is looked up
+  // with geocodePlace, same as "Where to go".
+  const addPlaceToSection = (sectionId, rawName, coords) => {
+    const name = (rawName || "").trim();
+    if (!name) return;
+    const section = customSections.find((s) => s.id === sectionId);
+    if (section && section.places.some((p) => p.name.trim().toLowerCase() === name.toLowerCase())) {
+      return; // already in this section
+    }
+    const place = {
+      id: nextPlaceId++,
+      number: nextNumber++,
+      name,
+      visited: false,
+      geocodeStatus: coords ? "verified" : "pending",
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
+    };
+    applyChange((prev) => ({
+      ...prev,
+      customSections: prev.customSections.map((s) =>
+        s.id === sectionId ? { ...s, places: [...s.places, place] } : s
+      ),
+    }));
+    if (!coords) geocodePlace(place);
+  };
+
+  const handleSectionPlaceKeyDown = (sectionId) => (e) => {
+    if (e.key !== "Enter") return;
+    const section = customSections.find((s) => s.id === sectionId);
+    if (!section || !section.placeInput.trim()) return;
+    addPlaceToSection(sectionId, section.placeInput);
+    handleSectionPlaceInputChange(sectionId, "");
+  };
+
+  const renderSectionSuggestions = (section) => {
+    // Suggestions are for adding places — nothing to add in a read-only view.
+    if (!canEdit) return null;
+    const category = detectSectionCategory(section.name);
+    if (!category || !destination.trim()) return null;
+    const result = sectionSuggestions[sectionSuggestionKey(category)];
+    if (!result) return null;
+    if (result.loading) {
+      return (
+        <p className="ww-field-label" style={{ marginBottom: 8 }}>
+          {t("loadingSuggestedPlaces")}
+        </p>
+      );
+    }
+    const added = new Set(section.places.map((p) => p.name.trim().toLowerCase()));
+    const list = result.places.filter((sp) => !added.has(sp.name.trim().toLowerCase()));
+    if (list.length === 0) {
+      return result.places.length === 0 ? (
+        <p className="ww-expense-empty">
+          {t("noSectionSuggestions")}{" "}
+          <button
+            type="button"
+            className="ww-show-more-btn"
+            onClick={() => setSuggestionsRetry((n) => n + 1)}
+          >
+            <Icon name="refresh" /> {t("tryAgain")}
+          </button>
+        </p>
+      ) : null;
+    }
+    const expanded = !!expandedSectionSuggestions[section.id];
+    return (
+      <div className="ww-suggested-places-panel">
+        <p className="ww-suggested-places-label">
+          {t(SECTION_SUGGESTION_LABEL_KEYS[category])} {destination}:
+        </p>
+        <div className="ww-suggested-chips">
+          {list.slice(0, expanded ? list.length : 12).map((sp) => (
+            <button
+              key={`${sp.name}-${sp.lat}-${sp.lon}`}
+              type="button"
+              className="ww-suggested-chip"
+              onClick={() => addPlaceToSection(section.id, sp.name, { lat: sp.lat, lng: sp.lon })}
+            >
+              <span className="ww-suggested-chip-plus">+</span> {sp.name}
+              {sp.isFree && <span className="ww-free-badge">{t("freeEntry")}</span>}
+            </button>
+          ))}
+        </div>
+        {list.length > 12 && (
+          <button
+            type="button"
+            className="ww-show-more-btn"
+            onClick={() =>
+              setExpandedSectionSuggestions((prev) => ({ ...prev, [section.id]: !prev[section.id] }))
+            }
+          >
+            {expanded
+              ? `${t("showFewerPlaces")} ▴`
+              : `${t("showMorePlaces")} (+${list.length - 12}) ▾`}
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const [dayInputs, setDayInputs] = useState({});
 
@@ -1279,6 +1582,10 @@ export default function TripPlanBuilderPage() {
   const whereToGoRef = useRef(null);
   const itineraryRef = useRef(null);
   const untitledRef = useRef(null);
+  // One DOM node per custom section, for the sidebar links.
+  const sectionRefs = useRef({});
+  // One DOM node per itinerary day, for the sidebar day links.
+  const dayRefs = useRef({});
 
   const scrollToRef = (ref) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1460,10 +1767,35 @@ export default function TripPlanBuilderPage() {
         people,
         tripState,
         returnPath: `/trip-plan${tripId ? `?tripId=${tripId}` : ""}`,
-        expenses,
+        expenses: allExpenses,
         days,
       },
     });
+  };
+
+  // Crew (not the owner) can leave the trip from here too.
+  const [leavingTrip, setLeavingTrip] = useState(false);
+  const handleLeaveTrip = async () => {
+    if (!tripId || leavingTrip) return;
+    if (!(await confirm(t("confirmLeaveTrip"), { danger: true, confirmLabel: t("leaveTrip") }))) return;
+    setLeavingTrip(true);
+    try {
+      const token = localStorage.getItem("wanderwise_token");
+      const resp = await fetch(`/api/trips/${tripId}/leave`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        navigate("/dashboard");
+        return;
+      }
+      alert(t("leaveTripFailed"));
+    } catch (err) {
+      console.warn("Failed to leave trip:", err);
+      alert(t("leaveTripFailed"));
+    } finally {
+      setLeavingTrip(false);
+    }
   };
 
     const handleGoToAddCrew = () => {
@@ -1525,7 +1857,7 @@ export default function TripPlanBuilderPage() {
               <span>
                 ₱{c.amount.toLocaleString()}
                 <span className="ww-cost-remove" onClick={() => removeCost(p.id, c.id)}>
-                  ✕
+                  <Icon name="x" />
                 </span>
               </span>
             </div>
@@ -1539,7 +1871,7 @@ export default function TripPlanBuilderPage() {
   );
 
   return (
-    <div className="ww-builder-page">
+    <div className={`ww-builder-page ${canEdit ? "" : "ww-builder-readonly"}`}>
       <header className="ww-builder-topbar">
         <div className="ww-brand">
           <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
@@ -1551,7 +1883,7 @@ export default function TripPlanBuilderPage() {
             onClick={handleUndo}
             style={{ cursor: past.length === 0 ? "default" : "pointer", opacity: past.length === 0 ? 0.4 : 1 }}
           >
-            ↩ {t("undo")}
+            <Icon name="undo" /> {t("undo")}
           </span>
           <span className="ww-builder-saved">{saveStatusLabel}</span>
           <span
@@ -1559,7 +1891,7 @@ export default function TripPlanBuilderPage() {
             onClick={handleRedo}
             style={{ cursor: future.length === 0 ? "default" : "pointer", opacity: future.length === 0 ? 0.4 : 1 }}
           >
-            ↪ {t("redo")}
+            <Icon name="redo" /> {t("redo")}
           </span>
           <button className="ww-trip-plan-btn">{t("tripPlanBtn")}</button>
           <div className="ww-menu-wrapper" ref={topMenuRef}>
@@ -1596,12 +1928,32 @@ export default function TripPlanBuilderPage() {
           <p className="ww-sidebar-item" onClick={() => scrollToRef(itineraryRef)} style={{ cursor: "pointer" }}>
             {t("notes")}
           </p>
-          <p className="ww-sidebar-item" onClick={() => scrollToRef(untitledRef)} style={{ cursor: "pointer" }}>
-            {customSections[0]?.name?.trim() || t("untitled")}
+          {visibleSections.map((section) => (
+            <p
+              key={section.id}
+              className="ww-sidebar-item"
+              onClick={() => scrollToRef({ current: sectionRefs.current[section.id] })}
+              style={{ cursor: "pointer" }}
+            >
+              {section.name?.trim() || t("untitled")}
+            </p>
+          ))}
+          <p
+            className="ww-sidebar-header"
+            onClick={() => scrollToRef(itineraryRef)}
+            style={{ cursor: "pointer" }}
+          >
+            {t("itinerary")}
           </p>
-          <p className="ww-sidebar-header">{t("itinerary")}</p>
           {days.map((day) => (
-            <p className="ww-sidebar-item" key={day.label}>{day.label}</p>
+            <p
+              className="ww-sidebar-item"
+              key={day.label}
+              onClick={() => scrollToRef({ current: dayRefs.current[day.label] })}
+              style={{ cursor: "pointer" }}
+            >
+              {day.label}
+            </p>
           ))}
           <p className="ww-sidebar-header">{t("budget")}</p>
           <p className="ww-sidebar-item" onClick={() => scrollToRef(expensesRef)} style={{ cursor: "pointer" }}>
@@ -1610,14 +1962,55 @@ export default function TripPlanBuilderPage() {
         </aside>
 
         <main className="ww-builder-main">
+          {/* Trip name: ✎ makes the text editable (like "Where to go"). It
+              only renames the trip — destination and dates are changed by
+              tapping the dates below. */}
           <h1 className="ww-builder-trip-title">
-            {t("tripToPrefix")} {destination || t("yourNextDestination")}{" "}
-            <span className="ww-edit-icon" onClick={openEditTrip} style={{ cursor: "pointer" }}>
-              ✎
+            {editingTripName ? (
+              <input
+                className="ww-section-name-input-inline ww-trip-name-input"
+                value={tripName || defaultTripName}
+                maxLength={150}
+                onChange={(e) => setTripName(e.target.value)}
+                onFocus={(e) => e.target.select()}
+                onBlur={finishTripNameEdit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === "Escape") e.target.blur();
+                }}
+                autoFocus
+              />
+            ) : (
+              <span>{tripName.trim() || defaultTripName}</span>
+            )}{" "}
+            <span
+              className="ww-edit-icon"
+              onClick={() => setEditingTripName((v) => !v)}
+              style={{ cursor: "pointer" }}
+              title={t("renameTripTitle")}
+            >
+              <Icon name="pencil" />
             </span>
           </h1>
-          {startDate && endDate && (
-            <p className="ww-builder-dates">📅 {formatDateRange(startDate, endDate)}</p>
+          {canEdit ? (
+            <button
+              type="button"
+              className="ww-builder-dates ww-builder-dates-edit"
+              onClick={openEditTrip}
+              title={t("editTripDetailsTitle")}
+            >
+              <Icon name="calendar" /> {startDate && endDate ? formatDateRange(startDate, endDate) : t("setTripDetails")}
+              <span aria-hidden="true"><Icon name="pencil" /></span>
+            </button>
+          ) : (
+            startDate && endDate && (
+              <p className="ww-builder-dates"><Icon name="calendar" /> {formatDateRange(startDate, endDate)}</p>
+            )
+          )}
+
+          {!canEdit && (
+            <div className="ww-hotels-trip-banner" style={{ margin: "0 0 16px" }}>
+              <span><Icon name="eye" /> {myRole === "teacher" ? t("teacherViewNotice") : t("viewOnlyNotice")}</span>
+            </div>
           )}
 
           <div className="ww-builder-map">
@@ -1628,6 +2021,9 @@ export default function TripPlanBuilderPage() {
             />
           </div>
 
+          {/* Teachers only review the trip — no booking or crew changes. */}
+          {myRole !== "teacher" && (
+          <>
           <button
             className="ww-browse-btn"
             onClick={() =>
@@ -1638,12 +2034,44 @@ export default function TripPlanBuilderPage() {
               })
             }
           >
-            🏨 {t("bookAHotel")}
+            <Icon name="bed" /> {t("bookAHotel")}
           </button>
+
+          <button
+            className="ww-trip-plan-btn"
+            onClick={handleGoToAddCrew}
+            style={{ marginLeft: 10, minHeight: 42 }}
+          >
+            <Icon name="users" /> {t("addCrew")}
+          </button>
+          </>
+          )}
+
+          {tripId && startDate && endDate && (
+            <button
+              className="ww-trip-plan-btn"
+              onClick={() => navigate(`/trip-plan/tour?tripId=${tripId}`)}
+              style={{ marginLeft: 10, minHeight: 42 }}
+            >
+              <Icon name="compass" /> {t("tourDayBtn")}
+            </button>
+          )}
+
+          {myRole !== "owner" && myRole !== "teacher" && !isClassTrip && (
+            <button
+              type="button"
+              className="ww-booking-cancel"
+              onClick={handleLeaveTrip}
+              disabled={leavingTrip}
+              style={{ marginLeft: 10, minHeight: 42 }}
+            >
+              <Icon name="log-out" /> {leavingTrip ? t("leavingTrip") : t("leaveTrip")}
+            </button>
+          )}
 
           {bookings.length > 0 && (
             <p className="ww-bookings-count">
-              ✓ {bookings.length} {t("bookingsRecordedCount")}
+              <Icon name="check" /> {bookings.length} {t("bookingsRecordedCount")}
             </p>
           )}
 
@@ -1667,7 +2095,7 @@ export default function TripPlanBuilderPage() {
                 onClick={() => setEditingWhereToGoTitle((v) => !v)}
                 style={{ cursor: "pointer" }}
               >
-                ✎
+                <Icon name="pencil" />
               </span>
             </span>
             <span
@@ -1681,9 +2109,22 @@ export default function TripPlanBuilderPage() {
           </h2>
           <div ref={whereToGoRef} />
 
-          {loadingSuggestions && (
+          {canEdit && loadingSuggestions && (
             <p className="ww-field-label" style={{ marginBottom: 8 }}>
               {t("loadingSuggestedPlaces")}
+            </p>
+          )}
+
+          {canEdit && !loadingSuggestions && destination.trim() && suggestedPlaces.length === 0 && (
+            <p className="ww-expense-empty" style={{ marginBottom: 12 }}>
+              {t("noSuggestedPlacesYet")}{" "}
+              <button
+                type="button"
+                className="ww-show-more-btn"
+                onClick={() => setSuggestionsRetry((n) => n + 1)}
+              >
+                <Icon name="refresh" /> {t("tryAgain")}
+              </button>
             </p>
           )}
 
@@ -1731,10 +2172,14 @@ export default function TripPlanBuilderPage() {
             </div>
           )}
 
+          {!canEdit && places.length === 0 && (
+            <p className="ww-expense-empty">{t("readonlyNoPlaces")}</p>
+          )}
+
           {places.map((p, i) => (
             <div className="ww-place-card" key={p.id}>
               <p className="ww-place-name">
-                📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
+                <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
               </p>
 
               {/* Shown when our free (OpenStreetMap) lookup could NOT
@@ -1750,7 +2195,7 @@ export default function TripPlanBuilderPage() {
               {(p.geocodeStatus === "unverified" ||
                 ((p.lat == null || p.lng == null) && p.geocodeStatus !== "pending")) && (
                 <div className="ww-unverified-warning">
-                  <span className="ww-unverified-warning-icon">⚠️</span>
+                  <span className="ww-unverified-warning-icon"><Icon name="alert-triangle" /></span>
                   <span className="ww-unverified-warning-text">{t("locationUnverifiedWarning")}</span>
                   <a
                     className="ww-unverified-warning-link"
@@ -1760,7 +2205,7 @@ export default function TripPlanBuilderPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {t("viewOnGoogleMaps")} ↗
+                    {t("viewOnGoogleMaps")} <Icon name="external-link" />
                   </a>
                 </div>
               )}
@@ -1779,7 +2224,7 @@ export default function TripPlanBuilderPage() {
                 onClick={() => toggleVisited(p.id)}
                 style={{ cursor: "pointer" }}
               >
-                {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
+                {p.visited ? <><Icon name="x" /> {t("unmarkVisited")}</> : <><Icon name="check" /> {t("markVisited")}</>}
               </p>
             </div>
           ))}
@@ -1795,7 +2240,7 @@ export default function TripPlanBuilderPage() {
             <input
               ref={newPlaceInputRef}
               className="ww-add-place-input"
-              placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+              placeholder={t("addNewPlacePlaceholder")}
               value={newPlaceInput}
               onChange={(e) => setNewPlaceInput(e.target.value)}
               onKeyDown={handleAddPlace}
@@ -1837,7 +2282,7 @@ export default function TripPlanBuilderPage() {
                         }}
                         onMouseDown={(e) => e.preventDefault()}
                       >
-                        📍 {sug.display_name}
+                        <Icon name="map-pin" /> {sug.display_name}
                       </div>
                     ))}
                   {!loadingPlaceSuggestions && placeSuggestions.length === 0 && (
@@ -1849,10 +2294,17 @@ export default function TripPlanBuilderPage() {
               )}
           </div>
 
-          <hr className="ww-builder-divider" />
+          {(canEdit || visibleSections.length > 0) && <hr className="ww-builder-divider" />}
 
-          {customSections.map((section, sectionIndex) => (
-            <div key={section.id} className="ww-custom-section" ref={sectionIndex === 0 ? untitledRef : null}>
+          {visibleSections.map((section, sectionIndex) => (
+            <div
+              key={section.id}
+              className="ww-custom-section"
+              ref={(el) => {
+                sectionRefs.current[section.id] = el;
+                if (sectionIndex === 0) untitledRef.current = el;
+              }}
+            >
               <h2
                 className={`ww-builder-section-title ${
                   section.name ? "" : "ww-section-placeholder-title"
@@ -1878,7 +2330,7 @@ export default function TripPlanBuilderPage() {
                     onClick={() => toggleSectionNameEdit(section.id)}
                     style={{ cursor: "pointer" }}
                   >
-                    ✎
+                    <Icon name="pencil" />
                   </span>
                 </span>
                 <span
@@ -1891,10 +2343,12 @@ export default function TripPlanBuilderPage() {
                 </span>
               </h2>
 
+              {renderSectionSuggestions(section)}
+
               {section.places.map((p, i) => (
                 <div className="ww-place-card" key={p.id}>
                   <p className="ww-place-name">
-                    📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
+                    <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
                   </p>
                   <input
                     className="ww-place-notes-input"
@@ -1910,16 +2364,17 @@ export default function TripPlanBuilderPage() {
                     onClick={() => toggleSectionPlaceVisited(section.id, p.id)}
                     style={{ cursor: "pointer" }}
                   >
-                    {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
+                    {p.visited ? <><Icon name="x" /> {t("unmarkVisited")}</> : <><Icon name="check" /> {t("markVisited")}</>}
                   </p>
                 </div>
               ))}
 
               <input
                 className="ww-add-place-input"
-                placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+                placeholder={t("addNewPlacePlaceholder")}
                 value={section.placeInput}
                 onChange={(e) => handleSectionPlaceInputChange(section.id, e.target.value)}
+                onKeyDown={handleSectionPlaceKeyDown(section.id)}
               />
             </div>
           ))}
@@ -1930,12 +2385,22 @@ export default function TripPlanBuilderPage() {
 
           <hr className="ww-builder-thick-divider" />
 
+          {/* Read-only (teacher / view-only crew): say why there's no
+              day-by-day plan instead of showing nothing. */}
+          {!canEdit && days.length === 0 && (
+            <>
+              <h2 className="ww-builder-section-title" ref={itineraryRef}>{t("itinerary")}</h2>
+              <p className="ww-expense-empty">{t("readonlyNoItinerary")}</p>
+              <hr className="ww-builder-thick-divider" />
+            </>
+          )}
+
           {days.length > 0 && (
             <>
               <h2 className="ww-builder-section-title" ref={itineraryRef}>
                 {t("itinerary")}
                 {startDate && endDate && (
-                  <span className="ww-date-pill">📅 {formatDateRange(startDate, endDate)}</span>
+                  <span className="ww-date-pill"><Icon name="calendar" /> {formatDateRange(startDate, endDate)}</span>
                 )}
               </h2>
 
@@ -1957,9 +2422,27 @@ export default function TripPlanBuilderPage() {
                     info.forIds === day.placeIds.join(","));
 
                 return (
-                  <div className="ww-day-block" key={day.label}>
+                  <div
+                    className="ww-day-block"
+                    key={day.label}
+                    ref={(el) => {
+                      dayRefs.current[day.label] = el;
+                    }}
+                  >
                     <div className="ww-day-header-row">
-                      <p className="ww-day-header">⌄ {day.label}</p>
+                      <p className="ww-day-header"><Icon name="chevron-down" /> {day.label}</p>
+                      {/* Tour Day for this day: attendance, check-in,
+                          announcements, activities. */}
+                      {tripId && (
+                        <button
+                          type="button"
+                          className="ww-tour-link"
+                          style={{ marginLeft: "auto" }}
+                          onClick={() => navigate(`/trip-plan/tour?tripId=${tripId}&day=${dayIndex}`)}
+                        >
+                          <Icon name="compass" /> {t("tourDayLink")}
+                        </button>
+                      )}
                       {routablePlaces >= 3 && (
                         <button
                           type="button"
@@ -1968,31 +2451,31 @@ export default function TripPlanBuilderPage() {
                           disabled={info?.status === "loading"}
                           title={t("optimizeRouteHint")}
                         >
-                          {info?.status === "loading" ? t("optimizingRoute") : `⇅ ${t("optimizeRoute")}`}
+                          {info?.status === "loading" ? t("optimizingRoute") : <><Icon name="arrow-up-down" /> {t("optimizeRoute")}</>}
                         </button>
                       )}
                     </div>
                     {showInfo && info.status === "done" && (
                       <p className="ww-optimize-result">
-                        ✓ {t("routeOptimized")} {formatTravelDuration(info.beforeS)} →{" "}
+                        <Icon name="check" /> {t("routeOptimized")} {formatTravelDuration(info.beforeS)} <Icon name="arrow-right" />{" "}
                         <strong>{formatTravelDuration(info.afterS)}</strong>
                         {info.beforeM != null && info.afterM != null && (
-                          <> ({formatTravelDistance(info.beforeM)} → {formatTravelDistance(info.afterM)})</>
+                          <> ({formatTravelDistance(info.beforeM)} <Icon name="arrow-right" /> {formatTravelDistance(info.afterM)})</>
                         )}
                       </p>
                     )}
                     {showInfo && info.status === "already" && (
-                      <p className="ww-optimize-result">✓ {t("routeAlreadyShortest")}</p>
+                      <p className="ww-optimize-result"><Icon name="check" /> {t("routeAlreadyShortest")}</p>
                     )}
                     {showInfo &&
                       (info.status === "done" || info.status === "already") &&
                       info.skippedNames?.length > 0 && (
                         <p className="ww-optimize-result ww-optimize-error">
-                          ⚠️ {t("routeSkippedPlaces")} {info.skippedNames.join(", ")}
+                          <Icon name="alert-triangle" /> {t("routeSkippedPlaces")} {info.skippedNames.join(", ")}
                         </p>
                       )}
                     {showInfo && info.status === "error" && (
-                      <p className="ww-optimize-result ww-optimize-error">⚠️ {t("routeOptimizeFailed")}</p>
+                      <p className="ww-optimize-result ww-optimize-error"><Icon name="alert-triangle" /> {t("routeOptimizeFailed")}</p>
                     )}
                     {/* Recorded bookings show on every day of the stay:
                         check-in day, the nights in between, and check-out day. */}
@@ -2016,7 +2499,7 @@ export default function TripPlanBuilderPage() {
                                 : t("bookingStaying");
                           return (
                             <p className="ww-day-booking" key={`bk-${b.id}-${dayIso}`}>
-                              🏨 {label}: <strong>{b.placeName}</strong>
+                              <Icon name="bed" /> {label}: <strong>{b.placeName}</strong>
                               {dayIso === inDay && b.confirmationNumber && <> · #{b.confirmationNumber}</>}
                             </p>
                           );
@@ -2044,14 +2527,14 @@ export default function TripPlanBuilderPage() {
                           </div>
                           <div>
                             <p className="ww-place-name">
-                              📍{number} {p.name}
+                              <Icon name="map-pin" />{number} {p.name}
                               {/* Tells the student up front which places
                                   have no confirmed location, so they know
                                   why a place is skipped by "Optimize route"
                                   and has no travel time. */}
                               {(p.lat == null || p.lng == null) && (
                                 <span className="ww-no-location-tag" title={t("locationUnverifiedWarning")}>
-                                  ⚠️ {t("noLocationTag")}
+                                  <Icon name="alert-triangle" /> {t("noLocationTag")}
                                 </span>
                               )}
                             </p>
@@ -2078,7 +2561,7 @@ export default function TripPlanBuilderPage() {
                                   onClick={() => setEditingTimeFor(p.id)}
                                   style={{ cursor: "pointer" }}
                                 >
-                                  🕐 {p.time ? formatTime(p.time) : t("selectTime")}
+                                  <Icon name="clock" /> {p.time ? formatTime(p.time) : t("selectTime")}
                                 </span>
                               )}
                               {renderAddCostButton(p, "day")}
@@ -2091,7 +2574,7 @@ export default function TripPlanBuilderPage() {
                               onClick={() => toggleVisited(p.id)}
                               style={{ cursor: "pointer" }}
                             >
-                              {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
+                              {p.visited ? <><Icon name="x" /> {t("unmarkVisited")}</> : <><Icon name="check" /> {t("markVisited")}</>}
                             </p>
                           </div>
                         </div>
@@ -2106,7 +2589,7 @@ export default function TripPlanBuilderPage() {
                             !placeTravelInfo[p.id].loading &&
                             !placeTravelInfo[p.id].error && (
                               <span style={{ marginRight: 8 }}>
-                                🚗 {formatTravelDuration(placeTravelInfo[p.id].durationS)} -{" "}
+                                <Icon name="car" /> {formatTravelDuration(placeTravelInfo[p.id].durationS)} -{" "}
                                 {formatTravelDistance(placeTravelInfo[p.id].distanceM)} |{" "}
                               </span>
                             )}
@@ -2117,7 +2600,7 @@ export default function TripPlanBuilderPage() {
                           >
                             {p.lat != null && p.lng != null && placeTravelInfo[p.id]
                               ? t("directions")
-                              : `🚗 ${t("directions")}`}
+                              : <><Icon name="car" /> {t("directions")}</>}
                           </span>
                         </p>
                       </React.Fragment>
@@ -2125,7 +2608,7 @@ export default function TripPlanBuilderPage() {
                     <div className="ww-day-add-wrap">
                       <input
                         className="ww-add-place-input"
-                        placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+                        placeholder={t("addNewPlacePlaceholder")}
                         value={dayInputs[dayIndex] || ""}
                         onChange={(e) => handleDayInputChange(dayIndex, e.target.value)}
                         onKeyDown={handleAddDayPlace(dayIndex)}
@@ -2149,7 +2632,7 @@ export default function TripPlanBuilderPage() {
                                     addPlaceToDay(dayIndex, p.name);
                                   }}
                                 >
-                                  📍 {p.name}
+                                  <Icon name="map-pin" /> {p.name}
                                 </li>
                               ))}
                             </ul>
@@ -2158,7 +2641,7 @@ export default function TripPlanBuilderPage() {
                     </div>
                     {dayNotice[dayIndex] && (
                       <p className="ww-day-notice">
-                        ⚠️ <strong>{dayNotice[dayIndex].name}</strong> {t("placeAlreadyOnDay")}{" "}
+                        <Icon name="alert-triangle" /> <strong>{dayNotice[dayIndex].name}</strong> {t("placeAlreadyOnDay")}{" "}
                         {dayNotice[dayIndex].dayNumber}. {t("placeAlreadyOnDayHint")}
                       </p>
                     )}
@@ -2176,7 +2659,7 @@ export default function TripPlanBuilderPage() {
             <p className="ww-budget-total">
               {t("budgetLabel")}: ₱{budgetTotal.toLocaleString()}.00{" "}
               <span className="ww-edit-icon" onClick={openEditBudget} style={{ cursor: "pointer" }}>
-                ✎
+                <Icon name="pencil" />
               </span>
             </p>
             <div className="ww-budget-buttons">
@@ -2185,33 +2668,32 @@ export default function TripPlanBuilderPage() {
               </button>
             </div>
             <p className="ww-budget-link" onClick={handleGoToBreakdown} style={{ cursor: "pointer" }}>
-              📊 {t("viewBreakdown")}
-            </p>
-            <p className="ww-budget-link" onClick={handleGoToAddCrew} style={{ cursor: "pointer" }}>
-              👤 {t("addCrew")}
+              <Icon name="bar-chart" /> {t("viewBreakdown")}
             </p>
           </div>
 
-          <h2 className="ww-builder-section-title" ref={expensesRef}>⌄ {t("expensesHeader")}</h2>
-          {expenses.length === 0 ? (
+          <h2 className="ww-builder-section-title" ref={expensesRef}><Icon name="chevron-down" /> {t("expensesHeader")}</h2>
+          {allExpenses.length === 0 ? (
             <p className="ww-expense-empty">{t("noExpensesYetAddOne")}</p>
           ) : (
-            expenses.map((e) => (
+            allExpenses.map((e) => (
               <div className="ww-expense-row" key={e.id}>
                 {/* The category (or place) always stays; the description is added beside it. */}
                 <span>
-                  {e.icon} {e.label}
+                  <Icon name={e.icon} /> {e.label}
                   {e.description && <span className="ww-expense-desc"> · {e.description}</span>}
                 </span>
                 <span>
                   ₱{e.amount.toLocaleString()}
                   <span
                     className="ww-cost-remove"
-                    onClick={() => handleDeleteExpense(e.id)}
+                    onClick={() =>
+                      e.fromPlaceCost ? removeCost(e.placeId, e.costId) : handleDeleteExpense(e.id)
+                    }
                     style={{ cursor: "pointer", marginLeft: 8 }}
                     title={t("deleteThisExpenseTitle")}
                   >
-                    ✕
+                    <Icon name="x" />
                   </span>
                 </span>
               </div>
@@ -2298,7 +2780,7 @@ export default function TripPlanBuilderPage() {
       {pendingDelete && (
         <div className="ww-modal-overlay" onClick={() => setPendingDelete(null)}>
           <div className="ww-warning-modal-card" onClick={(e) => e.stopPropagation()}>
-            <p className="ww-warning-modal-icon">⚠️</p>
+            <p className="ww-warning-modal-icon"><Icon name="alert-triangle" /></p>
             <p className="ww-warning-modal-text">{t("deleteSectionTitle")}</p>
             <p className="ww-warning-modal-subtext">
               {t("deleteSectionWarning")}

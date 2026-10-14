@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Same destination-photo lookup used in ProfilePage.jsx — goes through our
 // own backend (/api/destination-image) instead of calling Wikipedia
@@ -112,9 +113,9 @@ export default function PublicProfilePage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -172,13 +173,13 @@ export default function PublicProfilePage() {
               className={`ww-profile-tab ${activeTab === "trips" ? "active" : ""}`}
               onClick={() => setActiveTab("trips")}
             >
-              🧳 {t("trips")}
+              <Icon name="briefcase" /> {t("trips")}
             </span>
             <span
               className={`ww-profile-tab ${activeTab === "journal" ? "active" : ""}`}
               onClick={() => setActiveTab("journal")}
             >
-              📔 {t("journal")}
+              <Icon name="book-open" /> {t("journal")}
             </span>
           </div>
 
@@ -219,7 +220,7 @@ export default function PublicProfilePage() {
                                 fontSize: 32,
                               }}
                             >
-                              📍
+                              <Icon name="map-pin" />
                             </div>
                           )}
                           <p>{t3.destination || t3.title || t("untitledTrip")}</p>

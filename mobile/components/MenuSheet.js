@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
 
 const MENU_ITEMS = [
+  { key: 'classes', labelKey: 'myClasses', icon: '🎓', tint: '#C9D9C4', route: '/classes' },
   { key: 'notifications', labelKey: 'notificationsTitle', icon: '🔔', tint: '#F4D9A8', route: '/notifications' },
   { key: 'settings', labelKey: 'settingsTitle', icon: '⚙️', tint: '#C9D9C4', route: '/settings' },
   { key: 'history', labelKey: 'history', icon: '🕘', tint: '#D9C4D0', route: '/history' },
@@ -21,8 +22,8 @@ const MENU_ITEMS = [
 
 export default function MenuSheet({ visible, onClose }) {
   const router = useRouter();
-  const slideAnim = useRef(new Animated.Value(DRAWER_WIDTH)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(DRAWER_WIDTH));
+  const [overlayAnim] = useState(() => new Animated.Value(0));
   const { t, user, signOut } = useApp();
   const [unread, setUnread] = useState(0);
 
@@ -39,7 +40,7 @@ export default function MenuSheet({ visible, onClose }) {
       slideAnim.setValue(DRAWER_WIDTH);
       overlayAnim.setValue(0);
     }
-  }, [visible]);
+  }, [visible, slideAnim, overlayAnim]);
 
   function handleClose() {
     Animated.parallel([
@@ -128,7 +129,7 @@ export default function MenuSheet({ visible, onClose }) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(46,27,14,0.5)',
+    backgroundColor: 'rgba(51,28,8,0.5)',
   },
   drawer: {
     position: 'absolute',

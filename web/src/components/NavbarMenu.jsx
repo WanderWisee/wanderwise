@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
-import { notifyAuthChanged } from "../context/AppDataContext";
+import { notifyAuthChanged, useAppData } from "../context/AppDataContext";
 import "../App.css";
 
 export default function NavbarMenu() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { profileRole } = useAppData();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -31,6 +32,7 @@ export default function NavbarMenu() {
     localStorage.removeItem("wanderwise_token");
     // Clears the previous account's profile/journals right away.
     notifyAuthChanged();
+    // Everyone uses the same log in page.
     navigate("/login");
   };
 
@@ -42,18 +44,41 @@ export default function NavbarMenu() {
 
       {open && (
         <div className="ww-menu-panel">
+          {/* Role shortcuts: Admin panel / Teacher portal / student Classes */}
+          {profileRole === "admin" && (
+            <p className="ww-menu-item ww-menu-item-strong" onClick={() => goTo("/admin")}>
+               {t("adminPanel")}
+            </p>
+          )}
+          {profileRole === "teacher" && (
+            <p className="ww-menu-item ww-menu-item-strong" onClick={() => goTo("/teacher")}>
+               {t("teacherPortal")}
+            </p>
+          )}
+          {profileRole === "student" && (
+            <p className="ww-menu-item" onClick={() => goTo("/classes")}>
+               {t("myClasses")}
+            </p>
+          )}
           <p className="ww-menu-item" onClick={() => goTo("/settings")}>
             {t("settingsTitle")}
           </p>
-          <p className="ww-menu-item" onClick={() => goTo("/history")}>
-            {t("history")}
-          </p>
-          <p
-            className="ww-menu-item"
-            onClick={() => goTo("/settings", { section: "preferences" })}
-          >
-            {t("language")}
-          </p>
+          {/* Trip history is for students only. */}
+          {profileRole !== "teacher" && profileRole !== "admin" && (
+            <p className="ww-menu-item" onClick={() => goTo("/history")}>
+              {t("history")}
+            </p>
+          )}
+          {/* Students only — for teachers and the admin the language is
+              right in Settings, so no need for both. */}
+          {profileRole === "student" && (
+            <p
+              className="ww-menu-item"
+              onClick={() => goTo("/settings", { section: "preferences" })}
+            >
+              {t("language")}
+            </p>
+          )}
           <p className="ww-menu-item" onClick={handleLogout}>
             {t("logout")}
           </p>

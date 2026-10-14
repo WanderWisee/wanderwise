@@ -7,6 +7,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Same style of inline SVG pins as TripMap — no external image
 // requests, so nothing for an ad blocker / tracking prevention to block.
@@ -57,6 +58,13 @@ function FitBoundsToRoute({ routeCoords }) {
 export default function DirectionsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Back to the trip it was opened from. If it was opened directly from a
+  // link, there's no trip to go back to, so go to the Dashboard.
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) navigate(-1);
+    else navigate("/dashboard");
+  };
   const { t } = useLanguage();
   const { formatDistance } = usePreferences(); // km or miles, from Settings
 
@@ -152,13 +160,17 @@ export default function DirectionsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-directions-main">
+        <p className="ww-stories-back" onClick={handleBack}>
+          <Icon name="arrow-left" /> {t("back")}
+        </p>
+
         <h1 className="ww-directions-title">
           {t("directionsTitle")}
           {placeName && <span style={{ fontSize: 18, fontWeight: "normal" }}> — {placeName}</span>}
@@ -184,12 +196,12 @@ export default function DirectionsPage() {
                 />
 
                 <Marker position={[lat, lng]} icon={destinationIcon}>
-                  <Popup>📍 {placeName || t("directionsDestination")}</Popup>
+                  <Popup><Icon name="map-pin" /> {placeName || t("directionsDestination")}</Popup>
                 </Marker>
 
                 {origin && (
                   <Marker position={[origin.lat, origin.lng]} icon={youAreHereIcon}>
-                    <Popup>📍 {t("directionsYouAreHere")}</Popup>
+                    <Popup><Icon name="map-pin" /> {t("directionsYouAreHere")}</Popup>
                   </Marker>
                 )}
 
@@ -232,15 +244,15 @@ export default function DirectionsPage() {
                 maxWidth: 480,
               }}
             >
-              {locationError && <p style={{ color: "#a33", margin: 0 }}>⚠️ {t(locationError)}</p>}
+              {locationError && <p style={{ color: "#a33", margin: 0 }}><Icon name="alert-triangle" /> {t(locationError)}</p>}
               {!locationError && !origin && <p style={{ margin: 0 }}>{t("directionsLoadingLocation")}</p>}
               {origin && loadingRoute && <p style={{ margin: 0 }}>{t("directionsLoadingRoute")}</p>}
               {origin && !loadingRoute && routeError && (
-                <p style={{ color: "#a33", margin: 0 }}>⚠️ {t(routeError)}</p>
+                <p style={{ color: "#a33", margin: 0 }}><Icon name="alert-triangle" /> {t(routeError)}</p>
               )}
               {origin && !loadingRoute && activeRoute && (
                 <p style={{ margin: 0 }}>
-                  🚗 <strong>{formatDuration(activeRoute.durationS)}</strong> ({formatDistance(activeRoute.distanceM)})
+                  <Icon name="car" /> <strong>{formatDuration(activeRoute.durationS)}</strong> ({formatDistance(activeRoute.distanceM)})
                 </p>
               )}
             </div>
@@ -261,9 +273,9 @@ export default function DirectionsPage() {
                   >
                     <span className="ww-route-option-main">
                       <strong>{formatDuration(r.durationS)}</strong> · {formatDistance(r.distanceM)}
-                      {routes.length > 1 && i === 0 && <span className="ww-route-tag">⚡ {t("routeFastest")}</span>}
+                      {routes.length > 1 && i === 0 && <span className="ww-route-tag"><Icon name="zap" /> {t("routeFastest")}</span>}
                       {routes.length > 1 && i === shortestIndex && i !== 0 && (
-                        <span className="ww-route-tag">📏 {t("routeShortest")}</span>
+                        <span className="ww-route-tag"><Icon name="ruler" /> {t("routeShortest")}</span>
                       )}
                     </span>
                     {r.via && (

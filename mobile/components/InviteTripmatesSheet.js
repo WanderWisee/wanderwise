@@ -8,65 +8,51 @@ import { Colors } from '../constants/theme';
 import { WEB_URL } from '../constants/config';
 import { useApp } from '../context/AppContext';
 import { useDialog } from '../context/DialogContext';
-import { addCrewMember, fetchCrew, getShareToken, leaveTrip, removeCrewMember } from '../services/tripService';
-import { fullName, searchUsers } from '../services/userService';
+import { addCrewMember, fetchCrew, getShareToken, leaveTrip, removeCrewMember, updateCrewPermission, fetchTripById } from '../services/tripService';
+import { fullName } from '../services/userService';
+import { useStudentSearch } from '../hooks/useStudentSearch';
 import { Avatar } from './ui';
 
 // Parehong InviteCrewPage ng web:
 //  - totoong invite link (POST /api/trips/:id/share-link) — parehong link ng web
 //  - hanapin at idagdag ang kapwa estudyante bilang crew
 //  - listahan ng crew; ang may-ari lang ang puwedeng mag-alis
-export default function InviteTripmatesSheet({ visible, onClose, tripId, onChanged = null, onLeft = null }) {
+export default function InviteTripmatesSheet(props) {
+  return props.visible ? <InviteContent key={props.tripId} {...props} /> : null;
+}
+
+function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = null }) {
   const { t, user } = useApp();
   const { confirm, toast } = useDialog();
   const [shareToken, setShareToken] = useState(null);
   const [linkError, setLinkError] = useState(false);
   const [crew, setCrew] = useState([]);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [searching, setSearching] = useState(false);
+  const { results, loading: searching, error: searchError } = useStudentSearch(query, visible);
   const [busyId, setBusyId] = useState(null);
+  const [canInvite, setCanInvite] = useState(false);
+  const [crewError, setCrewError] = useState('');
 
   const shareLink = shareToken ? `${WEB_URL}/trip-plan/join/${shareToken}` : '';
   const isOwner = crew.some((m) => m.isOwner && user && m.userId === user.userId);
 
   async function loadCrew() {
     try {
-      setCrew(await fetchCrew(tripId));
-    } catch {
-      setCrew([]);
+      const [members, detail] = await Promise.all([fetchCrew(tripId), fetchTripById(tripId)]);
+      setCrew(members); setCanInvite(detail.myRole === 'owner' || detail.myRole === 'editor'); setCrewError('');
+    } catch (e) {
+      setCrewError(e.message);
     }
   }
 
   useEffect(() => {
-    if (!visible || !tripId) return;
-    setShareToken(null);
-    setLinkError(false);
-    setQuery('');
-    setResults([]);
-    getShareToken(tripId).then(setShareToken).catch(() => setLinkError(true));
-    loadCrew();
-  }, [visible, tripId]);
-
-  useEffect(() => {
-    const term = query.trim();
-    if (term.length < 2) {
-      setResults([]);
-      return;
-    }
     let alive = true;
-    setSearching(true);
-    const timer = setTimeout(() => {
-      searchUsers(term)
-        .then((data) => alive && setResults(data))
-        .catch(() => alive && setResults([]))
-        .finally(() => alive && setSearching(false));
-    }, 300);
-    return () => {
-      alive = false;
-      clearTimeout(timer);
-    };
-  }, [query]);
+    getShareToken(tripId).then((token) => { if (alive) setShareToken(token); }).catch(() => { if (alive) setLinkError(true); });
+    Promise.all([fetchCrew(tripId), fetchTripById(tripId)]).then(([members, detail]) => {
+      if (alive) { setCrew(members); setCanInvite(['owner', 'editor'].includes(detail.myRole)); }
+    }).catch((e) => { if (alive) setCrewError(e.message); });
+    return () => { alive = false; };
+  }, [tripId]);
 
   async function copyLink() {
     if (!shareLink) return;
@@ -89,7 +75,7 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
       await addCrewMember(tripId, person.id);
       toast(`${fullName(person)} ${t('addedToTrip')}`);
       setQuery('');
-      setResults([]);
+
       await loadCrew();
       onChanged && onChanged();
     } catch (e) {
@@ -97,6 +83,16 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
     } finally {
       setBusyId(null);
     }
+  }
+
+  async function togglePermission(member) {
+    if (!isOwner || busyId != null) return;
+    setBusyId(member.id);
+    try {
+      await updateCrewPermission(tripId, member.id, !member.canEdit);
+      await loadCrew(); onChanged?.(); toast(t('permissionUpdated'));
+    } catch (e) { toast(e.message); }
+    finally { setBusyId(null); }
   }
 
   async function remove(member) {
@@ -169,6 +165,7 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
                 </TouchableOpacity>
               </View>
 
+              {canInvite && <>
               {/* Search */}
               <Text style={styles.label}>{t('searchForAStudent')}</Text>
               <TextInput
@@ -178,6 +175,7 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
                 value={query}
                 onChangeText={setQuery}
               />
+              {!!searchError && <Text style={styles.removeText}>{searchError}</Text>}
               {searching && <ActivityIndicator size="small" color={Colors.brown600} style={{ marginBottom: 10 }} />}
               {!searching && query.trim().length >= 2 && results.length === 0 && (
                 <Text style={styles.muted}>{t('noStudentsFound')}</Text>
@@ -203,7 +201,9 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
                 );
               })}
 
+              </>}
               {/* Crew */}
+              {!!crewError && <TouchableOpacity onPress={loadCrew}><Text style={styles.removeText}>{crewError} ? {t('tryAgain')}</Text></TouchableOpacity>}
               <Text style={[styles.label, { marginTop: 18 }]}>{t('crewOnThisTrip')}</Text>
               {crew.length <= 1 && <Text style={styles.muted}>{t('noCrewYet')}</Text>}
               {crew.map((m) => (
@@ -214,6 +214,7 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
                     {m.isOwner ? `  · ${t('tripOwner')}` : ''}
                     {user && m.userId === user.userId ? `  (${t('historyYouTag')})` : ''}
                   </Text>
+                  {!m.isOwner && (isOwner ? <TouchableOpacity accessibilityRole="button" disabled={busyId != null} onPress={() => togglePermission(m)} style={{ padding: 8 }}><Text style={styles.muted}>{t(m.canEdit ? 'canEditLabel' : 'viewOnlyLabel')}</Text></TouchableOpacity> : <Text style={styles.muted}>{t(m.canEdit ? 'canEditLabel' : 'viewOnlyLabel')}</Text>)}
                   {isOwner && !m.isOwner && (
                     <TouchableOpacity onPress={() => remove(m)} hitSlop={8}>
                       <Text style={styles.removeText}>{t('remove')}</Text>
@@ -236,7 +237,7 @@ export default function InviteTripmatesSheet({ visible, onClose, tripId, onChang
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(46,27,14,0.45)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34,

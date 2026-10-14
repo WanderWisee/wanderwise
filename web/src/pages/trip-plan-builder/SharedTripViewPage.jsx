@@ -119,7 +119,7 @@ export default function SharedTripViewPage() {
               </div>
             ))}
 
-            <p className="ww-budget-total" style={{ marginTop: 16 }}>
+            <p className="ww-budget-total" style={{ marginTop: 16, color: "var(--ww-text-muted)" }}>
               {t("budgetLabel")}: ₱{Number(trip.budgetTotal || 0).toLocaleString()}.00
             </p>
           </>

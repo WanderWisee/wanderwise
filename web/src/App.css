@@ -8004,3 +8004,132 @@ html[data-ww-role="admin"] .ww-navbar:not(.ww-portal-nav) .ww-nav-icons > span:l
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------
+   18. SAFE AREA (phones with a notch, a camera hole or a home bar)
+   With viewport-fit=cover (public/index.html) the page is drawn under
+   the notch and the home bar, so everything below keeps the content
+   out of those areas. On devices without them every inset is 0, so
+   nothing changes there.
+   --------------------------------------------------------------------- */
+:root {
+  --ww-safe-top: env(safe-area-inset-top, 0px);
+  --ww-safe-right: env(safe-area-inset-right, 0px);
+  --ww-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ww-safe-left: env(safe-area-inset-left, 0px);
+
+  /* Top bars grow by the notch height; everything that sticks under
+     them (settings menu, builder section bar) uses these same values. */
+  --ww-nav-h: calc(68px + var(--ww-safe-top));
+}
+
+.ww-builder-page {
+  --ww-topbar-h: calc(64px + var(--ww-safe-top));
+}
+
+html {
+  background-color: var(--ww-bg);
+}
+
+/* Landscape notch on the left/right, and the home bar at the bottom. */
+body {
+  padding-left: var(--ww-safe-left);
+  padding-right: var(--ww-safe-right);
+  padding-bottom: var(--ww-safe-bottom);
+}
+
+/* Top bars: the notch strip gets the bar's own color and the bar's
+   contents start below it. A border (not padding) so it adds to every
+   page's own padding rules instead of replacing them. */
+.ww-navbar,
+.ww-builder-topbar {
+  border-top: var(--ww-safe-top) solid var(--ww-surface);
+}
+
+/* Full-screen layers: keep dialogs and windows clear of the notch and
+   the home bar. */
+.ww-modal-overlay {
+  padding:
+    max(20px, var(--ww-safe-top))
+    max(20px, var(--ww-safe-right))
+    max(20px, var(--ww-safe-bottom))
+    max(20px, var(--ww-safe-left));
+}
+
+.ww-dialog-overlay {
+  padding:
+    max(16px, var(--ww-safe-top))
+    max(16px, var(--ww-safe-right))
+    max(16px, var(--ww-safe-bottom))
+    max(16px, var(--ww-safe-left));
+}
+
+/* Mobile browsers: 100vh is taller than the visible area while the
+   address bar shows; dvh is the visible height. */
+@supports (height: 100dvh) {
+  .ww-profile-page,
+  .ww-journal-page,
+  .ww-settings-page,
+  .ww-history-page,
+  .ww-tour-page,
+  .ww-portal-page,
+  .ww-staff-shell {
+    min-height: 100dvh;
+  }
+
+  .ww-modal-card {
+    max-height: calc(90dvh - var(--ww-safe-top) - var(--ww-safe-bottom));
+  }
+
+  .ww-portal-journal-modal {
+    max-height: calc(85dvh - var(--ww-safe-top) - var(--ww-safe-bottom));
+  }
+
+  @media (min-width: 861px) {
+    .ww-builder-sidebar {
+      min-height: calc(100dvh - var(--ww-topbar-h));
+      max-height: calc(100dvh - var(--ww-topbar-h));
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .ww-navbar-search-popover {
+    top: calc(64px + var(--ww-safe-top));
+    left: max(12px, var(--ww-safe-left));
+    right: max(12px, var(--ww-safe-right));
+  }
+}
+
+/* Bigger tap targets need no hover; avoid the grey flash on tap. */
+@media (hover: none) {
+  button,
+  a,
+  [role="button"],
+  .ww-sidebar-item,
+  .ww-menu-item {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ---- Small phones: a few layouts that didn't wrap well ---- */
+@media (max-width: 560px) {
+  /* Trip builder: Book a Hotel / Add Crew / Tour Day line up when they
+     wrap, instead of the wrapped one keeping its left gap. */
+  .ww-builder-main > .ww-browse-btn,
+  .ww-builder-main > .ww-trip-plan-btn {
+    margin-left: 0 !important;
+    margin-right: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* Hotel results: buddies counter and dates share one full-width row. */
+  .ww-results-controls {
+    width: 100%;
+    align-items: flex-end;
+  }
+
+  .ww-results-controls > * {
+    flex: 1 1 140px;
+  }
+}

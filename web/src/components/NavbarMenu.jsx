@@ -69,12 +69,15 @@ export default function NavbarMenu() {
               {t("history")}
             </p>
           )}
-          <p
-            className="ww-menu-item"
-            onClick={() => goTo("/settings", { section: "preferences" })}
-          >
-            {t("language")}
-          </p>
+          {/* For the admin, Settings is just the language — no need for both. */}
+          {profileRole !== "admin" && (
+            <p
+              className="ww-menu-item"
+              onClick={() => goTo("/settings", { section: "preferences" })}
+            >
+              {t("language")}
+            </p>
+          )}
           <p className="ww-menu-item" onClick={handleLogout}>
             {t("logout")}
           </p>

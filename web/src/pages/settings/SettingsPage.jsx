@@ -31,7 +31,11 @@ export default function SettingsPage() {
     setProfileBio,
     profileLocation,
     setProfileLocation,
+    profileRole,
   } = useAppData();
+  // The admin only gets Preferences (language) — no student profile and no
+  // notification settings.
+  const isAdmin = profileRole === "admin";
   const avatarInputRef = useRef(null);
 
   const handleAvatarClick = () => avatarInputRef.current?.click();
@@ -65,9 +69,10 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const [activeSection, setActiveSection] = useState(
+  const [chosenSection, setActiveSection] = useState(
     location.state?.section || "account"
   );
+  const activeSection = isAdmin ? "preferences" : chosenSection;
   const [name, setName] = useState(profileName);
   const [email, setEmail] = useState(profileEmail);
   const [bio, setBio] = useState(profileBio);
@@ -147,7 +152,7 @@ export default function SettingsPage() {
         <aside className="ww-settings-sidebar">
           <div className="ww-settings-heading-row">
             <h1>{t("settingsTitle")}</h1>
-            {activeSection !== "account" && (
+            {activeSection !== "account" && !isAdmin && (
               <span
                 className="ww-settings-back-arrow"
                 onClick={() => setActiveSection("account")}
@@ -158,24 +163,28 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <p
-            className={`ww-settings-nav-item ${activeSection === "account" ? "active" : ""}`}
-            onClick={() => setActiveSection("account")}
-          >
-            {t("settingsAccount")}
-          </p>
+          {!isAdmin && (
+            <p
+              className={`ww-settings-nav-item ${activeSection === "account" ? "active" : ""}`}
+              onClick={() => setActiveSection("account")}
+            >
+              {t("settingsAccount")}
+            </p>
+          )}
           <p
             className={`ww-settings-nav-item ${activeSection === "preferences" ? "active" : ""}`}
             onClick={() => setActiveSection("preferences")}
           >
             {t("settingsPreferences")}
           </p>
-          <p
-            className={`ww-settings-nav-item ${activeSection === "notifications" ? "active" : ""}`}
-            onClick={() => setActiveSection("notifications")}
-          >
-            {t("settingsNotifications")}
-          </p>
+          {!isAdmin && (
+            <p
+              className={`ww-settings-nav-item ${activeSection === "notifications" ? "active" : ""}`}
+              onClick={() => setActiveSection("notifications")}
+            >
+              {t("settingsNotifications")}
+            </p>
+          )}
         </aside>
 
         <main className="ww-settings-main">
@@ -253,42 +262,48 @@ export default function SettingsPage() {
                 </select>
               </div>
 
-              <h2>{t("formatting")}</h2>
+              {/* Date/time/distance formats are for students and teachers —
+                  the admin only picks a language. */}
+              {!isAdmin && (
+                <>
+                  <h2>{t("formatting")}</h2>
 
-              <p className="ww-settings-field-label">{t("dateFormat")}</p>
-              <select
-                className="ww-settings-plain-select"
-                value={prefs.dateFormat}
-                onChange={(e) => savePref({ dateFormat: e.target.value })}
-              >
-                <option value="mdy">MM/DD/YYYY</option>
-                <option value="dmy">DD/MM/YYYY</option>
-              </select>
+                  <p className="ww-settings-field-label">{t("dateFormat")}</p>
+                  <select
+                    className="ww-settings-plain-select"
+                    value={prefs.dateFormat}
+                    onChange={(e) => savePref({ dateFormat: e.target.value })}
+                  >
+                    <option value="mdy">MM/DD/YYYY</option>
+                    <option value="dmy">DD/MM/YYYY</option>
+                  </select>
 
-              <p className="ww-settings-field-label">{t("timeFormat")}</p>
-              <select
-                className="ww-settings-plain-select"
-                value={prefs.timeFormat}
-                onChange={(e) => savePref({ timeFormat: e.target.value })}
-              >
-                <option value="12h">{t("hour12")}</option>
-                <option value="24h">{t("hour24")}</option>
-              </select>
+                  <p className="ww-settings-field-label">{t("timeFormat")}</p>
+                  <select
+                    className="ww-settings-plain-select"
+                    value={prefs.timeFormat}
+                    onChange={(e) => savePref({ timeFormat: e.target.value })}
+                  >
+                    <option value="12h">{t("hour12")}</option>
+                    <option value="24h">{t("hour24")}</option>
+                  </select>
 
-              <p className="ww-settings-field-label">{t("distanceFormat")}</p>
-              <select
-                className="ww-settings-plain-select"
-                value={prefs.distanceFormat}
-                onChange={(e) => savePref({ distanceFormat: e.target.value })}
-              >
-                <option value="km">{t("kilometers")}</option>
-                <option value="mi">{t("miles")}</option>
-              </select>
+                  <p className="ww-settings-field-label">{t("distanceFormat")}</p>
+                  <select
+                    className="ww-settings-plain-select"
+                    value={prefs.distanceFormat}
+                    onChange={(e) => savePref({ distanceFormat: e.target.value })}
+                  >
+                    <option value="km">{t("kilometers")}</option>
+                    <option value="mi">{t("miles")}</option>
+                  </select>
 
-              {/* Live preview so the student sees the effect right away. */}
-              <p className="ww-settings-preview">
-                {t("formatPreview")}: {formatDate("2026-04-17")} · {formatTime("14:30")} · {formatDistance(2300)}
-              </p>
+                  {/* Live preview so the student sees the effect right away. */}
+                  <p className="ww-settings-preview">
+                    {t("formatPreview")}: {formatDate("2026-04-17")} · {formatTime("14:30")} · {formatDistance(2300)}
+                  </p>
+                </>
+              )}
               {savedHint && <p className="ww-settings-saved">{savedHint}</p>}
             </div>
           )}

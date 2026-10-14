@@ -7,6 +7,7 @@ import { notificationText, notificationIcon } from "../../utils/notificationText
 import { requestPushPermission, isOneSignalEnabled } from "../../utils/oneSignal";
 import { setUnreadBadge } from "../../components/NotificationWatcher";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // The server sends UTC times without the "Z" — add it so the browser
 // converts to local (Philippine) time correctly.
@@ -108,9 +109,9 @@ export default function NotificationsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -120,7 +121,7 @@ export default function NotificationsPage() {
           <div className="ww-notifications-actions">
             {unreadCount > 0 && (
               <button type="button" className="ww-show-more-btn" style={{ marginTop: 0 }} onClick={handleMarkAllRead}>
-                ✓ {t("markAllRead")}
+                <Icon name="check" /> {t("markAllRead")}
               </button>
             )}
             <button
@@ -128,7 +129,7 @@ export default function NotificationsPage() {
               className="ww-booking-cancel"
               onClick={() => navigate("/settings", { state: { section: "notifications" } })}
             >
-              ⚙ {t("notificationSettings")}
+              <Icon name="settings" /> {t("notificationSettings")}
             </button>
           </div>
         </div>
@@ -155,7 +156,7 @@ export default function NotificationsPage() {
                 className={`ww-notif-item ${n.isRead ? "" : "ww-notif-unread"}`}
                 onClick={() => handleOpen(n)}
               >
-                <span className="ww-notif-icon">{notificationIcon(n.type)}</span>
+                <span className="ww-notif-icon"><Icon name={notificationIcon(n.type)} /></span>
                 <div className="ww-notif-body">
                   <p className="ww-notif-text">{notificationText(n, t, formatTime)}</p>
                   <p className="ww-notif-time">{formatWhen(n.createdAt)}</p>

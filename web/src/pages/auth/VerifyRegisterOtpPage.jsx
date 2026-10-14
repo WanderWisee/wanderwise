@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function VerifyRegisterOtpPage() {
   const navigate = useNavigate();
@@ -142,7 +143,7 @@ export default function VerifyRegisterOtpPage() {
             aria-label="Go back"
             onClick={() => navigate("/register")}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-register-title">{t("verifyEmailTitle")}</h1>

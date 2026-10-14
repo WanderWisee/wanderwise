@@ -9,6 +9,7 @@ import { api, fullName, peso, toLocalDate } from "../../utils/portal";
 import { Avatar } from "./TeacherClassPage";
 import { Stat } from "./TeacherHomePage";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Teacher (viewing only): one student in this class — trips (itinerary +
 // budget), attendance (check-in photo + where they were) and journal posts.
@@ -67,7 +68,7 @@ function StudentDetail() {
   if (notFound) {
     return (
       <main className="ww-portal-main">
-        <p className="ww-stories-back" onClick={back}>← {t("backToClass")}</p>
+        <p className="ww-stories-back" onClick={back}><Icon name="arrow-left" /> {t("backToClass")}</p>
         <p className="ww-expense-empty">{t("studentNotFound")}</p>
       </main>
     );
@@ -83,7 +84,7 @@ function StudentDetail() {
 
   return (
     <main className="ww-portal-main">
-      <p className="ww-stories-back" onClick={back}>← {data.className}</p>
+      <p className="ww-stories-back" onClick={back}><Icon name="arrow-left" /> {data.className}</p>
 
       <section className="ww-portal-card ww-portal-profile">
         <Avatar person={s} size={72} />
@@ -91,25 +92,25 @@ function StudentDetail() {
           <h1 className="ww-portal-title">{fullName(s)}</h1>
           <p className="ww-portal-muted">
             <code>{s.studentNumber}</code> · {s.email}
-            {s.cellphone && ` · 📱 ${s.cellphone}`}
+            {s.cellphone && <> · <Icon name="smartphone" /> {s.cellphone}</>}
           </p>
           {s.bio && <p className="ww-portal-muted small">“{s.bio}”</p>}
           <p className="ww-portal-muted small">{t("joinedClassOn")} {formatDate(toLocalDate(s.joinedAt))}</p>
         </div>
         <button type="button" className="ww-booking-cancel" onClick={() => navigate(`/profile/view/${s.userId}`)}>
-          👤 {t("viewPublicProfile")}
+          <Icon name="user" /> {t("viewPublicProfile")}
         </button>
       </section>
 
       <div className="ww-portal-stats">
-        <Stat icon="🗺️" value={data.trips.length} label={t("colTrips")} />
-        <Stat icon="✅" value={present} label={t("colCheckIns")} />
-        <Stat icon="📖" value={data.journals.length} label={t("colJournals")} />
+        <Stat icon="map" value={data.trips.length} label={t("colTrips")} />
+        <Stat icon="check-circle" value={present} label={t("colCheckIns")} />
+        <Stat icon="book-open" value={data.journals.length} label={t("colJournals")} />
       </div>
 
       {/* Trips */}
       <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>🗺️ {t("tripsTitle")}</h2></div>
+        <div className="ww-portal-card-head"><h2><Icon name="map" /> {t("tripsTitle")}</h2></div>
         {data.trips.length === 0 ? (
           <p className="ww-expense-empty">{t("noTripsStudent")}</p>
         ) : (
@@ -119,14 +120,14 @@ function StudentDetail() {
                 <div className="ww-portal-row-main">
                   <strong>
                     {trip.title || trip.destination}
-                    {trip.isClassTrip && <span className="ww-portal-badge">🚌 {t("fieldTripTag")}</span>}
+                    {trip.isClassTrip && <span className="ww-portal-badge"><Icon name="bus" /> {t("fieldTripTag")}</span>}
                     {trip.role === "crew" && !trip.isClassTrip && <span className="ww-portal-badge muted">{t("crewTag")}</span>}
                   </strong>
                   <span className="ww-portal-row-meta">
-                    <span>📍 {trip.destination || "—"}</span>
-                    {trip.startDate && <span>📅 {formatDateRange(trip.startDate + "T00:00:00", (trip.endDate || trip.startDate) + "T00:00:00")}</span>}
-                    <span>📌 {trip.placesCount} {t("placesShort")}</span>
-                    <span>💰 {peso(trip.spent)} / {peso(trip.budgetTotal)}</span>
+                    <span><Icon name="map-pin" /> {trip.destination || "—"}</span>
+                    {trip.startDate && <span><Icon name="calendar" /> {formatDateRange(trip.startDate + "T00:00:00", (trip.endDate || trip.startDate) + "T00:00:00")}</span>}
+                    <span><Icon name="map-pin" /> {trip.placesCount} {t("placesShort")}</span>
+                    <span><Icon name="wallet" /> {peso(trip.spent)} / {peso(trip.budgetTotal)}</span>
                   </span>
                 </div>
                 <div className="ww-portal-row-actions">
@@ -135,7 +136,7 @@ function StudentDetail() {
                   </button>
                   {trip.startDate && (
                     <button type="button" className="ww-link-btn" onClick={() => navigate(`/trip-plan/tour?tripId=${trip.id}`)}>
-                      🧭 {t("attendanceTitle")}
+                      <Icon name="compass" /> {t("attendanceTitle")}
                     </button>
                   )}
                 </div>
@@ -147,7 +148,7 @@ function StudentDetail() {
 
       {/* Attendance */}
       <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>✅ {t("attendanceTitle")}</h2></div>
+        <div className="ww-portal-card-head"><h2><Icon name="check-circle" /> {t("attendanceTitle")}</h2></div>
         {data.attendance.length === 0 ? (
           <p className="ww-expense-empty">{t("noAttendanceYet")}</p>
         ) : (
@@ -227,7 +228,7 @@ function StudentDetail() {
 
       {/* Journals */}
       <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>📖 {t("journalsTitle")}</h2></div>
+        <div className="ww-portal-card-head"><h2><Icon name="book-open" /> {t("journalsTitle")}</h2></div>
         {data.journals.length === 0 ? (
           <p className="ww-expense-empty">{t("noJournalsStudent")}</p>
         ) : (
@@ -238,8 +239,8 @@ function StudentDetail() {
                 <div className="ww-portal-row-main">
                   <strong>{j.title || t("untitledLabel")}</strong>
                   <span className="ww-portal-row-meta">
-                    <span>📅 {formatDate(toLocalDate(j.createdAt))}</span>
-                    <span>📌 {j.placesCount} {t("placesShort")}</span>
+                    <span><Icon name="calendar" /> {formatDate(toLocalDate(j.createdAt))}</span>
+                    <span><Icon name="map-pin" /> {j.placesCount} {t("placesShort")}</span>
                     {j.isHidden && <span className="ww-portal-badge danger">{t("hiddenByAdmin")}</span>}
                   </span>
                 </div>

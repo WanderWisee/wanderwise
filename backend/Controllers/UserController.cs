@@ -64,7 +64,7 @@ public class UsersController : ControllerBase
         var trips = await _db.Trips
             .Where(t => t.UserId == id)
             .OrderByDescending(t => t.CreatedAt)
-            .Select(t => new { id = t.Id, destination = t.Destination, title = t.Title })
+            .Select(t => new { id = t.Id, destination = t.Destination, title = t.Title, tripName = t.TripName })
             .ToListAsync();
 
         var journalEntries = await _db.JournalEntries

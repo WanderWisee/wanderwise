@@ -5,6 +5,7 @@ import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 const destinationImageCache = {};
 
@@ -200,7 +201,7 @@ export default function ProfilePage() {
 
         <div className="ww-nav-icons">
           <div className="ww-navbar-search-anchor" ref={searchBoxRef}>
-            <span onClick={openSearch} style={{ cursor: "pointer" }}>🔍</span>
+            <span onClick={openSearch} style={{ cursor: "pointer" }}><Icon name="search" /></span>
 
             {searchOpen && (
               <div className="ww-navbar-search-popover">
@@ -214,7 +215,7 @@ export default function ProfilePage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                   />
-                  <span className="ww-navbar-search-close" onClick={closeSearch}>✕</span>
+                  <span className="ww-navbar-search-close" onClick={closeSearch}><Icon name="x" /></span>
                 </div>
                 {showDropdown && (
                   <div className="ww-navbar-search-dropdown">
@@ -247,9 +248,9 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
-            👤
+            <Icon name="user" />
           </span>
         </div>
       </header>
@@ -299,13 +300,13 @@ export default function ProfilePage() {
           className={`ww-profile-tab ${activeTab === "trips" ? "active" : ""}`}
           onClick={() => setActiveTab("trips")}
         >
-          🧳 {t("trips")}
+          <Icon name="briefcase" /> {t("trips")}
         </span>
         <span
           className={`ww-profile-tab ${activeTab === "journal" ? "active" : ""}`}
           onClick={() => setActiveTab("journal")}
         >
-          📔 {t("journal")}
+          <Icon name="book-open" /> {t("journal")}
         </span>
       </div>
 
@@ -361,7 +362,7 @@ export default function ProfilePage() {
                             fontSize: 32,
                           }}
                         >
-                          📍
+                          <Icon name="map-pin" />
                         </div>
                       )}
                       <p>{t2.destination || t2.title || t("untitledTrip")}</p>
@@ -386,7 +387,7 @@ export default function ProfilePage() {
                           fontSize: 13,
                         }}
                       >
-                        🗑
+                        <Icon name="trash" />
                       </span>
                       )}
                     </div>

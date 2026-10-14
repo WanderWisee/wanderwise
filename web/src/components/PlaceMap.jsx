@@ -6,6 +6,7 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { useLanguage } from "../context/LanguageContext";
+import Icon from "./Icon";
 
 // Leaflet's default marker icon points at image paths that Create React
 // App doesn't resolve automatically — importing them explicitly and
@@ -104,7 +105,7 @@ export default function PlaceMap({ placeName, context, height = 220 }) {
   };
 
   if (notFound) {
-    return <div style={placeholderStyle}>📍 {t("locationNotFoundFor")} "{placeName}"</div>;
+    return <div style={placeholderStyle}><Icon name="map-pin" /> {t("locationNotFoundFor")} "{placeName}"</div>;
   }
 
   if (!coords) {

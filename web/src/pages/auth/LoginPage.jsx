@@ -4,6 +4,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
 import { homeForRole } from "../../utils/portal";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,8 +21,10 @@ export default function LoginPage() {
   // them to the plain Dashboard and making them re-find the link.
   const continuePendingInvite = async (role) => {
     const pendingToken = localStorage.getItem("wanderwise_pending_invite_token");
-    if (!pendingToken) {
-      // Teachers open the Teacher portal, admins the Admin panel.
+    // One log in page for everyone: students go to the Dashboard,
+    // teachers to the Teacher portal, the admin to the Admin panel.
+    // (Trip invites are for students only.)
+    if (!pendingToken || (role && role !== "student")) {
       navigate(homeForRole(role));
       return;
     }
@@ -54,15 +57,13 @@ export default function LoginPage() {
       const resp = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password, portal: "student" }),
+        // "web" = any account type can log in here; the role in the
+        // answer decides which pages open.
+        body: JSON.stringify({ email: email.trim(), password, portal: "web" }),
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
-        setError(
-          data?.code === "use_teacher_login" ? t("useTeacherLogin")
-          : data?.code === "use_admin_login" ? t("useAdminLogin")
-          : data?.error || t("loginErrFailed")
-        );
+        setError(resp.status === 401 ? t("loginErrInvalid") : data?.error || t("loginErrFailed"));
         return;
       }
       if (data?.token) {
@@ -99,18 +100,20 @@ export default function LoginPage() {
             aria-label="Go back"
             onClick={() => navigate('/')}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-login-title">{t("loginTitle")}</h1>
 
-          <label className="ww-field-label">{t("studentEmail")}</label>
+          <label className="ww-field-label">{t("loginUsername")}</label>
           <input
             type="text"
             className="ww-field-input"
-            placeholder={t("enterStudentEmail")}
+            placeholder={t("enterLoginUsername")}
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
 
           <label className="ww-field-label">{t("password")}</label>
@@ -119,8 +122,10 @@ export default function LoginPage() {
               type={showPassword ? "text" : "password"}
               className="ww-field-input"
               placeholder={t("enterPassword")}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             />
             <button
               type="button"
@@ -128,7 +133,7 @@ export default function LoginPage() {
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? "👁" : "🙈"}
+              <Icon name={showPassword ? "eye" : "eye-off"} />
             </button>
           </div>
 
@@ -147,8 +152,8 @@ export default function LoginPage() {
           </div>
           <p className="ww-teacher-signup-link">
             {t("areYouTeacher")}{" "}
-            <a href="/teacher/login" className="ww-bottom-link">
-              {t("teacherLoginHere")}
+            <a href="/register/teacher" className="ww-bottom-link">
+              {t("registerAsTeacher")}
             </a>
           </p>
         </div>

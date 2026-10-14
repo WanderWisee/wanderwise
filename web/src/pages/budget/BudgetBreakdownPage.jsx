@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 function groupByLabel(expenses) {
   const totals = {};
@@ -116,15 +117,15 @@ export default function BudgetBreakdownPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-breakdown-main">
         <h1 className="ww-breakdown-title" onClick={handleBack} style={{ cursor: "pointer" }}>
-          ← {t("breakdown")}
+          <Icon name="arrow-left" /> {t("breakdown")}
         </h1>
         <BarChart title={t("category")} emptyLabel={t("noExpensesYet")} data={categoryData} />
         <BarChart title={t("dayByDay")} emptyLabel={t("noExpensesYet")} data={dayData} />

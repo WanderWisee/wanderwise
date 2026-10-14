@@ -5,6 +5,7 @@ import JournalAvatar from "../../components/JournalAvatar";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // The server sends UTC times without the "Z" — add it so the browser
 // converts them to local (Philippine) time.
@@ -64,15 +65,15 @@ export default function DestinationStoriesPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-stories-main">
         <p className="ww-stories-back" onClick={() => navigate("/travel-tips")}>
-          ← {t("backToGuides")}
+          <Icon name="arrow-left" /> {t("backToGuides")}
         </p>
         <h1 className="ww-stories-title">
           {heading} {t("travelStorySuffix")}
@@ -84,7 +85,7 @@ export default function DestinationStoriesPage() {
             className="ww-story-card ww-story-guide"
             onClick={() => navigate("/travel-guide", { state: { destination: "Boracay, Aklan" } })}
           >
-            <span className="ww-story-guide-icon">📘</span>
+            <span className="ww-story-guide-icon"><Icon name="book-open" /></span>
             <div>
               <p className="ww-story-name">{t("officialGuide")}</p>
               <p className="ww-story-meta">{t("officialGuideHint")}</p>
@@ -114,7 +115,7 @@ export default function DestinationStoriesPage() {
                 <h3 className="ww-story-title">{s.title}</h3>
                 {s.coverImage && <img className="ww-story-cover" src={s.coverImage} alt={s.title || ""} />}
                 <p className="ww-story-meta">
-                  📍 {s.placesCount} {t("storyPlacesCount")} · 💬 {s.commentsCount} {t("storyCommentsCount")}
+                  <Icon name="map-pin" /> {s.placesCount} {t("storyPlacesCount")} · <Icon name="message" /> {s.commentsCount} {t("storyCommentsCount")}
                 </p>
               </div>
 
@@ -123,7 +124,7 @@ export default function DestinationStoriesPage() {
                   {t("readStory")}
                 </button>
                 <button type="button" className="ww-booking-cancel" onClick={() => openProfile(s.author)}>
-                  👤 {t("viewProfile")}
+                  <Icon name="user" /> {t("viewProfile")}
                 </button>
               </div>
             </article>

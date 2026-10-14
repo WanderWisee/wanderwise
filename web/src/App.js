@@ -1,5 +1,5 @@
 import './App.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/auth/HomaPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
@@ -35,8 +35,6 @@ import JoinTripPage from "./pages/trip-plan-builder/JoinTripPage";
 import SharedTripViewPage from "./pages/trip-plan-builder/SharedTripViewPage";
 import TourDayPage from "./pages/tour/TourDayPage";
 import TeacherRegisterPage from "./pages/auth/TeacherRegisterPage";
-import TeacherLoginPage from "./pages/auth/TeacherLoginPage";
-import AdminLoginPage from "./pages/auth/AdminLoginPage";
 import { StudentOnly, StaffShell } from "./components/PortalHeader";
 import TeacherHomePage from "./pages/teacher/TeacherHomePage";
 import TeacherClassPage from "./pages/teacher/TeacherClassPage";
@@ -91,8 +89,10 @@ function App() {
           <Route path="/trip-plan/tour" element={<StaffShell><TourDayPage /></StaffShell>} />
           {/* Teacher portal, student classes, admin panel.
               <StudentOnly> pages send a teacher to /teacher instead. */}
-          <Route path="/teacher/login" element={<TeacherLoginPage />} />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+          {/* One log in page for students, teachers and the admin. The old
+              links still work and land there. */}
+          <Route path="/teacher/login" element={<Navigate to="/login" replace />} />
+          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/register/teacher" element={<TeacherRegisterPage />} />
           <Route path="/teacher" element={<TeacherHomePage />} />
           <Route path="/teacher/class/:classId" element={<TeacherClassPage />} />

@@ -354,7 +354,8 @@ public class ClassesController : ControllerBase
             trips = trips.Select(t => new
             {
                 id = t.Id,
-                title = t.Title,
+                // The trip's name as the student set it ("Trip to …" by default).
+                title = Trip.DisplayName(t.TripName, t.Destination),
                 destination = t.Destination,
                 startDate = t.StartDate?.ToString("yyyy-MM-dd"),
                 endDate = t.EndDate?.ToString("yyyy-MM-dd"),
@@ -370,7 +371,7 @@ public class ClassesController : ControllerBase
                 return new
                 {
                     tripId = a.TripId,
-                    tripTitle = trip?.Title,
+                    tripTitle = trip == null ? null : Trip.DisplayName(trip.TripName, trip.Destination),
                     tripDestination = trip?.Destination,
                     date = a.DayDate.ToString("yyyy-MM-dd"),
                     present = a.Present,
@@ -413,7 +414,7 @@ public class ClassesController : ControllerBase
         var tripIds = onTrip.Select(x => x.Id).Distinct().ToList();
 
         var trips = await _db.Trips.Where(t => tripIds.Contains(t.Id))
-            .Select(t => new { t.Id, t.Title, t.Destination, t.ClassId }).ToListAsync();
+            .Select(t => new { t.Id, t.TripName, t.Destination, t.ClassId }).ToListAsync();
 
         var journals = await _db.JournalEntries.Where(j => ids.Contains(j.UserId))
             .GroupBy(j => j.UserId)
@@ -452,7 +453,7 @@ public class ClassesController : ControllerBase
                     return new
                     {
                         tripId = d.TripId,
-                        tripTitle = trip?.Title ?? trip?.Destination,
+                        tripTitle = trip == null ? null : Trip.DisplayName(trip.TripName, trip.Destination),
                         date = d.DayDate.ToString("yyyy-MM-dd"),
                         upcoming = d.DayDate > today,
                         userId = uid,
@@ -475,7 +476,7 @@ public class ClassesController : ControllerBase
             return new
             {
                 tripId = d.TripId,
-                tripTitle = trip?.Title ?? trip?.Destination,
+                tripTitle = trip == null ? null : Trip.DisplayName(trip.TripName, trip.Destination),
                 destination = trip?.Destination,
                 isClassTrip = trip?.ClassId != null,
                 date,

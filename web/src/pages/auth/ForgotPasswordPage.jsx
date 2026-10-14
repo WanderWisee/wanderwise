@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -61,9 +62,9 @@ export default function ForgotPasswordPage() {
           <button
             className="ww-back-btn"
             aria-label="Go back"
-              onClick={() => navigate(isTeacher ? "/teacher/login" : "/login")}
+              onClick={() => navigate("/login")}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-reset-title">{t("forgotPasswordTitle")}</h1>

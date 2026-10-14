@@ -8,6 +8,7 @@ import L from "leaflet";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import '../../App.css';
+import Icon from "../../components/Icon";
 
 // Brown pin (same style as the trip destination pin in the Trip Plan
 // Builder), drawn inline so ad blockers can't block an image request.
@@ -181,9 +182,9 @@ export default function DashboardPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -219,7 +220,7 @@ export default function DashboardPage() {
                   className="ww-story-item"
                   onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
                 >
-                  <span>📍 {trip.destination || trip.title || t("untitledTrip")}</span>
+                  <span><Icon name="map-pin" /> {trip.destination || trip.title || t("untitledTrip")}</span>
                   <span
                     style={{
                       marginLeft: "auto",
@@ -229,7 +230,7 @@ export default function DashboardPage() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    📅 {tripDates(trip)}
+                    <Icon name="calendar" /> {tripDates(trip)}
                   </span>
                 </div>
               ))}
@@ -262,15 +263,15 @@ export default function DashboardPage() {
             {tripPins.map((pin) => (
               <Marker key={pin.destination} position={[pin.lat, pin.lng]} icon={tripPinIcon}>
                 <Popup>
-                  <strong>📍 {pin.destination}</strong>
+                  <strong><Icon name="map-pin" /> {pin.destination}</strong>
                   {pin.trips.map((trip) => (
                     <div key={trip.id} style={{ marginTop: 8 }}>
-                      <div>📅 {tripDates(trip)}</div>
+                      <div><Icon name="calendar" /> {tripDates(trip)}</div>
                       <span
                         onClick={() => navigate(`/trip-plan?tripId=${trip.id}`)}
                         style={{ color: "#2f6f5f", fontWeight: 600, cursor: "pointer" }}
                       >
-                        {t("openItinerary")} →
+                        {t("openItinerary")} <Icon name="arrow-right" />
                       </span>
                     </div>
                   ))}

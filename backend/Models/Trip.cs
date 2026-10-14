@@ -13,8 +13,20 @@ public class Trip
     [Column("user_id")]
     public int UserId { get; set; }
 
+    // Name of the "Where to go" list in the Trip Plan Builder.
     [Column("title")]
     public string? Title { get; set; }
+
+    // The trip's own name, changed with ✎ next to "Trip to …" in the Trip
+    // Plan Builder. Empty = "Trip to <destination>".
+    [Column("trip_name")]
+    public string? TripName { get; set; }
+
+    // What every page shows as the trip's name (teacher pages, History…).
+    public static string DisplayName(string? tripName, string? destination) =>
+        !string.IsNullOrWhiteSpace(tripName) ? tripName.Trim()
+        : !string.IsNullOrWhiteSpace(destination) ? "Trip to " + destination.Trim()
+        : "Untitled trip";
 
     [Column("destination")]
     public string? Destination { get; set; }

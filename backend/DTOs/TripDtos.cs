@@ -3,6 +3,8 @@ namespace WanderWiseApi.DTOs;
 public class SaveTripRequest
 {
     public string? Title { get; set; }
+    // The trip's own name (✎ next to "Trip to …"); empty = "Trip to <destination>".
+    public string? TripName { get; set; }
     public string Destination { get; set; } = string.Empty;
     public string? StartDate { get; set; }   // "yyyy-MM-dd"
     public string? EndDate { get; set; }     // "yyyy-MM-dd"
@@ -45,6 +47,7 @@ public class TripResponse
 {
     public int Id { get; set; }
     public string? Title { get; set; }
+    public string? TripName { get; set; }
     public string? Destination { get; set; }
     public string? StartDate { get; set; }
     public string? EndDate { get; set; }

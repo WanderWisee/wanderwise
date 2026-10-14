@@ -5,6 +5,7 @@ import JournalAvatar from "../../components/JournalAvatar";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function TravelTipsPage() {
   const location = useLocation();
@@ -126,9 +127,9 @@ export default function TravelTipsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 

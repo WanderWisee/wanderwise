@@ -7,6 +7,7 @@ import { useDialog } from "../../context/DialogContext";
 import { api, fullName, initials, toLocalDate } from "../../utils/portal";
 import ClassSummaryTab from "./ClassSummaryTab";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // One class in the Teacher portal ("viewing only"):
 // Summary (class at a glance + CSV export) · Students (→ each student's
@@ -86,7 +87,7 @@ function TeacherClass() {
   if (notFound) {
     return (
       <main className="ww-portal-main">
-        <p className="ww-stories-back" onClick={() => navigate("/teacher")}>← {t("backToClasses")}</p>
+        <p className="ww-stories-back" onClick={() => navigate("/teacher")}><Icon name="arrow-left" /> {t("backToClasses")}</p>
         <p className="ww-expense-empty">{t("classNotFound")}</p>
       </main>
     );
@@ -95,7 +96,7 @@ function TeacherClass() {
 
   return (
     <main className="ww-portal-main">
-      <p className="ww-stories-back" onClick={() => navigate("/teacher")}>← {t("backToClasses")}</p>
+      <p className="ww-stories-back" onClick={() => navigate("/teacher")}><Icon name="arrow-left" /> {t("backToClasses")}</p>
 
       <section className="ww-portal-class-head">
         {editing ? (
@@ -130,7 +131,7 @@ function TeacherClass() {
               <span className="ww-portal-join-label">{t("joinCodeLabel")}</span>
               <code className="ww-portal-code big">{cls.joinCode}</code>
               <div className="ww-portal-join-actions">
-                <button type="button" className="ww-link-btn" onClick={copyCode}>{copied ? `✓ ${t("linkCopied")}` : t("copy")}</button>
+                <button type="button" className="ww-link-btn" onClick={copyCode}>{copied ? <><Icon name="check" /> {t("linkCopied")}</> : t("copy")}</button>
                 <button type="button" className="ww-link-btn" onClick={newCode}>{t("newCode")}</button>
                 <button type="button" className="ww-link-btn" onClick={() => setEditing(true)}>{t("edit")}</button>
                 <button type="button" className="ww-link-btn danger" onClick={deleteClass}>{t("dialogDelete")}</button>
@@ -202,7 +203,7 @@ function StudentsTab({ cls, reload }) {
 
       {(cls.students || []).length === 0 ? (
         <div className="ww-portal-empty">
-          <span>👩‍🎓</span>
+          <span><Icon name="user" /></span>
           <p>{t("noStudentsYet")}</p>
         </div>
       ) : (
@@ -238,7 +239,7 @@ function StudentsTab({ cls, reload }) {
                     <td className="num">{s.journalsCount}</td>
                     <td className="num">
                       <button type="button" className="ww-cost-remove" title={t("removeLabel")}
-                        onClick={(e) => { e.stopPropagation(); remove(s); }}>✕</button>
+                        onClick={(e) => { e.stopPropagation(); remove(s); }}><Icon name="x" /></button>
                     </td>
                   </tr>
                 ))}
@@ -309,7 +310,7 @@ export function AnnouncementsTab({ classId, canPost }) {
           <div className="ww-portal-actions">
             <span className="ww-portal-hint">{t("classAnnouncementHint")}</span>
             <button type="submit" className="ww-search-btn" disabled={posting || !message.trim()}>
-              📢 {posting ? t("savingEllipsis") : t("postAnnouncement")}
+              <Icon name="megaphone" /> {posting ? t("savingEllipsis") : t("postAnnouncement")}
             </button>
           </div>
         </form>
@@ -317,7 +318,7 @@ export function AnnouncementsTab({ classId, canPost }) {
       {items === null ? (
         <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
       ) : items.length === 0 ? (
-        <div className="ww-portal-empty"><span>📢</span><p>{t("noAnnouncementsYet")}</p></div>
+        <div className="ww-portal-empty"><span><Icon name="megaphone" /></span><p>{t("noAnnouncementsYet")}</p></div>
       ) : (
         <ul className="ww-tour-announcements ww-portal-announcements">
           {items.map((a) => (
@@ -326,7 +327,7 @@ export function AnnouncementsTab({ classId, canPost }) {
                 <strong>{a.authorName}</strong>
                 <span>{when(a.createdAt)}</span>
                 {canPost && (
-                  <button type="button" className="ww-cost-remove" onClick={() => remove(a)} title={t("dialogDelete")}>✕</button>
+                  <button type="button" className="ww-cost-remove" onClick={() => remove(a)} title={t("dialogDelete")}><Icon name="x" /></button>
                 )}
               </div>
               <p>{a.message}</p>

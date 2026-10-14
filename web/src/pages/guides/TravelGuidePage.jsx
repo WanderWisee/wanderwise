@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 const guideSections = [
   {
@@ -90,9 +91,9 @@ export default function TravelGuidePage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -103,7 +104,7 @@ export default function TravelGuidePage() {
           <section className="ww-guide-section" key={section.pinLabel}>
             <div className="ww-guide-intro">
               <div className="ww-guide-text">
-                <p className="ww-guide-pin">📍{section.pinLabel}</p>
+                <p className="ww-guide-pin"><Icon name="map-pin" />{section.pinLabel}</p>
                 <p className="ww-guide-subtitle">{section.subtitle}</p>
                 <p className="ww-guide-description">{section.description}</p>
 
@@ -132,7 +133,7 @@ export default function TravelGuidePage() {
             <div className="ww-guide-hotels-grid">
               {section.hotels.map((h) => (
                 <div className="ww-guide-hotel-card" key={h.name}>
-                  <p className="ww-guide-hotel-name">🏨 {h.name}</p>
+                  <p className="ww-guide-hotel-name"><Icon name="bed" /> {h.name}</p>
                   <p className="ww-guide-hotel-desc">{h.description}</p>
                   <button className="ww-guide-details-btn">{t("details")}</button>
                 </div>

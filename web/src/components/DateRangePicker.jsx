@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { usePreferences } from "../context/PreferencesContext";
+import Icon from "./Icon";
 
 // One date field for a whole trip, like Airbnb/Agoda: open the calendar,
 // tap the start date, then tap the end date. Days in between light up.
@@ -227,7 +228,7 @@ export default function DateRangePicker({
         className={`ww-drp-field ${startDate ? "" : "placeholder"}`}
         onClick={() => (open ? setOpen(false) : openCalendar())}
       >
-        📅 {label}
+        <Icon name="calendar" /> {label}
       </button>
 
       {open && (

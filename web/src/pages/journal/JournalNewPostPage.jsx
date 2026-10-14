@@ -6,6 +6,7 @@ import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 let nextHotelId = 1;
 
@@ -206,16 +207,16 @@ export default function JournalNewPostPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       {posted ? (
         // --- Read-only summary, shown right after posting ---
         <main className="ww-guide-main">
-          <p className="ww-journal-posted-banner">✅ {t("postedBanner")}</p>
+          <p className="ww-journal-posted-banner"><Icon name="check-circle" /> {t("postedBanner")}</p>
           <h1 className="ww-guide-title">{storyTitle}</h1>
 
           {entries.map((entry) => (
@@ -223,9 +224,12 @@ export default function JournalNewPostPage() {
               <div className="ww-guide-intro">
                 <div className="ww-guide-text">
                   <p className="ww-guide-pin">
-                    📍{entry.place || t("unnamedPlace")}{" "}
-                    {"★".repeat(entry.rating)}
-                    {"☆".repeat(5 - entry.rating)}
+                    <Icon name="map-pin" />{entry.place || t("unnamedPlace")}{" "}
+                    <span className="ww-stars">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Icon key={i} name="star" className={i <= entry.rating ? "filled" : ""} />
+                      ))}
+                    </span>
                   </p>
                   {entry.description && (
                     <p className="ww-guide-description">{entry.description}</p>
@@ -262,7 +266,7 @@ export default function JournalNewPostPage() {
                   <div className="ww-guide-hotels-grid">
                     {entry.hotels.map((h) => (
                       <div className="ww-guide-hotel-card" key={h.id}>
-                        <p className="ww-guide-hotel-name">🏨 {h.name}</p>
+                        <p className="ww-guide-hotel-name"><Icon name="bed" /> {h.name}</p>
                         {h.description && <p className="ww-guide-hotel-desc">{h.description}</p>}
                       </div>
                     ))}
@@ -289,7 +293,7 @@ export default function JournalNewPostPage() {
         // --- Editing form ---
         <main className="ww-journal-main">
           <p className="ww-stories-back" onClick={handleBack}>
-            ← {t("back")}
+            <Icon name="arrow-left" /> {t("back")}
           </p>
 
           <h1 className="ww-journal-title">
@@ -317,7 +321,7 @@ export default function JournalNewPostPage() {
               }
               style={{ cursor: "pointer" }}
             >
-              ✎
+              <Icon name="pencil" />
             </span>
           </h1>
 
@@ -331,7 +335,7 @@ export default function JournalNewPostPage() {
                 className="ww-journal-choose-file-btn"
                 onClick={() => fileInputRef.current?.click()}
               >
-                📁 {t("chooseFile")}
+                <Icon name="folder" /> {t("chooseFile")}
               </button>
               <span>{selectedFile ? selectedFile.name : t("noFileChosen")}</span>
               <input
@@ -363,7 +367,7 @@ export default function JournalNewPostPage() {
                     <div className="ww-journal-entry-fields">
                       <input
                         className="ww-journal-place-input"
-                        placeholder={`📍 ${t("addAPlace")}`}
+                        placeholder={t("addAPlace")}
                         value={entry.place}
                         onChange={(e) => updateEntry(entry.id, "place", e.target.value)}
                       />
@@ -375,7 +379,7 @@ export default function JournalNewPostPage() {
                             onClick={() => updateEntry(entry.id, "rating", n)}
                             style={{ cursor: "pointer" }}
                           >
-                            {n <= entry.rating ? "★" : "☆"}
+                            <Icon name="star" className={n <= entry.rating ? "filled" : ""} />
                           </span>
                         ))}
                       </div>
@@ -404,7 +408,7 @@ export default function JournalNewPostPage() {
                       {entry.pros.map((pro, i) => (
                         <span className="ww-journal-tag ww-journal-tag-pro" key={i}>
                           {pro}
-                          <span onClick={() => removePro(entry.id, i)}>✕</span>
+                          <span onClick={() => removePro(entry.id, i)}><Icon name="x" /></span>
                         </span>
                       ))}
                     </div>
@@ -426,7 +430,7 @@ export default function JournalNewPostPage() {
                       {entry.cons.map((con, i) => (
                         <span className="ww-journal-tag ww-journal-tag-con" key={i}>
                           {con}
-                          <span onClick={() => removeCon(entry.id, i)}>✕</span>
+                          <span onClick={() => removeCon(entry.id, i)}><Icon name="x" /></span>
                         </span>
                       ))}
                     </div>
@@ -450,13 +454,13 @@ export default function JournalNewPostPage() {
                           <strong>{hotel.name}</strong>
                           {hotel.description && <p>{hotel.description}</p>}
                         </div>
-                        <span onClick={() => removeHotel(entry.id, hotel.id)}>✕</span>
+                        <span onClick={() => removeHotel(entry.id, hotel.id)}><Icon name="x" /></span>
                       </div>
                     ))}
                     <div className="ww-journal-hotel-fields-row">
                       <input
                         className="ww-journal-tag-input"
-                        placeholder={`🛏 ${t("hotelName")}`}
+                        placeholder={t("hotelName")}
                         value={entry.hotelNameInput}
                         onChange={(e) => updateEntry(entry.id, "hotelNameInput", e.target.value)}
                       />

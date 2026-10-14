@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -100,7 +101,7 @@ export default function RegisterPage() {
             aria-label="Go back"
             onClick={() => navigate('/')}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-register-title">{t("registerTitle")}</h1>
@@ -178,7 +179,7 @@ export default function RegisterPage() {
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? "👁" : "🙈"}
+              <Icon name={showPassword ? "eye" : "eye-off"} />
             </button>
           </div>
 
@@ -197,7 +198,7 @@ export default function RegisterPage() {
               aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               onClick={() => setShowConfirmPassword((prev) => !prev)}
             >
-              {showConfirmPassword ? "👁" : "🙈"}
+              <Icon name={showConfirmPassword ? "eye" : "eye-off"} />
             </button>
           </div>
 

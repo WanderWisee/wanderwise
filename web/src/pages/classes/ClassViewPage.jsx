@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { api, fullName } from "../../utils/portal";
 import { AnnouncementsTab, Avatar } from "../teacher/TeacherClassPage";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Student view of one class: who the teacher is + the class announcements.
 export default function ClassViewPage() {
@@ -40,7 +41,7 @@ function ClassView() {
   if (notFound) {
     return (
       <main className="ww-portal-main">
-        <p className="ww-stories-back" onClick={() => navigate("/classes")}>← {t("myClasses")}</p>
+        <p className="ww-stories-back" onClick={() => navigate("/classes")}><Icon name="arrow-left" /> {t("myClasses")}</p>
         <p className="ww-expense-empty">{t("classNotFound")}</p>
       </main>
     );
@@ -49,7 +50,7 @@ function ClassView() {
 
   return (
     <main className="ww-portal-main">
-      <p className="ww-stories-back" onClick={() => navigate("/classes")}>← {t("myClasses")}</p>
+      <p className="ww-stories-back" onClick={() => navigate("/classes")}><Icon name="arrow-left" /> {t("myClasses")}</p>
       <section className="ww-portal-class-head">
         <div>
           <h1 className="ww-portal-title">{cls.name}</h1>
@@ -65,7 +66,7 @@ function ClassView() {
         </div>
       </section>
 
-      <h2 className="ww-portal-section-title">📢 {t("tab_announcements")}</h2>
+      <h2 className="ww-portal-section-title"><Icon name="megaphone" /> {t("tab_announcements")}</h2>
       <AnnouncementsTab classId={classId} canPost={false} />
     </main>
   );

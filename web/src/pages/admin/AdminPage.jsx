@@ -7,13 +7,12 @@ import { useDialog } from "../../context/DialogContext";
 import { api, fullName, toLocalDate } from "../../utils/portal";
 import { Avatar } from "../teacher/TeacherClassPage";
 import { Stat } from "../teacher/TeacherHomePage";
-import AdminContent from "./AdminContent";
 import "../../App.css";
 
 // ===== Admin panel =====
 // Overview · Users (approve teachers, roles, deactivate) · Journals
 // (hide/unhide) · Destinations & guides · Classes · Activity log
-const TABS = ["overview", "users", "journals", "content", "classes", "logs"];
+const TABS = ["overview", "users", "journals", "classes", "logs"];
 
 export default function AdminPage() {
   return (
@@ -55,7 +54,6 @@ function Admin() {
       {tab === "overview" && <Overview goTo={setTab} />}
       {tab === "users" && <Users initialStatus={searchParams.get("status") || ""} />}
       {tab === "journals" && <Journals />}
-      {tab === "content" && <AdminContent />}
       {tab === "classes" && <Classes />}
       {tab === "logs" && <Logs />}
     </main>
@@ -79,11 +77,6 @@ function Overview({ goTo }) {
 
   return (
     <>
-      {d.pendingTeachers > 0 && (
-        <button type="button" className="ww-portal-callout" onClick={() => goTo("users", { status: "pending" })}>
-          🧑‍🏫 <strong>{d.pendingTeachers}</strong> {t("teachersWaiting")} <span>{t("reviewNow")} →</span>
-        </button>
-      )}
 
       <div className="ww-portal-stats">
         <Stat icon="👥" value={d.users} label={t("statUsers")} />
@@ -205,17 +198,6 @@ function Users({ initialStatus }) {
     load();
   };
 
-  const setUserRole = async (u, next) => {
-    if (next === u.role) return;
-    if (!(await confirm(`${t("confirmChangeRole")} ${fullName(u)} → ${t(`role_${next}`)}?`))) return;
-    setBusyId(u.id);
-    setError("");
-    const r = await api(`/api/admin/users/${u.id}/role`, { method: "PUT", body: { role: next } });
-    setBusyId(null);
-    if (!r.ok) return setError(t("portalSaveFailed"));
-    load();
-  };
-
   return (
     <section className="ww-portal-card">
       <div className="ww-portal-filters">
@@ -228,7 +210,6 @@ function Users({ initialStatus }) {
         </select>
         <select className="ww-field-input" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">{t("allStatuses")}</option>
-          <option value="pending">{t("status_pending")}</option>
           <option value="active">{t("status_active")}</option>
           <option value="deactivated">{t("status_deactivated")}</option>
         </select>
@@ -255,7 +236,7 @@ function Users({ initialStatus }) {
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id} className={u.status === "pending" ? "highlight" : ""}>
+                <tr key={u.id}>
                   <td>
                     <span className="ww-portal-person">
                       <Avatar person={u} size={32} />
@@ -266,26 +247,12 @@ function Users({ initialStatus }) {
                     </span>
                   </td>
                   <td><code>{u.studentNumber}</code></td>
-                  <td>
-                    <select className="ww-portal-select" value={u.role} disabled={u.isMe || busyId === u.id}
-                      onChange={(e) => setUserRole(u, e.target.value)}>
-                      <option value="student">{t("role_student")}</option>
-                      <option value="teacher">{t("role_teacher")}</option>
-                      <option value="admin">{t("role_admin")}</option>
-                    </select>
-                  </td>
+                  <td><RoleBadge role={u.role} /></td>
                   <td><StatusBadge status={u.status} /></td>
                   <td className="num">{u.tripsCount}</td>
                   <td>{formatDate(toLocalDate(u.createdAt), { month: "short", day: "numeric", year: "numeric" })}</td>
                   <td>
-                    {u.isMe ? null : u.status === "pending" ? (
-                      <span className="ww-portal-btn-row">
-                        <button type="button" className="ww-search-btn small" disabled={busyId === u.id}
-                          onClick={() => setUserStatus(u, "active")}>✓ {t("approve")}</button>
-                        <button type="button" className="ww-booking-cancel small" disabled={busyId === u.id}
-                          onClick={() => setUserStatus(u, "deactivated", `${t("confirmDeny")} ${fullName(u)}?`)}>{t("deny")}</button>
-                      </span>
-                    ) : u.status === "active" ? (
+                    {u.isMe || u.role === "admin" ? null : u.status === "active" ? (
                       <button type="button" className="ww-link-btn danger" disabled={busyId === u.id}
                         onClick={() => setUserStatus(u, "deactivated", `${t("confirmDeactivate")} ${fullName(u)}?`)}>
                         {t("deactivate")}
@@ -479,8 +446,8 @@ function Classes() {
 // ---------------- Activity log ----------------
 const LOG_ACTIONS = [
   "login", "login_failed", "login_blocked", "register_student", "register_teacher", "password_reset",
-  "user_role_changed", "user_status_changed", "journal_hidden", "journal_unhidden", "content_changed",
-  "class_created", "class_deleted", "field_trip_created", "server_error",
+  "user_status_changed", "journal_hidden", "journal_unhidden", "class_created", "class_deleted",
+  "server_error",
 ];
 
 function Logs() {

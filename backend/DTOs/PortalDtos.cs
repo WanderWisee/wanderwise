@@ -25,11 +25,6 @@ public class ClassAnnouncementRequest
 }
 
 // ===== Admin panel =====
-public class SetRoleRequest
-{
-    public string Role { get; set; } = string.Empty;
-}
-
 public class SetStatusRequest
 {
     public string Status { get; set; } = string.Empty;
@@ -39,26 +34,4 @@ public class SetJournalVisibilityRequest
 {
     public bool Hidden { get; set; }
     public string? Reason { get; set; }
-}
-
-public class SaveDestinationRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string? Country { get; set; }
-    public string? ImageUrl { get; set; }
-    public bool IsFeatured { get; set; }
-}
-
-public class SaveGuideRequest
-{
-    public string? LocationName { get; set; }
-    public string? PinLabel { get; set; }
-    public string? Description { get; set; }
-    public string? Pros { get; set; }
-    public string? Cons { get; set; }
-    public string? ImageUrl { get; set; }
-    public string? MapImageUrl { get; set; }
-    public int SortOrder { get; set; }
-    // One hotel per line: "Hotel name — short description"
-    public string? Hotels { get; set; }
 }

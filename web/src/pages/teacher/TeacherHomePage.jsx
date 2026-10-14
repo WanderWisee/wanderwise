@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useAppData } from "../../context/AppDataContext";
 import { api } from "../../utils/portal";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Teacher portal home: all of the teacher's classes + "New class".
 export default function TeacherHomePage() {
@@ -57,7 +58,7 @@ function TeacherHome() {
     <main className="ww-portal-main">
       <div className="ww-portal-hero">
         <div>
-          <p className="ww-portal-eyebrow">🎓 {t("teacherPortal")}</p>
+          <p className="ww-portal-eyebrow"><Icon name="graduation-cap" /> {t("teacherPortal")}</p>
           <h1 className="ww-portal-title">
             {t("helloName")} {profileName ? profileName.split(" ")[0] : ""}!
           </h1>
@@ -70,8 +71,8 @@ function TeacherHome() {
 
       {classes && classes.length > 0 && (
         <div className="ww-portal-stats">
-          <Stat icon="🏫" value={classes.length} label={t("statClasses")} />
-          <Stat icon="👩‍🎓" value={totalStudents} label={t("statStudents")} />
+          <Stat icon="building" value={classes.length} label={t("statClasses")} />
+          <Stat icon="user" value={totalStudents} label={t("statStudents")} />
         </div>
       )}
 
@@ -112,7 +113,7 @@ function TeacherHome() {
         <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
       ) : classes.length === 0 ? (
         <div className="ww-portal-empty">
-          <span>🏫</span>
+          <span><Icon name="building" /></span>
           <p>{t("noClassesYet")}</p>
         </div>
       ) : (
@@ -125,7 +126,7 @@ function TeacherHome() {
                 {[c.section, c.term].filter(Boolean).join(" · ") || "—"}
               </span>
               <span className="ww-portal-class-meta">
-                <span>👩‍🎓 {c.studentCount}</span>
+                <span><Icon name="user" /> {c.studentCount}</span>
               </span>
               <span className="ww-portal-class-foot">
                 <code className="ww-portal-code">{c.joinCode}</code>
@@ -141,7 +142,7 @@ function TeacherHome() {
 export function Stat({ icon, value, label, tone = "" }) {
   return (
     <div className={`ww-portal-stat ${tone}`}>
-      <span className="ww-portal-stat-icon">{icon}</span>
+      <span className="ww-portal-stat-icon">{typeof icon === "string" ? <Icon name={icon} /> : icon}</span>
       <span className="ww-portal-stat-value">{value}</span>
       <span className="ww-portal-stat-label">{label}</span>
     </div>

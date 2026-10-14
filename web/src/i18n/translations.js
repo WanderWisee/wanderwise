@@ -29,7 +29,7 @@ export const translations = {
     loadingEllipsis: "Loading...",
 
     // ===== Home (landing) =====
-    homeHeroTitle: "Tourism Students, Welcome to your travel companion! ✈️",
+    homeHeroTitle: "Tourism Students, Welcome to your travel companion!",
     homeHeroSubtitleLine1: "Plan smarter, explore further, and create trips you'll",
     homeHeroSubtitleLine2: "never forget. Your next adventure starts here!",
 
@@ -623,7 +623,7 @@ export const translations = {
     inviteLinkInvalid: "Hindi na valid ang invite link na ito.",
 
     // ===== Home (landing) =====
-    homeHeroTitle: "Mga estudyanteng mahilig maglakbay, maligayang pagdating sa iyong kasama sa paglalakbay! ✈️",
+    homeHeroTitle: "Mga estudyanteng mahilig maglakbay, maligayang pagdating sa iyong kasama sa paglalakbay!",
     homeHeroSubtitleLine1: "Magplano nang mas matalino, mas malayo ang mararating, at gumawa ng mga byaheng",
     homeHeroSubtitleLine2: "hindi mo makakalimutan. Nagsisimula na dito ang susunod mong adbentura!",
 

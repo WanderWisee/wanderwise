@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Admin login (/admin/login) — web only, separate from the student and
 // teacher logins. Only admin accounts get in here.
@@ -58,10 +59,10 @@ export default function AdminLoginPage() {
       <main className="ww-login-wrapper">
         <form className="ww-login-card" onSubmit={handleLogin}>
           <button type="button" className="ww-back-btn" aria-label="Go back" onClick={() => navigate("/")}>
-            ←
+            <Icon name="arrow-left" />
           </button>
 
-          <p className="ww-portal-eyebrow ww-login-eyebrow">🛡️ {t("adminPanel")}</p>
+          <p className="ww-portal-eyebrow ww-login-eyebrow"><Icon name="shield" /> {t("adminPanel")}</p>
           <h1 className="ww-login-title">{t("adminLoginTitle")}</h1>
 
           <label className="ww-field-label">{t("adminAccountLabel")}</label>
@@ -90,7 +91,7 @@ export default function AdminLoginPage() {
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? "👁" : "🙈"}
+              <Icon name={showPassword ? "eye" : "eye-off"} />
             </button>
           </div>
 

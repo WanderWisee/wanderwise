@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import DateRangePicker from "../../components/DateRangePicker";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function TripPlanningPage() {
   const [destination, setDestination] = useState("");
@@ -65,9 +66,9 @@ export default function TripPlanningPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
@@ -77,7 +78,7 @@ export default function TripPlanningPage() {
           onClick={handleBack}
           style={{ width: "100%", maxWidth: 620 }}
         >
-          ← {t("back")}
+          <Icon name="arrow-left" /> {t("back")}
         </p>
 
         <h1 className="ww-planning-title">{t("beginYourJourney")}</h1>

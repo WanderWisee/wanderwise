@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function VerifyResetOtpPage() {
   const navigate = useNavigate();
@@ -85,7 +86,7 @@ export default function VerifyResetOtpPage() {
             aria-label="Go back"
             onClick={() => navigate("/forgot-password")}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-reset-title">{t("enterVerificationCodeTitle")}</h1>

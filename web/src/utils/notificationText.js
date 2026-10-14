@@ -46,14 +46,14 @@ export function notificationText(n, t, formatTime) {
     case "trip_ended":
       return `${trip} ${t("notifTextTripEnded")}`;
     case "announcement":
-      return `📢 ${d.actorName} ${t("notifTextAnnounced")} ${trip}: ${d.message}`;
+      return `${d.actorName} ${t("notifTextAnnounced")} ${trip}: ${d.message}`;
     case "password_changed":
       return t("notifTextPasswordChanged");
     // Teacher portal / admin panel
     case "class_added":
       return `${d.actorName} ${t("notifTextClassAdded")} ${d.className}.`;
     case "class_announcement":
-      return `📢 ${d.actorName} (${d.className}): ${d.message}`;
+      return `${d.actorName} (${d.className}): ${d.message}`;
     case "student_joined":
       return `${d.actorName} ${t("notifTextStudentJoined")} ${d.className}.`;
     case "class_removed":
@@ -72,48 +72,48 @@ export function notificationText(n, t, formatTime) {
 export function notificationIcon(type) {
   switch (type) {
     case "trip_start":
-      return "🧳";
+      return "briefcase";
     case "activity":
-      return "⏰";
+      return "clock";
     case "checkin":
-      return "🏨";
+      return "bed";
     case "crew_added":
     case "crew_joined":
     case "crew_removed":
     case "crew_left":
-      return "👥";
+      return "users";
     case "comment":
-      return "💬";
+      return "message";
     case "trip_updated":
-      return "✏️";
+      return "pencil";
     case "expense_added":
-      return "💸";
+      return "banknote";
     case "booking_added":
-      return "🏨";
+      return "bed";
     case "budget_80":
-      return "⚠️";
+      return "alert-triangle";
     case "budget_over":
-      return "🚨";
+      return "alert-circle";
     case "trip_ended":
-      return "📖";
+      return "book-open";
     case "announcement":
-      return "📢";
+      return "megaphone";
     case "password_changed":
-      return "🔒";
+      return "lock";
     case "class_added":
     case "teacher_approved":
-      return "🎓";
+      return "graduation-cap";
     case "class_announcement":
-      return "📢";
+      return "megaphone";
     case "student_joined":
-      return "🙋";
+      return "user-plus";
     case "class_removed":
-      return "🚪";
+      return "log-out";
     case "teacher_pending":
-      return "🧑‍🏫";
+      return "graduation-cap";
     case "journal_hidden":
-      return "🚫";
+      return "ban";
     default:
-      return "🔔";
+      return "bell";
   }
 }

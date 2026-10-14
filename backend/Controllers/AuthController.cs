@@ -227,12 +227,16 @@ public class AuthController : ControllerBase
     [HttpPost("/api/login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var email = request.Email?.Trim() ?? "";
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        // The "username" can be the school email or the ID number
+        // (student number for students, employee ID for teachers).
+        var login = request.Email?.Trim() ?? "";
+        var user = login.Length == 0
+            ? null
+            : await _db.Users.FirstOrDefaultAsync(u => u.Email == login || u.StudentNumber == login);
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            await ActivityLogger.LogAsync(_db, user?.Id, ActivityLogger.LoginFailed, email, HttpContext);
-            return Unauthorized(new { error = "Invalid email or password." });
+            await ActivityLogger.LogAsync(_db, user?.Id, ActivityLogger.LoginFailed, login, HttpContext);
+            return Unauthorized(new { error = "Invalid username or password." });
         }
 
         if (user.AccountStatus == PortalAccess.StatusPending)
@@ -246,15 +250,15 @@ public class AuthController : ControllerBase
             return StatusCode(403, new { error = "This account has been deactivated. Please contact the admin.", code = "deactivated" });
         }
 
-        // Separate logins (web only for teachers and admins):
-        //   students → /login and the mobile app (no "portal" sent)
-        //   teachers → /teacher/login  (portal = "teacher")
-        //   admins   → /admin/login    (portal = "admin")
-        // An account can only log in through its own page, so teacher and
-        // admin accounts can't get into the mobile app.
+        // Where the login comes from:
+        //   "web"  → the one web log in page (/login): every account type
+        //            logs in there and the web app opens the right pages
+        //            for the account's role.
+        //   anything else (the mobile app sends nothing) → students only,
+        //            because teachers and admins are web only.
         var portal = (request.Portal ?? "").Trim().ToLowerInvariant();
-        if (portal != PortalAccess.RoleTeacher && portal != PortalAccess.RoleAdmin) portal = PortalAccess.RoleStudent;
-        if (user.Role != portal)
+        if (portal != "web" && portal != PortalAccess.RoleTeacher && portal != PortalAccess.RoleAdmin) portal = PortalAccess.RoleStudent;
+        if (portal != "web" && user.Role != portal)
         {
             await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.LoginBlocked, $"{user.Role} account on the {portal} login", HttpContext);
             var code = user.Role == PortalAccess.RoleTeacher ? "use_teacher_login"

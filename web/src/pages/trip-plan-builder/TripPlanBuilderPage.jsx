@@ -6,6 +6,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 let nextPlaceId = 1;
 let nextSectionId = 1;
@@ -103,10 +104,15 @@ function fetchSuggestedPlaces(destination, category) {
   const url =
     `/api/places?destination=${encodeURIComponent(destination)}` +
     (category ? `&category=${encodeURIComponent(category)}` : "");
-  const MAX_RETRIES = 2;
+  // The server gives up after ~30s; one retry is enough (each retry used
+  // to add another long wait while "Loading suggested places..." showed).
+  const MAX_RETRIES = 1;
 
-  const attempt = (n) =>
-    fetch(url)
+  const attempt = (n) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 40000);
+    return fetch(url, { signal: controller.signal })
+      .finally(() => clearTimeout(timer))
       .then((resp) => resp.json())
       .then((data) => {
         const found = Array.isArray(data?.places) ? data.places : [];
@@ -116,6 +122,7 @@ function fetchSuggestedPlaces(destination, category) {
         return found;
       })
       .catch(() => (n < MAX_RETRIES ? wait(1500 * (n + 1)).then(() => attempt(n + 1)) : []));
+  };
 
   const request = attempt(0).then((found) => {
     // Don't keep an empty answer, so "Try again" can ask again.
@@ -253,7 +260,7 @@ function serializePlace(p, itineraryDateMap, sortOrder, itineraryOrderMap = {}) 
   };
 }
 
-function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState }) {
+function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripName, tripState }) {
   const itineraryDateMap = buildItineraryDateMap(tripState.days, startDate);
   const itineraryOrderMap = buildItineraryOrderMap(tripState.days);
 
@@ -274,6 +281,8 @@ function buildSaveRequest({ destination, startDate, endDate, people, whereToGoTi
 
   return {
     title: whereToGoTitle,
+    // The trip's own name (✎ next to "Trip to …"); empty = "Trip to <destination>".
+    tripName: (tripName || "").trim() || null,
     destination,
     startDate: startDate || null,
     endDate: endDate || null,
@@ -359,14 +368,14 @@ function hydrateTripState(tripResponse, defaultTitle) {
 // backend expense record into the shape the UI already expects
 // (label/icon/dayLabel), same look as before but now actually persisted.
 const EXPENSE_CATEGORIES = [
-  { icon: "🍽️", label: "Food and Drinks" },
-  { icon: "🚌", label: "Transit" },
-  { icon: "🎟️", label: "Activities" },
-  { icon: "🛍️", label: "Shopping" },
-  { icon: "🚗", label: "Car Rental" },
-  { icon: "🛏️", label: "Lodging" },
-  { icon: "⛽", label: "Gas" },
-  { icon: "✈️", label: "Flights" },
+  { icon: "utensils", label: "Food and Drinks" },
+  { icon: "bus", label: "Transit" },
+  { icon: "ticket", label: "Activities" },
+  { icon: "shopping-bag", label: "Shopping" },
+  { icon: "car", label: "Car Rental" },
+  { icon: "bed", label: "Lodging" },
+  { icon: "fuel", label: "Gas" },
+  { icon: "plane", label: "Flights" },
 ];
 
 function findPlaceNameById(tripStateLike, placeId) {
@@ -400,7 +409,7 @@ function mapExpenseFromApi(e, tripStateLike) {
     id: e.id,
     amount: e.amount,
     label: placeName || e.category || "Expense",
-    icon: categoryMatch ? categoryMatch.icon : placeName || isPlaceExpense ? "📍" : "💰",
+    icon: categoryMatch ? categoryMatch.icon : placeName || isPlaceExpense ? "map-pin" : "wallet",
     description: e.description || "",
     dayLabel: e.placeId
       ? findDayLabelForPlace(tripStateLike, e.placeId)
@@ -498,6 +507,10 @@ export default function TripPlanBuilderPage() {
 
   const [whereToGoTitle, setWhereToGoTitle] = useState(t("whereToGoDefault"));
   const [editingWhereToGoTitle, setEditingWhereToGoTitle] = useState(false);
+  // The trip's name. Empty = "Trip to <destination>" (follows the
+  // destination); ✎ only renames the trip — the destination stays.
+  const [tripName, setTripName] = useState("");
+  const [editingTripName, setEditingTripName] = useState(false);
 
   const [tripState, setTripState] = useState(
     tripInfo.restoredTripState || {
@@ -585,6 +598,7 @@ export default function TripPlanBuilderPage() {
             setEndDate(data.endDate || "");
             setPeople(data.travelBuddiesCount || 0);
             setWhereToGoTitle(data.title || t("whereToGoDefault"));
+            setTripName(data.tripName || "");
             const hydrated = hydrateTripState(data);
             setTripState(hydrated);
 
@@ -679,7 +693,7 @@ export default function TripPlanBuilderPage() {
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const body = buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripState });
+        const body = buildSaveRequest({ destination, startDate, endDate, people, whereToGoTitle, tripName, tripState });
         const resp = await fetch(`/api/trips/${tripId}`, {
           method: "PUT",
           headers: {
@@ -698,7 +712,7 @@ export default function TripPlanBuilderPage() {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripState, destination, startDate, endDate, people, whereToGoTitle, tripId]);
+  }, [tripState, destination, startDate, endDate, people, whereToGoTitle, tripName, tripId]);
 
   // --- Top-right "⋯" menu (Home / Guides / Profile) ---
   // The "Book a Hotel" button lower on the page already covers Hotels,
@@ -733,6 +747,14 @@ export default function TripPlanBuilderPage() {
       .then((data) => setDestinationOptions(Array.isArray(data) ? data : []))
       .catch(() => setDestinationOptions([]));
   }, []);
+
+  // "Trip to Lucena" until the student renames the trip.
+  const defaultTripName = `${t("tripToPrefix")} ${destination || t("yourNextDestination")}`;
+  const finishTripNameEdit = () => {
+    setEditingTripName(false);
+    // Typed back the default? Keep following the destination.
+    if (tripName.trim() === defaultTripName) setTripName("");
+  };
 
   const openEditTrip = () => {
     setEditForm({ destination, startDate, endDate, people });
@@ -981,7 +1003,7 @@ export default function TripPlanBuilderPage() {
           fromPlaceCost: true,
           amount: Number(c.amount) || 0,
           label: p.name,
-          icon: "📍",
+          icon: "map-pin",
           description: COST_CATEGORY_KEYS[c.category] ? t(COST_CATEGORY_KEYS[c.category]) : c.category,
           dayLabel: findDayLabelForPlace({ days }, p.id),
         });
@@ -1283,7 +1305,7 @@ export default function TripPlanBuilderPage() {
             className="ww-show-more-btn"
             onClick={() => setSuggestionsRetry((n) => n + 1)}
           >
-            ↻ {t("tryAgain")}
+            <Icon name="refresh" /> {t("tryAgain")}
           </button>
         </p>
       ) : null;
@@ -1835,7 +1857,7 @@ export default function TripPlanBuilderPage() {
               <span>
                 ₱{c.amount.toLocaleString()}
                 <span className="ww-cost-remove" onClick={() => removeCost(p.id, c.id)}>
-                  ✕
+                  <Icon name="x" />
                 </span>
               </span>
             </div>
@@ -1861,7 +1883,7 @@ export default function TripPlanBuilderPage() {
             onClick={handleUndo}
             style={{ cursor: past.length === 0 ? "default" : "pointer", opacity: past.length === 0 ? 0.4 : 1 }}
           >
-            ↩ {t("undo")}
+            <Icon name="undo" /> {t("undo")}
           </span>
           <span className="ww-builder-saved">{saveStatusLabel}</span>
           <span
@@ -1869,7 +1891,7 @@ export default function TripPlanBuilderPage() {
             onClick={handleRedo}
             style={{ cursor: future.length === 0 ? "default" : "pointer", opacity: future.length === 0 ? 0.4 : 1 }}
           >
-            ↪ {t("redo")}
+            <Icon name="redo" /> {t("redo")}
           </span>
           <button className="ww-trip-plan-btn">{t("tripPlanBtn")}</button>
           <div className="ww-menu-wrapper" ref={topMenuRef}>
@@ -1940,19 +1962,54 @@ export default function TripPlanBuilderPage() {
         </aside>
 
         <main className="ww-builder-main">
+          {/* Trip name: ✎ makes the text editable (like "Where to go"). It
+              only renames the trip — destination and dates are changed by
+              tapping the dates below. */}
           <h1 className="ww-builder-trip-title">
-            {t("tripToPrefix")} {destination || t("yourNextDestination")}{" "}
-            <span className="ww-edit-icon" onClick={openEditTrip} style={{ cursor: "pointer" }}>
-              ✎
+            {editingTripName ? (
+              <input
+                className="ww-section-name-input-inline ww-trip-name-input"
+                value={tripName || defaultTripName}
+                maxLength={150}
+                onChange={(e) => setTripName(e.target.value)}
+                onFocus={(e) => e.target.select()}
+                onBlur={finishTripNameEdit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === "Escape") e.target.blur();
+                }}
+                autoFocus
+              />
+            ) : (
+              <span>{tripName.trim() || defaultTripName}</span>
+            )}{" "}
+            <span
+              className="ww-edit-icon"
+              onClick={() => setEditingTripName((v) => !v)}
+              style={{ cursor: "pointer" }}
+              title={t("renameTripTitle")}
+            >
+              <Icon name="pencil" />
             </span>
           </h1>
-          {startDate && endDate && (
-            <p className="ww-builder-dates">📅 {formatDateRange(startDate, endDate)}</p>
+          {canEdit ? (
+            <button
+              type="button"
+              className="ww-builder-dates ww-builder-dates-edit"
+              onClick={openEditTrip}
+              title={t("editTripDetailsTitle")}
+            >
+              <Icon name="calendar" /> {startDate && endDate ? formatDateRange(startDate, endDate) : t("setTripDetails")}
+              <span aria-hidden="true"><Icon name="pencil" /></span>
+            </button>
+          ) : (
+            startDate && endDate && (
+              <p className="ww-builder-dates"><Icon name="calendar" /> {formatDateRange(startDate, endDate)}</p>
+            )
           )}
 
           {!canEdit && (
             <div className="ww-hotels-trip-banner" style={{ margin: "0 0 16px" }}>
-              <span>👁 {myRole === "teacher" ? t("teacherViewNotice") : t("viewOnlyNotice")}</span>
+              <span><Icon name="eye" /> {myRole === "teacher" ? t("teacherViewNotice") : t("viewOnlyNotice")}</span>
             </div>
           )}
 
@@ -1977,7 +2034,7 @@ export default function TripPlanBuilderPage() {
               })
             }
           >
-            🏨 {t("bookAHotel")}
+            <Icon name="bed" /> {t("bookAHotel")}
           </button>
 
           <button
@@ -1985,7 +2042,7 @@ export default function TripPlanBuilderPage() {
             onClick={handleGoToAddCrew}
             style={{ marginLeft: 10, minHeight: 42 }}
           >
-            👥 {t("addCrew")}
+            <Icon name="users" /> {t("addCrew")}
           </button>
           </>
           )}
@@ -1996,7 +2053,7 @@ export default function TripPlanBuilderPage() {
               onClick={() => navigate(`/trip-plan/tour?tripId=${tripId}`)}
               style={{ marginLeft: 10, minHeight: 42 }}
             >
-              🧭 {t("tourDayBtn")}
+              <Icon name="compass" /> {t("tourDayBtn")}
             </button>
           )}
 
@@ -2008,13 +2065,13 @@ export default function TripPlanBuilderPage() {
               disabled={leavingTrip}
               style={{ marginLeft: 10, minHeight: 42 }}
             >
-              🚪 {leavingTrip ? t("leavingTrip") : t("leaveTrip")}
+              <Icon name="log-out" /> {leavingTrip ? t("leavingTrip") : t("leaveTrip")}
             </button>
           )}
 
           {bookings.length > 0 && (
             <p className="ww-bookings-count">
-              ✓ {bookings.length} {t("bookingsRecordedCount")}
+              <Icon name="check" /> {bookings.length} {t("bookingsRecordedCount")}
             </p>
           )}
 
@@ -2038,7 +2095,7 @@ export default function TripPlanBuilderPage() {
                 onClick={() => setEditingWhereToGoTitle((v) => !v)}
                 style={{ cursor: "pointer" }}
               >
-                ✎
+                <Icon name="pencil" />
               </span>
             </span>
             <span
@@ -2066,7 +2123,7 @@ export default function TripPlanBuilderPage() {
                 className="ww-show-more-btn"
                 onClick={() => setSuggestionsRetry((n) => n + 1)}
               >
-                ↻ {t("tryAgain")}
+                <Icon name="refresh" /> {t("tryAgain")}
               </button>
             </p>
           )}
@@ -2122,7 +2179,7 @@ export default function TripPlanBuilderPage() {
           {places.map((p, i) => (
             <div className="ww-place-card" key={p.id}>
               <p className="ww-place-name">
-                📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
+                <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
               </p>
 
               {/* Shown when our free (OpenStreetMap) lookup could NOT
@@ -2138,7 +2195,7 @@ export default function TripPlanBuilderPage() {
               {(p.geocodeStatus === "unverified" ||
                 ((p.lat == null || p.lng == null) && p.geocodeStatus !== "pending")) && (
                 <div className="ww-unverified-warning">
-                  <span className="ww-unverified-warning-icon">⚠️</span>
+                  <span className="ww-unverified-warning-icon"><Icon name="alert-triangle" /></span>
                   <span className="ww-unverified-warning-text">{t("locationUnverifiedWarning")}</span>
                   <a
                     className="ww-unverified-warning-link"
@@ -2148,7 +2205,7 @@ export default function TripPlanBuilderPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {t("viewOnGoogleMaps")} ↗
+                    {t("viewOnGoogleMaps")} <Icon name="external-link" />
                   </a>
                 </div>
               )}
@@ -2167,7 +2224,7 @@ export default function TripPlanBuilderPage() {
                 onClick={() => toggleVisited(p.id)}
                 style={{ cursor: "pointer" }}
               >
-                {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
+                {p.visited ? <><Icon name="x" /> {t("unmarkVisited")}</> : <><Icon name="check" /> {t("markVisited")}</>}
               </p>
             </div>
           ))}
@@ -2183,7 +2240,7 @@ export default function TripPlanBuilderPage() {
             <input
               ref={newPlaceInputRef}
               className="ww-add-place-input"
-              placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+              placeholder={t("addNewPlacePlaceholder")}
               value={newPlaceInput}
               onChange={(e) => setNewPlaceInput(e.target.value)}
               onKeyDown={handleAddPlace}
@@ -2225,7 +2282,7 @@ export default function TripPlanBuilderPage() {
                         }}
                         onMouseDown={(e) => e.preventDefault()}
                       >
-                        📍 {sug.display_name}
+                        <Icon name="map-pin" /> {sug.display_name}
                       </div>
                     ))}
                   {!loadingPlaceSuggestions && placeSuggestions.length === 0 && (
@@ -2273,7 +2330,7 @@ export default function TripPlanBuilderPage() {
                     onClick={() => toggleSectionNameEdit(section.id)}
                     style={{ cursor: "pointer" }}
                   >
-                    ✎
+                    <Icon name="pencil" />
                   </span>
                 </span>
                 <span
@@ -2291,7 +2348,7 @@ export default function TripPlanBuilderPage() {
               {section.places.map((p, i) => (
                 <div className="ww-place-card" key={p.id}>
                   <p className="ww-place-name">
-                    📍{i + 1} {p.name} {p.visited && <span className="ww-visited-badge">✅ {t("visited")}</span>}
+                    <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
                   </p>
                   <input
                     className="ww-place-notes-input"
@@ -2307,14 +2364,14 @@ export default function TripPlanBuilderPage() {
                     onClick={() => toggleSectionPlaceVisited(section.id, p.id)}
                     style={{ cursor: "pointer" }}
                   >
-                    {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
+                    {p.visited ? <><Icon name="x" /> {t("unmarkVisited")}</> : <><Icon name="check" /> {t("markVisited")}</>}
                   </p>
                 </div>
               ))}
 
               <input
                 className="ww-add-place-input"
-                placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+                placeholder={t("addNewPlacePlaceholder")}
                 value={section.placeInput}
                 onChange={(e) => handleSectionPlaceInputChange(section.id, e.target.value)}
                 onKeyDown={handleSectionPlaceKeyDown(section.id)}
@@ -2343,7 +2400,7 @@ export default function TripPlanBuilderPage() {
               <h2 className="ww-builder-section-title" ref={itineraryRef}>
                 {t("itinerary")}
                 {startDate && endDate && (
-                  <span className="ww-date-pill">📅 {formatDateRange(startDate, endDate)}</span>
+                  <span className="ww-date-pill"><Icon name="calendar" /> {formatDateRange(startDate, endDate)}</span>
                 )}
               </h2>
 
@@ -2373,7 +2430,7 @@ export default function TripPlanBuilderPage() {
                     }}
                   >
                     <div className="ww-day-header-row">
-                      <p className="ww-day-header">⌄ {day.label}</p>
+                      <p className="ww-day-header"><Icon name="chevron-down" /> {day.label}</p>
                       {/* Tour Day for this day: attendance, check-in,
                           announcements, activities. */}
                       {tripId && (
@@ -2383,7 +2440,7 @@ export default function TripPlanBuilderPage() {
                           style={{ marginLeft: "auto" }}
                           onClick={() => navigate(`/trip-plan/tour?tripId=${tripId}&day=${dayIndex}`)}
                         >
-                          🧭 {t("tourDayLink")}
+                          <Icon name="compass" /> {t("tourDayLink")}
                         </button>
                       )}
                       {routablePlaces >= 3 && (
@@ -2394,31 +2451,31 @@ export default function TripPlanBuilderPage() {
                           disabled={info?.status === "loading"}
                           title={t("optimizeRouteHint")}
                         >
-                          {info?.status === "loading" ? t("optimizingRoute") : `⇅ ${t("optimizeRoute")}`}
+                          {info?.status === "loading" ? t("optimizingRoute") : <><Icon name="arrow-up-down" /> {t("optimizeRoute")}</>}
                         </button>
                       )}
                     </div>
                     {showInfo && info.status === "done" && (
                       <p className="ww-optimize-result">
-                        ✓ {t("routeOptimized")} {formatTravelDuration(info.beforeS)} →{" "}
+                        <Icon name="check" /> {t("routeOptimized")} {formatTravelDuration(info.beforeS)} <Icon name="arrow-right" />{" "}
                         <strong>{formatTravelDuration(info.afterS)}</strong>
                         {info.beforeM != null && info.afterM != null && (
-                          <> ({formatTravelDistance(info.beforeM)} → {formatTravelDistance(info.afterM)})</>
+                          <> ({formatTravelDistance(info.beforeM)} <Icon name="arrow-right" /> {formatTravelDistance(info.afterM)})</>
                         )}
                       </p>
                     )}
                     {showInfo && info.status === "already" && (
-                      <p className="ww-optimize-result">✓ {t("routeAlreadyShortest")}</p>
+                      <p className="ww-optimize-result"><Icon name="check" /> {t("routeAlreadyShortest")}</p>
                     )}
                     {showInfo &&
                       (info.status === "done" || info.status === "already") &&
                       info.skippedNames?.length > 0 && (
                         <p className="ww-optimize-result ww-optimize-error">
-                          ⚠️ {t("routeSkippedPlaces")} {info.skippedNames.join(", ")}
+                          <Icon name="alert-triangle" /> {t("routeSkippedPlaces")} {info.skippedNames.join(", ")}
                         </p>
                       )}
                     {showInfo && info.status === "error" && (
-                      <p className="ww-optimize-result ww-optimize-error">⚠️ {t("routeOptimizeFailed")}</p>
+                      <p className="ww-optimize-result ww-optimize-error"><Icon name="alert-triangle" /> {t("routeOptimizeFailed")}</p>
                     )}
                     {/* Recorded bookings show on every day of the stay:
                         check-in day, the nights in between, and check-out day. */}
@@ -2442,7 +2499,7 @@ export default function TripPlanBuilderPage() {
                                 : t("bookingStaying");
                           return (
                             <p className="ww-day-booking" key={`bk-${b.id}-${dayIso}`}>
-                              🏨 {label}: <strong>{b.placeName}</strong>
+                              <Icon name="bed" /> {label}: <strong>{b.placeName}</strong>
                               {dayIso === inDay && b.confirmationNumber && <> · #{b.confirmationNumber}</>}
                             </p>
                           );
@@ -2470,14 +2527,14 @@ export default function TripPlanBuilderPage() {
                           </div>
                           <div>
                             <p className="ww-place-name">
-                              📍{number} {p.name}
+                              <Icon name="map-pin" />{number} {p.name}
                               {/* Tells the student up front which places
                                   have no confirmed location, so they know
                                   why a place is skipped by "Optimize route"
                                   and has no travel time. */}
                               {(p.lat == null || p.lng == null) && (
                                 <span className="ww-no-location-tag" title={t("locationUnverifiedWarning")}>
-                                  ⚠️ {t("noLocationTag")}
+                                  <Icon name="alert-triangle" /> {t("noLocationTag")}
                                 </span>
                               )}
                             </p>
@@ -2504,7 +2561,7 @@ export default function TripPlanBuilderPage() {
                                   onClick={() => setEditingTimeFor(p.id)}
                                   style={{ cursor: "pointer" }}
                                 >
-                                  🕐 {p.time ? formatTime(p.time) : t("selectTime")}
+                                  <Icon name="clock" /> {p.time ? formatTime(p.time) : t("selectTime")}
                                 </span>
                               )}
                               {renderAddCostButton(p, "day")}
@@ -2517,7 +2574,7 @@ export default function TripPlanBuilderPage() {
                               onClick={() => toggleVisited(p.id)}
                               style={{ cursor: "pointer" }}
                             >
-                              {p.visited ? `✕ ${t("unmarkVisited")}` : `✓ ${t("markVisited")}`}
+                              {p.visited ? <><Icon name="x" /> {t("unmarkVisited")}</> : <><Icon name="check" /> {t("markVisited")}</>}
                             </p>
                           </div>
                         </div>
@@ -2532,7 +2589,7 @@ export default function TripPlanBuilderPage() {
                             !placeTravelInfo[p.id].loading &&
                             !placeTravelInfo[p.id].error && (
                               <span style={{ marginRight: 8 }}>
-                                🚗 {formatTravelDuration(placeTravelInfo[p.id].durationS)} -{" "}
+                                <Icon name="car" /> {formatTravelDuration(placeTravelInfo[p.id].durationS)} -{" "}
                                 {formatTravelDistance(placeTravelInfo[p.id].distanceM)} |{" "}
                               </span>
                             )}
@@ -2543,7 +2600,7 @@ export default function TripPlanBuilderPage() {
                           >
                             {p.lat != null && p.lng != null && placeTravelInfo[p.id]
                               ? t("directions")
-                              : `🚗 ${t("directions")}`}
+                              : <><Icon name="car" /> {t("directions")}</>}
                           </span>
                         </p>
                       </React.Fragment>
@@ -2551,7 +2608,7 @@ export default function TripPlanBuilderPage() {
                     <div className="ww-day-add-wrap">
                       <input
                         className="ww-add-place-input"
-                        placeholder={`📍 ${t("addNewPlacePlaceholder")}`}
+                        placeholder={t("addNewPlacePlaceholder")}
                         value={dayInputs[dayIndex] || ""}
                         onChange={(e) => handleDayInputChange(dayIndex, e.target.value)}
                         onKeyDown={handleAddDayPlace(dayIndex)}
@@ -2575,7 +2632,7 @@ export default function TripPlanBuilderPage() {
                                     addPlaceToDay(dayIndex, p.name);
                                   }}
                                 >
-                                  📍 {p.name}
+                                  <Icon name="map-pin" /> {p.name}
                                 </li>
                               ))}
                             </ul>
@@ -2584,7 +2641,7 @@ export default function TripPlanBuilderPage() {
                     </div>
                     {dayNotice[dayIndex] && (
                       <p className="ww-day-notice">
-                        ⚠️ <strong>{dayNotice[dayIndex].name}</strong> {t("placeAlreadyOnDay")}{" "}
+                        <Icon name="alert-triangle" /> <strong>{dayNotice[dayIndex].name}</strong> {t("placeAlreadyOnDay")}{" "}
                         {dayNotice[dayIndex].dayNumber}. {t("placeAlreadyOnDayHint")}
                       </p>
                     )}
@@ -2602,7 +2659,7 @@ export default function TripPlanBuilderPage() {
             <p className="ww-budget-total">
               {t("budgetLabel")}: ₱{budgetTotal.toLocaleString()}.00{" "}
               <span className="ww-edit-icon" onClick={openEditBudget} style={{ cursor: "pointer" }}>
-                ✎
+                <Icon name="pencil" />
               </span>
             </p>
             <div className="ww-budget-buttons">
@@ -2611,11 +2668,11 @@ export default function TripPlanBuilderPage() {
               </button>
             </div>
             <p className="ww-budget-link" onClick={handleGoToBreakdown} style={{ cursor: "pointer" }}>
-              📊 {t("viewBreakdown")}
+              <Icon name="bar-chart" /> {t("viewBreakdown")}
             </p>
           </div>
 
-          <h2 className="ww-builder-section-title" ref={expensesRef}>⌄ {t("expensesHeader")}</h2>
+          <h2 className="ww-builder-section-title" ref={expensesRef}><Icon name="chevron-down" /> {t("expensesHeader")}</h2>
           {allExpenses.length === 0 ? (
             <p className="ww-expense-empty">{t("noExpensesYetAddOne")}</p>
           ) : (
@@ -2623,7 +2680,7 @@ export default function TripPlanBuilderPage() {
               <div className="ww-expense-row" key={e.id}>
                 {/* The category (or place) always stays; the description is added beside it. */}
                 <span>
-                  {e.icon} {e.label}
+                  <Icon name={e.icon} /> {e.label}
                   {e.description && <span className="ww-expense-desc"> · {e.description}</span>}
                 </span>
                 <span>
@@ -2636,7 +2693,7 @@ export default function TripPlanBuilderPage() {
                     style={{ cursor: "pointer", marginLeft: 8 }}
                     title={t("deleteThisExpenseTitle")}
                   >
-                    ✕
+                    <Icon name="x" />
                   </span>
                 </span>
               </div>
@@ -2723,7 +2780,7 @@ export default function TripPlanBuilderPage() {
       {pendingDelete && (
         <div className="ww-modal-overlay" onClick={() => setPendingDelete(null)}>
           <div className="ww-warning-modal-card" onClick={(e) => e.stopPropagation()}>
-            <p className="ww-warning-modal-icon">⚠️</p>
+            <p className="ww-warning-modal-icon"><Icon name="alert-triangle" /></p>
             <p className="ww-warning-modal-text">{t("deleteSectionTitle")}</p>
             <p className="ww-warning-modal-subtext">
               {t("deleteSectionWarning")}

@@ -72,6 +72,7 @@ public class TripsController : ControllerBase
         {
             UserId = CurrentUserId,
             Title = request.Title,
+            TripName = CleanTripName(request.TripName),
             Destination = request.Destination,
             StartDate = ParseDate(request.StartDate),
             EndDate = ParseDate(request.EndDate),
@@ -113,6 +114,7 @@ public class TripsController : ControllerBase
                 p.ScheduledTime?.ToString("HH:mm"), p.Visited)));
 
         trip.Title = request.Title;
+        trip.TripName = CleanTripName(request.TripName);
         trip.Destination = request.Destination;
         trip.StartDate = ParseDate(request.StartDate);
         trip.EndDate = ParseDate(request.EndDate);
@@ -236,6 +238,7 @@ public class TripsController : ControllerBase
         {
             Id = trip.Id,
             Title = trip.Title,
+            TripName = trip.TripName,
             Destination = trip.Destination,
             StartDate = trip.StartDate?.ToString("yyyy-MM-dd"),
             EndDate = trip.EndDate?.ToString("yyyy-MM-dd"),
@@ -284,6 +287,7 @@ public class TripsController : ControllerBase
             {
                 t.Id,
                 t.Title,
+                t.TripName,
                 t.Destination,
                 t.StartDate,
                 t.EndDate,
@@ -576,6 +580,7 @@ public class TripsController : ControllerBase
         {
             Id = trip.Id,
             Title = trip.Title,
+            TripName = trip.TripName,
             Destination = trip.Destination,
             StartDate = trip.StartDate?.ToString("yyyy-MM-dd"),
             EndDate = trip.EndDate?.ToString("yyyy-MM-dd"),
@@ -662,6 +667,15 @@ public class TripsController : ControllerBase
                 Amount = c.Amount,
             }).ToList(),
         }).ToList();
+    }
+
+    // The trip's own name from the builder: trimmed, at most 150 characters;
+    // empty means "use Trip to <destination>".
+    private static string? CleanTripName(string? raw)
+    {
+        var name = (raw ?? "").Trim();
+        if (name.Length == 0) return null;
+        return name.Length > 150 ? name[..150] : name;
     }
 
     private static DateOnly? ParseDate(string? raw)

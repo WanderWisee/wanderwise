@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Teacher login (/teacher/login) — separate from the student login.
 // Only teacher accounts get in here; students are sent back to /login.
@@ -62,7 +63,7 @@ export default function TeacherLoginPage() {
       <main className="ww-login-wrapper">
         <form className="ww-login-card" onSubmit={handleLogin}>
           <button type="button" className="ww-back-btn" aria-label="Go back" onClick={() => navigate("/")}>
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           
@@ -94,7 +95,7 @@ export default function TeacherLoginPage() {
               aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? "👁" : "🙈"}
+              <Icon name={showPassword ? "eye" : "eye-off"} />
             </button>
           </div>
 

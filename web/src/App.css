@@ -8133,3 +8133,1118 @@ body {
     flex: 1 1 140px;
   }
 }
+
+/* ---- Trip builder: trip name + dates ---- */
+.ww-builder-trip-title .ww-trip-name-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+button.ww-builder-dates-edit {
+  border: 1px solid transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--ww-t-fast), background var(--ww-t-fast);
+}
+
+button.ww-builder-dates-edit:hover {
+  border-color: var(--ww-primary);
+}
+
+button.ww-builder-dates-edit > span {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+/* ---------------------------------------------------------------------
+   19. WELCOME PAGE (landing): hero + features + who it's for + how it
+       works + About Us. Same cream / brown / teal theme as the app.
+   --------------------------------------------------------------------- */
+.ww-landing {
+  min-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .ww-landing {
+    min-height: 100dvh;
+  }
+}
+
+/* Sections land below the sticky top bar when a link is clicked. */
+.ww-landing section[id] {
+  scroll-margin-top: calc(var(--ww-nav-h) + 16px);
+}
+
+/* ---- Top bar ---- */
+.ww-landing .ww-lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  flex-wrap: nowrap;
+  gap: 24px;
+  background: rgba(255, 253, 244, 0.92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-landing .ww-lp-nav .ww-brand {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ww-lp-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ww-lp-links a {
+  padding: 8px 14px;
+  border-radius: var(--ww-r-pill);
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-md);
+  text-decoration: none;
+  transition: background var(--ww-t-fast), color var(--ww-t-fast);
+}
+
+.ww-lp-links a:hover {
+  background: var(--ww-surface-2);
+  color: var(--ww-text);
+}
+
+.ww-lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ww-lp-text-btn {
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--ww-r-pill);
+  background: none;
+  color: var(--ww-text);
+  font-family: inherit;
+  font-size: var(--ww-fs-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ww-lp-text-btn:hover {
+  background: var(--ww-surface-2);
+}
+
+.ww-landing .ww-lp-nav-cta {
+  min-height: 42px;
+  padding: 0 20px;
+}
+
+/* ---- Hero ---- */
+.ww-lp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 56px;
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 88px var(--ww-gutter) 96px;
+}
+
+.ww-lp-eyebrow {
+  margin: 0 0 14px;
+  color: var(--ww-primary);
+  font-size: var(--ww-fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ww-lp-title {
+  margin: 0 0 22px;
+  color: var(--ww-text);
+  font-size: clamp(38px, 5.4vw, 64px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+}
+
+.ww-lp-lead {
+  max-width: 560px;
+  margin: 0 0 32px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-lg);
+  line-height: 1.7;
+}
+
+.ww-lp-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.ww-landing .ww-lp-ctas .ww-signup-btn,
+.ww-landing .ww-lp-ctas .ww-login-btn {
+  min-height: 52px;
+  padding: 0 32px;
+  font-size: var(--ww-fs-md);
+}
+
+.ww-lp-note {
+  margin: 22px 0 0;
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-lp-note a {
+  color: var(--ww-primary);
+  font-weight: 700;
+}
+
+/* ---- Hero picture (sample app window) ---- */
+.ww-lp-preview {
+  margin: 0;
+}
+
+.ww-lp-preview figcaption {
+  margin-top: 12px;
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-sm);
+  text-align: right;
+}
+
+.ww-lp-window {
+  overflow: hidden;
+  border-radius: var(--ww-r-xl);
+  border: 1px solid var(--ww-border-strong);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-lg);
+}
+
+.ww-lp-window-bar {
+  display: flex;
+  gap: 7px;
+  padding: 12px 16px;
+  background: var(--ww-surface-2);
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-lp-window-bar span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ww-border-strong);
+}
+
+.ww-lp-app-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ww-border);
+}
+
+.ww-lp-app-top img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.ww-lp-app-top strong {
+  flex: 1;
+  font-size: var(--ww-fs-md);
+}
+
+.ww-lp-app-top em {
+  padding: 3px 10px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-size: var(--ww-fs-xs);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ww-lp-app-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.ww-lp-map {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  border-radius: var(--ww-r-md);
+  background:
+    radial-gradient(rgba(47, 111, 95, 0.12) 1px, transparent 1.4px) 0 0 / 14px 14px,
+    linear-gradient(135deg, #e3efe7 0%, #d4e8e2 55%, #cfe3ea 100%);
+}
+
+.ww-lp-map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ww-lp-map path {
+  fill: none;
+  stroke: var(--ww-primary);
+  stroke-width: 3;
+  stroke-dasharray: 7 6;
+  stroke-linecap: round;
+}
+
+.ww-lp-map i {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  box-shadow: var(--ww-shadow-sm);
+}
+
+.ww-lp-day {
+  padding: 14px 16px;
+  border-radius: var(--ww-r-md);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-bg);
+}
+
+.ww-lp-day-title {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.ww-lp-day ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-lp-day li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: var(--ww-text-muted);
+}
+
+.ww-lp-day li b {
+  min-width: 70px;
+  color: var(--ww-text);
+}
+
+.ww-lp-day .ok {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-success-50);
+  color: var(--ww-success);
+  font-size: var(--ww-fs-xs);
+  font-weight: 700;
+}
+
+.ww-lp-budget {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: var(--ww-fs-sm);
+}
+
+.ww-lp-budget span {
+  color: var(--ww-text-subtle);
+}
+
+.ww-lp-budget strong {
+  justify-self: end;
+}
+
+.ww-lp-bar {
+  grid-column: 1 / -1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface-3);
+}
+
+.ww-lp-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ww-primary), var(--ww-accent));
+}
+
+/* ---- Sections ---- */
+.ww-lp-section {
+  max-width: var(--ww-container);
+  margin: 0 auto;
+  padding: 72px var(--ww-gutter);
+  border-top: 1px solid var(--ww-border);
+}
+
+.ww-lp-h2 {
+  margin: 0 0 12px;
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.ww-lp-sub {
+  max-width: 620px;
+  margin: 0 0 36px;
+  color: var(--ww-text-muted);
+  font-size: var(--ww-fs-lg);
+  line-height: 1.6;
+}
+
+.ww-lp-h2 + .ww-lp-grid,
+.ww-lp-h2 + .ww-lp-steps {
+  margin-top: 32px;
+}
+
+.ww-lp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ww-lp-card {
+  padding: 24px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+  box-shadow: var(--ww-shadow-xs);
+  transition: transform var(--ww-t), box-shadow var(--ww-t);
+}
+
+.ww-lp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ww-shadow-md);
+}
+
+.ww-lp-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 16px;
+  border-radius: var(--ww-r-md);
+  background: var(--ww-primary-50);
+  font-size: 22px;
+}
+
+.ww-lp-card h3,
+.ww-lp-steps h3,
+.ww-lp-about-item h3 {
+  margin: 0 0 8px;
+  font-size: var(--ww-fs-lg);
+  font-weight: 700;
+}
+
+.ww-lp-card p,
+.ww-lp-steps p,
+.ww-lp-about-item p {
+  margin: 0;
+  color: var(--ww-text-muted);
+  line-height: 1.65;
+}
+
+.ww-lp-card-who {
+  border-top: 4px solid var(--ww-accent);
+}
+
+/* ---- How it works ---- */
+.ww-lp-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.ww-lp-steps li {
+  position: relative;
+  padding: 24px 22px;
+  border-radius: var(--ww-r-lg);
+  background: var(--ww-surface-2);
+}
+
+.ww-lp-step-no {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--ww-btn);
+  color: var(--ww-on-btn);
+  font-weight: 700;
+}
+
+/* ---- About Us ---- */
+.ww-lp-about-head {
+  text-align: center;
+}
+
+.ww-lp-about-head .ww-lp-sub {
+  margin: 0 auto 40px;
+}
+
+.ww-lp-about-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface-2);
+  font-size: 34px;
+}
+
+.ww-lp-about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+.ww-lp-about-item {
+  padding: 24px 26px;
+  border-radius: var(--ww-r-lg);
+  border: 1px solid var(--ww-border);
+  background: var(--ww-surface);
+}
+
+.ww-lp-team {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ww-text-muted);
+}
+
+.ww-lp-team li::before {
+  content: "👤 ";
+}
+
+/* ---- Last call to action ---- */
+.ww-lp-band {
+  max-width: calc(var(--ww-container) - 2 * var(--ww-gutter));
+  margin: 24px auto 72px;
+  padding: 48px 40px;
+  border-radius: var(--ww-r-xl);
+  background: linear-gradient(135deg, var(--ww-btn) 0%, #5a3a22 100%);
+  color: #fff8ec;
+  text-align: center;
+}
+
+.ww-lp-band h2 {
+  margin: 0 0 10px;
+  color: #fff8ec;
+  font-size: clamp(26px, 3vw, 36px);
+}
+
+.ww-lp-band p {
+  margin: 0 0 26px;
+  color: rgba(255, 248, 236, 0.8);
+  font-size: var(--ww-fs-lg);
+}
+
+.ww-lp-band .ww-lp-ctas {
+  justify-content: center;
+}
+
+.ww-lp-band-primary,
+.ww-lp-band-secondary {
+  min-height: 50px;
+  padding: 0 30px;
+  border-radius: var(--ww-r-pill);
+  font-family: inherit;
+  font-size: var(--ww-fs-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ww-lp-band-primary {
+  border: none;
+  background: var(--ww-on-btn);
+  color: var(--ww-btn);
+}
+
+.ww-lp-band-secondary {
+  border: 1px solid rgba(255, 248, 236, 0.5);
+  background: transparent;
+  color: #fff8ec;
+}
+
+.ww-lp-band-primary:hover {
+  filter: brightness(1.05);
+}
+
+.ww-lp-band-secondary:hover {
+  background: rgba(255, 248, 236, 0.1);
+}
+
+/* ---- Footer ---- */
+.ww-lp-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 24px var(--ww-gutter) calc(24px + var(--ww-safe-bottom, 0px));
+  border-top: 1px solid var(--ww-border);
+  color: var(--ww-text-subtle);
+  font-size: var(--ww-fs-sm);
+}
+
+/* ---- Tablet ---- */
+@media (max-width: 1024px) {
+  .ww-lp-hero {
+    grid-template-columns: 1fr;
+    gap: 44px;
+    padding-top: 56px;
+  }
+
+  .ww-lp-hero-copy {
+    max-width: 680px;
+  }
+
+  .ww-lp-preview {
+    max-width: 620px;
+  }
+
+  .ww-lp-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  /* Brand + buttons on top, section links on a second, scrollable row */
+  .ww-landing .ww-lp-nav {
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding-bottom: 0;
+  }
+
+  .ww-landing .ww-lp-nav > .ww-brand {
+    order: 1;
+  }
+
+  .ww-lp-nav-actions {
+    order: 2;
+    margin-left: auto;
+  }
+
+  /* Taller top bar here (two rows) */
+  .ww-landing section[id] {
+    scroll-margin-top: calc(var(--ww-nav-h) + 60px);
+  }
+
+  .ww-lp-links {
+    order: 3;
+    width: 100%;
+    margin: 8px calc(-1 * var(--ww-gutter)) 0;
+    padding: 6px var(--ww-gutter);
+    overflow-x: auto;
+    border-top: 1px solid var(--ww-border);
+    scrollbar-width: none;
+  }
+
+  .ww-lp-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ww-lp-links a {
+    flex-shrink: 0;
+    font-size: var(--ww-fs-sm);
+  }
+
+  .ww-lp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ww-lp-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-lp-section {
+    padding: 56px var(--ww-gutter);
+  }
+}
+
+/* ---- Phones ---- */
+@media (max-width: 560px) {
+  .ww-landing .ww-lp-nav .ww-brand-name {
+    font-size: var(--ww-fs-md);
+  }
+
+  .ww-lp-text-btn {
+    padding: 8px 10px;
+    font-size: var(--ww-fs-sm);
+  }
+
+  .ww-landing .ww-lp-nav-cta {
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: var(--ww-fs-sm);
+  }
+
+  .ww-lp-hero {
+    padding: 40px var(--ww-gutter) 56px;
+  }
+
+  .ww-lp-lead,
+  .ww-lp-sub {
+    font-size: var(--ww-fs-md);
+  }
+
+  .ww-lp-ctas > button {
+    flex: 1 1 140px;
+  }
+
+  .ww-lp-grid,
+  .ww-lp-steps,
+  .ww-lp-about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-lp-preview figcaption {
+    text-align: center;
+  }
+
+  .ww-lp-band {
+    margin: 8px var(--ww-gutter) 48px;
+    padding: 36px 22px;
+  }
+
+  .ww-lp-footer {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .ww-landing .ww-lp-nav .ww-brand-name {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-lp-card,
+  .ww-lp-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   20. PROFESSIONAL POLISH (applies to every page)
+   Poppins type, line icons instead of emoji, calmer surfaces and one
+   consistent button style. Same WanderWise colors: cream, dark brown,
+   teal and sand.
+   --------------------------------------------------------------------- */
+:root {
+  --ww-font-body: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ww-font-head: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Poppins runs wider than the old serif, so the scale is a step smaller */
+  --ww-fs-xs: 11.5px;
+  --ww-fs-sm: 12.5px;
+  --ww-fs-base: 14px;
+  --ww-fs-md: 15px;
+  --ww-fs-lg: 17px;
+  --ww-fs-xl: 20px;
+  --ww-fs-2xl: 25px;
+  --ww-fs-3xl: 30px;
+
+  /* Calmer surfaces: white cards on a soft cream page */
+  --ww-bg: #f7f4ea;
+  --ww-surface: #ffffff;
+  --ww-surface-2: #f6f2e6;
+  --ww-surface-3: #ece6d4;
+  --ww-border: #e7e0cc;
+  --ww-border-strong: #d6cbb0;
+  --ww-text: #2b1c12;
+  --ww-text-muted: #5f4e3a;
+  --ww-text-subtle: #8c7a5e;
+
+  /* Buttons: deep brown with the original mint text */
+  --ww-btn: #331c08;
+  --ww-btn-hover: #2a1606;
+  --ww-btn-active: #211104;
+  --ww-on-btn: #a9e4dc;
+
+  --ww-r-sm: 6px;
+  --ww-r-md: 10px;
+  --ww-r-lg: 14px;
+  --ww-r-xl: 18px;
+
+  --ww-shadow-xs: 0 1px 2px rgba(43, 28, 18, 0.04);
+  --ww-shadow-sm: 0 1px 3px rgba(43, 28, 18, 0.06), 0 1px 2px rgba(43, 28, 18, 0.03);
+  --ww-shadow-md: 0 8px 20px -8px rgba(43, 28, 18, 0.14), 0 2px 4px -2px rgba(43, 28, 18, 0.05);
+  --ww-shadow-lg: 0 24px 48px -16px rgba(43, 28, 18, 0.22);
+  --ww-ring: 0 0 0 3px rgba(47, 111, 95, 0.18);
+}
+
+body {
+  font-family: var(--ww-font-body);
+  font-size: var(--ww-fs-base);
+  line-height: 1.6;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--ww-font-head);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--ww-primary-100);
+  color: var(--ww-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ww-primary);
+  outline-offset: 2px;
+}
+
+/* ---- Icons ---- */
+.ww-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.18em;
+}
+
+button .ww-icon,
+a .ww-icon {
+  vertical-align: -0.16em;
+}
+
+/* Rating stars */
+.ww-stars {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: -0.1em;
+}
+
+.ww-icon-star {
+  color: #d9a521;
+}
+
+.ww-icon-star:not(.filled) {
+  color: var(--ww-border-strong);
+}
+
+.ww-journal-stars span {
+  display: inline-flex;
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* ---- Top bar ---- */
+.ww-navbar {
+  background-color: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+  backdrop-filter: saturate(160%) blur(10px);
+  border-bottom-color: var(--ww-border);
+  box-shadow: none;
+}
+
+.ww-brand-name {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ww-nav-links a,
+.ww-menu-dropdown {
+  font-weight: 500;
+}
+
+.ww-nav-icons {
+  gap: 2px;
+}
+
+.ww-nav-icons > span,
+.ww-nav-icons > button,
+.ww-nav-icons > a,
+.ww-navbar-search-anchor > span {
+  color: var(--ww-text-muted);
+  font-size: 20px;
+}
+
+.ww-nav-icons > span:hover,
+.ww-nav-icons > button:hover,
+.ww-nav-icons > a:hover,
+.ww-navbar-search-anchor > span:hover,
+.ww-nav-icon-btn:hover {
+  color: var(--ww-text);
+  transform: none;
+}
+
+.ww-nav-icons .ww-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.ww-menu-panel {
+  border-radius: var(--ww-r-lg);
+  box-shadow: var(--ww-shadow-lg);
+}
+
+.ww-menu-item {
+  font-weight: 500;
+}
+
+/* ---- Buttons: one shape everywhere ---- */
+.ww-signup-btn,
+.ww-login-submit,
+.ww-register-submit,
+.ww-reset-submit,
+.ww-start-planning-btn,
+.ww-search-btn,
+.ww-itinerary-btn,
+.ww-lets-go-btn,
+.ww-view-deal-btn,
+.ww-browse-btn,
+.ww-new-list-btn,
+.ww-add-expense-btn,
+.ww-save-expense-btn,
+.ww-copy-btn,
+.ww-send-invite-btn,
+.ww-profile-edit-btn,
+.ww-profile-new-btn,
+.ww-journal-gallery-btn,
+.ww-journal-upload-btn,
+.ww-journal-post-btn,
+.ww-settings-save-btn,
+.ww-section-add-btn,
+.ww-itinerary-hotel-btn,
+.ww-warning-modal-ok-btn {
+  border-radius: var(--ww-r-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  box-shadow: 0 1px 2px rgba(43, 28, 18, 0.18);
+}
+
+.ww-signup-btn:hover,
+.ww-login-submit:hover,
+.ww-register-submit:hover,
+.ww-reset-submit:hover,
+.ww-start-planning-btn:hover,
+.ww-search-btn:hover,
+.ww-lets-go-btn:hover,
+.ww-browse-btn:hover,
+.ww-new-list-btn:hover,
+.ww-add-expense-btn:hover,
+.ww-save-expense-btn:hover,
+.ww-copy-btn:hover,
+.ww-send-invite-btn:hover,
+.ww-profile-edit-btn:hover,
+.ww-profile-new-btn:hover,
+.ww-journal-post-btn:hover,
+.ww-settings-save-btn:hover {
+  transform: none;
+  box-shadow: 0 4px 12px -4px rgba(43, 28, 18, 0.35);
+}
+
+.ww-trip-plan-btn,
+.ww-external-search-btn,
+.ww-modal-cancel-btn,
+.ww-booking-cancel,
+.ww-filter-pill,
+.ww-journal-choose-file-btn,
+.ww-assign-day-btn,
+.ww-login-btn,
+.ww-profile-share-btn {
+  border-radius: var(--ww-r-md);
+  border-color: var(--ww-border-strong);
+  background-color: var(--ww-surface);
+  color: var(--ww-text);
+  font-weight: 600;
+}
+
+.ww-trip-plan-btn:hover,
+.ww-external-search-btn:hover,
+.ww-modal-cancel-btn:hover,
+.ww-booking-cancel:hover,
+.ww-journal-choose-file-btn:hover,
+.ww-assign-day-btn:hover,
+.ww-login-btn:hover,
+.ww-profile-share-btn:hover {
+  border-color: var(--ww-primary);
+  background-color: var(--ww-primary-50);
+  color: var(--ww-primary-dark);
+}
+
+.ww-link-btn {
+  font-weight: 600;
+}
+
+/* Inputs */
+.ww-field-input,
+.ww-portal-form input,
+.ww-portal-form select,
+.ww-portal-form textarea,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.ww-field-input:focus,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--ww-primary);
+  box-shadow: var(--ww-ring);
+  outline: none;
+}
+
+/* ---- Clean backgrounds (no dotted map grid) ---- */
+.wanderwise-home,
+.wanderwise-login,
+.wanderwise-register,
+.wanderwise-reset {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200, 172, 130, 0.22) 0%, rgba(200, 172, 130, 0) 70%),
+    var(--ww-bg);
+  background-attachment: scroll;
+}
+
+.ww-profile-cover {
+  background: linear-gradient(120deg, #3a2416 0%, #5a3a22 55%, #2f6f5f 130%);
+}
+
+.ww-profile-cover::before,
+.ww-profile-cover::after {
+  display: none;
+}
+
+/* Cards: white, thin border, soft shadow */
+.ww-portal-card,
+.ww-portal-stat,
+.ww-portal-row,
+.ww-login-card,
+.ww-lp-card,
+.ww-lp-about-item,
+.ww-modal-card,
+.ww-dialog {
+  border-color: var(--ww-border);
+  box-shadow: var(--ww-shadow-xs);
+}
+
+.ww-login-card,
+.ww-modal-card,
+.ww-dialog {
+  box-shadow: var(--ww-shadow-md);
+}
+
+/* Icon tiles (stats, landing features, notifications) */
+.ww-portal-stat-icon,
+.ww-lp-icon,
+.ww-notif-icon {
+  color: var(--ww-primary);
+}
+
+.ww-portal-stat-icon .ww-icon,
+.ww-lp-icon .ww-icon {
+  width: 21px;
+  height: 21px;
+}
+
+.ww-portal-stat.warn .ww-portal-stat-icon {
+  color: var(--ww-warning);
+}
+
+.ww-notif-icon .ww-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.ww-portal-stat-value {
+  font-weight: 600;
+}
+
+/* Badges and eyebrows read cleaner in Poppins with less tracking */
+.ww-portal-badge {
+  font-weight: 600;
+}
+
+.ww-lp-eyebrow,
+.ww-portal-eyebrow,
+.ww-portal-table th {
+  letter-spacing: 0.08em;
+}
+
+/* Landing tweaks for Poppins */
+.ww-lp-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.ww-lp-h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.ww-lp-about-badge {
+  color: var(--ww-primary);
+}
+
+.ww-lp-about-badge .ww-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.ww-lp-team li::before {
+  content: none;
+}
+
+.ww-lp-band-primary {
+  background: var(--ww-on-btn);
+}
+
+/* Small "×" buttons */
+.ww-cost-remove .ww-icon {
+  width: 14px;
+  height: 14px;
+}

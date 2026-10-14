@@ -32,8 +32,8 @@ export default function NavbarMenu() {
     localStorage.removeItem("wanderwise_token");
     // Clears the previous account's profile/journals right away.
     notifyAuthChanged();
-    // Teachers and admins go back to their own login page.
-    navigate(profileRole === "teacher" ? "/teacher/login" : profileRole === "admin" ? "/admin/login" : "/login");
+    // Everyone uses the same log in page.
+    navigate("/login");
   };
 
   return (
@@ -47,17 +47,17 @@ export default function NavbarMenu() {
           {/* Role shortcuts: Admin panel / Teacher portal / student Classes */}
           {profileRole === "admin" && (
             <p className="ww-menu-item ww-menu-item-strong" onClick={() => goTo("/admin")}>
-              🛡️ {t("adminPanel")}
+               {t("adminPanel")}
             </p>
           )}
           {profileRole === "teacher" && (
             <p className="ww-menu-item ww-menu-item-strong" onClick={() => goTo("/teacher")}>
-              🎓 {t("teacherPortal")}
+               {t("teacherPortal")}
             </p>
           )}
           {profileRole === "student" && (
             <p className="ww-menu-item" onClick={() => goTo("/classes")}>
-              🎓 {t("myClasses")}
+               {t("myClasses")}
             </p>
           )}
           <p className="ww-menu-item" onClick={() => goTo("/settings")}>

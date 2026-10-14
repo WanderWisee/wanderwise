@@ -8,6 +8,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // ===== Tour Day (during the trip) =====
 // One page per itinerary day with:
@@ -445,19 +446,19 @@ export default function TourDayPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
 
       <main className="ww-tour-main">
         <p className="ww-stories-back" onClick={handleBack}>
-          ← {t("backToTrip")}
+          <Icon name="arrow-left" /> {t("backToTrip")}
         </p>
 
         <h1 className="ww-tour-title">
-          🧭 {t("tourDayTitle")}
+          <Icon name="compass" /> {t("tourDayTitle")}
           {trip?.destination && <span className="ww-tour-subtitle"> · {trip.destination}</span>}
         </h1>
 
@@ -497,10 +498,10 @@ export default function TourDayPage() {
                 {/* ===== Meeting point + check-in ===== */}
                 <section className="ww-tour-card ww-tour-card-wide">
                   <div className="ww-tour-card-head">
-                    <h2>📍 {t("meetingPointTitle")}</h2>
+                    <h2><Icon name="map-pin" /> {t("meetingPointTitle")}</h2>
                     {canManage && !editingMeeting && (
                       <button type="button" className="ww-tour-link" onClick={startEditMeeting}>
-                        ✎ {meeting ? t("editMeetingPoint") : t("setMeetingPoint")}
+                        <Icon name="pencil" /> {meeting ? t("editMeetingPoint") : t("setMeetingPoint")}
                       </button>
                     )}
                   </div>
@@ -548,7 +549,7 @@ export default function TourDayPage() {
                           onChange={(e) => setMeetingDraft((d) => ({ ...d, radius: e.target.value }))}
                         />
                       </label>
-                      <p className="ww-tour-hint">💡 {t("meetingPointMapHint")}</p>
+                      <p className="ww-tour-hint"><Icon name="lightbulb" /> {t("meetingPointMapHint")}</p>
                       <div className="ww-tour-form-actions">
                         <button type="button" className="ww-booking-cancel" onClick={() => setEditingMeeting(false)}>
                           {t("cancel")}
@@ -593,7 +594,7 @@ export default function TourDayPage() {
                           />
                           <Marker position={[fence.lat, fence.lng]} icon={meetingPinIcon}>
                             <Popup>
-                              📍 {fence.name || t("meetingPointCustom")} · {fence.radius} m
+                              <Icon name="map-pin" /> {fence.name || t("meetingPointCustom")} · {fence.radius} m
                             </Popup>
                           </Marker>
                         </>
@@ -613,7 +614,7 @@ export default function TourDayPage() {
                             <Popup>
                               <strong>{fullName(r)}</strong>
                               <br />
-                              ✓ {fmtWhen(r.checkedInAt)} · {r.distanceMeters} m
+                              <Icon name="check" /> {fmtWhen(r.checkedInAt)} · {r.distanceMeters} m
                               {r.photo && (
                                 <img src={r.photo} alt={fullName(r)} className="ww-tour-popup-photo" />
                               )}
@@ -638,7 +639,7 @@ export default function TourDayPage() {
                     <div className="ww-tour-checkin">
                       {me?.present && (
                         <p className="ww-tour-checked">
-                          ✅ {me.checkedInAt
+                          <Icon name="check-circle" /> {me.checkedInAt
                             ? `${t("youreCheckedIn")} · ${fmtWhen(me.checkedInAt)}`
                             : t("markedByOrganizer")}
                         </p>
@@ -646,18 +647,18 @@ export default function TourDayPage() {
 
                       {!myPos ? (
                         <button type="button" className="ww-search-btn" onClick={locateMe} disabled={locating}>
-                          📍 {locating ? t("checkingLocation") : me?.present ? t("checkInAgain") : t("checkInBtn")}
+                          <Icon name="map-pin" /> {locating ? t("checkingLocation") : me?.present ? t("checkInAgain") : t("checkInBtn")}
                         </button>
                       ) : (
                         <div className={`ww-tour-fence-status ${insideFence ? "inside" : "outside"}`}>
                           <p>
-                            {insideFence ? "✅" : "⛔"} {insideFence ? t("youAreInside") : t("youAreOutside")} ·{" "}
+                            <Icon name={insideFence ? "check-circle" : "ban"} /> {insideFence ? t("youAreInside") : t("youAreOutside")} ·{" "}
                             {myDistance} {t("metersAway")}
                             {!insideFence && ` (${t("needWithin")} ${meeting.radiusMeters} m)`}
                           </p>
                           <div className="ww-tour-form-actions">
                             <button type="button" className="ww-booking-cancel" onClick={locateMe} disabled={locating}>
-                              ↻ {locating ? t("checkingLocation") : t("refreshLocation")}
+                              <Icon name="refresh" /> {locating ? t("checkingLocation") : t("refreshLocation")}
                             </button>
                             {insideFence && (
                               <button
@@ -666,14 +667,14 @@ export default function TourDayPage() {
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={checkingIn}
                               >
-                                📷 {checkingIn ? t("uploadingCheckIn") : t("choosePhotoBtn")}
+                                <Icon name="camera" /> {checkingIn ? t("uploadingCheckIn") : t("choosePhotoBtn")}
                               </button>
                             )}
                           </div>
                           {insideFence && <p className="ww-tour-hint">{t("takePhotoToCheckIn")}</p>}
                         </div>
                       )}
-                      {locationError && <p className="ww-booking-error">⚠️ {locationError}</p>}
+                      {locationError && <p className="ww-booking-error"><Icon name="alert-triangle" /> {locationError}</p>}
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -689,7 +690,7 @@ export default function TourDayPage() {
                 {/* ===== Attendance ===== */}
                 <section className="ww-tour-card">
                   <div className="ww-tour-card-head">
-                    <h2>✅ {t("attendanceTitle")}</h2>
+                    <h2><Icon name="check-circle" /> {t("attendanceTitle")}</h2>
                     <span className="ww-tour-count">
                       {presentCount} / {roster.length} {t("presentCount")}
                     </span>
@@ -717,7 +718,7 @@ export default function TourDayPage() {
                           <span className="ww-tour-person-status">
                             {r.present
                               ? r.checkedInAt
-                                ? `✓ ${t("checkedInAt")} ${fmtWhen(r.checkedInAt)}${r.distanceMeters != null ? ` · ${r.distanceMeters} m` : ""}`
+                                ? <><Icon name="check" /> {t("checkedInAt")} {fmtWhen(r.checkedInAt)}{r.distanceMeters != null ? ` · ${r.distanceMeters} m` : ""}</>
                                 : t("markedByOrganizer")
                               : t("notYetCheckedIn")}
                           </span>
@@ -739,7 +740,7 @@ export default function TourDayPage() {
                 {/* ===== Announcements ===== */}
                 <section className="ww-tour-card">
                   <div className="ww-tour-card-head">
-                    <h2>📢 {t("announcementsTitle")}</h2>
+                    <h2><Icon name="megaphone" /> {t("announcementsTitle")}</h2>
                   </div>
                   {canManage && (
                     <div className="ww-tour-form">
@@ -757,7 +758,7 @@ export default function TourDayPage() {
                           onClick={postAnnouncement}
                           disabled={posting || !announcementText.trim()}
                         >
-                          📢 {posting ? t("savingEllipsis") : t("postAnnouncement")}
+                          <Icon name="megaphone" /> {posting ? t("savingEllipsis") : t("postAnnouncement")}
                         </button>
                       </div>
                     </div>
@@ -777,7 +778,7 @@ export default function TourDayPage() {
                                 onClick={() => deleteAnnouncement(a.id)}
                                 title={t("dialogDelete")}
                               >
-                                ✕
+                                <Icon name="x" />
                               </span>
                             )}
                           </div>
@@ -791,7 +792,7 @@ export default function TourDayPage() {
                 {/* ===== Activities ===== */}
                 <section className="ww-tour-card ww-tour-card-wide">
                   <div className="ww-tour-card-head">
-                    <h2>🎯 {t("activitiesTitle")}</h2>
+                    <h2><Icon name="target" /> {t("activitiesTitle")}</h2>
                   </div>
                   {tour.activities.length === 0 ? (
                     <p className="ww-expense-empty">{t("noActivities")}</p>
@@ -802,7 +803,7 @@ export default function TourDayPage() {
                           <span className="ww-tour-activity-time">{a.time ? formatTime(a.time) : "—"}</span>
                           <div className="ww-tour-activity-body">
                             <strong>{a.title}</strong>
-                            {a.placeName && <span className="ww-tour-activity-place">📍 {a.placeName}</span>}
+                            {a.placeName && <span className="ww-tour-activity-place"><Icon name="map-pin" /> {a.placeName}</span>}
                             {a.notes && <p>{a.notes}</p>}
                           </div>
                           {canManage && (
@@ -811,7 +812,7 @@ export default function TourDayPage() {
                               onClick={() => deleteActivity(a.id)}
                               title={t("dialogDelete")}
                             >
-                              ✕
+                              <Icon name="x" />
                             </span>
                           )}
                         </li>

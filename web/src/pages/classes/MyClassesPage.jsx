@@ -4,6 +4,7 @@ import PortalHeader, { RoleGate } from "../../components/PortalHeader";
 import { useLanguage } from "../../context/LanguageContext";
 import { api } from "../../utils/portal";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Student: the classes I'm in + "Join a class" with the teacher's code.
 export default function MyClassesPage() {
@@ -53,7 +54,7 @@ function MyClasses() {
     <main className="ww-portal-main">
       <div className="ww-portal-hero">
         <div>
-          <p className="ww-portal-eyebrow">🎓 {t("myClasses")}</p>
+          <p className="ww-portal-eyebrow"><Icon name="graduation-cap" /> {t("myClasses")}</p>
           <h1 className="ww-portal-title">{t("myClassesTitle")}</h1>
           <p className="ww-portal-muted">{t("myClassesIntro")}</p>
         </div>
@@ -71,7 +72,7 @@ function MyClasses() {
         <p className="ww-expense-empty">{t("loadingEllipsis")}</p>
       ) : classes.length === 0 ? (
         <div className="ww-portal-empty">
-          <span>🎒</span>
+          <span><Icon name="backpack" /></span>
           <p>{t("noClassesStudent")}</p>
         </div>
       ) : (
@@ -82,7 +83,7 @@ function MyClasses() {
               <span className="ww-portal-class-name">{c.name}</span>
               <span className="ww-portal-class-sub">{[c.section, c.term].filter(Boolean).join(" · ") || "—"}</span>
               <span className="ww-portal-class-meta">
-                <span>🧑‍🏫 {c.teacherName}</span>
+                <span><Icon name="graduation-cap" /> {c.teacherName}</span>
               </span>
             </button>
           ))}

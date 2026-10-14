@@ -4,6 +4,7 @@ import NavbarMenu from "./NavbarMenu";
 import { useLanguage } from "../context/LanguageContext";
 import { useAppData } from "../context/AppDataContext";
 import "../App.css";
+import Icon from "./Icon";
 
 function hasToken() {
   try {
@@ -24,6 +25,31 @@ export default function PortalHeader() {
   const isStaff = isTeacher || profileRole === "admin";
   const home = isTeacher ? "/teacher" : profileRole === "admin" ? "/admin" : "/dashboard";
 
+  // Students (My Classes pages): the same top bar as every other student
+  // page — Home, Guides, Hotels, Menu and 🔍 🔔 👤 — so the navigation
+  // doesn't change when they open their classes (My Classes is in Menu).
+  if (!isStaff) {
+    return (
+      <header className="ww-navbar">
+        <div className="ww-brand">
+          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
+          <span className="ww-brand-name">WanderWise!</span>
+        </div>
+        <nav className="ww-nav-links">
+          <a href="/dashboard">{t("navHome")}</a>
+          <a href="/travel-tips">{t("navGuides")}</a>
+          <a href="/hotels">{t("navHotels")}</a>
+          <NavbarMenu />
+        </nav>
+        <div className="ww-nav-icons">
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
+          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="ww-navbar ww-portal-nav">
       <div className="ww-brand" onClick={() => navigate(home)} style={{ cursor: "pointer" }}>
@@ -33,8 +59,6 @@ export default function PortalHeader() {
       <nav className="ww-nav-links">
         {profileRole === "admin" && <a href="/admin">{t("adminPanel")}</a>}
         {isTeacher && <a href="/teacher">{t("navClasses")}</a>}
-        {profileRole === "student" && <a href="/classes">{t("navClasses")}</a>}
-        {!isStaff && <a href="/dashboard">{t("navHome")}</a>}
         {/* Admins only view the system — no Guides. */}
         {profileRole !== "admin" && <a href="/travel-tips">{t("navGuides")}</a>}
         <NavbarMenu />
@@ -42,10 +66,7 @@ export default function PortalHeader() {
             <div className="ww-nav-icons">
         {/* Admins get no notifications — the Activity log covers it. */}
         {profileRole !== "admin" && (
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
-        )}
-        {!isStaff && (
-          <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>👤</span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
         )}
       </div>
     </header>
@@ -57,7 +78,7 @@ export function RoleGate({ need, children }) {
   const { t } = useLanguage();
   const { profileRole } = useAppData();
   const navigate = useNavigate();
-  const loginPath = need === "teacher" ? "/teacher/login" : need === "admin" ? "/admin/login" : "/login";
+  const loginPath = "/login";
 
   if (!hasToken()) {
     return (
@@ -77,7 +98,7 @@ export function RoleGate({ need, children }) {
     const home = profileRole === "teacher" ? "/teacher" : profileRole === "admin" ? "/admin" : "/dashboard";
     return (
       <div className="ww-portal-gate">
-        <p>🔒 {t("portalNoAccess")}</p>
+        <p><Icon name="lock" /> {t("portalNoAccess")}</p>
         <button type="button" className="ww-booking-cancel" onClick={() => navigate(home)}>
           {t("portalGoHome")}
         </button>

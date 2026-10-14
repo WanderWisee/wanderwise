@@ -5,6 +5,7 @@ import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -147,10 +148,10 @@ export default function SettingsPage() {
           <NavbarMenu />
         </nav>
         <div className="ww-nav-icons">
-          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}>🔍</span>
-          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}>🔔</span>
+          <span onClick={() => navigate("/hotels")} style={{ cursor: "pointer" }}><Icon name="search" /></span>
+          <span onClick={() => navigate("/notifications")} style={{ cursor: "pointer" }}><Icon name="bell" /></span>
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
-            👤
+            <Icon name="user" />
           </span>
         </div>
       </header>
@@ -165,7 +166,7 @@ export default function SettingsPage() {
                 onClick={() => setActiveSection("account")}
                 style={{ cursor: "pointer" }}
               >
-                ←
+                <Icon name="arrow-left" />
               </span>
             )}
           </div>
@@ -211,7 +212,7 @@ export default function SettingsPage() {
                   onClick={handleAvatarClick}
                   style={{ cursor: "pointer" }}
                 >
-                  ✎
+                  <Icon name="pencil" />
                 </span>
                 <input
                   ref={avatarInputRef}
@@ -265,7 +266,7 @@ export default function SettingsPage() {
 
           {activeSection === "preferences" && (
             <div className="ww-settings-preferences">
-              <h2>🌐 {t("changeLanguage")}</h2>
+              <h2><Icon name="globe" /> {t("changeLanguage")}</h2>
               <div className="ww-settings-select-box">
                 <span className="ww-settings-select-label">{t("changeLanguage")}</span>
                 <select value={language} onChange={(e) => setLanguage(e.target.value)}>
@@ -343,7 +344,7 @@ export default function SettingsPage() {
                 </label>
               ))}
               {/* Security alerts can't be turned off. */}
-              <p className="ww-settings-notif-always" style={{ fontSize: 13, opacity: 0.75, marginTop: 14 }}>🔒 {t("notifSecurityAlwaysOn")}</p>
+              <p className="ww-settings-notif-always" style={{ fontSize: 13, opacity: 0.75, marginTop: 14 }}><Icon name="lock" /> {t("notifSecurityAlwaysOn")}</p>
               {savedHint && <p className="ww-settings-saved">{savedHint}</p>}
             </div>
           )}

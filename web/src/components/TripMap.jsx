@@ -2,6 +2,7 @@ import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import Icon from "./Icon";
 
 // Custom SVG pin icons drawn inline — no external image requests at
 // all, so browser Tracking Prevention / ad blockers can't block them.
@@ -13,7 +14,7 @@ function makeNumberedPinIcon(number) {
         <path d="M15 0C7 0 0 6.7 0 15c0 11.2 15 27 15 27s15-15.8 15-27C30 6.7 23 0 15 0z"
               fill="#FC7E00" stroke="#2b1c12" stroke-width="1.5"/>
         <circle cx="15" cy="15" r="10" fill="#fff"/>
-        <text x="15" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#FC7E00" font-family="Georgia, serif">${number}</text>
+        <text x="15" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#FC7E00" font-family="Poppins, sans-serif">${number}</text>
       </svg>`,
     iconSize: [30, 42],
     iconAnchor: [15, 42],
@@ -71,13 +72,13 @@ export default function TripMap({ places, destinationMarker, destinationLabel })
 
       {destinationMarker && (
         <Marker position={[destinationMarker.lat, destinationMarker.lng]} icon={destinationIcon}>
-          <Popup>🎯 {destinationLabel || "Trip destination"}</Popup>
+          <Popup><Icon name="target" /> {destinationLabel || "Trip destination"}</Popup>
         </Marker>
       )}
 
       {geocoded.map((p) => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={makeNumberedPinIcon(p.displayNumber)}>
-          <Popup>📍{p.displayNumber} {p.name}</Popup>
+          <Popup><Icon name="map-pin" />{p.displayNumber} {p.name}</Popup>
         </Marker>
       ))}
     </MapContainer>

@@ -103,7 +103,7 @@ public class BookingsController : ControllerBase
             // Sent separately so the frontend can say "Trip to" or
             // "Byahe patungong" depending on the chosen language.
             tripDestination = b.Trip?.Destination,
-            tripTitle = b.Trip?.Title,
+            tripTitle = b.Trip == null ? null : Trip.DisplayName(b.Trip.TripName, b.Trip.Destination),
             placeName = b.PlaceName,
             bookingSite = b.BookingSite,
             confirmationNumber = b.ConfirmationNumber,

@@ -4,6 +4,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { api, fullName, initials, toLocalDate } from "../../utils/portal";
 import { Stat } from "./TeacherHomePage";
+import Icon from "../../components/Icon";
 
 // Summary tab of a class (teacher): how the whole class is doing at a
 // glance, who needs a nudge, attendance per tour day, and CSV exports.
@@ -60,16 +61,16 @@ export default function ClassSummaryTab({ classId, className }) {
   return (
     <>
       <div className="ww-portal-stats">
-        <Stat icon="👩‍🎓" value={total} label={t("statStudents")} />
-        <Stat icon="🗺️" value={`${withTrip}/${total}`} label={t("summaryWithTrip")} tone={withTrip < total ? "warn" : ""} />
-        <Stat icon="✅" value={`${checkedIn}/${total}`} label={t("summaryCheckedIn")} />
-        <Stat icon="📖" value={`${withJournal}/${total}`} label={t("summaryWithJournal")} tone={withJournal < total ? "warn" : ""} />
+        <Stat icon="user" value={total} label={t("statStudents")} />
+        <Stat icon="map" value={`${withTrip}/${total}`} label={t("summaryWithTrip")} tone={withTrip < total ? "warn" : ""} />
+        <Stat icon="check-circle" value={`${checkedIn}/${total}`} label={t("summaryCheckedIn")} />
+        <Stat icon="book-open" value={`${withJournal}/${total}`} label={t("summaryWithJournal")} tone={withJournal < total ? "warn" : ""} />
       </div>
 
       {/* Exports */}
       <section className="ww-portal-card">
         <div className="ww-portal-card-head">
-          <h2>⬇️ {t("exportTitle")}</h2>
+          <h2><Icon name="download" /> {t("exportTitle")}</h2>
           <div className="ww-portal-actions ww-portal-export-actions">
             <button type="button" className="ww-booking-cancel" disabled={total === 0}
               onClick={() => exportRoster(data, className)}>
@@ -86,7 +87,7 @@ export default function ClassSummaryTab({ classId, className }) {
 
       {/* Needs attention */}
       <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>🔔 {t("summaryNeedsAttention")}</h2></div>
+        <div className="ww-portal-card-head"><h2><Icon name="bell" /> {t("summaryNeedsAttention")}</h2></div>
         {total === 0 ? (
           <p className="ww-expense-empty">{t("noStudentsYet")}</p>
         ) : attention.length === 0 ? (
@@ -117,7 +118,7 @@ export default function ClassSummaryTab({ classId, className }) {
 
       {/* Attendance per tour day */}
       <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>🧭 {t("summaryTourDays")}</h2></div>
+        <div className="ww-portal-card-head"><h2><Icon name="compass" /> {t("summaryTourDays")}</h2></div>
         {data.tourDays.length === 0 ? (
           <p className="ww-expense-empty">{t("summaryNoTourDays")}</p>
         ) : (
@@ -145,7 +146,7 @@ export default function ClassSummaryTab({ classId, className }) {
                         </td>
                         <td>
                           {d.tripTitle || d.destination || "—"}
-                          {d.isClassTrip && <span className="ww-portal-badge">🚌 {t("fieldTripTag")}</span>}
+                          {d.isClassTrip && <span className="ww-portal-badge"><Icon name="bus" /> {t("fieldTripTag")}</span>}
                         </td>
                         <td>{d.meetingPlace || "—"}</td>
                         <td>
@@ -160,7 +161,7 @@ export default function ClassSummaryTab({ classId, className }) {
                         <tr className="ww-portal-day-detail">
                           <td colSpan={4}>
                             {d.absentIds.length === 0 ? (
-                              <span className="ww-portal-ok">✓ {t("everyoneCheckedIn")}</span>
+                              <span className="ww-portal-ok"><Icon name="check" /> {t("everyoneCheckedIn")}</span>
                             ) : (
                               <>
                                 <span className="ww-portal-muted">{t("notCheckedIn")}:</span>

@@ -4,6 +4,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
 import { api } from "../../utils/portal";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // Teacher sign-up: same steps as the student one (form → code sent to the
 // personal email → confirm), with the faculty email and employee ID.
@@ -89,9 +90,9 @@ export default function TeacherRegisterPage() {
             type="button"
             className="ww-back-btn"
             aria-label="Go back"
-            onClick={() => (step === "code" ? setStep("form") : navigate("/teacher/login"))}
+            onClick={() => (step === "code" ? setStep("form") : navigate("/login"))}
           >
-            ←
+            <Icon name="arrow-left" />
           </button>
 
           {step === "code" ? (
@@ -154,7 +155,7 @@ export default function TeacherRegisterPage() {
                   placeholder={t("enterPassword")}
                 />
                 <button type="button" className="ww-password-icon" onClick={() => setShowPassword((v) => !v)}>
-                  {showPassword ? "👁" : "🙈"}
+                  <Icon name={showPassword ? "eye" : "eye-off"} />
                 </button>
               </div>
 
@@ -173,7 +174,7 @@ export default function TeacherRegisterPage() {
               </button>
               <p className="ww-teacher-signup-link">
                 {t("haveTeacherAccount")}{" "}
-                <a href="/teacher/login" className="ww-bottom-link">{t("logIn")}</a>
+                <a href="/login" className="ww-bottom-link">{t("logIn")}</a>
               </p>
             </>
           )}

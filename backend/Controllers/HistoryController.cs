@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WanderWiseApi.Data;
+using WanderWiseApi.Models;
 
 namespace WanderWiseApi.Controllers;
 
@@ -45,6 +46,7 @@ public class HistoryController : ControllerBase
                 id = t.Id,
                 destination = t.Destination,
                 title = t.Title,
+                tripName = t.TripName,
                 updatedAt = t.UpdatedAt,
                 startDate = t.StartDate,
                 endDate = t.EndDate,
@@ -110,7 +112,7 @@ public class HistoryController : ControllerBase
         var trips = tripsRaw.Select(t => new
         {
             id = t.id,
-            title = !string.IsNullOrWhiteSpace(t.destination) ? "Trip to " + t.destination : (t.title ?? "Untitled trip"),
+            title = Trip.DisplayName(t.tripName, t.destination),
             type = "Trip",
             // Falls back to the trip's UpdatedAt only if I've never
             // actually opened it yet (e.g. just got added as crew).

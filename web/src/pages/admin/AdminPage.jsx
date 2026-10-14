@@ -8,6 +8,7 @@ import { api, fullName, toLocalDate } from "../../utils/portal";
 import { Avatar } from "../teacher/TeacherClassPage";
 import { Stat } from "../teacher/TeacherHomePage";
 import "../../App.css";
+import Icon from "../../components/Icon";
 
 // ===== Admin panel =====
 // Overview · Users (approve teachers, roles, deactivate) · Journals
@@ -36,7 +37,7 @@ function Admin() {
     <main className="ww-portal-main">
       <div className="ww-portal-hero">
         <div>
-          <p className="ww-portal-eyebrow">🛡️ {t("adminPanel")}</p>
+          <p className="ww-portal-eyebrow"><Icon name="shield" /> {t("adminPanel")}</p>
           <h1 className="ww-portal-title">{t("adminTitle")}</h1>
           <p className="ww-portal-muted">{t("adminIntro")}</p>
         </div>
@@ -79,19 +80,19 @@ function Overview({ goTo }) {
     <>
 
       <div className="ww-portal-stats">
-        <Stat icon="👥" value={d.users} label={t("statUsers")} />
-        <Stat icon="👩‍🎓" value={d.students} label={t("statStudents")} />
-        <Stat icon="🧑‍🏫" value={d.teachers} label={t("statTeachers")} />
-        <Stat icon="🆕" value={d.newUsersThisWeek} label={t("statNewThisWeek")} />
-        <Stat icon="🗺️" value={d.trips} label={t("colTrips")} />
-        <Stat icon="📖" value={d.journals} label={t("colJournals")} />
-        <Stat icon="🏫" value={d.classes} label={t("statClasses")} />
-        <Stat icon="📍" value={d.destinations} label={t("statDestinations")} />
+        <Stat icon="users" value={d.users} label={t("statUsers")} />
+        <Stat icon="user" value={d.students} label={t("statStudents")} />
+        <Stat icon="graduation-cap" value={d.teachers} label={t("statTeachers")} />
+        <Stat icon="sparkles" value={d.newUsersThisWeek} label={t("statNewThisWeek")} />
+        <Stat icon="map" value={d.trips} label={t("colTrips")} />
+        <Stat icon="book-open" value={d.journals} label={t("colJournals")} />
+        <Stat icon="building" value={d.classes} label={t("statClasses")} />
+        <Stat icon="map-pin" value={d.destinations} label={t("statDestinations")} />
       </div>
 
       <div className="ww-portal-two-col">
         <section className="ww-portal-card">
-          <div className="ww-portal-card-head"><h2>🩺 {t("systemHealth")}</h2></div>
+          <div className="ww-portal-card-head"><h2><Icon name="activity" /> {t("systemHealth")}</h2></div>
           <ul className="ww-portal-health">
             <li><span>{t("loginsToday")}</span><strong>{d.loginsToday}</strong></li>
             <li className={d.failedLoginsToday > 10 ? "warn" : ""}><span>{t("failedLoginsToday")}</span><strong>{d.failedLoginsToday}</strong></li>
@@ -104,13 +105,13 @@ function Overview({ goTo }) {
           </ul>
           {d.errorsThisWeek > 0 && (
             <button type="button" className="ww-link-btn" onClick={() => goTo("logs", { action: "server_error" })}>
-              {t("seeErrors")} →
+              {t("seeErrors")} <Icon name="arrow-right" />
             </button>
           )}
         </section>
 
         <section className="ww-portal-card">
-          <div className="ww-portal-card-head"><h2>🔥 {t("adminTopDestinations")}</h2></div>
+          <div className="ww-portal-card-head"><h2><Icon name="flame" /> {t("adminTopDestinations")}</h2></div>
           {d.topDestinations.length === 0 ? (
             <p className="ww-expense-empty">{t("nothingHere")}</p>
           ) : (
@@ -128,7 +129,7 @@ function Overview({ goTo }) {
       </div>
 
       <section className="ww-portal-card">
-        <div className="ww-portal-card-head"><h2>🆕 {t("recentSignups")}</h2></div>
+        <div className="ww-portal-card-head"><h2><Icon name="user-plus" /> {t("recentSignups")}</h2></div>
         <div className="ww-portal-list">
           {d.recentUsers.map((u) => (
             <div key={u.id} className="ww-portal-row">
@@ -151,8 +152,8 @@ function Overview({ goTo }) {
 
 function RoleBadge({ role }) {
   const { t } = useLanguage();
-  const icon = role === "admin" ? "🛡️" : role === "teacher" ? "🧑‍🏫" : "👩‍🎓";
-  return <span className={`ww-portal-badge role-${role}`}>{icon} {t(`role_${role}`)}</span>;
+  const icon = role === "admin" ? "shield" : role === "teacher" ? "graduation-cap" : "user";
+  return <span className={`ww-portal-badge role-${role}`}><Icon name={icon} /> {t(`role_${role}`)}</span>;
 }
 
 function StatusBadge({ status }) {
@@ -335,10 +336,10 @@ function Journals() {
               <div className="ww-portal-row-main">
                 <strong>{j.title || t("untitledLabel")}</strong>
                 <span className="ww-portal-row-meta">
-                  <span>✍️ {fullName(j.author)}</span>
-                  <span>📅 {formatDate(toLocalDate(j.createdAt), { month: "short", day: "numeric", year: "numeric" })}</span>
-                  <span>📌 {j.placesCount}</span>
-                  <span>💬 {j.commentsCount}</span>
+                  <span><Icon name="pencil" /> {fullName(j.author)}</span>
+                  <span><Icon name="calendar" /> {formatDate(toLocalDate(j.createdAt), { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span><Icon name="map-pin" /> {j.placesCount}</span>
+                  <span><Icon name="message" /> {j.commentsCount}</span>
                   {j.isHidden && <span className="ww-portal-badge danger">{t("hiddenLabel")}{j.hiddenReason ? `: ${j.hiddenReason}` : ""}</span>}
                 </span>
               </div>
@@ -381,11 +382,11 @@ function Journals() {
               <div className="ww-portal-journal-places">
                 {(viewing.places || []).map((p) => (
                   <div key={p.id} className="ww-portal-subcard">
-                    <strong>📍 {p.placeName}</strong> {p.rating ? `· ${"★".repeat(p.rating)}` : ""}
+                    <strong><Icon name="map-pin" /> {p.placeName}</strong> {p.rating ? `· ${"★".repeat(p.rating)}` : ""}
                     {p.imageUrl && <img src={p.imageUrl} alt="" />}
                     {p.description && <p>{p.description}</p>}
-                    {(p.pros || []).length > 0 && <p>👍 {(p.pros || []).map((x) => x.text).join(" · ")}</p>}
-                    {(p.cons || []).length > 0 && <p>👎 {(p.cons || []).map((x) => x.text).join(" · ")}</p>}
+                    {(p.pros || []).length > 0 && <p><Icon name="thumbs-up" /> {(p.pros || []).map((x) => x.text).join(" · ")}</p>}
+                    {(p.cons || []).length > 0 && <p><Icon name="thumbs-down" /> {(p.cons || []).map((x) => x.text).join(" · ")}</p>}
                   </div>
                 ))}
               </div>
@@ -486,7 +487,7 @@ function Logs() {
           {LOG_ACTIONS.map((a) => <option key={a} value={a}>{t(`log_${a}`)}</option>)}
         </select>
         <input className="ww-field-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("searchLogs")} />
-        <button type="button" className="ww-booking-cancel" onClick={load}>↻ {t("refreshLabel")}</button>
+        <button type="button" className="ww-booking-cancel" onClick={load}><Icon name="refresh" /> {t("refreshLabel")}</button>
       </div>
 
       {rows === null ? (

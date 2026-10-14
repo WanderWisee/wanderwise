@@ -632,6 +632,9 @@ public class TripsController : ControllerBase
         _db.TripPlaces.RemoveRange(_db.TripPlaces.Where(p => p.TripId == id));
         _db.TripSections.RemoveRange(_db.TripSections.Where(s => s.TripId == id));
         _db.TripMembers.RemoveRange(_db.TripMembers.Where(m => m.TripId == id));
+        // "Last viewed" rows (History page). Their foreign key has no
+        // ON DELETE CASCADE, so a trip anyone had opened couldn't be deleted.
+        _db.TripViews.RemoveRange(_db.TripViews.Where(v => v.TripId == id));
 
         _db.Trips.Remove(trip);
         await _db.SaveChangesAsync();

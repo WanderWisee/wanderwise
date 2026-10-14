@@ -94,6 +94,9 @@ export const portalTranslations = {
     exportRoster: "Roster (CSV)",
     exportAttendance: "Attendance (CSV)",
     exportHint: "CSV files open in Excel or Google Sheets.",
+    readonlyNoPlaces: "No places added yet.",
+    readonlyNoItinerary: "No trip dates set yet, so there's no day-by-day itinerary.",
+    deleteTripFailed: "Couldn't delete this trip. Please try again.",
 
     // Students tab
     addStudent: "Add student",
@@ -356,6 +359,9 @@ export const portalTranslations = {
     exportRoster: "Roster (CSV)",
     exportAttendance: "Attendance (CSV)",
     exportHint: "Nabubuksan ang CSV sa Excel o Google Sheets.",
+    readonlyNoPlaces: "Wala pang nailagay na lugar.",
+    readonlyNoItinerary: "Wala pang petsa ang trip, kaya wala pang itinerary bawat araw.",
+    deleteTripFailed: "Hindi mabura ang trip. Subukan ulit.",
 
     // Students tab
     addStudent: "Magdagdag",

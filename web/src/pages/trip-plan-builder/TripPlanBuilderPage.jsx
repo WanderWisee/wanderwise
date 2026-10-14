@@ -539,6 +539,11 @@ export default function TripPlanBuilderPage() {
   };
 
   const { places, customSections, days, budgetTotal, expenses = [] } = tripState;
+  // Read-only view: skip the blank "Name this section" list a new trip
+  // starts with — there's nothing in it to look at.
+  const visibleSections = canEdit
+    ? customSections
+    : customSections.filter((s) => s.name?.trim() || s.places.length > 0);
 
   // Load (existing trip) or create (fresh trip) exactly once on mount.
   // Whichever tripId we end up with is written back into the URL so a
@@ -1254,6 +1259,8 @@ export default function TripPlanBuilderPage() {
   };
 
   const renderSectionSuggestions = (section) => {
+    // Suggestions are for adding places — nothing to add in a read-only view.
+    if (!canEdit) return null;
     const category = detectSectionCategory(section.name);
     if (!category || !destination.trim()) return null;
     const result = sectionSuggestions[sectionSuggestionKey(category)];
@@ -1899,7 +1906,7 @@ export default function TripPlanBuilderPage() {
           <p className="ww-sidebar-item" onClick={() => scrollToRef(itineraryRef)} style={{ cursor: "pointer" }}>
             {t("notes")}
           </p>
-          {customSections.map((section) => (
+          {visibleSections.map((section) => (
             <p
               key={section.id}
               className="ww-sidebar-item"
@@ -2045,13 +2052,13 @@ export default function TripPlanBuilderPage() {
           </h2>
           <div ref={whereToGoRef} />
 
-          {loadingSuggestions && (
+          {canEdit && loadingSuggestions && (
             <p className="ww-field-label" style={{ marginBottom: 8 }}>
               {t("loadingSuggestedPlaces")}
             </p>
           )}
 
-          {!loadingSuggestions && destination.trim() && suggestedPlaces.length === 0 && (
+          {canEdit && !loadingSuggestions && destination.trim() && suggestedPlaces.length === 0 && (
             <p className="ww-expense-empty" style={{ marginBottom: 12 }}>
               {t("noSuggestedPlacesYet")}{" "}
               <button
@@ -2106,6 +2113,10 @@ export default function TripPlanBuilderPage() {
                 </button>
               )}
             </div>
+          )}
+
+          {!canEdit && places.length === 0 && (
+            <p className="ww-expense-empty">{t("readonlyNoPlaces")}</p>
           )}
 
           {places.map((p, i) => (
@@ -2226,9 +2237,9 @@ export default function TripPlanBuilderPage() {
               )}
           </div>
 
-          <hr className="ww-builder-divider" />
+          {(canEdit || visibleSections.length > 0) && <hr className="ww-builder-divider" />}
 
-          {customSections.map((section, sectionIndex) => (
+          {visibleSections.map((section, sectionIndex) => (
             <div
               key={section.id}
               className="ww-custom-section"
@@ -2316,6 +2327,16 @@ export default function TripPlanBuilderPage() {
           </button>
 
           <hr className="ww-builder-thick-divider" />
+
+          {/* Read-only (teacher / view-only crew): say why there's no
+              day-by-day plan instead of showing nothing. */}
+          {!canEdit && days.length === 0 && (
+            <>
+              <h2 className="ww-builder-section-title" ref={itineraryRef}>{t("itinerary")}</h2>
+              <p className="ww-expense-empty">{t("readonlyNoItinerary")}</p>
+              <hr className="ww-builder-thick-divider" />
+            </>
+          )}
 
           {days.length > 0 && (
             <>

@@ -148,9 +148,12 @@ export default function ProfilePage() {
       });
       if (resp.ok) {
         setTrips((prev) => prev.filter((t) => t.id !== tripId));
+      } else {
+        await alert(t("deleteTripFailed"));
       }
     } catch (err) {
       console.warn("Failed to delete trip:", err);
+      await alert(t("deleteTripFailed"));
     }
   };
 
@@ -362,6 +365,8 @@ export default function ProfilePage() {
                         </div>
                       )}
                       <p>{t2.destination || t2.title || t("untitledTrip")}</p>
+                      {/* Only the owner can delete; crew leave from the trip page. */}
+                      {t2.isOwner !== false && (
                       <span
                         onClick={(e) => handleDeleteTrip(e, t2.id)}
                         title="Delete this trip"
@@ -383,6 +388,7 @@ export default function ProfilePage() {
                       >
                         🗑
                       </span>
+                      )}
                     </div>
                   );
                 })}

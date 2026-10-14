@@ -157,7 +157,7 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
 
 const styles = StyleSheet.create({
   modalBackdrop: {
-    flex: 1, backgroundColor: 'rgba(46,27,14,0.45)',
+    flex: 1, backgroundColor: 'rgba(51,28,8,0.45)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20,
   },
   calendarCard: {

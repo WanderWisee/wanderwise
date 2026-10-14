@@ -237,7 +237,7 @@ function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = nu
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(46,27,14,0.45)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34,

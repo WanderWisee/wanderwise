@@ -41,7 +41,7 @@ export default function ClassesScreen() {
         {!!joinError && <Text accessibilityRole="alert" style={styles.error}>{joinError}</Text>}
         <PrimaryButton label={t('joinClass')} onPress={join} loading={joining} disabled={!code.trim()} />
       </StudentCard>
-      {loading ? <Loading /> : error ? <ErrorState message={error} onRetry={load} retryLabel={t('tryAgain')} /> : classes.length === 0 ? <EmptyState icon="??" title={t('classEmpty')} /> : classes.map((cls) => (
+      {loading ? <Loading /> : error ? <ErrorState message={error} onRetry={load} retryLabel={t('tryAgain')} /> : classes.length === 0 ? <EmptyState icon="🎓" title={t('classEmpty')} /> : classes.map((cls) => (
         <TouchableOpacity accessibilityRole="button" key={cls.id} onPress={() => router.push(`/classes/${cls.id}` as any)}>
           <StudentCard title={cls.name}>
             <Text style={styles.text}>{[cls.section, cls.term].filter(Boolean).join(' · ')}</Text>

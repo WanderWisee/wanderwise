@@ -25,7 +25,9 @@ export const studentTranslations = {
     mapPreview: 'Map preview · tap to open full map', mapUnavailable: 'Map tiles unavailable. Tap to open the map.',
     sectionLoadFailed: 'Some trip details could not load. Tap to retry.',
     storiesLoadFailed: 'Could not load your stories.', notificationsInbox: 'In-app notifications',
-    notifAnnouncement: 'posted a trip announcement', notifClassAdded: 'added you to', notifClassRemoved: 'removed you from',
+    notifAnnouncement: 'posted a trip announcement', notifClassAdded: 'added you to', notifClassRemoved: 'removed you from', notifJournalHidden: 'An admin hid your journal post',
+    loginIdPlaceholder: 'School email or student number', webOnlyAccount: 'Teacher and admin accounts log in on the WanderWise website.',
+    renameTrip: 'Rename trip',
     noDayExpenses: 'Assign places or expenses to a day to see the daily breakdown.',
   },
   fil: {
@@ -54,7 +56,9 @@ export const studentTranslations = {
     mapPreview: 'Preview ng mapa · pindutin para buksan', mapUnavailable: 'Hindi ma-load ang mapa. Pindutin para buksan.',
     sectionLoadFailed: 'May detalye ng trip na hindi na-load. Pindutin para ulitin.',
     storiesLoadFailed: 'Hindi ma-load ang iyong mga kuwento.', notificationsInbox: 'Mga notification sa app',
-    notifAnnouncement: 'nag-post ng anunsyo sa trip', notifClassAdded: 'idinagdag ka sa', notifClassRemoved: 'inalis ka sa',
+    notifAnnouncement: 'nag-post ng anunsyo sa trip', notifClassAdded: 'idinagdag ka sa', notifClassRemoved: 'inalis ka sa', notifJournalHidden: 'Itinago ng admin ang journal post mo',
+    loginIdPlaceholder: 'School email o student number', webOnlyAccount: 'Sa WanderWise website nagla-log in ang mga teacher at admin.',
+    renameTrip: 'Palitan ang pangalan ng trip',
     noDayExpenses: 'Magtalaga ng lugar o gastos sa araw para makita ang breakdown.',
   },
 };

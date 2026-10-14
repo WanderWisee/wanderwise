@@ -162,7 +162,7 @@ function HotelsContent({ params }) {
       .join(' · ');
 
   return (
-    <LinearGradient colors={['#F6F1DC', '#E6D9AE']} style={styles.screen}>
+    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <MeshBlobs height={900} style={styles.backdrop} />
         <Backdrop height={220} style={styles.backdrop} />
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   },
   bookingName: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
   bookingMeta: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 3 },
-  bookingTrip: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.mint, marginTop: 4 },
+  bookingTrip: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.teal, marginTop: 4 },
   horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
   resultCard: {
     width: 240,
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start',
   },
   dealButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
-  overlay: { flex: 1, backgroundColor: 'rgba(46,27,14,0.45)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34,

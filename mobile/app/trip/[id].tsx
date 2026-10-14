@@ -108,6 +108,8 @@ function hydrateTrip(data) {
     id: data.id,
     // Sa web, ang trip.title ay ang pangalan ng "Where to go?" list.
     title: data.title || '',
+    // Ang sariling pangalan ng trip (✎ sa tabi ng "Trip to …"). Walang laman = "Trip to <destination>".
+    tripName: data.tripName || '',
     destination: data.destination || '',
     startDate: data.startDate,
     endDate: data.endDate,
@@ -120,6 +122,8 @@ function hydrateTrip(data) {
 function buildSaveBody(trip) {
   return {
     title: trip.title,
+    // Kasama palagi, para hindi mabura ang pangalang itinakda sa web.
+    tripName: (trip.tripName || '').trim() || null,
     destination: trip.destination,
     startDate: trip.startDate,
     endDate: trip.endDate,
@@ -194,6 +198,7 @@ function TripDetailContent({ id }) {
   const [bookings, setBookings] = useState([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [activeDayKey, setActiveDayKey] = useState(null);
@@ -500,7 +505,7 @@ function TripDetailContent({ id }) {
       };
       const [before, after] = await Promise.all([duration(stops), duration(candidate)]);
       if (after >= before) { toast(t('routeUnchanged')); return; }
-      if (!(await confirm({ title: t('optimizeDay'), message: `${before} min ? ${after} min`, confirmLabel: t('save'), cancelLabel: t('cancel') }))) return;
+      if (!(await confirm({ title: t('optimizeDay'), message: `${before} min → ${after} min`, confirmLabel: t('save'), cancelLabel: t('cancel') }))) return;
       if (tripRef.current !== snapshot) { toast(t('tryAgain')); return; }
       const order = Object.fromEntries(candidate.map((p, i) => [p.key, i]));
       const ok = await persist({ ...snapshot, sections: snapshot.sections.map((section) => ({ ...section, places: section.places.map((p) => p.key in order ? { ...p, itineraryOrder: order[p.key] } : p) })) });
@@ -736,7 +741,16 @@ function TripDetailContent({ id }) {
   const bookingsOnDay = (dayKey) =>
     bookings.filter((b) => b.checkIn <= dayKey && (b.checkOut ? dayKey < b.checkOut : dayKey === b.checkIn));
 
-  const tripName = trip.destination ? `${t('tripToPrefix')} ${trip.destination}` : t('untitledTrip');
+  // "Trip to Lucena" hangga't hindi pinapalitan ng student ang pangalan.
+  const defaultTripName = trip.destination ? `${t('tripToPrefix')} ${trip.destination}` : t('untitledTrip');
+  const tripName = (trip.tripName || '').trim() || defaultTripName;
+  const finishRename = () => {
+    setEditingName(false);
+    const current = tripRef.current;
+    // Ibinalik sa default? Susunod ulit ang pangalan sa destinasyon.
+    const next = (current.tripName || '').trim() === defaultTripName ? { ...current, tripName: '' } : current;
+    persist(next);
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -773,7 +787,26 @@ function TripDetailContent({ id }) {
         {/* 1: Title card */}
         <View style={styles.titleCard}>
           <View style={styles.titleRow}>
-            <Text style={styles.tripName} numberOfLines={2}>{tripName}</Text>
+            {editingName ? (
+              <TextInput
+                style={[styles.tripName, styles.tripNameInput]}
+                value={trip.tripName || defaultTripName}
+                onChangeText={(text) => setTrip({ ...trip, tripName: text })}
+                onBlur={finishRename}
+                onSubmitEditing={finishRename}
+                maxLength={150}
+                autoFocus
+                selectTextOnFocus
+                returnKeyType="done"
+              />
+            ) : (
+              <Text style={styles.tripName} numberOfLines={2}>{tripName}</Text>
+            )}
+            {canEdit && !editingName && (
+              <TouchableOpacity onPress={() => setEditingName(true)} hitSlop={10} accessibilityLabel={t('renameTrip')}>
+                <Text style={styles.editHint}>✎</Text>
+              </TouchableOpacity>
+            )}
             {saving && <ActivityIndicator size="small" color={Colors.brown600} />}
           </View>
 
@@ -1358,7 +1391,7 @@ const styles = StyleSheet.create({
   backLink: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
 
   hero: { height: 190, backgroundColor: Colors.cream2, position: 'relative', overflow: 'hidden' },
-  heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(46,27,14,0.18)' },
+  heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(51,28,8,0.18)' },
   heroTopRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingTop: 12,
@@ -1376,6 +1409,7 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   tripName: { flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900 },
+  tripNameInput: { paddingVertical: 2, borderBottomWidth: 1, borderBottomColor: Colors.line },
   metaButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, alignSelf: 'flex-start' },
   editHint: { fontSize: 12, color: Colors.brown600 },
   tripDates: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
@@ -1411,7 +1445,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   mapCaption: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 18 },
-  linkAction: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  linkAction: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.teal },
 
   bookingCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 24,
@@ -1459,7 +1493,7 @@ const styles = StyleSheet.create({
     width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
-  iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.mint },
+  iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.teal },
   emptyText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
   emptyTextSmall: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: GREY_PLACEHOLDER, paddingVertical: 4, marginBottom: 6 },
 
@@ -1530,7 +1564,7 @@ const styles = StyleSheet.create({
   expenseDesc: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
   expenseAmount: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(46,27,14,0.45)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34,

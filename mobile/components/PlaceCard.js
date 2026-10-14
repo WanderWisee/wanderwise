@@ -246,10 +246,10 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chip: { backgroundColor: Colors.cream2, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   chipText: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown600 },
-  chipDay: { backgroundColor: 'rgba(46,27,14,0.08)' },
+  chipDay: { backgroundColor: 'rgba(51,28,8,0.08)' },
   chipDayText: { color: Colors.brown900, fontFamily: 'Lora_600SemiBold' },
-  chipVisited: { backgroundColor: 'rgba(63,169,138,0.15)' },
-  chipVisitedText: { color: Colors.mint, fontFamily: 'Lora_600SemiBold' },
+  chipVisited: { backgroundColor: 'rgba(47,111,95,0.12)' },
+  chipVisitedText: { color: Colors.teal, fontFamily: 'Lora_600SemiBold' },
   thumb: {
     width: 56, height: 56, borderRadius: 12, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
   actionText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.brown900 },
-  actionTextActive: { color: Colors.mint },
+  actionTextActive: { color: Colors.teal },
 
   costList: { marginTop: 12 },
   costRow: {

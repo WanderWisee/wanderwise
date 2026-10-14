@@ -114,7 +114,7 @@ export default function ProfileScreen() {
   ).size;
 
   return (
-    <LinearGradient colors={['#F6F1DC', '#E6D9AE']} style={styles.screen}>
+    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <MeshBlobs height={900} style={styles.backdrop} />
         <Backdrop height={220} style={styles.backdrop} />

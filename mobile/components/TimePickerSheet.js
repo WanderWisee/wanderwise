@@ -100,7 +100,7 @@ function TimePickerContent({ visible, initial, onClose, onSave }) {
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: 'rgba(46,27,14,0.45)',
+    flex: 1, backgroundColor: 'rgba(51,28,8,0.45)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30,
   },
   card: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 22 },

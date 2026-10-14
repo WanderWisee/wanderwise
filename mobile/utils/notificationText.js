@@ -23,6 +23,8 @@ export function notificationText(n, t, formatTime) {
       return `${d.actorName} ${t('notifClassAdded')} ${d.className}.`;
     case 'class_removed':
       return `${d.actorName} ${t('notifClassRemoved')} ${d.className}.`;
+    case 'journal_hidden':
+      return `${t('notifJournalHidden')} "${d.title || ''}"${d.reason ? `: ${d.reason}` : '.'}`;
     case 'class_announcement':
       return `${d.actorName} (${d.className}): ${d.message || ''}`;
     case "trip_start":
@@ -63,9 +65,10 @@ export function notificationText(n, t, formatTime) {
 export function notificationIcon(type) {
   switch (type) {
     case 'announcement':
-    case 'class_announcement': return '??';
+    case 'class_announcement': return '📢';
     case 'class_added':
-    case 'class_removed': return '??';
+    case 'class_removed': return '🎓';
+    case 'journal_hidden': return '🚫';
     case "trip_start":
       return "🧳";
     case "activity":

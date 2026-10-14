@@ -35,7 +35,8 @@ export default function LoginScreen() {
       const joinedTripId = await consumePendingJoin();
       router.replace(joinedTripId === 'retry' ? '/join' : joinedTripId ? `/trip/${joinedTripId}` : '/(tabs)/home');
     } catch (e) {
-      setError(e.message || t('loginErrFailed'));
+      const code = e?.data?.code;
+      setError(code === 'use_teacher_login' || code === 'use_admin_login' ? t('webOnlyAccount') : e.message || t('loginErrFailed'));
     } finally {
       setLoading(false);
     }
@@ -64,13 +65,12 @@ export default function LoginScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder={t('studentEmailPlaceholder')}
+              placeholder={t('loginIdPlaceholder')}
               placeholderTextColor={Colors.brown600}
               autoCapitalize="none"
               autoCorrect={false}
-              keyboardType="email-address"
               textContentType="username"
-              autoComplete="email"
+              autoComplete="username"
               value={email}
               onChangeText={setEmail}
               returnKeyType="next"

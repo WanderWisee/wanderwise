@@ -112,7 +112,7 @@ export default function HomeScreen() {
     : GUIDE_DESTINATIONS.map((d) => ({ latitude: d.lat, longitude: d.lon, label: d.name }));
 
   return (
-    <LinearGradient colors={['#F6F1DC', '#E6D9AE']} style={styles.screen}>
+    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <MeshBlobs height={900} style={styles.backdrop} />
         <Backdrop height={220} style={styles.backdrop} />
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   startCard: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 18 },
   startTitle: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900, lineHeight: 20 },
-  startLink: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.mint, marginTop: 4 },
+  startLink: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.teal, marginTop: 4 },
 
   sectionTitle: {
     fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,

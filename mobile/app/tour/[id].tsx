@@ -109,7 +109,7 @@ export default function TourScreen() {
             <Text style={[styles.text, { color: day === date ? Colors.mint : Colors.brown900 }]}>{formatDate(day, 'short')}</Text>
           </TouchableOpacity>)}
         </ScrollView>
-        {loading ? <Loading /> : !days.length ? <EmptyState icon="??" title={t('noTripDates')} /> : data && <>
+        {loading ? <Loading /> : !days.length ? <EmptyState icon="📅" title={t('noTripDates')} /> : data && <>
           {!!actionError && <Text accessibilityRole="alert" style={styles.error}>{actionError}</Text>}
           <StudentCard title={t('meetingPoint')}>
             {meeting?.latitude != null ? <>

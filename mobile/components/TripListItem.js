@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { DestinationImage } from './ui';
@@ -13,7 +15,7 @@ export default function TripListItem({ trip, onPress, onShare = null, onMenu = n
 
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <DestinationImage name={trip.destination} style={styles.thumb} emojiSize={26} />
+      <DestinationImage name={trip.destination} style={styles.thumb} iconSize={26} />
 
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
@@ -26,12 +28,12 @@ export default function TripListItem({ trip, onPress, onShare = null, onMenu = n
         <View style={styles.actions}>
           {onShare && (
             <TouchableOpacity onPress={onShare} style={styles.actionButton} hitSlop={6} accessibilityLabel={t('share')}>
-              <Text style={{ fontSize: 16, color: Colors.brown900 }}>↗</Text>
+              <AppIcon name="external" style={{ fontSize: 16, color: Colors.brown900 }} />
             </TouchableOpacity>
           )}
           {onMenu && (
             <TouchableOpacity onPress={onMenu} style={styles.actionButton} hitSlop={6} accessibilityLabel={t('moreActions')}>
-              <Text style={{ fontSize: 18, color: Colors.brown600 }}>⋯</Text>
+              <AppIcon name="more" style={{ fontSize: 18, color: Colors.brown600 }} />
             </TouchableOpacity>
           )}
         </View>
@@ -50,8 +52,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line, overflow: 'hidden',
   },
   info: { flex: 1 },
-  title: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 5 },
-  metaText: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 5 },
+  metaText: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600 },
   actions: { flexDirection: 'row', gap: 4 },
   actionButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
 });

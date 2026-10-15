@@ -1,5 +1,7 @@
+import AppIcon from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,7 +55,7 @@ function JoinContent({ onRetry }) {
     <SafeAreaView style={styles.screen}>
       <Backdrop height={200} style={styles.backdrop} />
       <View style={styles.center}>
-        <Text style={{ fontSize: 44 }}>🧳</Text>
+        <AppIcon name="suitcase" style={{ fontSize: 44 }} />
         {!isLoggedIn ? (
           <>
             <Text style={styles.title}>{t('joinTripTitle')}</Text>
@@ -82,9 +84,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   backdrop: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 },
-  title: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, textAlign: 'center', marginTop: 16 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, textAlign: 'center', marginTop: 16 },
   subtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown600,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown600,
     textAlign: 'center', marginTop: 8, marginBottom: 20,
   },
   button: { alignSelf: 'stretch', marginTop: 12 },

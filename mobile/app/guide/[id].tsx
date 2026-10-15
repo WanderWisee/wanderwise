@@ -1,5 +1,7 @@
+import AppIcon, { IconLabel } from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -70,12 +72,12 @@ export default function GuideDetailScreen() {
 
         {hasOfficialGuide && (
           <TouchableOpacity style={styles.officialCard} onPress={() => router.push('/guide/official')} activeOpacity={0.85}>
-            <Text style={{ fontSize: 26 }}>📘</Text>
+            <AppIcon name="book" style={{ fontSize: 26 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.storyName}>{t('officialGuide')}</Text>
               <Text style={styles.storyMeta}>{t('officialGuideHint')}</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <AppIcon name="chevron-right" style={styles.chevron} />
           </TouchableOpacity>
         )}
 
@@ -88,7 +90,7 @@ export default function GuideDetailScreen() {
           <ErrorState message={error} onRetry={onRefresh} retryLabel={t('tryAgain')} />
         ) : stories.length === 0 ? (
           <EmptyState
-            icon="📖"
+            icon="book"
             title={t('storiesEmpty')}
             action={
               <TouchableOpacity
@@ -113,9 +115,7 @@ export default function GuideDetailScreen() {
               <TouchableOpacity onPress={() => router.push(`/journal/${s.id}`)} activeOpacity={0.85}>
                 <Text style={styles.storyTitle}>{s.title}</Text>
                 {!!s.coverImage && <Image source={{ uri: s.coverImage }} style={styles.cover} />}
-                <Text style={styles.storyMeta}>
-                  📍 {s.placesCount} {t('storyPlacesCount')} · 💬 {s.commentsCount} {t('storyCommentsCount')}
-                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}><IconLabel name="pin" textStyle={styles.storyMeta}>{s.placesCount} {t('storyPlacesCount')}</IconLabel><IconLabel name="message" textStyle={styles.storyMeta}>{s.commentsCount} {t('storyCommentsCount')}</IconLabel></View>
               </TouchableOpacity>
 
               <View style={styles.storyActions}>
@@ -123,7 +123,7 @@ export default function GuideDetailScreen() {
                   <Text style={styles.readButtonText}>{t('readStory')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.profileButton} onPress={() => router.push(`/user/${s.author?.id}`)}>
-                  <Text style={styles.profileButtonText}>👤 {t('viewProfile')}</Text>
+                  <IconLabel name="user" textStyle={styles.profileButtonText}>{t('viewProfile')}</IconLabel>
                 </TouchableOpacity>
               </View>
             </View>
@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   hero: { width: '100%', height: 170, borderRadius: 16, marginBottom: 22, backgroundColor: Colors.cream2 },
-  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 12 },
-  subtitle: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: -6, marginBottom: 14 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 12 },
+  subtitle: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: -6, marginBottom: 14 },
   officialCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 18,
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
@@ -151,19 +151,19 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line,
   },
   storyHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  storyName: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
-  storyMeta: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
-  storyTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 16.5, color: Colors.brown900, marginBottom: 10 },
+  storyName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  storyMeta: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
+  storyTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 16.5, color: Colors.brown900, marginBottom: 10 },
   cover: { width: '100%', height: 190, borderRadius: 12, marginBottom: 10, backgroundColor: Colors.cream2 },
   storyActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
   readButton: {
     flex: 1, backgroundColor: Colors.brown900, borderRadius: 12, height: 40,
     alignItems: 'center', justifyContent: 'center',
   },
-  readButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  readButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
   profileButton: {
     flex: 1, borderRadius: 12, height: 40, borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  profileButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  profileButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
 });

@@ -1,8 +1,7 @@
+import AppIcon, { IconLabel, RatingStars } from '../../components/AppIcon';
+import { Text, TextInput } from '../../components/Typography';
 import { useCallback, useState } from 'react';
-import {
-  View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity, ActivityIndicator,
-  KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -88,7 +87,7 @@ export default function JournalViewScreen() {
         title={entry?.title || t('journal')}
         onBack={() => router.back()}
         titleSize={17}
-        right={isMine ? <SquareButton onPress={remove} accessibilityLabel={t('dialogDelete')}>🗑</SquareButton> : null}
+        right={isMine ? <SquareButton onPress={remove} accessibilityLabel={t('dialogDelete')}><AppIcon name="trash" color={Colors.error} size={18} /></SquareButton> : null}
       />
 
       {loading ? (
@@ -117,12 +116,9 @@ export default function JournalViewScreen() {
             {entry.entries.map((p, i) => (
               <View key={p.id || i} style={styles.page}>
                 {!!p.img && <Image source={{ uri: p.img }} style={styles.photo} />}
-                <Text style={styles.placeName}>📍 {p.place || t('unnamedPlace')}</Text>
+                <IconLabel name="pin" textStyle={styles.placeName}>{p.place || t('unnamedPlace')}</IconLabel>
                 {p.rating > 0 && (
-                  <Text style={styles.stars}>
-                    {'★'.repeat(p.rating)}
-                    <Text style={{ color: Colors.line }}>{'★'.repeat(Math.max(0, 5 - p.rating))}</Text>
-                  </Text>
+                  <RatingStars rating={p.rating} />
                 )}
                 {!!p.description && <Text style={styles.description}>{p.description}</Text>}
 
@@ -130,7 +126,7 @@ export default function JournalViewScreen() {
                   <>
                     <Text style={styles.listTitle}>{t('prosOfVisiting')} {p.place || t('thisPlace')}</Text>
                     {p.pros.map((x, k) => (
-                      <Text key={k} style={styles.listItem}>✓  {x}</Text>
+                      <IconLabel key={k} name="check" textStyle={styles.listItem}>{x}</IconLabel>
                     ))}
                   </>
                 )}
@@ -138,7 +134,7 @@ export default function JournalViewScreen() {
                   <>
                     <Text style={styles.listTitle}>{t('consOfVisiting')} {p.place || t('thisPlace')}</Text>
                     {p.cons.map((x, k) => (
-                      <Text key={k} style={styles.listItem}>✕  {x}</Text>
+                      <IconLabel key={k} name="x" textStyle={styles.listItem}>{x}</IconLabel>
                     ))}
                   </>
                 )}
@@ -147,7 +143,7 @@ export default function JournalViewScreen() {
                     <Text style={styles.listTitle}>{t('hotelOptions')}</Text>
                     {p.hotels.map((h, k) => (
                       <View key={h.id || k} style={styles.hotel}>
-                        <Text style={styles.hotelName}>🏨 {h.name}</Text>
+                        <IconLabel name="hotel" textStyle={styles.hotelName}>{h.name}</IconLabel>
                         {!!h.description && <Text style={styles.hotelDesc}>{h.description}</Text>}
                       </View>
                     ))}
@@ -156,9 +152,7 @@ export default function JournalViewScreen() {
               </View>
             ))}
 
-            <Text style={styles.commentsTitle}>
-              💬 {t('comments')} ({comments.length})
-            </Text>
+            <IconLabel name="message" textStyle={styles.commentsTitle}>{t('comments')} ({comments.length})</IconLabel>
             {comments.length === 0 && <Text style={styles.meta}>{t('noCommentsBeFirst')}</Text>}
             {comments.map((c) => (
               <View key={c.id} style={styles.comment}>
@@ -197,34 +191,34 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#E7DEBC' },
   content: { paddingHorizontal: 20, paddingBottom: 30 },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  authorName: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
-  meta: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
+  authorName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  meta: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
   page: {
     backgroundColor: '#FAF3E3', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(200,172,130,0.4)',
     padding: 18, marginBottom: 18,
     shadowColor: Colors.brown900, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 3,
   },
   photo: { width: '100%', height: 220, borderRadius: 4, marginBottom: 14, backgroundColor: Colors.card },
-  placeName: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
+  placeName: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
   stars: { fontSize: 18, color: Colors.brown900, marginTop: 4 },
-  description: { fontFamily: 'Lora_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown900, marginTop: 10 },
-  listTitle: { fontFamily: 'Lora_400Regular', fontStyle: 'italic', fontSize: 14, color: Colors.brown900, marginTop: 16, marginBottom: 6 },
-  listItem: { fontFamily: 'Lora_400Regular', fontSize: 13.5, lineHeight: 20, color: Colors.brown800, marginBottom: 3 },
+  description: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 21, color: Colors.brown900, marginTop: 10 },
+  listTitle: { fontFamily: 'Poppins_400Regular', fontStyle: 'italic', fontSize: 14, color: Colors.brown900, marginTop: 16, marginBottom: 6 },
+  listItem: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 20, color: Colors.brown800, marginBottom: 3 },
   hotel: { marginBottom: 8 },
-  hotelName: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
-  hotelDesc: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
-  commentsTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, marginTop: 8, marginBottom: 10 },
+  hotelName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
+  hotelDesc: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
+  commentsTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900, marginTop: 8, marginBottom: 10 },
   comment: { flexDirection: 'row', gap: 10, marginTop: 12 },
   commentBubble: { flex: 1, backgroundColor: '#FAF3E3', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
-  commentName: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
-  commentTime: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600 },
-  commentText: { fontFamily: 'Lora_400Regular', fontSize: 13.5, lineHeight: 19, color: Colors.brown900, marginTop: 3 },
+  commentName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  commentTime: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
+  commentText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 19, color: Colors.brown900, marginTop: 3 },
   composer: {
     flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: Colors.cream, borderTopWidth: 1, borderTopColor: Colors.line,
   },
   composerInput: {
-    flex: 1, maxHeight: 110, fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    flex: 1, maxHeight: 110, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: '#FFFFFF', borderRadius: 18, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10,
   },
@@ -232,5 +226,5 @@ const styles = StyleSheet.create({
     height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  sendText: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  sendText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
 });

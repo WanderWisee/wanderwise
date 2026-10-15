@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import AppIcon from '../components/AppIcon';
+import { Text } from '../components/Typography';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -13,7 +15,7 @@ export default function AboutScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <AppIcon name="arrow-left" style={styles.backText} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('aboutUs')}</Text>
         <View style={{ width: 34 }} />
@@ -21,7 +23,7 @@ export default function AboutScreen() {
 
       <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <View style={styles.logoBadge}>
-          <Text style={{ fontSize: 32 }}>🧭</Text>
+          <AppIcon name="compass" style={{ fontSize: 32 }} />
         </View>
 
         <Text style={styles.title}>WanderWise</Text>
@@ -73,19 +75,19 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900 },
+  headerTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900 },
   content: { paddingHorizontal: 30, paddingTop: 24, paddingBottom: 40, alignItems: 'center' },
   logoBadge: {
     width: 84, height: 84, borderRadius: 42, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
     marginBottom: 20,
   },
-  title: { fontFamily: 'Lora_600SemiBold', fontSize: 26, color: Colors.brown900 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, color: Colors.brown900 },
   tagline: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown600,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600,
     marginTop: 6, marginBottom: 34, textAlign: 'center',
   },
   section: { width: '100%', marginBottom: 26 },
-  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 8 },
-  paragraph: { fontFamily: 'Lora_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown600 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 8 },
+  paragraph: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown600 },
 });

@@ -1,5 +1,7 @@
+import AppIcon, { IconLabel } from './AppIcon';
+import { Text, TextInput } from './Typography';
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../constants/theme';
 import TimePickerSheet from './TimePickerSheet';
 import { useApp } from '../context/AppContext';
@@ -72,7 +74,7 @@ export default function PlaceCard({
       >
         {selecting && (
           <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-            {selected && <Text style={styles.checkboxMark}>✓</Text>}
+            {selected && <AppIcon name="check" style={styles.checkboxMark} />}
           </View>
         )}
 
@@ -86,17 +88,17 @@ export default function PlaceCard({
             <View style={styles.chipsRow}>
               {!!dayLabel && (
                 <View style={[styles.chip, styles.chipDay]}>
-                  <Text style={[styles.chipText, styles.chipDayText]}>📅 {dayLabel}</Text>
+                  <IconLabel name="calendar" textStyle={[styles.chipText, styles.chipDayText]}>{dayLabel}</IconLabel>
                 </View>
               )}
               {place.visited && (
                 <View style={[styles.chip, styles.chipVisited]}>
-                  <Text style={[styles.chipText, styles.chipVisitedText]}>✓ {t('visited')}</Text>
+                  <IconLabel name="check" textStyle={[styles.chipText, styles.chipVisitedText]}>{t('visited')}</IconLabel>
                 </View>
               )}
               {!!place.scheduledTime && (
                 <View style={styles.chip}>
-                  <Text style={styles.chipText}>🕒 {formatTime(place.scheduledTime)}</Text>
+                  <IconLabel name="clock" textStyle={styles.chipText}>{formatTime(place.scheduledTime)}</IconLabel>
                 </View>
               )}
               {totalCost > 0 && (
@@ -109,7 +111,7 @@ export default function PlaceCard({
         </View>
 
         <View style={styles.thumb}>
-          <Text style={{ fontSize: 22 }}>📍</Text>
+          <AppIcon name="pin" style={{ fontSize: 22 }} />
         </View>
       </TouchableOpacity>
 
@@ -129,15 +131,11 @@ export default function PlaceCard({
 
           <View pointerEvents={readOnly ? 'none' : 'auto'} style={[styles.actionsRow, readOnly && { display: 'none' }]}>
             <TouchableOpacity onPress={onToggleVisited} style={styles.actionButton}>
-              <Text style={[styles.actionText, place.visited && styles.actionTextActive]}>
-                {place.visited ? `✓ ${t('unmarkVisited')}` : `✓ ${t('markVisited')}`}
-              </Text>
+              <IconLabel name="check" textStyle={[styles.actionText, place.visited && styles.actionTextActive]}>{t(place.visited ? 'unmarkVisited' : 'markVisited')}</IconLabel>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setTimeOpen(true)} style={styles.actionButton}>
-              <Text style={styles.actionText}>
-                🕒 {place.scheduledTime ? formatTime(place.scheduledTime) : t('selectTime')}
-              </Text>
+              <IconLabel name="clock" textStyle={styles.actionText}>{place.scheduledTime ? formatTime(place.scheduledTime) : t('selectTime')}</IconLabel>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setAddingCost(true)} style={styles.actionButton}>
@@ -152,7 +150,7 @@ export default function PlaceCard({
                   <Text style={styles.costCategory}>{catLabel(c.category)}</Text>
                   <Text style={styles.costAmount}>{formatPeso(c.amount)}</Text>
                   <TouchableOpacity disabled={readOnly} onPress={() => onRemoveCost(c.id)} style={styles.costRemove}>
-                    <Text style={styles.costRemoveText}>✕</Text>
+                    <AppIcon name="x" style={styles.costRemoveText} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -236,20 +234,20 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream,
   },
   checkboxChecked: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
-  checkboxMark: { color: Colors.mint, fontSize: 13, fontFamily: 'Lora_600SemiBold' },
+  checkboxMark: { color: Colors.mint, fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   numberBadge: {
     width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  numberText: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.mint },
-  name: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  numberText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.mint },
+  name: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chip: { backgroundColor: Colors.cream2, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  chipText: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown600 },
+  chipText: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600 },
   chipDay: { backgroundColor: 'rgba(51,28,8,0.08)' },
-  chipDayText: { color: Colors.brown900, fontFamily: 'Lora_600SemiBold' },
+  chipDayText: { color: Colors.brown900, fontFamily: 'Poppins_600SemiBold' },
   chipVisited: { backgroundColor: 'rgba(47,111,95,0.12)' },
-  chipVisitedText: { color: Colors.teal, fontFamily: 'Lora_600SemiBold' },
+  chipVisitedText: { color: Colors.teal, fontFamily: 'Poppins_600SemiBold' },
   thumb: {
     width: 56, height: 56, borderRadius: 12, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
@@ -257,14 +255,14 @@ const styles = StyleSheet.create({
 
   details: { marginTop: 12, borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 12 },
   notesInput: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     minHeight: 40, paddingVertical: 4, textAlignVertical: 'top',
   },
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   actionButton: {
     backgroundColor: Colors.cream2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
-  actionText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.brown900 },
+  actionText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown900 },
   actionTextActive: { color: Colors.teal },
 
   costList: { marginTop: 12 },
@@ -272,12 +270,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingVertical: 6,
     borderBottomWidth: 1, borderBottomColor: Colors.line,
   },
-  costCategory: { flex: 1, fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown900 },
-  costAmount: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900, marginRight: 10 },
+  costCategory: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown900 },
+  costAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, marginRight: 10 },
   costRemove: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   costRemoveText: { fontSize: 12, color: Colors.error },
   costTotal: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.brown600,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown600,
     textAlign: 'right', marginTop: 6,
   },
 
@@ -288,10 +286,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line,
   },
   categoryChipActive: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
-  categoryChipText: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown900 },
-  categoryChipTextActive: { color: Colors.mint, fontFamily: 'Lora_600SemiBold' },
+  categoryChipText: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown900 },
+  categoryChipTextActive: { color: Colors.mint, fontFamily: 'Poppins_600SemiBold' },
   costInput: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
   },
@@ -300,10 +298,10 @@ const styles = StyleSheet.create({
     flex: 1, height: 38, borderRadius: 10, borderWidth: 1.2, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  costCancelText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  costCancelText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
   costAdd: {
     flex: 1, height: 38, borderRadius: 10, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  costAddText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  costAddText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
 });

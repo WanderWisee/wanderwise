@@ -1,8 +1,11 @@
+import AppIcon from '../components/AppIcon';
+import { Text } from '../components/Typography';
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import { Wordmark } from '../components/ui';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
@@ -50,12 +53,7 @@ export default function LandingScreen() {
       </Svg>
 
       <View style={styles.header}>
-        <View style={styles.logoBadge}>
-          <Text style={{ fontSize: 16 }}>🧭</Text>
-        </View>
-        <Text style={styles.wordmark}>
-          Wander<Text style={styles.wordmarkLight}>Wise</Text>
-        </Text>
+        <Wordmark />
       </View>
 
       <Animated.View
@@ -65,7 +63,7 @@ export default function LandingScreen() {
         ]}
       >
         <View style={styles.heroBadge}>
-          <Text style={{ fontSize: 32 }}>✈️</Text>
+          <AppIcon name="plane" style={{ fontSize: 32 }} />
         </View>
 
         <Text style={styles.heading}>
@@ -135,12 +133,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wordmark: {
-    fontFamily: 'Lora_600SemiBold',
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 19,
     color: Colors.brown900,
   },
   wordmarkLight: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: 'Poppins_400Regular',
     color: Colors.brown600,
   },
   content: {
@@ -161,7 +159,7 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
   heading: {
-    fontFamily: 'Lora_600SemiBold',
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 26,
     lineHeight: 34,
     color: Colors.brown900,
@@ -169,7 +167,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   subtitle: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: 'Poppins_400Regular',
     fontSize: 14.5,
     lineHeight: 23,
     color: Colors.brown600,
@@ -190,7 +188,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButtonText: {
-    fontFamily: 'Lora_600SemiBold',
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 15.5,
     color: Colors.mint,
   },
@@ -204,7 +202,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   outlineButtonText: {
-    fontFamily: 'Lora_600SemiBold',
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 15.5,
     color: Colors.brown900,
   },
@@ -220,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   footerLink: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: 'Poppins_400Regular',
     fontSize: 12.5,
     color: Colors.brown600,
     textDecorationLine: 'underline',

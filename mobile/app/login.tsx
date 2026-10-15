@@ -1,8 +1,7 @@
+import AppIcon from '../components/AppIcon';
+import { Text, TextInput } from '../components/Typography';
 import { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
-  KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -58,7 +57,7 @@ export default function LoginScreen() {
               style={styles.backButton}
               hitSlop={10}
             >
-              <Text style={styles.backText}>←</Text>
+              <AppIcon name="arrow-left" style={styles.backText} />
             </TouchableOpacity>
 
             <Text style={styles.cardTitle}>{t('loginTitle')}</Text>
@@ -130,27 +129,27 @@ const styles = StyleSheet.create({
   backButton: { marginBottom: 12, alignSelf: 'flex-start' },
   backText: { fontSize: 20, color: Colors.brown900 },
   cardTitle: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900,
     textAlign: 'center', marginBottom: 24,
   },
   input: {
-    fontFamily: 'Lora_400Regular', fontSize: 14.5, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900,
     borderBottomWidth: 1, borderBottomColor: Colors.brown900,
     paddingVertical: 8, marginBottom: 20,
   },
   passwordRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginBottom: 20 },
   eye: { paddingBottom: 9 },
-  eyeText: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.brown600 },
+  eyeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown600 },
   errorText: {
-    fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12,
+    fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12,
   },
   primaryButton: {
     height: 48, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', marginTop: 4,
   },
-  primaryButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.mint },
+  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
   linkRow: {
     flexDirection: 'row', justifyContent: 'space-between', marginTop: 16,
   },
-  linkText: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600 },
+  linkText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600 },
 });

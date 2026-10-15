@@ -1,5 +1,7 @@
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
 import { useMemo, useState } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
@@ -158,7 +160,7 @@ export default function OsmMap({
         <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
       </View>
       <View style={styles.expandBadge} pointerEvents="none">
-        <Text style={styles.expandText}>⤢</Text>
+        <AppIcon name="expand" style={styles.expandText} />
       </View>
       <View style={{ position: 'absolute', top: 8, left: 8, right: 44, backgroundColor: 'rgba(246,241,220,0.94)', borderRadius: 8, padding: 6 }} pointerEvents="none">
         <Text style={{ fontFamily: Fonts.regular, color: Colors.brown900, fontSize: 11 }}>

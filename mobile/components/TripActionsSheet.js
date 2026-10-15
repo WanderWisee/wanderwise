@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
@@ -11,15 +13,15 @@ export default function TripActionsSheet({ visible, onClose, onShare, onEdit, on
           <View style={styles.handle} />
 
           <TouchableOpacity style={styles.row} onPress={() => { onClose(); onShare(); }}>
-            <Text style={styles.icon}>↗</Text>
+            <AppIcon name="external" style={styles.icon} />
             <Text style={styles.label}>{t('inviteYourCrew')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={() => { onClose(); onEdit(); }}>
-            <Text style={styles.icon}>✎</Text>
+            <AppIcon name="pencil" style={styles.icon} />
             <Text style={styles.label}>{t('editYourTrip')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={() => { onClose(); onDelete(); }}>
-            <Text style={[styles.icon, { color: Colors.error }]}>🗑</Text>
+            <AppIcon name="trash" style={[styles.icon, { color: Colors.error }]} />
             <Text style={[styles.label, { color: Colors.error }]}>{t('deleteOrLeaveTrip')}</Text>
           </TouchableOpacity>
         </Pressable>
@@ -40,5 +42,5 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
   icon: { fontSize: 17, width: 22, color: Colors.brown900 },
-  label: { fontFamily: 'Lora_400Regular', fontSize: 15, color: Colors.brown900 },
+  label: { fontFamily: 'Poppins_400Regular', fontSize: 15, color: Colors.brown900 },
 });

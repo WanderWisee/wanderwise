@@ -1,10 +1,12 @@
+import AppIcon from './AppIcon';
+import { Text } from './Typography';
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { Colors } from '../constants/theme';
 import { getRoute, directionsUrl, hasCoords } from '../services/geoService';
 import { useApp } from '../context/AppContext';
 
-const MODE_ICONS = { walking: '🚶', driving: '🚗' };
+const MODE_ICONS = { walking: 'user', driving: 'car' };
 
 function formatDuration(mins) {
   if (mins < 60) return `${mins} min${mins > 1 ? 's' : ''}`;
@@ -46,8 +48,8 @@ export default function DirectionsConnector({ from, to, destination }) {
         style={styles.modeButton}
         onPress={() => setMode(mode === 'walking' ? 'driving' : 'walking')}
       >
-        <Text style={styles.modeIcon}>{MODE_ICONS[mode]}</Text>
-        <Text style={styles.caret}>▾</Text>
+        <AppIcon name={MODE_ICONS[mode]} size={20} />
+        <AppIcon name="chevron-down" style={styles.caret} />
       </TouchableOpacity>
 
       {summary && <Text style={styles.summary}>{summary}</Text>}
@@ -69,9 +71,9 @@ const styles = StyleSheet.create({
   modeButton: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   modeIcon: { fontSize: 14 },
   caret: { fontSize: 10, color: Colors.brown600 },
-  summary: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600 },
+  summary: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600 },
   directionsLink: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.brown900,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown900,
     textDecorationLine: 'underline',
   },
   dashedLine: {

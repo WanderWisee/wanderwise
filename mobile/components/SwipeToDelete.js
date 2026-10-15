@@ -1,5 +1,6 @@
+import { Text } from './Typography';
 import { useRef } from 'react';
-import { Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
 export default function SwipeToDelete({ children, onDelete, disabled, label = 'Delete' }) {
@@ -38,5 +39,5 @@ const styles = StyleSheet.create({
     width: 84, marginLeft: 8, borderRadius: 16, backgroundColor: '#B3261E',
     alignItems: 'center', justifyContent: 'center',
   },
-  actionText: { color: '#FFFFFF', fontFamily: 'Lora_600SemiBold', fontSize: 13 },
+  actionText: { color: '#FFFFFF', fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
 });

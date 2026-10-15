@@ -1,8 +1,7 @@
+import AppIcon, { IconLabel } from '../../components/AppIcon';
+import { Text, TextInput } from '../../components/Typography';
 import { useState, useEffect, useRef } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Modal, Pressable,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
@@ -38,14 +37,14 @@ const GREY_PLACEHOLDER = Colors.placeholder;
 
 // Parehong mga kategorya ng AddExpensePage ng web (English ang naka-save).
 const EXPENSE_CATEGORIES = [
-  { icon: '🍽️', label: 'Food and Drinks', key: 'catFood' },
-  { icon: '🚌', label: 'Transit', key: 'catTransit' },
-  { icon: '🎟️', label: 'Activities', key: 'catActivities' },
-  { icon: '🛍️', label: 'Shopping', key: 'catShopping' },
-  { icon: '🚗', label: 'Car Rental', key: 'catCarRental' },
-  { icon: '🛏️', label: 'Lodging', key: 'catLodging' },
-  { icon: '⛽', label: 'Gas', key: 'catGas' },
-  { icon: '✈️', label: 'Flights', key: 'catFlights' },
+  { icon: 'utensils', label: 'Food and Drinks', key: 'catFood' },
+  { icon: 'bus', label: 'Transit', key: 'catTransit' },
+  { icon: 'ticket', label: 'Activities', key: 'catActivities' },
+  { icon: 'shopping', label: 'Shopping', key: 'catShopping' },
+  { icon: 'car', label: 'Car Rental', key: 'catCarRental' },
+  { icon: 'hotel', label: 'Lodging', key: 'catLodging' },
+  { icon: 'fuel', label: 'Gas', key: 'catGas' },
+  { icon: 'plane', label: 'Flights', key: 'catFlights' },
 ];
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -706,7 +705,7 @@ function TripDetailContent({ id }) {
       <SafeAreaView style={styles.screen}>
         <ErrorState message={loadError || t('tripNotFoundOrLinkInvalid')} onRetry={() => { setLoading(true); loadTrip().finally(() => setLoading(false)); }} retryLabel={t('tryAgain')} />
         <TouchableOpacity onPress={() => router.replace('/(tabs)/home')} style={{ alignSelf: 'center', marginBottom: 40 }}>
-          <Text style={styles.backLink}>← {t('goHome')}</Text>
+          <IconLabel name="arrow-left" textStyle={styles.backLink}>{t('goHome')}</IconLabel>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -731,7 +730,7 @@ function TripDetailContent({ id }) {
     byCategory[e.category] = (byCategory[e.category] || 0) + (Number(e.amount) || 0);
   });
   placeCosts.forEach((c) => {
-    const key = `📍 ${c.placeName}`;
+    const key = c.placeName;
     byCategory[key] = (byCategory[key] || 0) + (Number(c.amount) || 0);
   });
   const categoryRows: [string, number][] = Object.entries(byCategory).map(([k, v]) => [k, Number(v)] as [string, number]).sort((a, b) => b[1] - a[1]);
@@ -767,18 +766,18 @@ function TripDetailContent({ id }) {
       >
         {/* 0: Hero */}
         <View style={styles.hero}>
-          <DestinationImage name={trip.destination} style={StyleSheet.absoluteFill} emojiSize={50} />
+          <DestinationImage name={trip.destination} style={StyleSheet.absoluteFill} iconSize={50} />
           <View style={styles.heroShade} />
           <View style={styles.heroTopRow}>
             <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/home'))} style={styles.heroIconButton} accessibilityLabel={t('back')}>
-              <Text style={styles.heroIconText}>←</Text>
+              <AppIcon name="arrow-left" style={styles.heroIconText} />
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity onPress={() => setInviteOpen(true)} style={styles.heroIconButton} accessibilityLabel={t('inviteYourCrew')}>
-                <Text style={styles.heroIconText}>👥</Text>
+                <AppIcon name="users" style={styles.heroIconText} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.heroIconButton} accessibilityLabel={t('moreActions')}>
-                <Text style={styles.heroIconText}>⋯</Text>
+                <AppIcon name="more" style={styles.heroIconText} />
               </TouchableOpacity>
             </View>
           </View>
@@ -804,28 +803,26 @@ function TripDetailContent({ id }) {
             )}
             {canEdit && !editingName && (
               <TouchableOpacity onPress={() => setEditingName(true)} hitSlop={10} accessibilityLabel={t('renameTrip')}>
-                <Text style={styles.editHint}>✎</Text>
+                <AppIcon name="pencil" style={styles.editHint} />
               </TouchableOpacity>
             )}
             {saving && <ActivityIndicator size="small" color={Colors.brown600} />}
           </View>
 
           <TouchableOpacity disabled={!canEdit} onPress={() => setDatesOpen(true)} style={styles.metaButton} activeOpacity={0.7}>
-            <Text style={styles.tripDates}>
-              📅 {trip.startDate || trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : t('setTripDates')}
-            </Text>
-            <Text style={styles.editHint}>✎</Text>
+            <IconLabel name="calendar" textStyle={styles.tripDates}>{trip.startDate || trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : t('setTripDates')}</IconLabel>
+            <AppIcon name="pencil" style={styles.editHint} />
           </TouchableOpacity>
 
           <View style={styles.metaRow}>
             <View style={styles.buddiesRow}>
-              <Text style={styles.tripDates}>👤 {t('travelBuddies')}</Text>
+              <IconLabel name="user" textStyle={styles.tripDates}>{t('travelBuddies')}</IconLabel>
               <TouchableOpacity style={styles.miniCounter} disabled={!canEdit} onPress={() => changeBuddies(-1)} hitSlop={6}>
-                <Text style={styles.miniCounterText}>−</Text>
+                <AppIcon name="minus" style={styles.miniCounterText} />
               </TouchableOpacity>
               <Text style={styles.buddiesValue}>{trip.travelBuddiesCount}</Text>
               <TouchableOpacity style={styles.miniCounter} disabled={!canEdit} onPress={() => changeBuddies(1)} hitSlop={6}>
-                <Text style={styles.miniCounterText}>+</Text>
+                <AppIcon name="plus" style={styles.miniCounterText} />
               </TouchableOpacity>
             </View>
 
@@ -846,7 +843,7 @@ function TripDetailContent({ id }) {
             <Text style={[styles.linkAction, persistence.status === 'failed' && { color: Colors.error }]}>{t(persistence.status === 'failed' ? 'saveFailedRetry' : persistence.status === 'saving' ? 'savingLabel' : dirty ? 'unsavedLabel' : 'savedLabel')}</Text>
           </TouchableOpacity>}
           {!!sectionError && <TouchableOpacity onPress={loadResources}><Text style={{ color: Colors.error }}>{t('sectionLoadFailed')}</Text></TouchableOpacity>}
-          <TouchableOpacity style={styles.newListButtonMinimal} onPress={() => router.push({ pathname: '/tour/[id]', params: { id: String(id) } } as any)}><Text style={styles.newListButtonMinimalText}>{t('tourDay')} ?</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.newListButtonMinimal} onPress={() => router.push({ pathname: '/tour/[id]', params: { id: String(id) } } as any)}><IconLabel trailing name="star" textStyle={styles.newListButtonMinimalText}>{t('tourDay')}</IconLabel></TouchableOpacity>
         </View>
 
         {/* 2: Sticky header — tabs, at day pills kapag nasa Itinerary */}
@@ -907,22 +904,20 @@ function TripDetailContent({ id }) {
               <View style={styles.bookingCard}>
                 <View style={styles.sectionHeaderRow}>
                   <View style={[styles.sectionIconBadge, { backgroundColor: Colors.tintSky }]}>
-                    <Text style={{ fontSize: 14 }}>🏨</Text>
+                    <AppIcon name="hotel" style={{ fontSize: 14 }} />
                   </View>
                   <Text style={[styles.sectionTitle, { flex: 1, marginBottom: 0 }]}>{t('yourBookings')}</Text>
                   <TouchableOpacity onPress={openHotels}>
-                    <Text style={styles.linkAction}>+ {t('bookAHotel')}</Text>
+                    <IconLabel name="plus" textStyle={styles.linkAction}>{t('bookAHotel')}</IconLabel>
                   </TouchableOpacity>
                 </View>
                 {bookings.length === 0 ? (
                   <Text style={styles.emptyTextSmall}>{t('noBookingsForTrip')}</Text>
                 ) : (
                   bookings.map((b) => (
-                    <Text key={b.id} style={styles.bookingLine}>
-                      🛏️ {b.placeName} · {formatDate(b.checkIn, 'short')}
+                    <IconLabel name="hotel" textStyle={styles.bookingLine} key={b.id}>{b.placeName} · {formatDate(b.checkIn, 'short')}
                       {b.checkOut ? ` → ${formatDate(b.checkOut, 'short')}` : ''}
-                      {b.bookingSite ? ` · ${b.bookingSite}` : ''}
-                    </Text>
+                      {b.bookingSite ? ` · ${b.bookingSite}` : ''}</IconLabel>
                   ))
                 )}
               </View>
@@ -940,7 +935,7 @@ function TripDetailContent({ id }) {
                 <View key={section.key} style={styles.sectionBlock}>
                   <View style={styles.sectionHeaderRow}>
                     <View style={[styles.sectionIconBadge, { backgroundColor: sIndex % 2 === 0 ? Colors.tintSand : Colors.tintSage }]}>
-                      <Text style={{ fontSize: 14 }}>📍</Text>
+                      <AppIcon name="pin" style={{ fontSize: 14 }} />
                     </View>
                     {section.isDefault ? (
                       <TextInput
@@ -964,7 +959,7 @@ function TripDetailContent({ id }) {
                           onEndEditing={() => persist(tripRef.current)}
                         />
                         <TouchableOpacity disabled={!canEdit} onPress={() => deleteList(section.key)} hitSlop={8} accessibilityLabel={t('deleteThisListTitle')}>
-                          <Text style={{ fontSize: 14, color: Colors.brown600 }}>🗑</Text>
+                          <AppIcon name="trash" style={{ fontSize: 14, color: Colors.brown600 }} />
                         </TouchableOpacity>
                       </>
                     )}
@@ -1020,21 +1015,21 @@ function TripDetailContent({ id }) {
                       onPress={() => addPlaceToSection(section.key, { openNotes: true })}
                       accessibilityLabel={t('addWithNotes')}
                     >
-                      <Text style={{ fontSize: 15 }}>📝</Text>
+                      <AppIcon name="pencil" style={{ fontSize: 15 }} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.iconSquareButton, isSelecting && styles.iconSquareButtonActive]}
                       onPress={() => (isSelecting ? cancelSelecting() : startSelecting())}
                       accessibilityLabel={t('selectPlaces')}
                     >
-                      <Text style={{ fontSize: 15 }}>☑️</Text>
+                      <AppIcon name="square-check" style={{ fontSize: 15 }} />
                     </TouchableOpacity>
                   </View>
                 </View>
               ))}
 
               <TouchableOpacity disabled={!canEdit} style={[styles.newListButtonMinimal, !canEdit && { display: 'none' }]} onPress={addNewList}>
-                <Text style={styles.newListButtonMinimalText}>+ {t('newListBtn')}</Text>
+                <IconLabel name="plus" textStyle={styles.newListButtonMinimalText}>{t('newListBtn')}</IconLabel>
               </TouchableOpacity>
 
               {isSelecting && selectedPlaceKeys.length > 0 && (
@@ -1055,7 +1050,7 @@ function TripDetailContent({ id }) {
                   )}
                   <View style={styles.assignBarBottomRow}>
                     <TouchableOpacity onPress={deleteSelected}>
-                      <Text style={styles.assignBarDelete}>🗑 {t('deleteSelected')}</Text>
+                      <IconLabel name="trash" textStyle={styles.assignBarDelete}>{t('deleteSelected')}</IconLabel>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={cancelSelecting}>
                       <Text style={styles.assignBarCancel}>{t('cancel')}</Text>
@@ -1070,11 +1065,11 @@ function TripDetailContent({ id }) {
             <>
               {days.length === 0 ? (
                 <View style={styles.emptyStateCard}>
-                  <Text style={{ fontSize: 30 }}>🗓️</Text>
+                  <AppIcon name="calendar" style={{ fontSize: 30 }} />
                   <Text style={styles.emptyStateTitle}>{t('noDatesSetYet')}</Text>
                   <Text style={[styles.emptyText, { textAlign: 'center' }]}>{t('setDatesForDays')}</Text>
                   <TouchableOpacity style={[styles.addExpenseButton, { paddingHorizontal: 20, marginTop: 8 }]} disabled={!canEdit} onPress={() => setDatesOpen(true)}>
-                    <Text style={styles.addExpenseButtonText}>📅 {t('setTripDates')}</Text>
+                    <IconLabel name="calendar" textStyle={styles.addExpenseButtonText}>{t('setTripDates')}</IconLabel>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -1092,9 +1087,7 @@ function TripDetailContent({ id }) {
 
                       {stays.map((b) => (
                         <View key={`stay-${b.id}`} style={styles.stayBanner}>
-                          <Text style={styles.stayText}>
-                            🛏️ {b.checkIn === day.key ? t('checkInAt') : t('bookingStaying')} {b.placeName}
-                          </Text>
+                          <IconLabel name="hotel" textStyle={styles.stayText}>{b.checkIn === day.key ? t('checkInAt') : t('bookingStaying')} {b.placeName}</IconLabel>
                         </View>
                       ))}
 
@@ -1122,10 +1115,10 @@ function TripDetailContent({ id }) {
                               {canEdit && isExpanded && stops.length > 1 && (
                                 <View style={styles.reorderRow}>
                                   <TouchableOpacity disabled={index === 0} onPress={() => moveStop(day.key, place.key, -1)} style={[styles.reorderButton, index === 0 && { opacity: 0.35 }]}>
-                                    <Text style={styles.reorderText}>↑ {t('moveUp')}</Text>
+                                    <IconLabel name="arrow-up" textStyle={styles.reorderText}>{t('moveUp')}</IconLabel>
                                   </TouchableOpacity>
                                   <TouchableOpacity disabled={index === stops.length - 1} onPress={() => moveStop(day.key, place.key, 1)} style={[styles.reorderButton, index === stops.length - 1 && { opacity: 0.35 }]}>
-                                    <Text style={styles.reorderText}>↓ {t('moveDown')}</Text>
+                                    <IconLabel name="arrow-down" textStyle={styles.reorderText}>{t('moveDown')}</IconLabel>
                                   </TouchableOpacity>
                                 </View>
                               )}
@@ -1147,7 +1140,7 @@ function TripDetailContent({ id }) {
                           onSubmitEditing={() => addPlaceToDay(day.key)}
                         />
                         <TouchableOpacity style={styles.addPlaceButton} onPress={() => addPlaceToDay(day.key)} disabled={saving}>
-                          <Text style={styles.addPlaceButtonText}>+</Text>
+                          <AppIcon name="plus" style={styles.addPlaceButtonText} />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1185,7 +1178,7 @@ function TripDetailContent({ id }) {
                       setEditingBudget(true);
                     }}
                   >
-                    <Text style={styles.budgetAmount}>{budget > 0 ? formatPeso(budget) : t('setABudget')} ✎</Text>
+                    <IconLabel trailing name="pencil" textStyle={styles.budgetAmount}>{budget > 0 ? formatPeso(budget) : t('setABudget')}</IconLabel>
                   </TouchableOpacity>
                 )}
 
@@ -1220,7 +1213,7 @@ function TripDetailContent({ id }) {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                   <ChoiceChips
                     style={{ flexWrap: 'nowrap' }}
-                    options={EXPENSE_CATEGORIES.map((c) => ({ value: c.label, label: `${c.icon} ${t(c.key)}` }))}
+                    options={EXPENSE_CATEGORIES.map((c) => ({ value: c.label, label: t(c.key), icon: c.icon }))}
                     value={expenseCategory}
                     onChange={setExpenseCategory}
                   />
@@ -1246,7 +1239,7 @@ function TripDetailContent({ id }) {
                   {saving ? (
                     <ActivityIndicator size="small" color={Colors.mint} />
                   ) : (
-                    <Text style={styles.addExpenseButtonText}>+ {t('addExpenseBtn')}</Text>
+                    <IconLabel name="plus" textStyle={styles.addExpenseButtonText}>{t('addExpenseBtn')}</IconLabel>
                   )}
                 </TouchableOpacity>
               </View>
@@ -1259,7 +1252,7 @@ function TripDetailContent({ id }) {
                       <View key={label} style={styles.breakdownRow}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                           <Text style={styles.breakdownLabel} numberOfLines={1}>
-                            {catMeta(label) ? `${catMeta(label).icon} ` : ''}{catLabel(label)}
+                            {catLabel(label)}
                           </Text>
                           <Text style={styles.breakdownAmount}>{formatPeso(amount)}</Text>
                         </View>
@@ -1288,14 +1281,14 @@ function TripDetailContent({ id }) {
               ) : (
                 expenses.map((e) => (
                   <View key={e.id} style={styles.expenseRow}>
-                    <Text style={{ fontSize: 18 }}>{catMeta(e.category)?.icon || '📍'}</Text>
+                    <AppIcon name={catMeta(e.category)?.icon || 'pin'} size={22} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.expenseTitle}>{catLabel(e.category)}</Text>
                       {!!e.description && <Text style={styles.expenseDesc}>{e.description}</Text>}
                     </View>
                     <Text style={styles.expenseAmount}>{formatPeso(e.amount)}</Text>
                     <TouchableOpacity disabled={!canEdit} onPress={() => handleDeleteExpense(e)} hitSlop={8} accessibilityLabel={t('dialogDelete')}>
-                      <Text style={{ fontSize: 14, color: Colors.brown600 }}>✕</Text>
+                      <AppIcon name="x" style={{ fontSize: 14, color: Colors.brown600 }} />
                     </TouchableOpacity>
                   </View>
                 ))
@@ -1307,7 +1300,7 @@ function TripDetailContent({ id }) {
                   <Text style={[styles.emptyTextSmall, { marginBottom: 10 }]}>{t('placeCostsHint')}</Text>
                   {placeCosts.map((c) => (
                     <View key={c.id} style={styles.expenseRow}>
-                      <Text style={{ fontSize: 16 }}>📍</Text>
+                      <AppIcon name="pin" style={{ fontSize: 16 }} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.expenseTitle}>{c.placeName}</Text>
                         <Text style={styles.expenseDesc}>{c.category}</Text>
@@ -1343,15 +1336,15 @@ function TripDetailContent({ id }) {
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <View style={styles.handle} />
             <TouchableOpacity style={styles.sheetRow} onPress={() => { setMenuOpen(false); setInviteOpen(true); }}>
-              <Text style={styles.sheetIcon}>👥</Text>
+              <AppIcon name="users" style={styles.sheetIcon} />
               <Text style={styles.sheetLabel}>{t('inviteYourCrew')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sheetRow} disabled={!canEdit} onPress={() => { setMenuOpen(false); setDatesOpen(true); }}>
-              <Text style={styles.sheetIcon}>📅</Text>
+              <AppIcon name="calendar" style={styles.sheetIcon} />
               <Text style={styles.sheetLabel}>{t('changeDates')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sheetRow} onPress={openHotels}>
-              <Text style={styles.sheetIcon}>🏨</Text>
+              <AppIcon name="hotel" style={styles.sheetIcon} />
               <Text style={styles.sheetLabel}>{t('bookAHotel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -1361,17 +1354,17 @@ function TripDetailContent({ id }) {
                 router.push({ pathname: '/new-post', params: { place: trip.destination } });
               }}
             >
-              <Text style={styles.sheetIcon}>📖</Text>
+              <AppIcon name="book" style={styles.sheetIcon} />
               <Text style={styles.sheetLabel}>{t('writeAboutThisTrip')}</Text>
             </TouchableOpacity>
             {isOwner ? (
               <TouchableOpacity style={styles.sheetRow} onPress={confirmDeleteTrip}>
-                <Text style={styles.sheetIcon}>🗑</Text>
+                <AppIcon name="trash" style={styles.sheetIcon} />
                 <Text style={[styles.sheetLabel, { color: Colors.error }]}>{t('deleteTripTitle')}</Text>
               </TouchableOpacity>
             ) : crew.length > 0 ? (
               <TouchableOpacity style={styles.sheetRow} onPress={confirmLeaveTrip}>
-                <Text style={styles.sheetIcon}>🚪</Text>
+                <AppIcon name="door" style={styles.sheetIcon} />
                 <Text style={[styles.sheetLabel, { color: Colors.error }]}>{t('leaveTrip')}</Text>
               </TouchableOpacity>
             ) : null}
@@ -1384,11 +1377,11 @@ function TripDetailContent({ id }) {
 
 const styles = StyleSheet.create({
   osmAttribution: {
-    fontFamily: 'Lora_400Regular', fontSize: 10.5, color: GREY_PLACEHOLDER,
+    fontFamily: 'Poppins_400Regular', fontSize: 10.5, color: GREY_PLACEHOLDER,
     textAlign: 'center', marginTop: 8,
   },
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backLink: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  backLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
 
   hero: { height: 190, backgroundColor: Colors.cream2, position: 'relative', overflow: 'hidden' },
   heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(51,28,8,0.18)' },
@@ -1408,26 +1401,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  tripName: { flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900 },
+  tripName: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
   tripNameInput: { paddingVertical: 2, borderBottomWidth: 1, borderBottomColor: Colors.line },
   metaButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, alignSelf: 'flex-start' },
   editHint: { fontSize: 12, color: Colors.brown600 },
-  tripDates: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
+  tripDates: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600 },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   buddiesRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   miniCounter: {
     width: 24, height: 24, borderRadius: 7, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
   },
-  miniCounterText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
-  buddiesValue: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900, minWidth: 14, textAlign: 'center' },
+  miniCounterText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  buddiesValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900, minWidth: 14, textAlign: 'center' },
   crewRow: { flexDirection: 'row', alignItems: 'center' },
-  crewMore: { fontFamily: 'Lora_600SemiBold', fontSize: 11, color: Colors.brown600, marginLeft: 4 },
+  crewMore: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, color: Colors.brown600, marginLeft: 4 },
 
   stickyHeader: { backgroundColor: Colors.cream, borderBottomWidth: 1, borderBottomColor: Colors.line },
   tabBar: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 18 },
   tabItem: { marginRight: 24, paddingBottom: 12 },
-  tabText: { fontFamily: 'Lora_600SemiBold', fontSize: 14.5, color: Colors.brown600 },
+  tabText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14.5, color: Colors.brown600 },
   tabTextActive: { color: Colors.brown900 },
   tabUnderline: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: Colors.brown900 },
 
@@ -1437,50 +1430,50 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   dayPillActive: { backgroundColor: Colors.brown900 },
-  dayPillText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  dayPillText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
   dayPillTextActive: { color: Colors.mint },
 
   tabContent: { paddingHorizontal: 20, paddingTop: 20 },
-  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900, marginBottom: 12 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, marginBottom: 12 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  mapCaption: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 18 },
-  linkAction: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.teal },
+  mapCaption: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 18 },
+  linkAction: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.teal },
 
   bookingCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 24,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
-  bookingLine: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown900, marginTop: 4 },
+  bookingLine: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown900, marginTop: 4 },
 
   selectHint: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: Colors.cream2, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 16,
   },
-  selectHintText: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown900, flex: 1 },
-  selectHintCancel: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
+  selectHintText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown900, flex: 1 },
+  selectHintCancel: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
 
   sectionBlock: { marginBottom: 22 },
   listTitleInput: {
-    flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900,
+    flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900,
     paddingVertical: 2,
   },
 
   daySection: { paddingBottom: 16 },
   daySectionDivider: { borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 22 },
-  dayHeading: { fontFamily: 'Lora_600SemiBold', fontSize: 26, color: Colors.brown900, marginBottom: 14 },
+  dayHeading: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, color: Colors.brown900, marginBottom: 14 },
   stayBanner: {
     backgroundColor: Colors.tintSky, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
   },
-  stayText: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown900 },
+  stayText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown900 },
   reorderRow: { flexDirection: 'row', gap: 10, marginTop: 6, justifyContent: 'flex-end' },
   reorderButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: Colors.cream2 },
-  reorderText: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.brown900 },
+  reorderText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown900 },
 
   addPlaceRow: { flexDirection: 'row', gap: 10, marginBottom: 12, marginTop: 2 },
   addPlaceInput: {
-    flex: 1, fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 14, paddingVertical: 12,
   },
@@ -1488,71 +1481,71 @@ const styles = StyleSheet.create({
     width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  addPlaceButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.mint },
+  addPlaceButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.mint },
   iconSquareButton: {
     width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.teal },
-  emptyText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600 },
-  emptyTextSmall: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: GREY_PLACEHOLDER, paddingVertical: 4, marginBottom: 6 },
+  emptyText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600 },
+  emptyTextSmall: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: GREY_PLACEHOLDER, paddingVertical: 4, marginBottom: 6 },
 
   newListButtonMinimal: { alignSelf: 'center', marginTop: 8, paddingVertical: 10, paddingHorizontal: 20 },
   newListButtonMinimalText: {
-    fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.brown600, textDecorationLine: 'underline',
+    fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.brown600, textDecorationLine: 'underline',
   },
 
   assignBar: { backgroundColor: Colors.brown900, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 20 },
-  assignBarTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint, marginBottom: 10 },
+  assignBarTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint, marginBottom: 10 },
   assignBarDayPill: {
     backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingHorizontal: 14, height: 34,
     alignItems: 'center', justifyContent: 'center',
   },
-  assignBarDayPillText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: '#FFFFFF' },
+  assignBarDayPillText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: '#FFFFFF' },
   assignBarBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  assignBarDelete: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: '#F4A19A' },
-  assignBarCancel: { fontFamily: 'Lora_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.75)', textDecorationLine: 'underline' },
+  assignBarDelete: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: '#F4A19A' },
+  assignBarCancel: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.75)', textDecorationLine: 'underline' },
 
   emptyStateCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', gap: 8,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
-  emptyStateTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  emptyStateTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
 
   budgetHero: { backgroundColor: Colors.brown900, borderRadius: 18, padding: 20, marginBottom: 24 },
-  budgetLabel: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.mint },
-  budgetAmount: { fontFamily: 'Lora_600SemiBold', fontSize: 30, color: '#FFFFFF', marginTop: 4 },
+  budgetLabel: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.mint },
+  budgetAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 30, color: '#FFFFFF', marginTop: 4 },
   budgetEditRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  budgetPeso: { fontFamily: 'Lora_600SemiBold', fontSize: 30, color: '#FFFFFF' },
+  budgetPeso: { fontFamily: 'Poppins_600SemiBold', fontSize: 30, color: '#FFFFFF' },
   budgetInput: {
-    flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 30, color: '#FFFFFF', padding: 0,
+    flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 30, color: '#FFFFFF', padding: 0,
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.4)',
   },
   progressTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)', marginTop: 16, overflow: 'hidden' },
   progressFill: { height: 8, borderRadius: 4, backgroundColor: Colors.mint },
   budgetStatsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
-  budgetStatValue: { fontFamily: 'Lora_600SemiBold', fontSize: 16, color: '#FFFFFF' },
-  budgetStatLabel: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  budgetSplit: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 12 },
+  budgetStatValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#FFFFFF' },
+  budgetStatLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  budgetSplit: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 12 },
   addExpenseCard: {
     backgroundColor: Colors.cream2, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, padding: 16,
   },
   expenseInput: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10,
   },
   addExpenseButton: {
     backgroundColor: Colors.brown900, borderRadius: 12, height: 44, alignItems: 'center', justifyContent: 'center',
   },
-  addExpenseButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  addExpenseButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
   breakdownCard: {
     backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: Colors.line, padding: 16, gap: 14,
   },
   breakdownRow: { gap: 6 },
-  breakdownLabel: { flex: 1, fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown900, marginRight: 10 },
-  breakdownAmount: { fontFamily: 'Lora_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
+  breakdownLabel: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900, marginRight: 10 },
+  breakdownAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
   breakdownTrack: { height: 6, borderRadius: 3, backgroundColor: Colors.cream2, overflow: 'hidden' },
   breakdownFill: { height: 6, borderRadius: 3, backgroundColor: Colors.card },
   expenseRow: {
@@ -1560,9 +1553,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10,
   },
-  expenseTitle: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900 },
-  expenseDesc: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
-  expenseAmount: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  expenseTitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900 },
+  expenseDesc: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
+  expenseAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
 
   overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
@@ -1572,5 +1565,5 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.line, alignSelf: 'center', marginBottom: 10 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 },
   sheetIcon: { fontSize: 17, width: 24 },
-  sheetLabel: { fontFamily: 'Lora_400Regular', fontSize: 15, color: Colors.brown900 },
+  sheetLabel: { fontFamily: 'Poppins_400Regular', fontSize: 15, color: Colors.brown900 },
 });

@@ -1,5 +1,7 @@
+import AppIcon, { IconLabel } from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Share, RefreshControl } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Share, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -121,11 +123,11 @@ export default function ProfileScreen() {
 
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.push('/search')} style={styles.menuButton} accessibilityLabel={t('searchForAStudent')}>
-            <Text style={{ fontSize: 15 }}>🔍</Text>
+            <AppIcon name="search" style={{ fontSize: 15 }} />
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.menuButton} accessibilityLabel={t('menu')}>
-            <Text style={{ fontSize: 18 }}>☰</Text>
+            <AppIcon name="menu" style={{ fontSize: 18 }} />
           </TouchableOpacity>
         </View>
 
@@ -139,7 +141,7 @@ export default function ProfileScreen() {
             <Text style={styles.username}>{user ? fullName(user, t('student')) : ' '}</Text>
             {!!user?.email && <Text style={styles.email}>{user.email}</Text>}
             <Text style={styles.bio}>{user?.bio || t('noBioYet')}</Text>
-            <Text style={styles.location}>📍 {user?.location || t('locationNotSet')}</Text>
+            <IconLabel name="pin" textStyle={styles.location}>{user?.location || t('locationNotSet')}</IconLabel>
 
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
@@ -160,10 +162,10 @@ export default function ProfileScreen() {
 
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.editButton} onPress={() => router.push('/settings/account')}>
-                <Text style={styles.editButtonText}>✎ {t('edit')}</Text>
+                <IconLabel name="pencil" textStyle={styles.editButtonText}>{t('edit')}</IconLabel>
               </TouchableOpacity>
               <TouchableOpacity style={styles.shareButton} onPress={shareProfile}>
-                <Text style={styles.shareButtonText}>⇱ {t('share')}</Text>
+                <IconLabel name="external" textStyle={styles.shareButtonText}>{t('share')}</IconLabel>
               </TouchableOpacity>
             </View>
           </View>
@@ -172,11 +174,11 @@ export default function ProfileScreen() {
 
           <View style={styles.tabRow}>
             <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('trips')}>
-              <Text style={[styles.tabText, activeTab === 'trips' && styles.tabTextActive]}>📍 {capitalize(t('trips'))}</Text>
+              <IconLabel name="pin" textStyle={[styles.tabText, activeTab === 'trips' && styles.tabTextActive]}>{capitalize(t('trips'))}</IconLabel>
               {activeTab === 'trips' && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
             <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('journal')}>
-              <Text style={[styles.tabText, activeTab === 'journal' && styles.tabTextActive]}>📖 {t('journal')}</Text>
+              <IconLabel name="book" textStyle={[styles.tabText, activeTab === 'journal' && styles.tabTextActive]}>{t('journal')}</IconLabel>
               {activeTab === 'journal' && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           </View>
@@ -187,7 +189,7 @@ export default function ProfileScreen() {
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>{t('yourTravels')}</Text>
                   <TouchableOpacity style={styles.addButton} onPress={() => router.push('/new-trip')}>
-                    <Text style={styles.addButtonText}>+ {t('addNewPlan')}</Text>
+                    <IconLabel name="plus" textStyle={styles.addButtonText}>{t('addNewPlan')}</IconLabel>
                   </TouchableOpacity>
                 </View>
 
@@ -196,7 +198,7 @@ export default function ProfileScreen() {
                 ) : error ? (
                   <ErrorState message={error} onRetry={onRefresh} retryLabel={t('tryAgain')} />
                 ) : trips.length === 0 ? (
-                  <EmptyState icon="🧳" title={t('noTripsYetPlanOne')} />
+                  <EmptyState icon="suitcase" title={t('noTripsYetPlanOne')} />
                 ) : (
                   trips.map((trip, index) => (
                     <View key={trip.id} style={index !== trips.length - 1 ? styles.tripRowDivider : null}>
@@ -215,7 +217,7 @@ export default function ProfileScreen() {
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>{t('yourTravelStories')}</Text>
                   <TouchableOpacity style={styles.addButton} onPress={() => router.push('/new-post')}>
-                    <Text style={styles.addButtonText}>+ {t('newPost')}</Text>
+                    <IconLabel name="plus" textStyle={styles.addButtonText}>{t('newPost')}</IconLabel>
                   </TouchableOpacity>
                 </View>
                 {loading ? (
@@ -223,7 +225,7 @@ export default function ProfileScreen() {
                 ) : error ? (
                   <ErrorState message={error} onRetry={onRefresh} retryLabel={t('tryAgain')} />
                 ) : journal.length === 0 ? (
-                  <EmptyState icon="📖" title={t('noJournalPostsYet')} subtitle={t('journalEmptyHint')} />
+                  <EmptyState icon="book" title={t('noJournalPostsYet')} subtitle={t('journalEmptyHint')} />
                 ) : (
                   <View style={styles.grid}>
                     {journal.map((j) => (
@@ -232,11 +234,11 @@ export default function ProfileScreen() {
                           <Image source={{ uri: j.coverImage }} style={styles.gridImage} />
                         ) : (
                           <View style={[styles.gridImage, { alignItems: 'center', justifyContent: 'center' }]}>
-                            <Text style={{ fontSize: 30 }}>📖</Text>
+                            <AppIcon name="book" style={{ fontSize: 30 }} />
                           </View>
                         )}
                         <Text style={styles.gridTitle} numberOfLines={2}>{j.title || t('untitled')}</Text>
-                        <Text style={styles.gridMeta}>📍 {j.entries.length} {t('storyPlacesCount')}</Text>
+                        <IconLabel name="pin" textStyle={styles.gridMeta}>{j.entries.length} {t('storyPlacesCount')}</IconLabel>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -280,15 +282,15 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
 
   identitySection: { alignItems: 'center', marginBottom: 24 },
-  username: { fontFamily: 'Lora_600SemiBold', fontSize: 20, color: Colors.brown900, textAlign: 'center' },
-  email: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
-  bio: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 6, textAlign: 'center' },
-  location: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 4 },
+  username: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, textAlign: 'center' },
+  email: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
+  bio: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 6, textAlign: 'center' },
+  location: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 4 },
 
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: 24, marginTop: 20, marginBottom: 20 },
   statItem: { alignItems: 'center' },
-  statValue: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900 },
-  statLabel: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown600, marginTop: 2 },
+  statValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
+  statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600, marginTop: 2 },
   statDivider: { width: 1, height: 28, backgroundColor: Colors.line },
 
   actionRow: { flexDirection: 'row', gap: 10, width: '100%' },
@@ -296,20 +298,20 @@ const styles = StyleSheet.create({
     flex: 1, height: 42, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  editButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
+  editButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
   shareButton: {
     flex: 1, height: 42, borderRadius: 12, backgroundColor: 'transparent',
     borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  shareButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  shareButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
 
   divider: { height: 1, backgroundColor: Colors.line, marginBottom: 4 },
 
   tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.line, marginBottom: 20 },
   tabButton: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  tabText: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown600 },
-  tabTextActive: { fontFamily: 'Lora_600SemiBold', color: Colors.brown900 },
+  tabText: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600 },
+  tabTextActive: { fontFamily: 'Poppins_600SemiBold', color: Colors.brown900 },
   tabUnderline: {
     position: 'absolute', bottom: -1, height: 2, width: '55%', backgroundColor: Colors.brown900,
   },
@@ -318,12 +320,12 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 10,
   },
-  sectionTitle: { flex: 1, fontFamily: 'Lora_600SemiBold', fontSize: 19, color: Colors.brown900 },
+  sectionTitle: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 19, color: Colors.brown900 },
   addButton: {
     backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 14, height: 38,
     alignItems: 'center', justifyContent: 'center',
   },
-  addButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  addButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
   tripRowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14, marginTop: 8 },
   gridCard: {
@@ -331,6 +333,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line,
   },
   gridImage: { width: '100%', height: 120, backgroundColor: Colors.cream2 },
-  gridTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900, paddingHorizontal: 10, paddingTop: 10 },
-  gridMeta: { fontFamily: 'Lora_400Regular', fontSize: 11, color: Colors.brown600, paddingHorizontal: 10, paddingTop: 4, paddingBottom: 10 },
+  gridTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, paddingHorizontal: 10, paddingTop: 10 },
+  gridMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600, paddingHorizontal: 10, paddingTop: 4, paddingBottom: 10 },
 });

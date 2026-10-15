@@ -1,8 +1,7 @@
+import AppIcon, { IconLabel } from './AppIcon';
+import { Text, TextInput } from './Typography';
 import { useEffect, useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Pressable, Share, ScrollView,
-  ActivityIndicator, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Share, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Colors } from '../constants/theme';
 import { WEB_URL } from '../constants/config';
@@ -156,11 +155,11 @@ function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = nu
 
               <View style={styles.shareRow}>
                 <TouchableOpacity style={styles.shareItem} onPress={copyLink} disabled={!shareLink}>
-                  <View style={styles.shareIconBadge}><Text style={{ fontSize: 18 }}>🔗</Text></View>
+                  <View style={styles.shareIconBadge}><AppIcon name="link" style={{ fontSize: 18 }} /></View>
                   <Text style={styles.shareLabel}>{t('copy')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.shareItem} onPress={shareVia} disabled={!shareLink}>
-                  <View style={styles.shareIconBadge}><Text style={{ fontSize: 18 }}>💬</Text></View>
+                  <View style={styles.shareIconBadge}><AppIcon name="message" style={{ fontSize: 18 }} /></View>
                   <Text style={styles.shareLabel}>{t('sendViaApps')}</Text>
                 </TouchableOpacity>
               </View>
@@ -194,7 +193,7 @@ function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = nu
                       {busyId === p.id ? (
                         <ActivityIndicator size="small" color={Colors.mint} />
                       ) : (
-                        <Text style={styles.smallButtonText}>{already ? '✓' : t('add')}</Text>
+                        <Text style={styles.smallButtonText}>{already ? 'check' : t('add')}</Text>
                       )}
                     </TouchableOpacity>
                   </View>
@@ -225,7 +224,7 @@ function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = nu
 
               {!isOwner && crew.length > 0 && (
                 <TouchableOpacity style={styles.leaveRow} onPress={leave}>
-                  <Text style={styles.leaveText}>🚪 {t('leaveTrip')}</Text>
+                  <IconLabel name="door" textStyle={styles.leaveText}>{t('leaveTrip')}</IconLabel>
                 </TouchableOpacity>
               )}
             </ScrollView>
@@ -246,34 +245,34 @@ const styles = StyleSheet.create({
     width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.line,
     alignSelf: 'center', marginBottom: 16,
   },
-  title: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900, textAlign: 'center', marginBottom: 14 },
-  label: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.brown900, marginBottom: 8 },
-  muted: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 8 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, textAlign: 'center', marginBottom: 14 },
+  label: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, marginBottom: 8 },
+  muted: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 8 },
   linkBox: {
     backgroundColor: Colors.cream2, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
     borderWidth: 1, borderColor: Colors.line, marginBottom: 14, minHeight: 46, justifyContent: 'center',
   },
-  linkText: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown900 },
+  linkText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown900 },
   shareRow: { flexDirection: 'row', justifyContent: 'space-evenly', marginBottom: 18 },
   shareItem: { alignItems: 'center', gap: 6 },
   shareIconBadge: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.cream2,
     alignItems: 'center', justifyContent: 'center',
   },
-  shareLabel: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600 },
+  shareLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
   input: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: Colors.cream2, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
     borderWidth: 1, borderColor: Colors.line, marginBottom: 10,
   },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
-  personName: { flex: 1, fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900 },
+  personName: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900 },
   smallButton: {
     minWidth: 58, height: 32, borderRadius: 10, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12,
   },
-  smallButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
-  removeText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.error },
+  smallButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  removeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.error },
   leaveRow: { borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 16, marginTop: 12 },
-  leaveText: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.error },
+  leaveText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.error },
 });

@@ -1,5 +1,7 @@
+import { IconLabel } from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useCallback, useRef, useState } from 'react';
-import { Image, Linking, RefreshControl, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Linking, RefreshControl, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
@@ -109,14 +111,14 @@ export default function TourScreen() {
             <Text style={[styles.text, { color: day === date ? Colors.mint : Colors.brown900 }]}>{formatDate(day, 'short')}</Text>
           </TouchableOpacity>)}
         </ScrollView>
-        {loading ? <Loading /> : !days.length ? <EmptyState icon="📅" title={t('noTripDates')} /> : data && <>
+        {loading ? <Loading /> : !days.length ? <EmptyState icon="calendar" title={t('noTripDates')} /> : data && <>
           {!!actionError && <Text accessibilityRole="alert" style={styles.error}>{actionError}</Text>}
           <StudentCard title={t('meetingPoint')}>
             {meeting?.latitude != null ? <>
               <Text style={styles.text}>{meeting.name} · {meeting.radiusMeters} m</Text>
               <OsmMap markers={[{ ...meeting, label: meeting.name }]} height={180} />
               <Text style={styles.text}>{t('checkInHint')}</Text>
-              {myAttendance?.checkedInAt && <Text style={styles.text}>✓ {t('checkedIn')} · {timeAgo(myAttendance.checkedInAt)}</Text>}
+              {myAttendance?.checkedInAt && <IconLabel name="check" textStyle={styles.text}>{t('checkedIn')} · {timeAgo(myAttendance.checkedInAt)}</IconLabel>}
               {data.canCheckIn && <PrimaryButton label={t('checkInNow')} loading={busy} onPress={() => run(takeCheckIn)} />}
             </> : <Text style={styles.text}>{t('meetingMissing')}</Text>}
             {canManage && <>

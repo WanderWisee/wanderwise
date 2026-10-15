@@ -1,7 +1,7 @@
+import AppIcon, { IconLabel } from '../../components/AppIcon';
+import { Text, TextInput } from '../../components/Typography';
 import { useCallback, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, Linking, Modal, Pressable,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Linking, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -175,16 +175,16 @@ function HotelsContent({ params }) {
           {tripMode && (
             <View style={styles.tripBanner}>
               <Text style={styles.tripBannerText}>
-                {t('hotelsForTrip')} <Text style={{ fontFamily: 'Lora_600SemiBold' }}>{t('tripToPrefix')} {tripMode.destination}</Text>
+                {t('hotelsForTrip')} <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>{t('tripToPrefix')} {tripMode.destination}</Text>
               </Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <TouchableOpacity onPress={() => router.push(`/trip/${tripMode.id}`)}>
-                  <Text style={styles.tripBannerLink}>← {t('backToTrip')}</Text>
+                  <IconLabel name="arrow-left" textStyle={styles.tripBannerLink}>{t('backToTrip')}</IconLabel>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => router.setParams({ tripId: '', destination: '', startDate: '', endDate: '', search: '' })}
                 >
-                  <Text style={styles.tripBannerLink}>{t('showAllBookings')} ✕</Text>
+                  <IconLabel trailing name="x" textStyle={styles.tripBannerLink}>{t('showAllBookings')}</IconLabel>
                 </TouchableOpacity>
               </View>
             </View>
@@ -218,11 +218,11 @@ function HotelsContent({ params }) {
             <Text style={styles.counterLabel}>{t('travelBuddies')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, zIndex: 1 }}>
               <TouchableOpacity style={styles.counterButton} onPress={() => setTravelers((n) => Math.max(0, n - 1))}>
-                <Text style={styles.counterButtonText}>−</Text>
+                <AppIcon name="minus" style={styles.counterButtonText} />
               </TouchableOpacity>
               <Text style={styles.counterValue}>{travelers}</Text>
               <TouchableOpacity style={styles.counterButton} onPress={() => setTravelers((n) => n + 1)}>
-                <Text style={styles.counterButtonText}>+</Text>
+                <AppIcon name="plus" style={styles.counterButtonText} />
               </TouchableOpacity>
             </View>
           </View>
@@ -235,7 +235,7 @@ function HotelsContent({ params }) {
           {/* ===== Destinations ===== */}
           <View style={styles.sectionHeaderRow}>
             <View style={[styles.sectionIconBadge, { backgroundColor: '#C9D9C4' }]}>
-              <Text style={{ fontSize: 14 }}>🏨</Text>
+              <AppIcon name="hotel" style={{ fontSize: 14 }} />
             </View>
             <Text style={styles.sectionTitle}>{t('hotelsDestinationsTitle')}</Text>
           </View>
@@ -257,7 +257,7 @@ function HotelsContent({ params }) {
           {/* ===== Record a booking ===== */}
           <View style={styles.sectionHeaderRow}>
             <View style={[styles.sectionIconBadge, { backgroundColor: '#F4D9A8' }]}>
-              <Text style={{ fontSize: 14 }}>🧾</Text>
+              <AppIcon name="receipt" style={{ fontSize: 14 }} />
             </View>
             <Text style={styles.sectionTitle}>{t('recordYourBooking')}</Text>
           </View>
@@ -335,7 +335,7 @@ function HotelsContent({ params }) {
           {/* ===== Bookings ===== */}
           <View style={styles.sectionHeaderRow}>
             <View style={[styles.sectionIconBadge, { backgroundColor: '#B8D4D9' }]}>
-              <Text style={{ fontSize: 14 }}>🛏️</Text>
+              <AppIcon name="hotel" style={{ fontSize: 14 }} />
             </View>
             <Text style={styles.sectionTitle}>{t('yourBookings')}</Text>
           </View>
@@ -346,16 +346,16 @@ function HotelsContent({ params }) {
               {bookings.map((b) => (
                 <View key={b.id} style={styles.bookingRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.bookingName}>🏨 {b.placeName}</Text>
+                    <IconLabel name="hotel" textStyle={styles.bookingName}>{b.placeName}</IconLabel>
                     <Text style={styles.bookingMeta}>{bookingLine(b)}</Text>
                     {!tripMode && !!b.tripDestination && (
                       <TouchableOpacity onPress={() => router.push(`/trip/${b.tripId}`)}>
-                        <Text style={styles.bookingTrip}>{t('tripToPrefix')} {b.tripDestination} ›</Text>
+                        <IconLabel trailing name="chevron-right" textStyle={styles.bookingTrip}>{t('tripToPrefix')} {b.tripDestination}</IconLabel>
                       </TouchableOpacity>
                     )}
                   </View>
                   <TouchableOpacity onPress={() => removeBooking(b)} hitSlop={8} accessibilityLabel={t('dialogDelete')}>
-                    <Text style={{ fontSize: 16 }}>🗑</Text>
+                    <AppIcon name="trash" style={{ fontSize: 16 }} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -382,15 +382,15 @@ function HotelsContent({ params }) {
               <Text style={styles.sheetTitle}>{t('hotelsAndLodging')} — {optionsFor}</Text>
               {!dateRange && <Text style={styles.sheetHint}>{t('hotelsSelectDatesFirst')}</Text>}
               <TouchableOpacity style={styles.sheetRow} onPress={() => openSite('maps')}>
-                <Text style={styles.sheetIcon}>🗺️</Text>
+                <AppIcon name="map" style={styles.sheetIcon} />
                 <Text style={styles.sheetLabel}>{t('viewHotelsOnGoogleMaps')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.sheetRow} onPress={() => openSite('agoda')}>
-                <Text style={styles.sheetIcon}>🔗</Text>
+                <AppIcon name="link" style={styles.sheetIcon} />
                 <Text style={styles.sheetLabel}>{t('searchOnAgoda')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.sheetRow} onPress={() => openSite('klook')}>
-                <Text style={styles.sheetIcon}>🔗</Text>
+                <AppIcon name="link" style={styles.sheetIcon} />
                 <Text style={styles.sheetLabel}>{t('searchOnKlook')}</Text>
               </TouchableOpacity>
             </Pressable>
@@ -409,11 +409,11 @@ const styles = StyleSheet.create({
   tripBanner: {
     backgroundColor: Colors.brown900, borderRadius: 14, padding: 14, marginBottom: 18, gap: 6,
   },
-  tripBannerText: { fontFamily: 'Lora_400Regular', fontSize: 13.5, color: '#FFFFFF' },
-  tripBannerLink: { fontFamily: 'Lora_600SemiBold', fontSize: 13, color: Colors.mint },
-  pageTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 24, color: Colors.brown900 },
+  tripBannerText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: '#FFFFFF' },
+  tripBannerLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
+  pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900 },
   pageSubtitle: {
-    fontFamily: 'Lora_400Regular', fontSize: 13.5, color: Colors.brown600,
+    fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown600,
     marginTop: 6, marginBottom: 20,
   },
   inputWrap: {
@@ -421,51 +421,51 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
     justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14,
   },
-  searchInput: { zIndex: 1, fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900, padding: 0 },
-  dateRangeText: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900, zIndex: 1 },
-  dateRangePlaceholder: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
+  searchInput: { zIndex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, padding: 0 },
+  dateRangeText: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, zIndex: 1 },
+  dateRangePlaceholder: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
   counterRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderRadius: 10, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
     paddingHorizontal: 16, paddingVertical: 8, marginBottom: 12,
   },
-  counterLabel: { fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
+  counterLabel: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
   counterButton: {
     width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 8,
   },
-  counterButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 22, color: Colors.brown900 },
-  counterValue: { fontFamily: 'Lora_600SemiBold', fontSize: 18, color: Colors.brown900, minWidth: 20, textAlign: 'center' },
+  counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
+  counterValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, minWidth: 20, textAlign: 'center' },
   searchButton: {
     height: 48, borderRadius: 10, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', marginBottom: 30,
   },
-  searchButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.mint },
+  searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, flex: 1 },
-  hint: { fontFamily: 'Lora_400Regular', fontSize: 12.5, lineHeight: 18, color: Colors.brown600, marginBottom: 12 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900, flex: 1 },
+  hint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, lineHeight: 18, color: Colors.brown600, marginBottom: 12 },
   formCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 30,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
-  formLabel: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 6 },
+  formLabel: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 6 },
   formInput: {
-    fontFamily: 'Lora_400Regular', fontSize: 14, color: Colors.brown900,
+    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: Colors.cream2, borderRadius: 10, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 14,
   },
-  errorText: { fontFamily: 'Lora_400Regular', fontSize: 13, color: Colors.error, marginBottom: 10 },
+  errorText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 10 },
   bookingRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10,
   },
-  bookingName: { fontFamily: 'Lora_600SemiBold', fontSize: 14, color: Colors.brown900 },
-  bookingMeta: { fontFamily: 'Lora_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 3 },
-  bookingTrip: { fontFamily: 'Lora_600SemiBold', fontSize: 12, color: Colors.teal, marginTop: 4 },
+  bookingName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
+  bookingMeta: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 3 },
+  bookingTrip: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.teal, marginTop: 4 },
   horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
   resultCard: {
     width: 240,
@@ -475,22 +475,22 @@ const styles = StyleSheet.create({
   },
   resultImage: { width: 240, height: 140, backgroundColor: Colors.cream2 },
   resultBody: { padding: 16 },
-  hotelName: { fontFamily: 'Lora_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 6 },
-  hotelAmenities: { fontFamily: 'Lora_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 12 },
+  hotelName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 6 },
+  hotelAmenities: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 12 },
   dealButton: {
     backgroundColor: Colors.brown900, borderRadius: 10, paddingHorizontal: 16, height: 38,
     alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start',
   },
-  dealButtonText: { fontFamily: 'Lora_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  dealButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
   overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34,
   },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.line, alignSelf: 'center', marginBottom: 14 },
-  sheetTitle: { fontFamily: 'Lora_600SemiBold', fontSize: 17, color: Colors.brown900, marginBottom: 6 },
-  sheetHint: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 6 },
+  sheetTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900, marginBottom: 6 },
+  sheetHint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 6 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.line },
   sheetIcon: { fontSize: 18, width: 24 },
-  sheetLabel: { fontFamily: 'Lora_400Regular', fontSize: 15, color: Colors.brown900 },
+  sheetLabel: { fontFamily: 'Poppins_400Regular', fontSize: 15, color: Colors.brown900 },
 });

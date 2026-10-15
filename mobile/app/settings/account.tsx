@@ -1,5 +1,7 @@
+import AppIcon from '../../components/AppIcon';
+import { Text } from '../../components/Typography';
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -76,7 +78,7 @@ function AccountContent() {
           <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading} activeOpacity={0.8}>
             <Avatar person={user} size={100} />
             <View style={styles.avatarEditBadge}>
-              {uploading ? <ActivityIndicator size="small" color={Colors.brown900} /> : <Text style={{ fontSize: 12 }}>✎</Text>}
+              {uploading ? <ActivityIndicator size="small" color={Colors.brown900} /> : <AppIcon name="pencil" style={{ fontSize: 12 }} />}
             </View>
           </TouchableOpacity>
           <Text style={styles.changePhoto}>{t('changePhoto')}</Text>
@@ -120,6 +122,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line,
     alignItems: 'center', justifyContent: 'center',
   },
-  changePhoto: { fontFamily: 'Lora_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 22 },
+  changePhoto: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 22 },
   field: { alignSelf: 'stretch' },
 });

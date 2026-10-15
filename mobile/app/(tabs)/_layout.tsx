@@ -1,5 +1,5 @@
+import AppIcon from '../../components/AppIcon';
 import { Tabs, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/theme';
@@ -30,7 +30,7 @@ function AddTabButton(props) {
         elevation: 6,
       }}
     >
-      <Ionicons name="add" size={30} color={Colors.brown900} />
+      <AppIcon name="plus" size={30} color={Colors.brown900} />
     </TouchableOpacity>
   );
 }
@@ -52,7 +52,7 @@ export default function TabsLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontFamily: 'Lora_400Regular',
+          fontFamily: 'Poppins_400Regular',
           fontSize: 11,
         },
       }}
@@ -62,7 +62,7 @@ export default function TabsLayout() {
         options={{
           title: t('navHome'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <AppIcon name="home" size={size} color={color} />
           ),
         }}
       />
@@ -71,7 +71,7 @@ export default function TabsLayout() {
         options={{
           title: t('navGuides'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
+            <AppIcon name="map" size={size} color={color} />
           ),
         }}
       />
@@ -94,7 +94,7 @@ export default function TabsLayout() {
         options={{
           title: t('navHotels'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="business-outline" size={size} color={color} />
+            <AppIcon name="hotel" size={size} color={color} />
           ),
         }}
       />
@@ -103,7 +103,7 @@ export default function TabsLayout() {
         options={{
           title: t('navProfile'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <AppIcon name="user" size={size} color={color} />
           ),
         }}
       />

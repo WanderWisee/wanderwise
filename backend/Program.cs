@@ -10,8 +10,9 @@ using WanderWiseApi.Services;
 using WanderWiseApi.Models;
 
 // Load DB_*, JWT_SECRET, etc. from backend/.env (same convention as the
-// old Node.js backend).
-Env.Load();
+// old Node.js backend). On Railway there is no .env file: the same names
+// are set in the service's Variables tab instead.
+if (File.Exists(".env")) Env.Load();
 
 // Keep the JWT "sub" claim as "sub" instead of ASP.NET Core's default
 // remapping to a long .NET claim type URI — simpler to read in controllers.

@@ -42,11 +42,13 @@ builder.Services.AddOpenApi();
 // Lets the Overpass/Nominatim calls in PlacesController actually work.
 builder.Services.AddHttpClient();
 
-// Allows the React dev server (localhost:3000) to call this API.
+// Allows the React dev server (localhost:3000) and Expo web to call this API.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
-        policy.WithOrigins("http://localhost:3000")
+        // 3000 = web (npm start); 8081 / 19006 = mobile app opened in a
+        // browser with Expo ("w" in npx expo start).
+        policy.WithOrigins("http://localhost:3000", "http://localhost:8081", "http://localhost:19006")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });

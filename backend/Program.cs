@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Threading.RateLimiting;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WanderWiseApi.Data;
@@ -67,6 +69,53 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+
+// ---- Rate limiting: stops one person or script from flooding the API ----
+// The real visitor IP is the first one in X-Forwarded-For (Railway, and
+// Vercel for the website, sit in front of the API). The numbers are
+// generous on purpose: a whole class on the same school Wi-Fi shares one
+// IP, and a demo must never get blocked.
+static string ClientIp(HttpContext ctx)
+{
+    var forwarded = ctx.Request.Headers["X-Forwarded-For"].ToString();
+    if (!string.IsNullOrWhiteSpace(forwarded)) return forwarded.Split(',')[0].Trim();
+    return ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            "{\"error\":\"Too many requests. Please wait a minute and try again.\"}", cancellationToken);
+    };
+
+    // Every request: 300 a minute per logged-in user, 600 a minute per IP
+    // for requests without a login (shared school Wi-Fi).
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var userId = context.User.FindFirst("sub")?.Value;
+        var key = userId != null ? $"user:{userId}" : $"ip:{ClientIp(context)}";
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = userId != null ? 300 : 600,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+    });
+
+    // Log in, sign up and password reset: 60 a minute per IP. Each account
+    // also locks after too many wrong passwords/codes (AttemptGuard).
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter($"auth:{ClientIp(context)}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+});
 builder.Services.AddHostedService<WanderWiseApi.Controllers.TripReminderService>();
 
 var app = builder.Build();
@@ -176,6 +225,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();

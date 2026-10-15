@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using WanderWiseApi.Data;
 using WanderWiseApi.DTOs;
@@ -37,6 +38,7 @@ public class AuthController : ControllerBase
     // ---------------- Registration ----------------
 
     [HttpPost("/api/register/send-otp")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> SendRegisterOtp([FromBody] RegisterSendOtpRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
@@ -79,6 +81,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("/api/register")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register([FromBody] RegisterCompleteRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
@@ -144,6 +147,7 @@ public class AuthController : ControllerBase
     // The account is active right away (no admin approval) and logged in.
 
     [HttpPost("/api/register/teacher/send-otp")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> SendTeacherRegisterOtp([FromBody] TeacherSendOtpRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
@@ -189,6 +193,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("/api/register/teacher")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> RegisterTeacher([FromBody] TeacherRegisterRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
@@ -253,6 +258,7 @@ public class AuthController : ControllerBase
     // ---------------- Login ----------------
 
     [HttpPost("/api/login")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         // The "username" can be the school email or the ID number
@@ -388,6 +394,7 @@ public class AuthController : ControllerBase
     // ---------------- Forgot password ----------------
 
     [HttpPost("/api/forgot-password/send-otp")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> SendResetOtp([FromBody] ForgotPasswordSendOtpRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
@@ -419,6 +426,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("/api/forgot-password/reset")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordResetRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";

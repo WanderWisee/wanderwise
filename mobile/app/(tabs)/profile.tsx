@@ -4,13 +4,10 @@ import { useState, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Share, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { WEB_URL } from '../../constants/config';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
-import Backdrop from '../../components/Backdrop';
-import MeshBlobs from '../../components/MeshBlobs';
 import MenuSheet from '../../components/MenuSheet';
 import TripListItem from '../../components/TripListItem';
 import TripActionsSheet from '../../components/TripActionsSheet';
@@ -116,10 +113,8 @@ export default function ProfileScreen() {
   ).size;
 
   return (
-    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
+    <View style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <MeshBlobs height={900} style={styles.backdrop} />
-        <Backdrop height={220} style={styles.backdrop} />
 
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.push('/search')} style={styles.menuButton} accessibilityLabel={t('searchForAStudent')}>
@@ -264,13 +259,12 @@ export default function ProfileScreen() {
           tripId={inviteTripId}
         />
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
+  screen: { flex: 1, backgroundColor: Colors.cream },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
   menuButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },

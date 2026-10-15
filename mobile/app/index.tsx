@@ -1,10 +1,10 @@
-import AppIcon from '../components/AppIcon';
 import { Text } from '../components/Typography';
 import { useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import Backdrop from '../components/Backdrop';
 import { Wordmark } from '../components/ui';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
@@ -32,6 +32,9 @@ export default function LandingScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <View pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}>
+        <Backdrop height={220} style={{ position: 'absolute', top: 0, left: 0, right: 0 }} />
+      </View>
       {/* Background curves — parehong disenyo ng Flutter version natin */}
       <Svg
         style={styles.backdrop}
@@ -43,12 +46,12 @@ export default function LandingScreen() {
         <Path
           d="M0,90 C90,40 180,140 375,70 L375,220 L0,220 Z"
           fill={Colors.cream2}
-          opacity={0.9}
+          opacity={0.45}
         />
         <Path
           d="M0,140 C110,110 250,190 375,120 L375,220 L0,220 Z"
           fill="#E7DEBC"
-          opacity={0.7}
+          opacity={0.3}
         />
       </Svg>
 
@@ -62,10 +65,6 @@ export default function LandingScreen() {
           { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
         ]}
       >
-        <View style={styles.heroBadge}>
-          <AppIcon name="plane" style={{ fontSize: 32 }} />
-        </View>
-
         <Text style={styles.heading}>
           {t('landingTitle')}
         </Text>
@@ -146,17 +145,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 30,
-  },
-  heroBadge: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: Colors.cream2,
-    borderWidth: 1,
-    borderColor: Colors.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 26,
+    paddingVertical: 24,
+    width: '100%',
+    maxWidth: 500,
+    alignSelf: 'center',
   },
   heading: {
     fontFamily: 'Poppins_600SemiBold',

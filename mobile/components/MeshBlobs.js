@@ -9,15 +9,15 @@ export default function MeshBlobs({ height = 900, style }) {
     <Svg style={style} width="100%" height={height} viewBox={`0 0 375 ${height}`}>
       <Defs>
         <RadialGradient id="blob1" cx="50%" cy="50%" r="50%">
-          <Stop offset="0" stopColor="#E3D7A8" stopOpacity="0.9" />
+          <Stop offset="0" stopColor="#E3D7A8" stopOpacity="0.65" />
           <Stop offset="1" stopColor="#E3D7A8" stopOpacity="0" />
         </RadialGradient>
         <RadialGradient id="blob2" cx="50%" cy="50%" r="50%">
-          <Stop offset="0" stopColor="#D4C182" stopOpacity="0.8" />
+          <Stop offset="0" stopColor="#D4C182" stopOpacity="0.5" />
           <Stop offset="1" stopColor="#D4C182" stopOpacity="0" />
         </RadialGradient>
         <RadialGradient id="blob3" cx="50%" cy="50%" r="50%">
-          <Stop offset="0" stopColor="#C7B074" stopOpacity="0.7" />
+          <Stop offset="0" stopColor="#C7B074" stopOpacity="0.35" />
           <Stop offset="1" stopColor="#C7B074" stopOpacity="0" />
         </RadialGradient>
       </Defs>

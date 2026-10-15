@@ -7,7 +7,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { fetchHistory } from '../services/userService';
-import Backdrop from '../components/Backdrop';
 import { ChoiceChips, EmptyState, ErrorState, Loading, ScreenHeader } from '../components/ui';
 
 // Parehong /api/history ng web: mga trip (sarili at sinalihan) at journal
@@ -54,7 +53,6 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={180} style={styles.backdrop} />
       <ScreenHeader title={t('history')} onBack={() => router.back()} />
 
       {loading ? (
@@ -128,7 +126,6 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,

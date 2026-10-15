@@ -2,7 +2,6 @@ import AppIcon from './AppIcon';
 import { Text } from './Typography';
 import { useEffect, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
@@ -70,7 +69,7 @@ export default function MenuSheet({ visible, onClose }) {
             { width: DRAWER_WIDTH, transform: [{ translateX: slideAnim }] },
           ]}
         >
-          <LinearGradient colors={['#FBF7E8', Colors.cream2]} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.cream }]} />
 
           <View style={styles.content}>
             <Text style={styles.title}>{t('menu')}</Text>

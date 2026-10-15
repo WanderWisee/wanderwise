@@ -8,7 +8,6 @@ import { Colors } from '../constants/theme';
 import { login } from '../services/authService';
 import { consumePendingJoin } from '../services/pendingJoin';
 import { useApp } from '../context/AppContext';
-import Backdrop from '../components/Backdrop';
 import { Wordmark } from '../components/ui';
 
 export default function LoginScreen() {
@@ -43,7 +42,6 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={180} style={styles.backdrop} />
 
       <View style={styles.header}>
         <Wordmark />
@@ -123,7 +121,6 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
   centerWrap: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 24 },
   card: { width: '100%', maxWidth: 440, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: Colors.line },

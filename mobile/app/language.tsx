@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
-import Backdrop from '../components/Backdrop';
 import { ScreenHeader } from '../components/ui';
 
 // English at Filipino — ang dalawang wikang may buong translation sa web,
@@ -21,7 +20,6 @@ export default function LanguageScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={180} style={styles.backdrop} />
       <ScreenHeader title={t('language')} onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -60,7 +58,6 @@ export default function LanguageScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   sectionLabel: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginBottom: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },

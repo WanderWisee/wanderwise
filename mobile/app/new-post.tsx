@@ -12,8 +12,6 @@ import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { useDialog } from '../context/DialogContext';
 import { createJournalEntry } from '../services/journalService';
-import Backdrop from '../components/Backdrop';
-import MeshBlobs from '../components/MeshBlobs';
 
 function makeEmptyEntry() {
   return {
@@ -198,8 +196,6 @@ export default function NewPostScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <MeshBlobs height={900} style={styles.backdrop} />
-      <Backdrop height={220} style={styles.backdrop} />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -369,7 +365,6 @@ export default function NewPostScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#E7DEBC' },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,

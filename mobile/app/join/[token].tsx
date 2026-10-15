@@ -10,7 +10,6 @@ import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { joinTripByToken } from '../../services/tripService';
 import { savePendingJoin } from '../../services/pendingJoin';
-import Backdrop from '../../components/Backdrop';
 import { Loading, OutlineButton, PrimaryButton } from '../../components/ui';
 
 // Binubuksan ng invite link (wanderwise://join/<token>) o ng "Join with
@@ -53,7 +52,6 @@ function JoinContent({ onRetry }) {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={200} style={styles.backdrop} />
       <View style={styles.center}>
         <AppIcon name="suitcase" style={{ fontSize: 44 }} />
         {!isLoggedIn ? (
@@ -82,7 +80,6 @@ function JoinContent({ onRetry }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 },
   title: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, textAlign: 'center', marginTop: 16 },
   subtitle: {

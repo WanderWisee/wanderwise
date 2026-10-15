@@ -8,7 +8,6 @@ import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '../services/userService';
 import { notificationIcon, notificationRoute, notificationText } from '../utils/notificationText';
-import Backdrop from '../components/Backdrop';
 import { EmptyState, ErrorState, Loading, ScreenHeader } from '../components/ui';
 
 // Parehong /api/notifications na gamit ng web: trip reminders, crew,
@@ -64,7 +63,6 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={180} style={styles.backdrop} />
       <ScreenHeader
         title={t('notificationsTitle')}
         onBack={() => router.back()}
@@ -119,7 +117,6 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   gear: {
     width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',

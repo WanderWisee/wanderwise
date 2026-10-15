@@ -8,7 +8,6 @@ import { Wordmark } from '../components/ui';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { createTrip, ensureDestination, fetchDestinations } from '../services/tripService';
-import Backdrop from '../components/Backdrop';
 import IconBadge from '../components/IconBadge';
 import CalendarPicker, { formatDate } from '../components/CalendarPicker';
 
@@ -71,7 +70,6 @@ export default function NewTripScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={180} style={styles.backdrop} />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -170,7 +168,6 @@ export default function NewTripScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,

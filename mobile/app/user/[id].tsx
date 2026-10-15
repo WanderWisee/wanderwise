@@ -7,7 +7,6 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { fetchPublicProfile, fullName } from '../../services/userService';
-import Backdrop from '../../components/Backdrop';
 import { Avatar, DestinationImage, EmptyState, ErrorState, Loading, ScreenHeader } from '../../components/ui';
 
 // Profile ng ibang estudyante (mula sa Guides o sa search). Read-only.
@@ -38,7 +37,6 @@ export default function PublicProfileScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Backdrop height={200} style={styles.backdrop} />
       <ScreenHeader title="" onBack={() => router.back()} />
 
       {error ? (
@@ -122,7 +120,6 @@ function Stat({ value, label }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   center: { alignItems: 'center', justifyContent: 'center' },
   identity: { alignItems: 'center', marginBottom: 20 },

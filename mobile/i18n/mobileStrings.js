@@ -5,7 +5,7 @@
 
 export const mobileTranslations = {
   en: {
-    landingTitle: 'Tourism students, welcome to your travel companion',
+    landingTitle: 'Tourism students, welcome to your travel companion!',
     landingSubtitle: "Plan smarter, explore further, and create trips you'll never forget. Your next adventure starts here.",
     studentEmailPlaceholder: 'School email (@student.mseuf.edu.ph)',
     recoveryEmailPlaceholder: 'Personal email (for account recovery)',

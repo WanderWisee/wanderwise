@@ -4,15 +4,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
 import { fetchTrips } from '../../services/tripService';
 import { fetchNotifications } from '../../services/userService';
 import { geocodeDestination } from '../../services/geoService';
-import Backdrop from '../../components/Backdrop';
-import MeshBlobs from '../../components/MeshBlobs';
 import TripListItem from '../../components/TripListItem';
 import OsmMap from '../../components/OsmMap';
 import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
@@ -111,10 +108,8 @@ export default function HomeScreen() {
     : GUIDE_DESTINATIONS.map((d) => ({ latitude: d.lat, longitude: d.lon, label: d.name }));
 
   return (
-    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
+    <View style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <MeshBlobs height={900} style={styles.backdrop} />
-        <Backdrop height={220} style={styles.backdrop} />
 
         <View style={styles.header}>
           <Wordmark />
@@ -283,13 +278,12 @@ export default function HomeScreen() {
           initialRange={dateRange}
         />
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
+  screen: { flex: 1, backgroundColor: Colors.cream },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12,

@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Linking, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import { HOTEL_DESTINATIONS } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
@@ -12,8 +11,6 @@ import { useDialog } from '../../context/DialogContext';
 import {
   createBooking, deleteBooking, fetchMyBookings, fetchTripBookings, fetchTrips, fetchTripById,
 } from '../../services/tripService';
-import Backdrop from '../../components/Backdrop';
-import MeshBlobs from '../../components/MeshBlobs';
 import CalendarPicker, { formatDate as formatParts } from '../../components/CalendarPicker';
 import { ChoiceChips, PrimaryButton, Wordmark, ErrorState } from '../../components/ui';
 import { partsToISO, rangeFromISO } from '../../utils/dates';
@@ -161,10 +158,8 @@ function HotelsContent({ params }) {
       .join(' · ');
 
   return (
-    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
+    <View style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <MeshBlobs height={900} style={styles.backdrop} />
-        <Backdrop height={220} style={styles.backdrop} />
 
         <View style={styles.header}>
           <Wordmark />
@@ -395,13 +390,12 @@ function HotelsContent({ params }) {
           </Pressable>
         </Modal>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
+  screen: { flex: 1, backgroundColor: Colors.cream },
   header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
   tripBanner: {

@@ -4,13 +4,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
 import { bareTitle, fetchJournalFeed } from '../../services/journalService';
-import Backdrop from '../../components/Backdrop';
-import MeshBlobs from '../../components/MeshBlobs';
 import { Avatar, EmptyState, Wordmark } from '../../components/ui';
 
 // Parehong lohika ng TravelTipsPage ng web: ang Guides ay feed ng journal
@@ -97,10 +94,8 @@ export default function GuidesScreen() {
   const nothingFound = destinations.length === 0 && otherPlaces.length === 0;
 
   return (
-    <LinearGradient colors={['#F7F4EA', '#E6D9AE']} style={styles.screen}>
+    <View style={styles.screen}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <MeshBlobs height={900} style={styles.backdrop} />
-        <Backdrop height={220} style={styles.backdrop} />
 
         <View style={styles.header}>
           <Wordmark />
@@ -206,13 +201,12 @@ export default function GuidesScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
+  screen: { flex: 1, backgroundColor: Colors.cream },
   header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
   pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900, marginBottom: 20 },

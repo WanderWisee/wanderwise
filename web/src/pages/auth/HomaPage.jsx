@@ -83,6 +83,7 @@ export default function HomePage() {
           </figure>
         </section>
 
+        <div className="ww-lp-mesh">
         {/* ---- Features ---- */}
         <section id="features" className="ww-lp-section">
           <p className="ww-lp-eyebrow">{t("lpNavFeatures")}</p>
@@ -169,6 +170,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        </div>
 
         {/* ---- Last call to action ---- */}
         <section className="ww-lp-band">

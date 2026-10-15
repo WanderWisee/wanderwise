@@ -8602,6 +8602,31 @@ button.ww-builder-dates-edit > span {
   font-weight: 700;
 }
 
+/* Mesh background across Features, Who it's for, How it works, and About. */
+.ww-lp-mesh {
+  position: relative;
+  isolation: isolate;
+}
+
+.ww-lp-mesh .ww-lp-section {
+  border-top: 0;
+}
+
+/* One continuous layer behind all four sections, fading at its outer edges. */
+.ww-lp-mesh::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  mask-image: linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 34% 38% at 8% 25%, rgba(227, 215, 168, 0.85), transparent 100%),
+    radial-gradient(ellipse 30% 42% at 94% 45%, rgba(212, 193, 130, 0.65), transparent 100%),
+    radial-gradient(ellipse 32% 35% at 12% 78%, rgba(199, 176, 116, 0.5), transparent 100%),
+    radial-gradient(ellipse 26% 30% at 90% 92%, rgba(227, 215, 168, 0.7), transparent 100%);
+}
+
 /* ---- About Us ---- */
 .ww-lp-about-head {
   text-align: center;
@@ -9255,8 +9280,10 @@ textarea:focus-visible {
    messages under sign-up fields that need fixing.
    --------------------------------------------------------------------- */
 .ww-logo {
+  display: block;
+  flex-shrink: 0;
   width: auto;
-  height: 40px;
+  height: 32px;
   object-fit: contain;
   border-radius: 0;
   box-shadow: none;
@@ -9265,9 +9292,10 @@ textarea:focus-visible {
 
 .ww-brand-wordmark {
   display: block;
-  height: 17px;
+  height: 15px;
   width: auto;
-  max-width: 200px;
+  max-width: 180px;
+  object-fit: contain;
 }
 
 .ww-dialog-logo,
@@ -9280,11 +9308,11 @@ textarea:focus-visible {
 @media (max-width: 640px) {
   .ww-logo {
     width: auto;
-    height: 34px;
+    height: 28px;
   }
 
   .ww-brand-wordmark {
-    height: 14px;
+    height: 13px;
   }
 }
 
@@ -9392,4 +9420,18 @@ textarea:focus-visible {
   font-size: 28px;
   font-weight: 700;
   color: var(--ww-text);
+}
+
+/* Landing-only horizon; signed-in pages keep the clean cream canvas. */
+.ww-landing {
+  background-image: url('./assets/horizon-backdrop.svg');
+  background-repeat: no-repeat;
+  background-position: center 48px;
+  background-size: 100% 360px;
+}
+
+@media (max-width: 640px) {
+  .ww-landing {
+    background-size: 100% 260px;
+  }
 }

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="horizon-sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DFCE9A" stop-opacity=".65"/>
+      <stop offset=".5" stop-color="#DFCE9A" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#DFCE9A" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="horizon-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D3BE84" stop-opacity=".5"/>
+      <stop offset=".5" stop-color="#D3BE84" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#D3BE84" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="horizon-earth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C2A968" stop-opacity=".4"/>
+      <stop offset=".5" stop-color="#C2A968" stop-opacity=".15"/>
+      <stop offset="1" stop-color="#C2A968" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="M0 45 C270 -5 500 100 770 45 C1000 0 1230 70 1440 30 V320 H0Z" fill="url(#horizon-sand)"/>
+  <path d="M0 110 C300 60 580 145 880 95 C1110 50 1290 130 1440 85 V320 H0Z" fill="url(#horizon-gold)"/>
+  <path d="M0 170 C350 125 690 200 1000 150 C1190 115 1320 185 1440 150 V320 H0Z" fill="url(#horizon-earth)"/>
+</svg>

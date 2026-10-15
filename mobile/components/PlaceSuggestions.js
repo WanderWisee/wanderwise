@@ -19,7 +19,7 @@ function suggestions(destination, category) {
   return requests.get(key);
 }
 
-export default function PlaceSuggestions({ destination, sectionName = '', query = '', onSelect }) {
+export default function PlaceSuggestions({ destination, sectionName = '', query = '', exclude = [], onSelect }) {
   const { t } = useApp();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,9 @@ export default function PlaceSuggestions({ destination, sectionName = '', query 
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [destination, category, attempt]);
-  const shown = items.filter((item) => item.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 12);
+  // Itago ang mga naidagdag na para hindi na ma-tap ulit.
+  const added = new Set(exclude.map((n) => String(n || '').trim().toLowerCase()));
+  const shown = items.filter((item) => !added.has(item.name.trim().toLowerCase()) && item.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 12);
   return <View style={{ gap: 8, marginBottom: 14 }}>
     <Text style={{ fontFamily: Fonts.semibold, color: Colors.brown600, fontSize: 13 }}>{t('suggestedPlaces')}</Text>
     {loading ? <ActivityIndicator color={Colors.brown600} /> : error ? <TouchableOpacity accessibilityRole="button" onPress={() => { setLoading(true); setAttempt((n) => n + 1); }}><Text style={{ color: Colors.error }}>{t('tryAgain')}</Text></TouchableOpacity> : !shown.length ? <Text style={{ color: Colors.brown600, fontSize: 12 }}>{t('noSuggestions')}</Text> : <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>

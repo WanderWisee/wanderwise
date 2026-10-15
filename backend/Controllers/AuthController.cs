@@ -69,9 +69,13 @@ public class AuthController : ControllerBase
         });
         await _db.SaveChangesAsync();
 
-        await _email.SendOtpEmailAsync(recoveryEmail, code, "register");
+        // The code goes to the SCHOOL email: only the real owner of that
+        // Outlook mailbox can read it, so nobody can sign up with someone
+        // else's student number/email. The personal email is kept only
+        // for account recovery (forgot password).
+        await _email.SendOtpEmailAsync(schoolEmail, code, "register");
 
-        return Ok(new { message = "Verification code sent to your personal email." });
+        return Ok(new { message = "Verification code sent to your school email. Check your Junk folder too." });
     }
 
     [HttpPost("/api/register")]
@@ -175,9 +179,13 @@ public class AuthController : ControllerBase
         });
         await _db.SaveChangesAsync();
 
-        await _email.SendOtpEmailAsync(recoveryEmail, code, "register");
+        // The code goes to the SCHOOL email: only the real owner of that
+        // Outlook mailbox can read it, so nobody can sign up with someone
+        // else's student number/email. The personal email is kept only
+        // for account recovery (forgot password).
+        await _email.SendOtpEmailAsync(schoolEmail, code, "register");
 
-        return Ok(new { message = "Verification code sent to your personal email." });
+        return Ok(new { message = "Verification code sent to your school email. Check your Junk folder too." });
     }
 
     [HttpPost("/api/register/teacher")]

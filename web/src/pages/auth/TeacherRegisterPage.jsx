@@ -11,11 +11,12 @@ import {
   keepEmail,
   keepEmployeeId,
   keepNameChars,
+  liveErrors,
   registrationErrors,
 } from "../../utils/validation";
 
 // Teacher sign-up: same steps as the student one (form → code sent to the
-// personal email → confirm), with the faculty email and employee ID.
+// faculty email → confirm), with the faculty email and employee ID.
 // No admin approval — the teacher is logged in and opens the Teacher portal.
 const FILTERS = {
   firstName: keepNameChars,
@@ -47,14 +48,30 @@ export default function TeacherRegisterPage() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [dobBad, setDobBad] = useState(false);
   const limits = dobLimits();
 
+  // Every change is checked right away (not only when Register is
+  // pressed), so a wrong birthday or number shows its message at once.
   const handleChange = (field) => (e) => {
     const filter = FILTERS[field];
     const value = filter ? filter(e.target.value) : e.target.value;
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    const nextForm = { ...form, [field]: value };
+    const nextTouched = { ...touched, [field]: true };
+    if (field === "password" && form.confirmPassword) nextTouched.confirmPassword = true;
+    setForm(nextForm);
+    setTouched(nextTouched);
+    const found = liveErrors(nextForm, nextTouched, { teacher: true });
+    // A half-typed date (e.g. 02/30/____) reaches us as "", so ask the
+    // browser whether what's in the box is a real date.
+    const badDate = field === "dob" ? !!e.target.validity?.badInput : dobBad;
+    if (field === "dob") setDobBad(badDate);
+    if (badDate) found.dob = "valDobInvalid";
+    setErrors(found);
+    setError("");
   };
+  const hasErrors = Object.values(errors).some(Boolean);
   const fieldClass = (field) => `ww-field-input${errors[field] ? " has-error" : ""}`;
   const fieldError = (field) =>
     errors[field] ? (
@@ -67,6 +84,8 @@ export default function TeacherRegisterPage() {
     setError("");
     setInfo("");
     const found = registrationErrors(form, { teacher: true });
+    if (dobBad) found.dob = "valDobInvalid";
+    setTouched(Object.fromEntries(Object.keys(form).map((k) => [k, true])));
     setErrors(found);
     if (Object.keys(found).length > 0) return setError(t("valFixFields"));
 
@@ -216,7 +235,7 @@ export default function TeacherRegisterPage() {
               {fieldError("confirmPassword")}
 
               {error && <div className="ww-portal-error">{error}</div>}
-              <button className="ww-register-submit" type="button" onClick={sendCode} disabled={loading}>
+              <button className="ww-register-submit" type="button" onClick={sendCode} disabled={loading || hasErrors}>
                 {loading ? t("sendingCode") : t("teacherSendCode")}
               </button>
               <p className="ww-teacher-signup-link">

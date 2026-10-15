@@ -205,6 +205,12 @@ function TripDetailContent({ id }) {
 
   const [selectedPlaceKeys, setSelectedPlaceKeys] = useState([]);
   const [isSelecting, setIsSelecting] = useState(false);
+  // Kapag galing sa trash ng isang list ang pag-select, dito ipinapakita
+  // ang bar (select all / delete selected / delete whole list).
+  const [selectingSectionKey, setSelectingSectionKey] = useState(null);
+  useEffect(() => {
+    if (!isSelecting) setSelectingSectionKey(null);
+  }, [isSelecting]);
   const [expandedPlaceKey, setExpandedPlaceKey] = useState(null);
 
   const [expenses, setExpenses] = useState([]);
@@ -369,11 +375,21 @@ function TripDetailContent({ id }) {
     await persist({ ...trip, sections: trip.sections.filter((s) => s.key !== sectionKey) });
   }
 
-  function startSelecting(placeKey = null) {
+  function startSelecting(placeKey = null, sectionKey = null) {
     if (!canEdit) return;
     setExpandedPlaceKey(null);
     setIsSelecting(true);
+    setSelectingSectionKey(sectionKey);
     setSelectedPlaceKeys(placeKey ? [placeKey] : []);
+  }
+
+  // Trash sa tabi ng list: lalabas ang checkbox sa bawat lugar para
+  // mapili kung alin ang buburahin (hindi na agad binubura ang buong list).
+  function onSectionTrash(section) {
+    if (!canEdit) return;
+    if (section.places.length === 0) { deleteList(section.key); return; }
+    if (isSelecting && selectingSectionKey === section.key) { cancelSelecting(); return; }
+    startSelecting(null, section.key);
   }
 
   function togglePlaceSelected(placeKey) {
@@ -385,6 +401,50 @@ function TripDetailContent({ id }) {
   function cancelSelecting() {
     setIsSelecting(false);
     setSelectedPlaceKeys([]);
+  }
+
+  // section = galing sa trash ng list na iyon (may "Select all" at
+  // "Delete whole list"); null = ang dating bar sa ibaba.
+  function renderSelectBar(section) {
+    const count = selectedPlaceKeys.length;
+    const sectionKeys = section ? section.places.map((p) => p.key) : [];
+    const allChosen = section && sectionKeys.length > 0 && sectionKeys.every((k) => selectedPlaceKeys.includes(k));
+    return (
+      <View style={styles.assignBar}>
+        <Text style={styles.assignBarTitle}>
+          {count > 0 ? `${count} ${t('placesSelectedAddTo')}` : t('selectPlacesToDelete')}
+        </Text>
+        {count > 0 && (days.length === 0 ? (
+          <Text style={[styles.emptyTextSmall, { color: 'rgba(255,255,255,0.7)' }]}>{t('setDatesToAssign')}</Text>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {days.map((day) => (
+              <TouchableOpacity key={day.key} style={styles.assignBarDayPill} onPress={() => assignSelectedToDay(day.key)}>
+                <Text style={styles.assignBarDayPillText}>{day.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ))}
+        {section && (
+          <View style={styles.assignBarBottomRow}>
+            <TouchableOpacity onPress={() => setSelectedPlaceKeys(allChosen ? [] : sectionKeys)}>
+              <Text style={styles.assignBarCancel}>{allChosen ? t('clearSelection') : t('selectAll')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { cancelSelecting(); deleteList(section.key); }}>
+              <Text style={styles.assignBarDelete}>{t('deleteThisListTitle')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={styles.assignBarBottomRow}>
+          <TouchableOpacity onPress={deleteSelected} disabled={count === 0} style={count === 0 && { opacity: 0.4 }}>
+            <IconLabel name="trash" textStyle={styles.assignBarDelete}>{t('deleteSelected')}</IconLabel>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={cancelSelecting}>
+            <Text style={styles.assignBarCancel}>{t('cancel')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   }
 
   function nextOrderFor(baseTrip, dayKey) {
@@ -516,6 +576,12 @@ function TripDetailContent({ id }) {
   async function addSuggestion(sectionKey, item) {
     if (!canEdit) return;
     const base = tripRef.current;
+    // Huwag nang idagdag ulit kung nasa section na (dati, bawat tap sa
+    // suggestion ay nagdadagdag ng kapareho). tripRef ay agad na-a-update
+    // ng persist, kaya kahit sunod-sunod ang tap ay isa lang ang madadagdag.
+    const key = String(item.name || '').trim().toLowerCase();
+    const target = base?.sections.find((section) => section.key === sectionKey);
+    if (!key || !target || target.places.some((p) => String(p.name || '').trim().toLowerCase() === key)) return;
     const place = { ...makePlace(item.name), latitude: Number(item.lat), longitude: Number(item.lon) };
     if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) return;
     await persist({ ...base, sections: base.sections.map((section) => section.key === sectionKey ? { ...section, placeInput: '', places: [...section.places, place] } : section) });
@@ -958,13 +1024,14 @@ function TripDetailContent({ id }) {
                           onChangeText={(text) => updateSectionField(section.key, 'name', text)}
                           onEndEditing={() => persist(tripRef.current)}
                         />
-                        <TouchableOpacity disabled={!canEdit} onPress={() => deleteList(section.key)} hitSlop={8} accessibilityLabel={t('deleteThisListTitle')}>
+                        <TouchableOpacity disabled={!canEdit} onPress={() => onSectionTrash(section)} hitSlop={8} accessibilityLabel={t('deleteThisListTitle')}>
                           <AppIcon name="trash" style={{ fontSize: 14, color: Colors.brown600 }} />
                         </TouchableOpacity>
                       </>
                     )}
                   </View>
 
+                  {isSelecting && selectingSectionKey === section.key && renderSelectBar(section)}
                   {section.places.length === 0 && <Text style={styles.emptyTextSmall}>{t('noPlacesInListYet')}</Text>}
 
                   {section.places.map((place, pIndex) => {
@@ -998,7 +1065,7 @@ function TripDetailContent({ id }) {
                     );
                   })}
 
-                  {canEdit && <PlaceSuggestions destination={trip.destination} sectionName={section.name} query={section.placeInput} onSelect={(item) => addSuggestion(section.key, item)} />}
+                  {canEdit && <PlaceSuggestions destination={trip.destination} sectionName={section.name} query={section.placeInput} exclude={section.places.map((p) => p.name)} onSelect={(item) => addSuggestion(section.key, item)} />}
                   <View pointerEvents={canEdit ? 'auto' : 'none'} style={[styles.addPlaceRow, !canEdit && { display: 'none' }]}>
                     <TextInput
                         editable={canEdit}
@@ -1032,32 +1099,7 @@ function TripDetailContent({ id }) {
                 <IconLabel name="plus" textStyle={styles.newListButtonMinimalText}>{t('newListBtn')}</IconLabel>
               </TouchableOpacity>
 
-              {isSelecting && selectedPlaceKeys.length > 0 && (
-                <View style={styles.assignBar}>
-                  <Text style={styles.assignBarTitle}>
-                    {selectedPlaceKeys.length} {t('placesSelectedAddTo')}
-                  </Text>
-                  {days.length === 0 ? (
-                    <Text style={[styles.emptyTextSmall, { color: 'rgba(255,255,255,0.7)' }]}>{t('setDatesToAssign')}</Text>
-                  ) : (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                      {days.map((day) => (
-                        <TouchableOpacity key={day.key} style={styles.assignBarDayPill} onPress={() => assignSelectedToDay(day.key)}>
-                          <Text style={styles.assignBarDayPillText}>{day.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  )}
-                  <View style={styles.assignBarBottomRow}>
-                    <TouchableOpacity onPress={deleteSelected}>
-                      <IconLabel name="trash" textStyle={styles.assignBarDelete}>{t('deleteSelected')}</IconLabel>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={cancelSelecting}>
-                      <Text style={styles.assignBarCancel}>{t('cancel')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
+              {isSelecting && !selectingSectionKey && selectedPlaceKeys.length > 0 && renderSelectBar(null)}
             </>
           )}
 

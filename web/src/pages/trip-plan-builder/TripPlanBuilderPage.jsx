@@ -816,6 +816,12 @@ export default function TripPlanBuilderPage() {
   const newPlaceInputRef = useRef(null);
 
   const [suggestedPlaces, setSuggestedPlaces] = useState([]);
+  // "Where to go" suggestions minus the places already added, so a chip
+  // disappears once it's been clicked.
+  const addedPlaceNames = new Set(places.map((p) => (p.name || "").trim().toLowerCase()));
+  const suggestedToShow = suggestedPlaces.filter(
+    (sp) => !addedPlaceNames.has((sp.name || "").trim().toLowerCase())
+  );
   // Bumped by the "Try again" buttons to re-run the suggestion lookups.
   const [suggestionsRetry, setSuggestionsRetry] = useState(0);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -1081,7 +1087,13 @@ export default function TripPlanBuilderPage() {
     }
   };
 
-  const addPlace = (name, coords) => {
+  const addPlace = (rawName, coords) => {
+    const name = (rawName || "").trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    // Already in "Where to go"? Don't add it again (clicking a suggestion
+    // many times used to add the same place over and over).
+    if (places.some((p) => (p.name || "").trim().toLowerCase() === key)) return;
     const place = {
       id: nextPlaceId++,
       number: nextNumber++,
@@ -1092,7 +1104,12 @@ export default function TripPlanBuilderPage() {
       geocodeStatus: coords ? "verified" : "pending",
       ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
     };
-    applyChange((prev) => ({ ...prev, places: [...prev.places, place] }));
+    applyChange((prev) =>
+      // Second check on the newest state, for very fast repeated clicks.
+      prev.places.some((p) => (p.name || "").trim().toLowerCase() === key)
+        ? prev
+        : { ...prev, places: [...prev.places, place] }
+    );
     // Only geocode blind (auto-pick first match) when we don't already have
     // confirmed coordinates from a suggestion the user themselves picked.
     if (!coords) geocodePlace(place);
@@ -1138,6 +1155,44 @@ export default function TripPlanBuilderPage() {
 
   const [pendingDelete, setPendingDelete] = useState(null);
 
+  // ===== Choose which places to delete =====
+  // The "⋯" next to a list no longer wipes the whole list right away:
+  // it shows a checkbox on every place in that list so the student can
+  // pick what to remove. list = "whereToGo" or a custom section's id.
+  const [selecting, setSelecting] = useState(null); // { list, ids: [] }
+
+  const startSelecting = (list) => setSelecting({ list, ids: [] });
+  const cancelSelecting = () => setSelecting(null);
+  const isSelectingList = (list) => !!selecting && selecting.list === list;
+  const toggleSelected = (placeId) =>
+    setSelecting((prev) =>
+      prev
+        ? {
+            ...prev,
+            ids: prev.ids.includes(placeId)
+              ? prev.ids.filter((id) => id !== placeId)
+              : [...prev.ids, placeId],
+          }
+        : prev
+    );
+
+  // Removes the chosen places from their list and from every day.
+  const performDeletePlaces = (ids) => {
+    const idsToRemove = new Set(ids);
+    applyChange((prev) => ({
+      ...prev,
+      places: prev.places.filter((p) => !idsToRemove.has(p.id)),
+      customSections: prev.customSections.map((s) => ({
+        ...s,
+        places: s.places.filter((p) => !idsToRemove.has(p.id)),
+      })),
+      days: prev.days.map((day) => ({
+        ...day,
+        placeIds: day.placeIds.filter((id) => !idsToRemove.has(id)),
+      })),
+    }));
+  };
+
   const performDeleteWhereToGoList = () => {
     applyChange((prev) => {
       const idsToRemove = new Set(prev.places.map((p) => p.id));
@@ -1180,7 +1235,9 @@ export default function TripPlanBuilderPage() {
     if (!pendingDelete) return;
     if (pendingDelete.type === "whereToGo") performDeleteWhereToGoList();
     if (pendingDelete.type === "section") performDeleteSection(pendingDelete.id);
+    if (pendingDelete.type === "places") performDeletePlaces(pendingDelete.ids);
     setPendingDelete(null);
+    setSelecting(null);
   };
 
   const handleNewList = () => {
@@ -1263,10 +1320,14 @@ export default function TripPlanBuilderPage() {
       geocodeStatus: coords ? "verified" : "pending",
       ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
     };
+    const key = name.toLowerCase();
     applyChange((prev) => ({
       ...prev,
       customSections: prev.customSections.map((s) =>
-        s.id === sectionId ? { ...s, places: [...s.places, place] } : s
+        s.id === sectionId &&
+        !s.places.some((p) => (p.name || "").trim().toLowerCase() === key)
+          ? { ...s, places: [...s.places, place] }
+          : s
       ),
     }));
     if (!coords) geocodePlace(place);
@@ -1278,6 +1339,56 @@ export default function TripPlanBuilderPage() {
     if (!section || !section.placeInput.trim()) return;
     addPlaceToSection(sectionId, section.placeInput);
     handleSectionPlaceInputChange(sectionId, "");
+  };
+
+  // Checkbox shown on a place while its list is in "choose to delete" mode.
+  const renderSelectBox = (list, place) =>
+    isSelectingList(list) ? (
+      <input
+        type="checkbox"
+        className="ww-select-check"
+        checked={selecting.ids.includes(place.id)}
+        onChange={() => toggleSelected(place.id)}
+        aria-label={place.name}
+      />
+    ) : null;
+
+  // Bar under the list title: select all, delete selected, delete the
+  // whole list, cancel.
+  const renderSelectBar = (list, listPlaces, deleteWholeList) => {
+    if (!canEdit || !isSelectingList(list)) return null;
+    const count = selecting.ids.length;
+    const allChosen = listPlaces.length > 0 && count === listPlaces.length;
+    return (
+      <div className="ww-select-bar">
+        <span className="ww-select-bar-text">
+          {count > 0 ? `${count} ${t("selectedCount")}` : t("selectPlacesToDelete")}
+        </span>
+        <button
+          type="button"
+          className="ww-select-bar-btn"
+          onClick={() =>
+            setSelecting({ list, ids: allChosen ? [] : listPlaces.map((p) => p.id) })
+          }
+        >
+          {allChosen ? t("clearSelection") : t("selectAll")}
+        </button>
+        <button
+          type="button"
+          className="ww-select-bar-btn ww-select-bar-danger"
+          disabled={count === 0}
+          onClick={() => setPendingDelete({ type: "places", ids: selecting.ids })}
+        >
+          <Icon name="trash" /> {t("deleteSelected")}
+        </button>
+        <button type="button" className="ww-select-bar-btn" onClick={deleteWholeList}>
+          {t("deleteThisListTitle")}
+        </button>
+        <button type="button" className="ww-select-bar-btn" onClick={cancelSelecting}>
+          {t("cancel")}
+        </button>
+      </div>
+    );
   };
 
   const renderSectionSuggestions = (section) => {
@@ -2100,7 +2211,11 @@ export default function TripPlanBuilderPage() {
             </span>
             <span
               className="ww-more-icon"
-              onClick={handleDeleteWhereToGoList}
+              onClick={() =>
+                isSelectingList("whereToGo")
+                  ? cancelSelecting()
+                  : places.length > 0 && startSelecting("whereToGo")
+              }
               style={{ cursor: "pointer" }}
               title={t("deleteThisListTitle")}
             >
@@ -2108,6 +2223,7 @@ export default function TripPlanBuilderPage() {
             </span>
           </h2>
           <div ref={whereToGoRef} />
+          {renderSelectBar("whereToGo", places, handleDeleteWhereToGoList)}
 
           {canEdit && loadingSuggestions && (
             <p className="ww-field-label" style={{ marginBottom: 8 }}>
@@ -2128,13 +2244,13 @@ export default function TripPlanBuilderPage() {
             </p>
           )}
 
-          {suggestedPlaces.length > 0 && (
+          {suggestedToShow.length > 0 && (
             <div className="ww-suggested-places-panel">
               <p className="ww-suggested-places-label">
                 {t("suggestedPlacesIn")} {destination}:
               </p>
               <div className="ww-suggested-chips">
-                {suggestedPlaces.slice(0, showAllSuggestedPlaces ? suggestedPlaces.length : 12).map((sp) => (
+                {suggestedToShow.slice(0, showAllSuggestedPlaces ? suggestedToShow.length : 12).map((sp) => (
                   <button
                     key={sp.name}
                     type="button"
@@ -2158,7 +2274,7 @@ export default function TripPlanBuilderPage() {
                   involved), so we let the user reveal every suggestion we
                   fetched instead of hiding most of them behind the
                   12-item cap. */}
-              {suggestedPlaces.length > 12 && (
+              {suggestedToShow.length > 12 && (
                 <button
                   type="button"
                   className="ww-show-more-btn"
@@ -2166,7 +2282,7 @@ export default function TripPlanBuilderPage() {
                 >
                   {showAllSuggestedPlaces
                     ? `${t("showFewerPlaces")} ▴`
-                    : `${t("showMorePlaces")} (+${suggestedPlaces.length - 12}) ▾`}
+                    : `${t("showMorePlaces")} (+${suggestedToShow.length - 12}) ▾`}
                 </button>
               )}
             </div>
@@ -2179,6 +2295,7 @@ export default function TripPlanBuilderPage() {
           {places.map((p, i) => (
             <div className="ww-place-card" key={p.id}>
               <p className="ww-place-name">
+                {renderSelectBox("whereToGo", p)}
                 <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
               </p>
 
@@ -2335,7 +2452,12 @@ export default function TripPlanBuilderPage() {
                 </span>
                 <span
                   className="ww-more-icon"
-                  onClick={() => handleDeleteSection(section.id)}
+                  onClick={() => {
+                    if (isSelectingList(section.id)) cancelSelecting();
+                    // Nothing to choose from: just remove the empty list.
+                    else if (section.places.length === 0) handleDeleteSection(section.id);
+                    else startSelecting(section.id);
+                  }}
                   style={{ cursor: "pointer" }}
                   title={t("deleteThisListTitle")}
                 >
@@ -2343,11 +2465,14 @@ export default function TripPlanBuilderPage() {
                 </span>
               </h2>
 
+              {renderSelectBar(section.id, section.places, () => handleDeleteSection(section.id))}
+
               {renderSectionSuggestions(section)}
 
               {section.places.map((p, i) => (
                 <div className="ww-place-card" key={p.id}>
                   <p className="ww-place-name">
+                    {renderSelectBox(section.id, p)}
                     <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
                   </p>
                   <input
@@ -2781,9 +2906,13 @@ export default function TripPlanBuilderPage() {
         <div className="ww-modal-overlay" onClick={() => setPendingDelete(null)}>
           <div className="ww-warning-modal-card" onClick={(e) => e.stopPropagation()}>
             <p className="ww-warning-modal-icon"><Icon name="alert-triangle" /></p>
-            <p className="ww-warning-modal-text">{t("deleteSectionTitle")}</p>
+            <p className="ww-warning-modal-text">
+              {pendingDelete.type === "places" ? t("deleteSelectedTitle") : t("deleteSectionTitle")}
+            </p>
             <p className="ww-warning-modal-subtext">
-              {t("deleteSectionWarning")}
+              {pendingDelete.type === "places"
+                ? `${pendingDelete.ids.length} ${t("placesWillBeRemoved")}`
+                : t("deleteSectionWarning")}
             </p>
             <button className="ww-warning-modal-ok-btn" onClick={confirmPendingDelete}>
               {t("ok")}

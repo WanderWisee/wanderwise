@@ -3,6 +3,7 @@ import { Text, TextInput } from './Typography';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Svg, { Image as SvgImage } from 'react-native-svg';
+import { Image as RemoteImage } from 'expo-image';
 import { Colors, Fonts, cardShadow } from '../constants/theme';
 import { initials } from '../services/userService';
 import { fetchDestinationImage } from '../services/geoService';
@@ -197,8 +198,19 @@ export function DestinationImage({ name, style, icon = 'map', iconSize = 34 }) {
     };
   }, [name, local]);
 
-  const source = local || (remote?.name === name ? { uri: remote.url } : null);
-  if (source) return <Image source={source} style={[{ backgroundColor: Colors.cream2 }, style]} resizeMode="cover" />;
+  if (local) return <Image source={local} style={[{ backgroundColor: Colors.cream2 }, style]} resizeMode="cover" />;
+  if (remote?.name === name) {
+    // Wikimedia rejects images requested without a proper User-Agent (the APK
+    // on Android would show an empty box), so send one with expo-image.
+    return (
+      <RemoteImage
+        source={{ uri: remote.url, headers: { 'User-Agent': 'WanderWise-Mobile/1.0 (capstone project)' } }}
+        style={[{ backgroundColor: Colors.cream2 }, style]}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+      />
+    );
+  }
   return (
     <View style={[{ backgroundColor: Colors.cream2, alignItems: 'center', justifyContent: 'center' }, style]}>
       <AppIcon name={icon} size={iconSize} />

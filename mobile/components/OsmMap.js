@@ -1,19 +1,25 @@
 import AppIcon from './AppIcon';
 import { Text } from './Typography';
 import { useMemo, useState } from 'react';
-import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
-// Totoong mapa gamit ang OpenStreetMap tiles — walang dagdag na library
-// (gumagana sa Expo Go). Kinukuwenta ang zoom para magkasya lahat ng pin,
+// Totoong mapa gamit ang OpenStreetMap data (CARTO Voyager tiles).
+// Hindi na tile.openstreetmap.org ang gamit: hinaharang nito ang APK
+// ("Access blocked — tile usage policy"), pero gumagana ang CARTO sa
+// Expo Go at sa APK. Gamit ang expo-image para siguradong maipadala ang
+// User-Agent sa Android. Kinukuwenta ang zoom para magkasya lahat ng pin,
 // tapos inilalatag ang mga tile bilang <Image>. Pag-tap: bubukas ang buong
 // mapa sa openstreetmap.org para makapag-zoom/pan ang user.
 //
 // markers: [{ latitude, longitude, label?, color? }]
 
 const TILE = 256;
-const TILE_URL = 'https://tile.openstreetmap.org';
+const TILE_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+const tileUrl = (z, x, y) =>
+  `https://${TILE_SUBDOMAINS[(x + y) % TILE_SUBDOMAINS.length]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
 const TILE_HEADERS = { 'User-Agent': 'WanderWise-Mobile/1.0 (capstone project)' };
 
 // Sentro ng Pilipinas kapag walang pin
@@ -98,7 +104,7 @@ export default function OsmMap({
         const wrappedX = ((tx % maxTile) + maxTile) % maxTile;
         tiles.push({
           key: `${zoom}-${tx}-${ty}`,
-          uri: `${TILE_URL}/${zoom}/${wrappedX}/${ty}.png`,
+          uri: tileUrl(zoom, wrappedX, ty),
           left: tx * TILE - left,
           top: ty * TILE - top,
         });
@@ -135,6 +141,8 @@ export default function OsmMap({
           <Image
             key={tile.key}
             source={{ uri: tile.uri, headers: TILE_HEADERS }}
+            cachePolicy="memory-disk"
+            transition={0}
             onError={() => setFailedTile(tile.key)}
             style={[styles.tile, { left: tile.left, top: tile.top }]}
           />
@@ -157,7 +165,7 @@ export default function OsmMap({
       )}
 
       <View style={styles.attribution} pointerEvents="none">
-        <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
+        <Text style={styles.attributionText}>© OpenStreetMap contributors © CARTO</Text>
       </View>
       <View style={styles.expandBadge} pointerEvents="none">
         <AppIcon name="expand" style={styles.expandText} />

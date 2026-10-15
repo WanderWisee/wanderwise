@@ -83,13 +83,10 @@ export default function PreferencesScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginTop: 18, marginBottom: 12 },
-  label: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 14, marginBottom: 8 },
-  preview: {
-    marginTop: 26, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: Colors.line,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, color: Colors.brown900, marginTop: 20, marginBottom: 16 },
+  label: { fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 20, color: Colors.brown600, marginTop: 20, marginBottom: 10 },
+  preview: { marginTop: 28, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: Colors.line },
   previewLabel: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600 },
   previewValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginTop: 4 },
 });

@@ -11,7 +11,8 @@ python database/apply_schema_update.py
 
 The helper reads existing `backend/.env` connection settings, checks actual
 columns/tables, saves a full local backup, and applies only missing additive
-statements from `1_align_current_models.sql`. It leaves existing records and
+statements from `1_align_current_models.sql`, `5_trip_name.sql`, and
+`6_push_tokens.sql`. It leaves existing records and
 existing column definitions unchanged. Rerunning skips already-applied changes.
 
 MySQL client tools are expected in `C:\Program Files\MySQL\MySQL Server 8.0\bin`.

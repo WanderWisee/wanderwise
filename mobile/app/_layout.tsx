@@ -3,7 +3,7 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, P
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Colors } from '../constants/theme';
 import { AppProvider, useApp } from '../context/AppContext';
@@ -37,7 +37,7 @@ function AuthGate() {
   // Pag-tap sa push notification: buksan ang tamang screen (trip, klase,
   // journal), o ang Notifications kung walang tiyak na screen.
   useEffect(() => {
-    if (!ready || !isLoggedIn) return;
+    if (!ready || !isLoggedIn || Platform.OS === 'web') return;
     let handled = '';
     const openFrom = (response: Notifications.NotificationResponse | null) => {
       if (!response) return;

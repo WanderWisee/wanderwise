@@ -1389,29 +1389,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingTop: 12,
   },
-  heroIconButton: {
-    width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.85)',
-    alignItems: 'center', justifyContent: 'center',
-  },
+  heroIconButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center' },
   heroIconText: { fontSize: 16, color: Colors.brown900 },
 
-  titleCard: {
-    backgroundColor: '#FFFFFF', marginHorizontal: 20, marginTop: -36, borderRadius: 18, padding: 18,
-    shadowColor: Colors.brown900, shadowOpacity: 0.1, shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 }, elevation: 4,
-  },
+  titleCard: { backgroundColor: '#FFFFFF', marginHorizontal: 20, marginTop: -36, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: Colors.line },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  tripName: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
+  tripName: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900 },
   tripNameInput: { paddingVertical: 2, borderBottomWidth: 1, borderBottomColor: Colors.line },
   metaButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, alignSelf: 'flex-start' },
   editHint: { fontSize: 12, color: Colors.brown600 },
   tripDates: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   buddiesRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  miniCounter: {
-    width: 24, height: 24, borderRadius: 7, backgroundColor: Colors.cream2,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  miniCounter: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
   miniCounterText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
   buddiesValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900, minWidth: 14, textAlign: 'center' },
   crewRow: { flexDirection: 'row', alignItems: 'center' },
@@ -1440,11 +1430,7 @@ const styles = StyleSheet.create({
   mapCaption: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 18 },
   linkAction: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.teal },
 
-  bookingCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 24,
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
+  bookingCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: Colors.line },
   bookingLine: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown900, marginTop: 4 },
 
   selectHint: {
@@ -1462,13 +1448,13 @@ const styles = StyleSheet.create({
 
   daySection: { paddingBottom: 16 },
   daySectionDivider: { borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 22 },
-  dayHeading: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, color: Colors.brown900, marginBottom: 14 },
+  dayHeading: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900, marginBottom: 16 },
   stayBanner: {
     backgroundColor: Colors.tintSky, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
   },
   stayText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown900 },
   reorderRow: { flexDirection: 'row', gap: 10, marginTop: 6, justifyContent: 'flex-end' },
-  reorderButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: Colors.cream2 },
+  reorderButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.cream2 },
   reorderText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown900 },
 
   addPlaceRow: { flexDirection: 'row', gap: 10, marginBottom: 12, marginTop: 2 },
@@ -1497,20 +1483,13 @@ const styles = StyleSheet.create({
 
   assignBar: { backgroundColor: Colors.brown900, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 20 },
   assignBarTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint, marginBottom: 10 },
-  assignBarDayPill: {
-    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingHorizontal: 14, height: 34,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  assignBarDayPill: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   assignBarDayPillText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: '#FFFFFF' },
   assignBarBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   assignBarDelete: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: '#F4A19A' },
   assignBarCancel: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.75)', textDecorationLine: 'underline' },
 
-  emptyStateCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 30, alignItems: 'center', gap: 8,
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
+  emptyStateCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 28, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: Colors.line },
   emptyStateTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
 
   budgetHero: { backgroundColor: Colors.brown900, borderRadius: 18, padding: 20, marginBottom: 24 },
@@ -1528,9 +1507,7 @@ const styles = StyleSheet.create({
   budgetStatValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#FFFFFF' },
   budgetStatLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   budgetSplit: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 12 },
-  addExpenseCard: {
-    backgroundColor: Colors.cream2, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, padding: 16,
-  },
+  addExpenseCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 20 },
   expenseInput: {
     fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
     backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, borderColor: Colors.line,
@@ -1540,19 +1517,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brown900, borderRadius: 12, height: 44, alignItems: 'center', justifyContent: 'center',
   },
   addExpenseButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
-  breakdownCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: Colors.line, padding: 16, gap: 14,
-  },
+  breakdownCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 20, gap: 16 },
   breakdownRow: { gap: 6 },
   breakdownLabel: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900, marginRight: 10 },
   breakdownAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.brown900 },
   breakdownTrack: { height: 6, borderRadius: 3, backgroundColor: Colors.cream2, overflow: 'hidden' },
   breakdownFill: { height: 6, borderRadius: 3, backgroundColor: Colors.card },
-  expenseRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10,
-  },
+  expenseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 16, marginBottom: 12 },
   expenseTitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900 },
   expenseDesc: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginTop: 2 },
   expenseAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },

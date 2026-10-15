@@ -6,20 +6,18 @@ import { Image } from 'expo-image';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
-// Totoong mapa gamit ang OpenStreetMap data (CARTO Voyager tiles).
-// Hindi na tile.openstreetmap.org ang gamit: hinaharang nito ang APK
-// ("Access blocked — tile usage policy"), pero gumagana ang CARTO sa
-// Expo Go at sa APK. Gamit ang expo-image para siguradong maipadala ang
-// User-Agent sa Android. Kinukuwenta ang zoom para magkasya lahat ng pin,
-// tapos inilalatag ang mga tile bilang <Image>. Pag-tap: bubukas ang buong
-// mapa sa openstreetmap.org para makapag-zoom/pan ang user.
+// OpenStreetMap data rendered with CARTO Voyager raster tiles.
+// CARTO requires a basemap key; configure EXPO_PUBLIC_CARTO_API_KEY.
+// expo-image caches tiles and sends an identifying User-Agent on native.
+// Tap the preview to open the full map on openstreetmap.org.
 //
 // markers: [{ latitude, longitude, label?, color? }]
 
 const TILE = 256;
 const TILE_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+const CARTO_API_KEY = process.env.EXPO_PUBLIC_CARTO_API_KEY?.trim();
 const tileUrl = (z, x, y) =>
-  `https://${TILE_SUBDOMAINS[(x + y) % TILE_SUBDOMAINS.length]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
+  `https://${TILE_SUBDOMAINS[(x + y) % TILE_SUBDOMAINS.length]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png${CARTO_API_KEY ? `?key=${encodeURIComponent(CARTO_API_KEY)}` : ''}`;
 const TILE_HEADERS = { 'User-Agent': 'WanderWise-Mobile/1.0 (capstone project)' };
 
 // Sentro ng Pilipinas kapag walang pin

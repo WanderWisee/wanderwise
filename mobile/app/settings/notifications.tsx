@@ -56,13 +56,10 @@ export default function NotificationSettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
-  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 8 },
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.line,
-  },
-  rowLabel: { fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900 },
-  rowHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 17, color: Colors.brown600, marginTop: 3 },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, color: Colors.brown900, marginBottom: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, marginBottom: 12, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line },
+  rowLabel: { fontFamily: 'Poppins_500Medium', fontSize: 14, lineHeight: 22, color: Colors.brown900 },
+  rowHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600, marginTop: 4 },
   always: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginTop: 18 },
 });

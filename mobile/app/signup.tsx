@@ -137,7 +137,7 @@ export default function SignupScreen() {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.centerWrap} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.centerWrap} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
             <TouchableOpacity onPress={goBack} style={styles.backButton} hitSlop={10}>
               <AppIcon name="arrow-left" style={styles.backText} />
@@ -149,7 +149,9 @@ export default function SignupScreen() {
 
                 <View style={styles.nameRow}>
                   <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.fieldLabel}>{t('firstName')}</Text>
                     <TextInput
+                      accessibilityLabel={t('firstName')}
                       style={inputStyle('firstName')}
                       placeholder={t('firstName')}
                       placeholderTextColor={Colors.brown600}
@@ -161,7 +163,9 @@ export default function SignupScreen() {
                     {fieldError('firstName')}
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.fieldLabel}>{t('lastName')}</Text>
                     <TextInput
+                      accessibilityLabel={t('lastName')}
                       style={inputStyle('lastName')}
                       placeholder={t('lastName')}
                       placeholderTextColor={Colors.brown600}
@@ -173,7 +177,9 @@ export default function SignupScreen() {
                     {fieldError('lastName')}
                   </View>
                 </View>
+                <Text style={styles.fieldLabel}>{t('schoolEmail')}</Text>
                 <TextInput
+                  accessibilityLabel={t('schoolEmail')}
                   style={inputStyle('schoolEmail')}
                   placeholder={t('studentEmailPlaceholder')}
                   placeholderTextColor={Colors.brown600}
@@ -184,7 +190,9 @@ export default function SignupScreen() {
                   onChangeText={set('schoolEmail')}
                 />
                 {fieldError('schoolEmail')}
+                <Text style={styles.fieldLabel}>{t('recoveryEmailLabel')}</Text>
                 <TextInput
+                  accessibilityLabel={t('recoveryEmailLabel')}
                   style={inputStyle('recoveryEmail')}
                   placeholder={t('recoveryEmailPlaceholder')}
                   placeholderTextColor={Colors.brown600}
@@ -195,6 +203,7 @@ export default function SignupScreen() {
                   onChangeText={set('recoveryEmail')}
                 />
                 {fieldError('recoveryEmail')}
+                <Text style={styles.fieldLabel}>{t('dobLabel')}</Text>
                 <TouchableOpacity
                   style={[...inputStyle('dob'), styles.dateField]}
                   onPress={() => setDobOpen(true)}
@@ -207,7 +216,9 @@ export default function SignupScreen() {
                   <AppIcon name="calendar" style={styles.dateIcon} />
                 </TouchableOpacity>
                 {fieldError('dob')}
+                <Text style={styles.fieldLabel}>{t('cellphoneNumber')}</Text>
                 <TextInput
+                  accessibilityLabel={t('cellphoneNumber')}
                   style={inputStyle('cellphone')}
                   placeholder={t('valPhonePlaceholder')}
                   placeholderTextColor={Colors.brown600}
@@ -217,7 +228,9 @@ export default function SignupScreen() {
                   maxLength={11}
                 />
                 {fieldError('cellphone')}
+                <Text style={styles.fieldLabel}>{t('password')}</Text>
                 <TextInput
+                  accessibilityLabel={t('password')}
                   style={inputStyle('password')}
                   placeholder={t('createPasswordLabel')}
                   placeholderTextColor={Colors.brown600}
@@ -228,7 +241,9 @@ export default function SignupScreen() {
                   maxLength={100}
                 />
                 {fieldError('password') || <Text style={styles.fieldHint}>{t('valPasswordHint')}</Text>}
+                <Text style={styles.fieldLabel}>{t('confirmPassword')}</Text>
                 <TextInput
+                  accessibilityLabel={t('confirmPassword')}
                   style={inputStyle('confirmPassword')}
                   placeholder={t('confirmPassword')}
                   placeholderTextColor={Colors.brown600}
@@ -308,25 +323,16 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
-  header: { paddingHorizontal: 24, paddingTop: 10 },
-  centerWrap: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30, paddingVertical: 24 },
-  card: {
-    width: '100%', backgroundColor: Colors.card, borderRadius: 22,
-    paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28,
-  },
-  backButton: { marginBottom: 12, alignSelf: 'flex-start' },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  centerWrap: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 24 },
+  card: { width: '100%', maxWidth: 440, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: Colors.line },
+  backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', marginBottom: 16, alignSelf: 'flex-start' },
   backText: { fontSize: 20, color: Colors.brown900 },
-  cardTitle: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900,
-    textAlign: 'center', marginBottom: 24,
-  },
-  nameRow: { flexDirection: 'row', gap: 14 },
-  input: {
-    fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900,
-    borderBottomWidth: 1, borderBottomColor: Colors.brown900,
-    paddingVertical: 8, marginBottom: 18,
-  },
-  inputError: { borderBottomColor: Colors.error, borderBottomWidth: 1.5 },
+  cardTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 24, lineHeight: 34, letterSpacing: -0.5, color: Colors.brown900, marginBottom: 24 },
+  nameRow: { flexDirection: 'row', gap: 10 },
+  fieldLabel: { fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 20, color: Colors.brown600, marginBottom: 8 },
+  input: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, borderRadius: 14, minHeight: 52, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 18 },
+  inputError: { borderColor: Colors.error, borderWidth: 1.5 },
   fieldError: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.error, marginTop: -12, marginBottom: 14 },
   fieldHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: -12, marginBottom: 14 },
   dateField: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -340,10 +346,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 19, color: Colors.brown800,
     textAlign: 'center', marginBottom: 18,
   },
-  primaryButton: {
-    height: 48, borderRadius: 12, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center', marginTop: 6,
-  },
+  primaryButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
   linkText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
 });

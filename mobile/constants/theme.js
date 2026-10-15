@@ -28,11 +28,20 @@ export const Fonts = {
   semibold: 'Poppins_600SemiBold',
 };
 
+export const Layout = {
+  gutter: 20,
+  contentWidth: 560,
+  controlHeight: 52,
+  touchTarget: 44,
+};
+
+export const Radius = { control: 14, card: 20 };
+
 // Parehong anino ng mga puting card sa app
 export const cardShadow = {
   shadowColor: Colors.brown900,
-  shadowOpacity: 0.06,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.045,
+  shadowRadius: 14,
+  shadowOffset: { width: 0, height: 5 },
   elevation: 2,
 };

@@ -5,7 +5,6 @@ import { View, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, Linking
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
@@ -136,6 +135,8 @@ export default function HomeScreen() {
             contentContainerStyle={styles.scrollContent}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
           >
             {!!user?.firstName && (
               <Text style={styles.greeting}>
@@ -150,7 +151,7 @@ export default function HomeScreen() {
             ) : latestTrip ? (
               <>
                 <View style={styles.continueHeaderRow}>
-                  <Text style={styles.sectionTitle}>{t('continuePlanning')}</Text>
+                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('continuePlanning')}</Text>
                   <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/profile', params: { tab: 'trips' } })}>
                     <Text style={styles.seeAllText}>{t('seeAll')}</Text>
                   </TouchableOpacity>
@@ -185,10 +186,12 @@ export default function HomeScreen() {
             </Text>
 
             <View style={styles.hotelSearchCard}>
-              <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
               <Text style={styles.sectionTitle}>{t('discoverGreatPlaces')}</Text>
+              <View style={styles.searchField}>
+              <AppIcon name="search" size={20} color={Colors.brown600} />
               <TextInput
                 style={styles.searchInput}
+                accessibilityLabel={t('searchPlaces')}
                 placeholder={t('searchPlaces')}
                 placeholderTextColor={Colors.brown600}
                 value={destination}
@@ -196,33 +199,40 @@ export default function HomeScreen() {
                 returnKeyType="search"
                 onSubmitEditing={searchHotels}
               />
+              </View>
               <TouchableOpacity style={styles.dateRangeField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
-                <Text style={dateRange ? styles.dateRangeText : styles.dateRangePlaceholder}>
+                <AppIcon name="calendar" size={20} color={Colors.brown600} />
+                <Text style={[dateRange ? styles.dateRangeText : styles.dateRangePlaceholder, { flex: 1 }]}>
                   {dateRange
                     ? `${formatDate(dateRange.start, prefs.dateFormat)} — ${formatDate(dateRange.end, prefs.dateFormat)}`
                     : t('selectDates')}
                 </Text>
+                <AppIcon name="chevron-down" size={16} color={Colors.brown600} />
               </TouchableOpacity>
               <View style={styles.travelersRow}>
+                <IconLabel name="users" textStyle={styles.travelersLabel}>{t('travelBuddies')}</IconLabel>
+                <View style={styles.stepper}>
                 <TouchableOpacity
                   style={styles.counterButton}
                   onPress={() => setTravelers((n) => Math.max(0, n - 1))}
-                  accessibilityLabel="−"
+                  accessibilityLabel={`${t('remove')} ${t('travelBuddies')}`}
+                  disabled={travelers === 0}
                 >
                   <AppIcon name="minus" style={styles.counterButtonText} />
                 </TouchableOpacity>
-                <Text accessibilityLabel={t('travelBuddies')} style={styles.counterValue}>{travelers} {t('travelBuddies')}</Text>
+                <Text accessibilityLabel={t('travelBuddies')} style={styles.counterValue}>{travelers}</Text>
                 <TouchableOpacity
                   style={styles.counterButton}
                   onPress={() => setTravelers((n) => n + 1)}
-                  accessibilityLabel="+"
+                  accessibilityLabel={`${t('add')} ${t('travelBuddies')}`}
                 >
                   <AppIcon name="plus" style={styles.counterButtonText} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.searchButton} onPress={searchHotels}>
-                  <Text style={styles.searchButtonText}>{t('search')}</Text>
-                </TouchableOpacity>
+                </View>
               </View>
+              <TouchableOpacity style={styles.searchButton} onPress={searchHotels} accessibilityRole="button">
+                <IconLabel name="search" textStyle={styles.searchButtonText}>{t('search')}</IconLabel>
+              </TouchableOpacity>
             </View>
 
             <Text style={[styles.sectionTitle, { marginTop: 10 }]}>{t('topDestinations')}</Text>
@@ -282,10 +292,10 @@ const styles = StyleSheet.create({
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6,
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12,
   },
   bellButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
+    width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.white,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   badge: {
@@ -293,15 +303,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
   },
   badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10, color: '#FFFFFF' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
-  greeting: { fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 18 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  greeting: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900, marginBottom: 24 },
 
   continueHeaderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
   },
-  seeAllText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, textDecorationLine: 'underline' },
+  seeAllText: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: Colors.teal, paddingVertical: 10 },
   continueCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16, marginBottom: 26,
+    backgroundColor: '#FFFFFF', borderRadius: 20, paddingHorizontal: 16, marginBottom: 28,
+    borderWidth: 1, borderColor: Colors.line,
     shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
@@ -310,32 +321,33 @@ const styles = StyleSheet.create({
   startLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.teal, marginTop: 4 },
 
   sectionTitle: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, marginBottom: 14,
+    fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, marginBottom: 14,
   },
   mapCaption: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 24 },
 
   hotelSearchCard: {
-    borderRadius: 16, padding: 20, marginBottom: 30, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 20, padding: 20, marginBottom: 28, backgroundColor: Colors.white,
+    borderWidth: 1, borderColor: Colors.line,
   },
+  searchField: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, borderRadius: 14, paddingHorizontal: 14, marginBottom: 12 },
   searchInput: {
-    zIndex: 1,
+    flex: 1, minWidth: 0,
     fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
-    backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
+    paddingVertical: 14,
   },
   dateRangeField: {
-    zIndex: 1,
-    backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(43,28,18,0.25)',
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52,
+    backgroundColor: Colors.cream, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.line,
+    paddingHorizontal: 14, paddingVertical: 14, marginBottom: 12,
   },
   dateRangeText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900 },
   dateRangePlaceholder: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown600 },
-  travelersRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 1 },
+  travelersRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 },
+  travelersLabel: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: Colors.brown600 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   counterButton: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.4)',
+    width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.cream,
     alignItems: 'center', justifyContent: 'center',
   },
   counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
@@ -343,20 +355,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, minWidth: 20, textAlign: 'center',
   },
   searchButton: {
-    flex: 1, backgroundColor: Colors.brown900, borderRadius: 10, height: 40,
+    backgroundColor: Colors.brown900, borderRadius: 14, minHeight: 52, paddingVertical: 14,
     alignItems: 'center', justifyContent: 'center',
   },
   searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
 
   horizontalListContent: { gap: 14, paddingRight: 6 },
-  destinationCardHorizontal: { width: 200 },
+  destinationCardHorizontal: { width: 200, borderRadius: 20, backgroundColor: Colors.white, overflow: 'hidden', borderWidth: 1, borderColor: Colors.line },
   destinationImage: {
-    width: 200, height: 160, borderRadius: 12, marginBottom: 10, backgroundColor: Colors.cream2,
+    width: '100%', height: 140, marginBottom: 14, backgroundColor: Colors.cream2,
   },
-  destinationName: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 10 },
+  destinationName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, lineHeight: 22, color: Colors.brown900, marginBottom: 12, paddingHorizontal: 14 },
   itineraryButton: {
-    backgroundColor: Colors.brown900, borderRadius: 20, height: 40,
-    alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 20,
+    backgroundColor: Colors.brown900, borderRadius: 12, minHeight: 44,
+    alignItems: 'center', justifyContent: 'center', marginHorizontal: 14, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10,
   },
   itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
 

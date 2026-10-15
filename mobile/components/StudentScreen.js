@@ -1,9 +1,9 @@
 import { Text } from './Typography';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Colors, Fonts, cardShadow } from '../constants/theme';
+import { Colors, Fonts, Layout, Radius, cardShadow } from '../constants/theme';
 import Backdrop from './Backdrop';
 import MeshBlobs from './MeshBlobs';
 import { ScreenHeader } from './ui';
@@ -16,9 +16,11 @@ export default function StudentScreen({ title, children, refreshControl = undefi
         <MeshBlobs height={900} style={StyleSheet.absoluteFill} />
         <Backdrop height={220} style={StyleSheet.absoluteFill} />
         <ScreenHeader title={title} onBack={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/home')} />
-        <ScrollView refreshControl={refreshControl} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 16 }}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView refreshControl={refreshControl} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Layout.gutter, paddingTop: 4, paddingBottom: 40, gap: 20, width: '100%', maxWidth: Layout.contentWidth, alignSelf: 'center' }}>
           {children}
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -29,8 +31,8 @@ export function StudentCard({ title = '', children }) {
 }
 
 export const studentStyles = StyleSheet.create({
-  card: { backgroundColor: Colors.white, borderRadius: 18, padding: 18, gap: 12, ...cardShadow },
-  title: { fontFamily: Fonts.semibold, fontSize: 19, color: Colors.brown900 },
+  card: { backgroundColor: Colors.white, borderRadius: Radius.card, padding: 20, gap: 12, borderWidth: 1, borderColor: Colors.line, ...cardShadow },
+  title: { fontFamily: Fonts.semibold, fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900 },
   text: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 21, color: Colors.brown600 },
   error: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 21, color: Colors.error },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },

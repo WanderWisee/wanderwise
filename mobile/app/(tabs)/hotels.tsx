@@ -5,7 +5,6 @@ import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Linking, Modal, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Colors } from '../../constants/theme';
 import { HOTEL_DESTINATIONS } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
@@ -171,7 +170,9 @@ function HotelsContent({ params }) {
           <Wordmark />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}>
           {tripMode && (
             <View style={styles.tripBanner}>
               <Text style={styles.tripBannerText}>
@@ -194,7 +195,6 @@ function HotelsContent({ params }) {
           <Text style={styles.pageSubtitle}>{t('hotelsHeroSubtitle')}</Text>
 
           <View style={styles.inputWrap}>
-            <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <TextInput
               style={styles.searchInput}
               placeholder={t('hotelsSearchPlaceholder')}
@@ -207,21 +207,19 @@ function HotelsContent({ params }) {
           </View>
 
           <TouchableOpacity style={styles.inputWrap} onPress={() => setPickerFor('search')} activeOpacity={0.7}>
-            <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <Text style={dateRange ? styles.dateRangeText : styles.dateRangePlaceholder}>
               {dateRange ? `${formatParts(dateRange.start, prefs.dateFormat)} — ${formatParts(dateRange.end, prefs.dateFormat)}` : t('selectDates')}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.counterRow}>
-            <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <Text style={styles.counterLabel}>{t('travelBuddies')}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, zIndex: 1 }}>
-              <TouchableOpacity style={styles.counterButton} onPress={() => setTravelers((n) => Math.max(0, n - 1))}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 1 }}>
+              <TouchableOpacity style={styles.counterButton} disabled={travelers === 0} accessibilityLabel={`${t('remove')} ${t('travelBuddies')}`} onPress={() => setTravelers((n) => Math.max(0, n - 1))}>
                 <AppIcon name="minus" style={styles.counterButtonText} />
               </TouchableOpacity>
               <Text style={styles.counterValue}>{travelers}</Text>
-              <TouchableOpacity style={styles.counterButton} onPress={() => setTravelers((n) => n + 1)}>
+              <TouchableOpacity style={styles.counterButton} accessibilityLabel={`${t('add')} ${t('travelBuddies')}`} onPress={() => setTravelers((n) => n + 1)}>
                 <AppIcon name="plus" style={styles.counterButtonText} />
               </TouchableOpacity>
             </View>
@@ -404,83 +402,45 @@ function HotelsContent({ params }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
-  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
-  content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 40 },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
   tripBanner: {
     backgroundColor: Colors.brown900, borderRadius: 14, padding: 14, marginBottom: 18, gap: 6,
   },
   tripBannerText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: '#FFFFFF' },
   tripBannerLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
-  pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900 },
-  pageSubtitle: {
-    fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown600,
-    marginTop: 6, marginBottom: 20,
-  },
-  inputWrap: {
-    borderRadius: 10, overflow: 'hidden', marginBottom: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
-    justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14,
-  },
+  pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900 },
+  pageSubtitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown600, marginTop: 8, marginBottom: 24 },
+  inputWrap: { minHeight: 52, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12 },
   searchInput: { zIndex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, padding: 0 },
   dateRangeText: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, zIndex: 1 },
   dateRangePlaceholder: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
-  counterRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderRadius: 10, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
-    paddingHorizontal: 16, paddingVertical: 8, marginBottom: 12,
-  },
+  counterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 16 },
   counterLabel: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
-  counterButton: {
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 8,
-  },
+  counterButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream, borderRadius: 12 },
   counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
   counterValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, minWidth: 20, textAlign: 'center' },
-  searchButton: {
-    height: 48, borderRadius: 10, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 30,
-  },
+  searchButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
   searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: Colors.brown900, flex: 1 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flex: 1 },
   hint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, lineHeight: 18, color: Colors.brown600, marginBottom: 12 },
-  formCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 30,
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
-  formLabel: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 6 },
-  formInput: {
-    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
-    backgroundColor: Colors.cream2, borderRadius: 10, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 14,
-  },
+  formCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginBottom: 32, borderWidth: 1, borderColor: Colors.line },
+  formLabel: { fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 20, color: Colors.brown600, marginBottom: 8 },
+  formInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, minHeight: 52, backgroundColor: Colors.cream, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16 },
   errorText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 10 },
-  bookingRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10,
-  },
+  bookingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 16, marginBottom: 12 },
   bookingName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
   bookingMeta: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 3 },
   bookingTrip: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.teal, marginTop: 4 },
   horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
-  resultCard: {
-    width: 240,
-    backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden',
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
+  resultCard: { width: 240, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
   resultImage: { width: 240, height: 140, backgroundColor: Colors.cream2 },
   resultBody: { padding: 16 },
   hotelName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 6 },
   hotelAmenities: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 12 },
-  dealButton: {
-    backgroundColor: Colors.brown900, borderRadius: 10, paddingHorizontal: 16, height: 38,
-    alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start',
-  },
+  dealButton: { backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 16, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
   dealButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
   overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
@@ -492,5 +452,5 @@ const styles = StyleSheet.create({
   sheetHint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 6 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.line },
   sheetIcon: { fontSize: 18, width: 24 },
-  sheetLabel: { fontFamily: 'Poppins_400Regular', fontSize: 15, color: Colors.brown900 },
+  sheetLabel: { fontFamily: 'Poppins_400Regular', fontSize: 15, lineHeight: 23, color: Colors.brown900, flex: 1 },
 });

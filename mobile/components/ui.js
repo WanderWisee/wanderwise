@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Svg, { Image as SvgImage } from 'react-native-svg';
 import { Image as RemoteImage } from 'expo-image';
-import { Colors, Fonts, cardShadow } from '../constants/theme';
+import { Colors, Fonts, Layout, Radius, cardShadow } from '../constants/theme';
 import { initials } from '../services/userService';
 import { fetchDestinationImage } from '../services/geoService';
 import { localImageFor } from '../constants/destinations';
@@ -35,12 +35,12 @@ export function ScreenHeader({ title, onBack, right = null, titleSize = 20 }) {
           <AppIcon name="arrow-left" style={styles.backText} />
         </TouchableOpacity>
       ) : (
-        <View style={{ width: 34 }} />
+        <View style={{ width: Layout.touchTarget }} />
       )}
       <Text style={[styles.headerTitle, { fontSize: titleSize }]} numberOfLines={1}>
         {title}
       </Text>
-      {right || <View style={{ width: 34 }} />}
+      <View style={{ minWidth: Layout.touchTarget, alignItems: 'flex-end' }}>{right}</View>
     </View>
   );
 }
@@ -85,6 +85,9 @@ export function OutlineButton({ label, onPress, disabled = false, style = null, 
       ]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
       activeOpacity={0.7}
     >
       <Text style={[styles.outlineButtonText, small && { fontSize: 13 }, danger && { color: Colors.error }]}>{label}</Text>
@@ -93,18 +96,21 @@ export function OutlineButton({ label, onPress, disabled = false, style = null, 
 }
 
 // Label + input na may parehong istilo ng Account screen.
-export function Field({ label, style = null, inputStyle = null, hint = null, editable = true, ...inputProps }) {
+export function Field({ label, style = null, inputStyle = null, hint = null, editable = true, error = '', onFocus = undefined, onBlur = undefined, ...inputProps }) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={[{ marginBottom: 16 }, style]}>
       {!!label && <Text style={styles.fieldLabel}>{label}</Text>}
       <TextInput
-        style={[styles.fieldInput, !editable && styles.fieldInputLocked, inputStyle]}
+        style={[styles.fieldInput, !editable && styles.fieldInputLocked, focused && styles.fieldInputFocused, !!error && { borderColor: Colors.error }, inputStyle]}
         placeholderTextColor={Colors.placeholder}
         accessibilityLabel={label}
         editable={editable}
+        onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+        onBlur={(event) => { setFocused(false); onBlur?.(event); }}
         {...inputProps}
       />
-      {!!hint && <Text style={styles.fieldHint}>{hint}</Text>}
+      {!!(error || hint) && <Text accessibilityRole={error ? 'alert' : undefined} style={[styles.fieldHint, !!error && { color: Colors.error }]}>{error || hint}</Text>}
     </View>
   );
 }
@@ -230,6 +236,8 @@ export function ChoiceChips({ options, value, onChange, style = null }) {
             style={[styles.chip, { flexDirection: 'row', gap: 6 }, active && styles.chipActive]}
             onPress={() => onChange(opt.value)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
           >
             {!!opt.icon && <AppIcon name={opt.icon} size={16} color={active ? Colors.mint : Colors.brown900} />}
             <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</Text>
@@ -254,37 +262,39 @@ const styles = StyleSheet.create({
   wordmarkRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
+    paddingHorizontal: Layout.gutter, paddingTop: 12, paddingBottom: 20,
   },
   squareButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
+    width: Layout.touchTarget, height: Layout.touchTarget, borderRadius: Radius.control, backgroundColor: Colors.white,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   backText: { fontSize: 18, color: Colors.brown900 },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: Fonts.semibold, color: Colors.brown900 },
+  headerTitle: { flex: 1, textAlign: 'center', fontFamily: Fonts.semibold, color: Colors.brown900, letterSpacing: -0.4 },
   primaryButton: {
-    minHeight: 48, paddingVertical: 12, borderRadius: 12, backgroundColor: Colors.brown900,
+    minHeight: Layout.controlHeight, paddingVertical: 14, borderRadius: Radius.control, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
   },
-  primaryButtonSmall: { height: 38, borderRadius: 10, paddingHorizontal: 14 },
+  primaryButtonSmall: { minHeight: Layout.touchTarget, paddingVertical: 10, borderRadius: 12, paddingHorizontal: 14 },
   primaryButtonText: { fontFamily: Fonts.semibold, fontSize: 15, color: Colors.mint },
   outlineButton: {
-    minHeight: 48, paddingVertical: 12, borderRadius: 12, borderWidth: 1.4, borderColor: Colors.brown900,
+    minHeight: Layout.controlHeight, paddingVertical: 14, borderRadius: Radius.control, borderWidth: 1, borderColor: Colors.line,
+    backgroundColor: Colors.white,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
   },
   outlineButtonText: { fontFamily: Fonts.semibold, fontSize: 15, color: Colors.brown900 },
-  fieldLabel: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.brown600, marginBottom: 6 },
+  fieldLabel: { fontFamily: Fonts.medium, fontSize: 13, lineHeight: 20, color: Colors.brown600, marginBottom: 8 },
   fieldInput: {
     fontFamily: Fonts.regular, fontSize: 15, color: Colors.brown900,
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 16, paddingVertical: 13,
+    minHeight: Layout.controlHeight, backgroundColor: Colors.cream, borderRadius: Radius.control, borderWidth: 1, borderColor: Colors.line,
+    paddingHorizontal: 16, paddingVertical: 14, lineHeight: 22,
   },
+  fieldInputFocused: { borderColor: Colors.teal, backgroundColor: Colors.white },
   fieldInputLocked: { opacity: 0.65 },
-  fieldHint: { fontFamily: Fonts.regular, fontSize: 11.5, color: Colors.placeholder, marginTop: 5 },
+  fieldHint: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 18, color: Colors.brown600, marginTop: 6 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { flex: 1, fontFamily: Fonts.semibold, fontSize: 19, color: Colors.brown900 },
-  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 36, paddingHorizontal: 30 },
+  sectionTitle: { flex: 1, fontFamily: Fonts.semibold, fontSize: 18, lineHeight: 26, color: Colors.brown900, letterSpacing: -0.3 },
+  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 28, paddingHorizontal: 20, gap: 4 },
   emptyTitle: { fontFamily: Fonts.semibold, fontSize: 16, color: Colors.brown900, marginTop: 14, textAlign: 'center' },
   emptySubtitle: {
     fontFamily: Fonts.regular, fontSize: 13, lineHeight: 19, color: Colors.brown600, marginTop: 6, textAlign: 'center',
@@ -297,7 +307,7 @@ const styles = StyleSheet.create({
   avatarInitials: { fontFamily: Fonts.semibold, color: Colors.brown600 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    paddingHorizontal: 14, height: 36, borderRadius: 18, backgroundColor: Colors.cream2,
+    paddingHorizontal: 14, paddingVertical: 10, minHeight: Layout.touchTarget, borderRadius: Radius.control, backgroundColor: Colors.cream,
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   chipActive: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },

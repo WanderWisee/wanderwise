@@ -220,12 +220,7 @@ export default function PlaceCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: Colors.line,
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 }, elevation: 2,
-  },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: Colors.line },
   cardSelected: { borderColor: Colors.brown900, borderWidth: 1.5 },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -240,7 +235,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   numberText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.mint },
-  name: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
+  name: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, lineHeight: 23, color: Colors.brown900 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chip: { backgroundColor: Colors.cream2, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   chipText: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600 },
@@ -253,15 +248,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  details: { marginTop: 12, borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 12 },
-  notesInput: {
-    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
-    minHeight: 40, paddingVertical: 4, textAlignVertical: 'top',
-  },
+  details: { marginTop: 16, borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 16 },
+  notesInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, minHeight: 52, paddingVertical: 8, textAlignVertical: 'top' },
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  actionButton: {
-    backgroundColor: Colors.cream2, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
-  },
+  actionButton: { minHeight: 44, justifyContent: 'center', backgroundColor: Colors.cream, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   actionText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown900 },
   actionTextActive: { color: Colors.teal },
 
@@ -272,7 +262,7 @@ const styles = StyleSheet.create({
   },
   costCategory: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown900 },
   costAmount: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, marginRight: 10 },
-  costRemove: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  costRemove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   costRemoveText: { fontSize: 12, color: Colors.error },
   costTotal: {
     fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown600,
@@ -281,27 +271,14 @@ const styles = StyleSheet.create({
 
   costForm: { marginTop: 12, backgroundColor: Colors.cream, borderRadius: 12, padding: 12 },
   categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  categoryChip: {
-    borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6,
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line,
-  },
+  categoryChip: { minHeight: 44, justifyContent: 'center', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line },
   categoryChipActive: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
   categoryChipText: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown900 },
   categoryChipTextActive: { color: Colors.mint, fontFamily: 'Poppins_600SemiBold' },
-  costInput: {
-    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
-    backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8,
-  },
+  costInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, borderRadius: 14, minHeight: 52, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 12 },
   costFormActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
-  costCancel: {
-    flex: 1, height: 38, borderRadius: 10, borderWidth: 1.2, borderColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  costCancel: { flex: 1, minHeight: 44, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   costCancelText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
-  costAdd: {
-    flex: 1, height: 38, borderRadius: 10, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  costAdd: { flex: 1, minHeight: 44, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
   costAddText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
 });

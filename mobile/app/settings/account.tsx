@@ -114,7 +114,7 @@ function AccountContent() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40, alignItems: 'center' },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center', alignItems: 'center' },
   avatarWrap: { marginBottom: 8 },
   avatarEditBadge: {
     position: 'absolute', bottom: 0, right: 0,

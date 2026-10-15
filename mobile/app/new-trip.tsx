@@ -175,14 +175,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
   },
-  backButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
+  backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 18, color: Colors.brown900 },
   wordmark: { fontFamily: 'Poppins_600SemiBold', fontSize: 19, color: Colors.brown900 },
   wordmarkLight: { fontFamily: 'Poppins_400Regular', color: Colors.brown600 },
-  content: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
   suggestions: {
     backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
     marginTop: -10, marginBottom: 16, overflow: 'hidden',
@@ -193,38 +190,21 @@ const styles = StyleSheet.create({
   },
   suggestionText: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900 },
   suggestionCountry: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
-  heading: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900,
-    textAlign: 'center', marginBottom: 30,
-  },
+  heading: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900, marginBottom: 28 },
   label: {
     fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown600, marginBottom: 8,
   },
-  input: {
-    fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900,
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16,
-  },
-  dateField: {
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16,
-  },
+  input: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, borderRadius: 14, minHeight: 52, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 18 },
+  dateField: { minHeight: 52, backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 18 },
   dateFieldText: { fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900 },
   dateFieldPlaceholder: { fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown600 },
-  counterRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 20, paddingVertical: 10, marginBottom: 30,
-  },
-  counterButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  counterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 28 },
+  counterButton: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
   counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
   counterValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
   errorText: {
     fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12,
   },
-  submitButton: {
-    height: 50, borderRadius: 14, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  submitButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   submitButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15.5, color: Colors.mint },
 });

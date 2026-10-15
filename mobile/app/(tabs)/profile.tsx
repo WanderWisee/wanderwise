@@ -271,42 +271,29 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4,
-  },
-  menuButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  menuButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
 
-  identitySection: { alignItems: 'center', marginBottom: 24 },
-  username: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.brown900, textAlign: 'center' },
-  email: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: 2 },
-  bio: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 6, textAlign: 'center' },
+  identitySection: { alignItems: 'center', marginBottom: 24, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: Colors.line },
+  username: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900, textAlign: 'center' },
+  email: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600, marginTop: 4, textAlign: 'center' },
+  bio: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 21, color: Colors.brown600, marginTop: 12, textAlign: 'center' },
   location: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 4 },
 
-  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 24, marginTop: 20, marginBottom: 20 },
-  statItem: { alignItems: 'center' },
+  statsRow: { flexDirection: 'row', alignItems: 'center', width: '100%', paddingVertical: 16, marginVertical: 20, borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.line },
+  statItem: { alignItems: 'center', flex: 1, paddingHorizontal: 4 },
   statValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
-  statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600, marginTop: 2 },
+  statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, lineHeight: 17, color: Colors.brown600, marginTop: 4, textAlign: 'center' },
   statDivider: { width: 1, height: 28, backgroundColor: Colors.line },
 
   actionRow: { flexDirection: 'row', gap: 10, width: '100%' },
-  editButton: {
-    flex: 1, height: 42, borderRadius: 12, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  editButton: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
   editButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
-  shareButton: {
-    flex: 1, height: 42, borderRadius: 12, backgroundColor: 'transparent',
-    borderWidth: 1.4, borderColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  shareButton: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 14, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   shareButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
 
-  divider: { height: 1, backgroundColor: Colors.line, marginBottom: 4 },
+  divider: { height: 0 },
 
   tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.line, marginBottom: 20 },
   tabButton: { flex: 1, alignItems: 'center', paddingVertical: 14 },
@@ -318,21 +305,15 @@ const styles = StyleSheet.create({
 
   tabContent: { paddingHorizontal: 2 },
   sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 10,
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12,
   },
-  sectionTitle: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 19, color: Colors.brown900 },
-  addButton: {
-    backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 14, height: 38,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flex: 1 },
+  addButton: { backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 12, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   addButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
   tripRowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14, marginTop: 8 },
-  gridCard: {
-    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 14, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.line,
-  },
+  gridCard: { width: '48%', backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
   gridImage: { width: '100%', height: 120, backgroundColor: Colors.cream2 },
-  gridTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900, paddingHorizontal: 10, paddingTop: 10 },
+  gridTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, lineHeight: 20, color: Colors.brown900, paddingHorizontal: 12, paddingTop: 12 },
   gridMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600, paddingHorizontal: 10, paddingTop: 4, paddingBottom: 10 },
 });

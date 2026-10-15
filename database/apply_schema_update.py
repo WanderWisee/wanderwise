@@ -44,12 +44,14 @@ def main():
     existing = {(table, column) for table, column in columns}
     tables = sorted({table for table, _ in columns})
     before_counts = {table: int(query(f'SELECT COUNT(*) FROM `{table}`')[0][0]) for table in tables}
-    sql = re.sub(r'--[^\n]*', '', (DB_DIR / '1_align_current_models.sql').read_text(encoding='utf-8'))
+    migration_files = ['1_align_current_models.sql', '5_trip_name.sql', '6_push_tokens.sql']
+    sql = '\n'.join(re.sub(r'--[^\n]*', '', (DB_DIR / name).read_text(encoding='utf-8'))
+                    for name in migration_files)
     statements = [part.strip() for part in sql.split(';') if part.strip()]
     plan = []
     for statement in statements:
-        alter = re.match(r'ALTER TABLE (\w+) ADD COLUMN (\w+) ', statement, re.I)
-        create = re.match(r'CREATE TABLE IF NOT EXISTS (\w+)', statement, re.I)
+        alter = re.match(r'ALTER TABLE\s+`?(\w+)`?\s+ADD COLUMN\s+`?(\w+)`?\s+', statement, re.I)
+        create = re.match(r'CREATE TABLE IF NOT EXISTS\s+`?(\w+)`?', statement, re.I)
         if alter and tuple(alter.groups()) not in existing:
             plan.append(statement)
         elif create and create.group(1) not in tables:

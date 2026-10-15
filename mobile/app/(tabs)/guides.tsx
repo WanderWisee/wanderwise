@@ -5,7 +5,6 @@ import { View, TouchableOpacity, StyleSheet, ScrollView, Image, RefreshControl }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
@@ -110,13 +109,14 @@ export default function GuidesScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <Text style={styles.pageTitle}>{t('discoverTravelTips')}</Text>
 
           <View style={[styles.searchWrap, { flexDirection: 'row', alignItems: 'center', paddingLeft: 12 }]}>
             <AppIcon name="search" size={20} color={Colors.brown600} />
-            <BlurView intensity={45} tint="light" style={StyleSheet.absoluteFill} pointerEvents="none" />
             <TextInput
               style={[styles.searchInput, { flex: 1 }]}
               placeholder={t('discoverWhereToGo')}
@@ -213,33 +213,18 @@ export default function GuidesScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   backdrop: { position: 'absolute', left: 0, right: 0, top: 0 },
-  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
-  content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 40 },
-  pageTitle: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 24, color: Colors.brown900, marginBottom: 16,
-  },
-  searchWrap: {
-    borderRadius: 10, overflow: 'hidden', marginBottom: 22,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
-  },
-  searchInput: {
-    zIndex: 1,
-    fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900, marginBottom: 20 },
+  searchWrap: { minHeight: 52, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, marginBottom: 28, overflow: 'hidden' },
+  searchInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, minHeight: 52, paddingHorizontal: 12, paddingVertical: 14 },
   offlineNote: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 19, color: Colors.brown900 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flex: 1 },
   horizontalListContent: { gap: 14, paddingRight: 6, paddingBottom: 6 },
-  card: {
-    width: 220,
-    backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden',
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
-  cardImage: { width: 220, height: 150, backgroundColor: Colors.cream2 },
+  card: { width: 220, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
+  cardImage: { width: '100%', height: 150, backgroundColor: Colors.cream2 },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
   cardBody: { padding: 16 },
   destinationName: {
@@ -247,19 +232,12 @@ const styles = StyleSheet.create({
   },
   authorsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   authorsText: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
-  itineraryButton: {
-    backgroundColor: Colors.brown900, borderRadius: 20, height: 40,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  itineraryButton: { backgroundColor: Colors.brown900, borderRadius: 12, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
-  gridCard: {
-    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden',
-    shadowColor: Colors.brown900, shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
+  gridCard: { width: '48%', backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
   gridImage: { width: '100%', height: 110, backgroundColor: Colors.cream2 },
   gridBody: { padding: 12, minHeight: 82 },
-  gridName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900, marginBottom: 8 },
+  gridName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 21, color: Colors.brown900, marginBottom: 8 },
   noStories: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
 });

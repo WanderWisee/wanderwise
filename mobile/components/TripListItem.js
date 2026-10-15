@@ -27,12 +27,12 @@ export default function TripListItem({ trip, onPress, onShare = null, onMenu = n
       {showActions && (
         <View style={styles.actions}>
           {onShare && (
-            <TouchableOpacity onPress={onShare} style={styles.actionButton} hitSlop={6} accessibilityLabel={t('share')}>
+            <TouchableOpacity onPress={(event) => { event.stopPropagation(); onShare(); }} style={styles.actionButton} hitSlop={6} accessibilityLabel={t('share')}>
               <AppIcon name="external" style={{ fontSize: 16, color: Colors.brown900 }} />
             </TouchableOpacity>
           )}
           {onMenu && (
-            <TouchableOpacity onPress={onMenu} style={styles.actionButton} hitSlop={6} accessibilityLabel={t('moreActions')}>
+            <TouchableOpacity onPress={(event) => { event.stopPropagation(); onMenu(); }} style={styles.actionButton} hitSlop={6} accessibilityLabel={t('moreActions')}>
               <AppIcon name="more" style={{ fontSize: 18, color: Colors.brown600 }} />
             </TouchableOpacity>
           )}
@@ -43,17 +43,14 @@ export default function TripListItem({ trip, onPress, onShare = null, onMenu = n
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingVertical: 12,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16 },
   thumb: {
     width: 64, height: 64, borderRadius: 14,
     borderWidth: 1, borderColor: Colors.line, overflow: 'hidden',
   },
   info: { flex: 1 },
-  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 5 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 22, color: Colors.brown900, marginBottom: 4 },
   metaText: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600 },
-  actions: { flexDirection: 'row', gap: 4 },
-  actionButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  actions: { flexDirection: 'row' },
+  actionButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

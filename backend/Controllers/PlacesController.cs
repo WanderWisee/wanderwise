@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WanderWiseApi.Data;
 
 namespace WanderWise.Controllers
 {
@@ -22,6 +24,14 @@ namespace WanderWise.Controllers
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<PlacesController> _logger;
+        private readonly WanderWiseDbContext _db;
+
+        // Saved results in the database (table place_cache), so a restart or
+        // a redeploy doesn't forget them, and when every OpenStreetMap server
+        // is down we can still show the last good list instead of
+        // "Couldn't load suggested places".
+        private static readonly TimeSpan DbCacheDuration = TimeSpan.FromDays(7);
+        private static volatile bool _dbCacheReady;
 
         // Finished results, per destination + category.
         private static readonly ConcurrentDictionary<string, (DateTime CachedAt, object Data)> _cache = new();
@@ -44,6 +54,7 @@ namespace WanderWise.Controllers
             "https://overpass-api.de/api/interpreter",
             "https://overpass.kumi.systems/api/interpreter",
             "https://overpass.private.coffee/api/interpreter",
+            "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
         };
 
         // Optional ?category= for per-section suggestions in the Trip Plan
@@ -61,10 +72,11 @@ namespace WanderWise.Controllers
             ["heritage"] = (new[] { @"[""historic""]", @"[""tourism""=""museum""]", @"[""amenity""=""place_of_worship""]" }, "historic"),
         };
 
-        public PlacesController(IHttpClientFactory httpClientFactory, ILogger<PlacesController> logger)
+        public PlacesController(IHttpClientFactory httpClientFactory, ILogger<PlacesController> logger, WanderWiseDbContext db)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _db = db;
         }
 
         [HttpGet]
@@ -90,6 +102,13 @@ namespace WanderWise.Controllers
                 return Ok(cached.Data);
             }
 
+            // Saved in the database recently? Use it (survives restarts).
+            var saved = await ReadDbCacheAsync(cacheKey);
+            if (saved != null && DateTime.UtcNow - saved.Value.CachedAt < DbCacheDuration)
+            {
+                return Content(saved.Value.Json, "application/json");
+            }
+
             // The whole lookup gets at most 30 seconds, so the page never
             // stays on "Loading suggested places..." for minutes when the
             // OpenStreetMap servers are slow or can't be reached.
@@ -106,6 +125,8 @@ namespace WanderWise.Controllers
             if (geo is null)
             {
                 _logger.LogWarning("Places: couldn't find '{Destination}' ({Status}) {Error}", destination, geocodeStatus, geocodeError);
+                // An older saved list is better than nothing.
+                if (saved != null) return Content(saved.Value.Json, "application/json");
                 // Degrade gracefully instead of breaking the UI
                 return Ok(new
                 {
@@ -195,6 +216,13 @@ namespace WanderWise.Controllers
             if (places.Count > 0)
             {
                 _cache[cacheKey] = (DateTime.UtcNow, result);
+                await WriteDbCacheAsync(cacheKey, JsonSerializer.Serialize(result, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+            }
+            else if (saved != null)
+            {
+                // The servers are down right now: show the last good list.
+                _logger.LogInformation("Places: servers failed for '{Destination}', using saved list from {CachedAt}", destination, saved.Value.CachedAt);
+                return Content(saved.Value.Json, "application/json");
             }
 
             return Ok(result);
@@ -464,13 +492,77 @@ namespace WanderWise.Controllers
             }
         }
 
+        // ---------------- Saved results (database) ----------------
+
+        private sealed class PlaceCacheRow
+        {
+            public string Data { get; set; } = "";
+            public DateTime CachedAt { get; set; }
+        }
+
+        // Makes the place_cache table the first time it's needed, so there is
+        // no extra SQL file to run on Railway.
+        private async Task<bool> EnsureDbCacheAsync()
+        {
+            if (_dbCacheReady) return true;
+            try
+            {
+                await _db.Database.ExecuteSqlRawAsync(
+                    "CREATE TABLE IF NOT EXISTS place_cache (" +
+                    "cache_key VARCHAR(191) NOT NULL PRIMARY KEY, " +
+                    "data MEDIUMTEXT NOT NULL, " +
+                    "cached_at DATETIME NOT NULL)");
+                _dbCacheReady = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Places: couldn't create place_cache table: {Error}", ex.Message);
+            }
+            return _dbCacheReady;
+        }
+
+        private async Task<(string Json, DateTime CachedAt)?> ReadDbCacheAsync(string cacheKey)
+        {
+            if (!await EnsureDbCacheAsync()) return null;
+            try
+            {
+                var row = await _db.Database
+                    .SqlQueryRaw<PlaceCacheRow>(
+                        "SELECT data AS Data, cached_at AS CachedAt FROM place_cache WHERE cache_key = {0}", cacheKey)
+                    .FirstOrDefaultAsync();
+                if (row == null || string.IsNullOrWhiteSpace(row.Data)) return null;
+                return (row.Data, DateTime.SpecifyKind(row.CachedAt, DateTimeKind.Utc));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Places: couldn't read saved places: {Error}", ex.Message);
+                return null;
+            }
+        }
+
+        private async Task WriteDbCacheAsync(string cacheKey, string json)
+        {
+            if (!await EnsureDbCacheAsync()) return;
+            try
+            {
+                await _db.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO place_cache (cache_key, data, cached_at) VALUES ({0}, {1}, UTC_TIMESTAMP()) " +
+                    "ON DUPLICATE KEY UPDATE data = VALUES(data), cached_at = VALUES(cached_at)",
+                    cacheKey, json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Places: couldn't save places: {Error}", ex.Message);
+            }
+        }
+
         // ---------------- Backup: Nominatim place search ----------------
 
         // Nominatim "special phrases" for each category. With a bounded
         // viewbox, q=[restaurant] returns restaurants inside that box.
         private static readonly Dictionary<string, string[]> NominatimKeywords = new()
         {
-            [""] = new[] { "attraction", "museum", "park" },
+            [""] = new[] { "attraction", "museum", "park", "church", "monument" },
             ["food"] = new[] { "restaurant", "cafe", "fast food" },
             ["hotel"] = new[] { "hotel", "resort" },
             ["shopping"] = new[] { "mall", "supermarket", "market" },

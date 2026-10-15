@@ -111,25 +111,88 @@ public class JournalController : ControllerBase
         return Ok(items);
     }
 
+    // ---- Limits for a new story (checked on the server, not just the app) ----
+    private const int MaxTitle = 150;
+    private const int MaxPlaces = 15;
+    private const int MaxPlaceName = 150;
+    private const int MaxDescription = 2000;
+    private const int MaxListItems = 20;      // pros / cons per place
+    private const int MaxListItemText = 200;
+    private const int MaxHotels = 10;
+    private const int MaxHotelName = 150;
+    private const int MaxHotelDescription = 1000;
+    private const int MaxComment = 1000;
+    // One photo as a data URL. The apps shrink photos before sending, so
+    // real ones are far smaller; this stops huge or fake "images".
+    private const int MaxImageLength = 4_000_000;
+    private const int MaxTotalImageLength = 25_000_000;
+
+    private static bool IsAllowedImage(string? value) =>
+        string.IsNullOrEmpty(value) ||
+        (value.Length <= MaxImageLength &&
+         (value.StartsWith("data:image/jpeg;base64,") ||
+          value.StartsWith("data:image/png;base64,") ||
+          value.StartsWith("data:image/webp;base64,") ||
+          value.StartsWith("data:image/gif;base64,") ||
+          value.StartsWith("https://")));
+
+    // Returns a message when something is wrong, or null when it's fine.
+    private static string? JournalError(CreateJournalEntryRequest r)
+    {
+        if ((r.Title?.Trim().Length ?? 0) > MaxTitle) return $"Title must be {MaxTitle} characters or less.";
+        if (r.Places == null) r.Places = new();
+        if (r.Places.Count > MaxPlaces) return $"A story can have up to {MaxPlaces} places.";
+        if (!IsAllowedImage(r.CoverImage)) return "Cover photo must be a JPG, PNG, WEBP or GIF image under 3 MB.";
+
+        long totalImages = r.CoverImage?.Length ?? 0;
+        foreach (var p in r.Places)
+        {
+            if ((p.PlaceName?.Trim().Length ?? 0) > MaxPlaceName) return $"Place names must be {MaxPlaceName} characters or less.";
+            if ((p.Description?.Length ?? 0) > MaxDescription) return $"Descriptions must be {MaxDescription} characters or less.";
+            if (p.Rating > 5) return "Rating must be from 0 to 5 stars.";
+            if (!IsAllowedImage(p.ImageUrl)) return "Photos must be JPG, PNG, WEBP or GIF images under 3 MB.";
+            totalImages += p.ImageUrl?.Length ?? 0;
+
+            if ((p.Pros?.Count ?? 0) > MaxListItems || (p.Cons?.Count ?? 0) > MaxListItems)
+                return $"Up to {MaxListItems} pros and {MaxListItems} cons per place.";
+            if ((p.Pros ?? new()).Concat(p.Cons ?? new()).Any(t => t == null || t.Length > MaxListItemText))
+                return $"Each pro/con must be {MaxListItemText} characters or less.";
+
+            if ((p.Hotels?.Count ?? 0) > MaxHotels) return $"Up to {MaxHotels} hotels per place.";
+            foreach (var h in p.Hotels ?? new())
+            {
+                if (string.IsNullOrWhiteSpace(h.Name) || h.Name.Length > MaxHotelName)
+                    return $"Hotel names are required and must be {MaxHotelName} characters or less.";
+                if ((h.Description?.Length ?? 0) > MaxHotelDescription)
+                    return $"Hotel descriptions must be {MaxHotelDescription} characters or less.";
+            }
+        }
+        if (totalImages > MaxTotalImageLength) return "Your photos are too large altogether. Use fewer or smaller photos.";
+        return null;
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateEntry([FromBody] CreateJournalEntryRequest request)
     {
+        var problem = JournalError(request);
+        if (problem != null) return BadRequest(new { error = problem });
+
         var entry = new JournalEntry
         {
             UserId = CurrentUserId,
-            Title = request.Title,
+            Title = request.Title?.Trim(),
             CoverImage = request.CoverImage,
             CreatedAt = DateTime.UtcNow,
             Places = request.Places.Select(p => new JournalEntryPlace
             {
-                PlaceName = p.PlaceName,
+                PlaceName = p.PlaceName?.Trim(),
                 ImageUrl = p.ImageUrl,
                 Rating = p.Rating,
                 Description = p.Description,
                 SortOrder = p.SortOrder,
-                Pros = p.Pros.Select(t => new JournalEntryPro { Text = t }).ToList(),
-                Cons = p.Cons.Select(t => new JournalEntryCon { Text = t }).ToList(),
-                Hotels = p.Hotels.Select(h => new JournalEntryHotel { Name = h.Name, Description = h.Description }).ToList(),
+                Pros = (p.Pros ?? new()).Select(t => new JournalEntryPro { Text = t.Trim() }).ToList(),
+                Cons = (p.Cons ?? new()).Select(t => new JournalEntryCon { Text = t.Trim() }).ToList(),
+                Hotels = (p.Hotels ?? new()).Select(h => new JournalEntryHotel { Name = h.Name.Trim(), Description = h.Description }).ToList(),
             }).ToList(),
         };
 
@@ -178,9 +241,13 @@ public class JournalController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Text))
             return BadRequest("Comment can't be empty.");
+        if (request.Text.Trim().Length > MaxComment)
+            return BadRequest($"Comments must be {MaxComment} characters or less.");
 
         var entry = await _db.JournalEntries.FirstOrDefaultAsync(j => j.Id == id);
         if (entry is null) return NotFound();
+        // A story the admin hid can't get new comments (except from its author).
+        if (entry.IsHidden && entry.UserId != CurrentUserId) return NotFound();
 
         var comment = new JournalComment
         {

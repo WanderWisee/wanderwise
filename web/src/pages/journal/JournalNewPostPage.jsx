@@ -25,6 +25,31 @@ function readFileAsDataUrl(file) {
   });
 }
 
+// Phone photos can be 5–10 MB. Shrink to at most 1280px (JPEG) before
+// saving, so the story loads fast and stays under the server's size limit.
+// If the browser can't read the picture, the original is used.
+function shrinkPhoto(file, maxSide = 1280) {
+  return readFileAsDataUrl(file).then(
+    (dataUrl) =>
+      new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff"; // transparent PNGs get a white background
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.75));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      })
+  );
+}
+
 export default function JournalNewPostPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -79,7 +104,7 @@ export default function JournalNewPostPage() {
     }
     setUploading(true);
     try {
-      const imageUrl = await readFileAsDataUrl(selectedFile);
+      const imageUrl = await shrinkPhoto(selectedFile);
       const newEntry = {
         id: nextEntryIdRef.current++,
         place: "",

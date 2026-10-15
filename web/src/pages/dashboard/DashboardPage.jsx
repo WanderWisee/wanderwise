@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
+import { useAppData } from "../../context/AppDataContext";
 import '../../App.css';
 import Icon from "../../components/Icon";
 
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { formatDateRange } = usePreferences();
+  const { profileFirstName } = useAppData();
 
   // Travel trips
   const [trips, setTrips] = useState([]);
@@ -187,6 +189,13 @@ export default function DashboardPage() {
           <span onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}><Icon name="user" /></span>
         </div>
       </header>
+
+      {/* Same greeting as the mobile home screen. */}
+      {profileFirstName && (
+        <h1 className="ww-dashboard-greeting">
+          {t("helloPrefix")} {profileFirstName}!
+        </h1>
+      )}
 
       {/* Travel Stories */}
       <div className="ww-stories-row">

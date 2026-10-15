@@ -9329,3 +9329,67 @@ textarea:focus-visible {
 .ww-register-card .ww-portal-error {
   margin: 4px 0 12px;
 }
+
+/* ============================================================
+   22. CHOOSE PLACES TO DELETE (trip builder lists)
+   ============================================================ */
+.ww-select-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface-2);
+}
+.ww-select-bar-text {
+  flex: 1 1 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ww-text-muted);
+}
+.ww-select-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: 999px;
+  background: var(--ww-surface);
+  color: var(--ww-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.ww-select-bar-btn:hover:not(:disabled) {
+  background: var(--ww-surface-3);
+}
+.ww-select-bar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ww-select-bar-danger {
+  border-color: var(--ww-danger);
+  color: var(--ww-danger);
+}
+.ww-select-check {
+  width: 18px;
+  height: 18px;
+  margin: 0 8px 0 0;
+  vertical-align: middle;
+  accent-color: var(--ww-btn);
+  cursor: pointer;
+}
+
+/* Dashboard greeting ("Hi, Juan!"), same as the mobile home screen */
+.ww-dashboard > .ww-dashboard-greeting {
+  width: 100%;
+  max-width: var(--ww-container);
+  margin: 20px auto 4px;
+  padding: 0 var(--ww-gutter);
+  box-sizing: border-box;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ww-text);
+}

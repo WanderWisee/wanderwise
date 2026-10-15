@@ -155,8 +155,7 @@ export default function VerifyRegisterOtpPage() {
           <h1 className="ww-register-title">{t("verifyEmailTitle")}</h1>
           <p className="ww-field-label" style={{ marginBottom: 16, fontWeight: 400 }}>
             {t("verifyRegisterSubtitleBefore")}{" "}
-            <strong>{form.recoveryEmail}</strong>{t("verifyRegisterSubtitleMiddle")}{" "}
-            <strong>{form.schoolEmail}</strong>.
+            <strong>{form.schoolEmail}</strong>. {t("otpCheckJunk")}
           </p>
 
           <label className="ww-field-label">{t("verificationCode")}</label>

@@ -6,19 +6,24 @@ import { Image } from 'expo-image';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
-// OpenStreetMap data rendered with CARTO Voyager raster tiles.
-// CARTO requires a basemap key; configure EXPO_PUBLIC_CARTO_API_KEY.
-// expo-image caches tiles and sends an identifying User-Agent on native.
-// Tap the preview to open the full map on openstreetmap.org.
+// Totoong mapa gamit ang Esri World Street Map tiles (galing sa OpenStreetMap
+// at iba pang data). Hindi na tile.openstreetmap.org (403 "Access blocked" sa
+// APK) at hindi na CARTO ("API KEY REQUIRED" sa APK); ang Esri tiles ay walang
+// kailangang API key. Gamit ang expo-image para maipadala ang headers.
+// Kinukuwenta ang zoom para magkasya lahat ng pin,
+// tapos inilalatag ang mga tile bilang <Image>. Pag-tap: bubukas ang buong
+// mapa sa openstreetmap.org para makapag-zoom/pan ang user.
 //
 // markers: [{ latitude, longitude, label?, color? }]
 
 const TILE = 256;
-const TILE_SUBDOMAINS = ['a', 'b', 'c', 'd'];
-const CARTO_API_KEY = process.env.EXPO_PUBLIC_CARTO_API_KEY?.trim();
+// Pansinin: z / y / x ang ayos sa Esri (hindi z / x / y).
 const tileUrl = (z, x, y) =>
-  `https://${TILE_SUBDOMAINS[(x + y) % TILE_SUBDOMAINS.length]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png${CARTO_API_KEY ? `?key=${encodeURIComponent(CARTO_API_KEY)}` : ''}`;
-const TILE_HEADERS = { 'User-Agent': 'WanderWise-Mobile/1.0 (capstone project)' };
+  `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
+const TILE_HEADERS = {
+  'User-Agent': 'WanderWise-Mobile/1.0 (+https://www.wanderwise.site)',
+  Referer: 'https://www.wanderwise.site/',
+};
 
 // Sentro ng Pilipinas kapag walang pin
 const PH_CENTER = { latitude: 12.3, longitude: 122.5, zoom: 5 };
@@ -163,7 +168,7 @@ export default function OsmMap({
       )}
 
       <View style={styles.attribution} pointerEvents="none">
-        <Text style={styles.attributionText}>© OpenStreetMap contributors © CARTO</Text>
+        <Text style={styles.attributionText}>Tiles © Esri · © OpenStreetMap contributors</Text>
       </View>
       <View style={styles.expandBadge} pointerEvents="none">
         <AppIcon name="expand" style={styles.expandText} />

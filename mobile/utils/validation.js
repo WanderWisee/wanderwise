@@ -84,3 +84,14 @@ export function registrationErrors(form) {
   else if (form.password !== form.confirmPassword) e.confirmPassword = 'registerErrPasswordMismatch';
   return e;
 }
+
+// Live checks while the user types: only the fields they've already
+// touched show a message, so the form isn't red before they start.
+export function liveErrors(form, touched) {
+  const all = registrationErrors(form);
+  const shown = {};
+  Object.keys(all).forEach((field) => {
+    if (touched[field]) shown[field] = all[field];
+  });
+  return shown;
+}

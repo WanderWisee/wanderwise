@@ -17,12 +17,14 @@ import {
   keepDigits,
   keepEmail,
   keepNameChars,
+  liveErrors,
   registrationErrors,
   toMdy,
 } from '../utils/validation';
 
 // Parehong daloy ng web: (1) punan ang form → magpapadala ng 6-digit code
-// sa personal/recovery email → (2) ilagay ang code → gagawin ang account.
+// sa SCHOOL email (Outlook) → (2) ilagay ang code → gagawin ang account.
+// Ang personal email ay pang-recovery lang (forgot password).
 
 // Bawat field ay sinusuri: letra lang sa pangalan, 11-digit na 09 number,
 // kalendaryo para sa birthday, at password na may letra at numero.
@@ -53,14 +55,23 @@ export default function SignupScreen() {
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [dobOpen, setDobOpen] = useState(false);
   const bounds = dobBounds();
 
+  // Sinusuri agad ang bawat pagbabago (hindi lang kapag pinindot ang
+  // Register), kaya lumalabas agad ang mali sa birthday, number, atbp.
   const set = (key) => (value) => {
     const filter = FILTERS[key];
-    setForm((f) => ({ ...f, [key]: filter ? filter(value) : value }));
-    setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
+    const nextForm = { ...form, [key]: filter ? filter(value) : value };
+    const nextTouched: Record<string, boolean> = { ...touched, [key]: true };
+    if (key === 'password' && form.confirmPassword) nextTouched.confirmPassword = true;
+    setForm(nextForm);
+    setTouched(nextTouched);
+    setErrors(liveErrors(nextForm, nextTouched));
+    setError(null);
   };
+  const hasErrors = Object.values(errors).some(Boolean);
   const inputStyle = (key, extra = null) => [styles.input, extra, errors[key] && styles.inputError];
   const fieldError = (key) => (errors[key] ? <Text style={styles.fieldError}>{t(errors[key])}</Text> : null);
 
@@ -68,6 +79,7 @@ export default function SignupScreen() {
     setError(null);
     setInfo(null);
     const found = registrationErrors(form);
+    setTouched(Object.fromEntries(Object.keys(form).map((k) => [k, true])));
     setErrors(found);
     if (Object.keys(found).length > 0) {
       setError(t('valFixFields'));
@@ -77,7 +89,7 @@ export default function SignupScreen() {
     try {
       await sendRegisterOtp({ schoolEmail: form.schoolEmail, recoveryEmail: form.recoveryEmail });
       setStep('otp');
-      setInfo(`${t('otpSentTo')} ${form.recoveryEmail.trim()}`);
+      setInfo(`${t('otpSentTo')} ${form.schoolEmail.trim()}. ${t('otpCheckJunk')}`);
     } catch (e) {
       setError(e.message || t('registerErrSendOtp'));
     } finally {
@@ -109,7 +121,7 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       await sendRegisterOtp({ schoolEmail: form.schoolEmail, recoveryEmail: form.recoveryEmail });
-      setInfo(t('otpResendRecoverySuccess'));
+      setInfo(`${t('otpResendSuccess')} ${t('otpCheckJunk')}`);
     } catch (e) {
       setError(e.message || t('otpErrResendFailed'));
     } finally {
@@ -268,7 +280,7 @@ export default function SignupScreen() {
 
                 {error && <Text style={styles.errorText}>{error}</Text>}
 
-                <TouchableOpacity style={styles.primaryButton} onPress={handleSendCode} disabled={loading}>
+                <TouchableOpacity style={[styles.primaryButton, hasErrors && { opacity: 0.5 }]} onPress={handleSendCode} disabled={loading || hasErrors}>
                   {loading ? (
                     <ActivityIndicator color={Colors.mint} />
                   ) : (

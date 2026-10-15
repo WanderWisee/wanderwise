@@ -117,6 +117,8 @@ export function AppDataProvider({ children }) {
 
   const [profileUserId, setProfileUserId] = useState(null);
   const [profileName, setProfileName] = useState("");
+  // First name only, for the "Hi, Juan!" greeting on the dashboard.
+  const [profileFirstName, setProfileFirstName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [profileBio, setProfileBio] = useState("");
@@ -165,6 +167,7 @@ export function AppDataProvider({ children }) {
         const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
         setProfileUserId(data.userId ?? null);
         setProfileName(fullName || data.email || "");
+        setProfileFirstName(data.firstName || "");
         setProfileEmail(data.email || "");
         setProfileAvatar(data.avatarUrl || null);
         setProfileBio(data.bio || "");
@@ -188,6 +191,7 @@ export function AppDataProvider({ children }) {
         profileUserId,
         profileName,
         setProfileName,
+        profileFirstName,
         profileEmail,
         setProfileEmail,
         profileAvatar,

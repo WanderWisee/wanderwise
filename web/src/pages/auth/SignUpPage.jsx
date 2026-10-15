@@ -8,6 +8,7 @@ import {
   keepDigits,
   keepEmail,
   keepNameChars,
+  liveErrors,
   registrationErrors,
 } from "../../utils/validation";
 
@@ -38,16 +39,32 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [dobBad, setDobBad] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const limits = dobLimits();
 
+  // Every change is checked right away (not only when Register is
+  // pressed), so a wrong birthday or number shows its message at once.
   const handleChange = (field) => (e) => {
     const filter = FILTERS[field];
     const value = filter ? filter(e.target.value) : e.target.value;
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    const nextForm = { ...form, [field]: value };
+    const nextTouched = { ...touched, [field]: true };
+    if (field === "password" && form.confirmPassword) nextTouched.confirmPassword = true;
+    setForm(nextForm);
+    setTouched(nextTouched);
+    const found = liveErrors(nextForm, nextTouched);
+    // A half-typed date (e.g. 02/30/____) reaches us as "", so ask the
+    // browser whether what's in the box is a real date.
+    const badDate = field === "dob" ? !!e.target.validity?.badInput : dobBad;
+    if (field === "dob") setDobBad(badDate);
+    if (badDate) found.dob = "valDobInvalid";
+    setErrors(found);
+    setError("");
   };
+  const hasErrors = Object.values(errors).some(Boolean);
 
   const fieldClass = (field) => `ww-field-input${errors[field] ? " has-error" : ""}`;
   const fieldError = (field) =>
@@ -62,6 +79,8 @@ export default function RegisterPage() {
     setError("");
 
     const found = registrationErrors(form);
+    if (dobBad) found.dob = "valDobInvalid";
+    setTouched(Object.fromEntries(Object.keys(form).map((k) => [k, true])));
     setErrors(found);
     if (Object.keys(found).length > 0) {
       setError(t("valFixFields"));
@@ -247,7 +266,7 @@ export default function RegisterPage() {
           {fieldError("confirmPassword")}
 
           {error && <div className="ww-portal-error" role="alert">{error}</div>}
-          <button className="ww-register-submit" type="submit" disabled={loading}>
+          <button className="ww-register-submit" type="submit" disabled={loading || hasErrors}>
             {loading ? t("sendingCode") : t("register")}
           </button>
         </form>

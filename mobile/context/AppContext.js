@@ -12,6 +12,7 @@ import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { startLiveSync } from '../utils/liveSync';
+import { registerForPush, unregisterPush } from '../services/pushService';
 import { STORAGE_KEYS } from '../constants/config';
 import { translations } from '../i18n/translations';
 import { mobileTranslations } from '../i18n/mobileStrings';
@@ -278,6 +279,11 @@ export function AppProvider({ children }) {
     []
   );
 
+  // Push notifications: i-save ang push token ng phone kapag naka-login.
+  useEffect(() => {
+    if (token) registerForPush();
+  }, [token]);
+
   const signIn = useCallback(async () => {
     const saved = await getToken();
 
@@ -292,6 +298,8 @@ export function AppProvider({ children }) {
   const signOut = useCallback(async () => {
     userLoadRef.current += 1;
 
+    // Habang naka-login pa: tanggalin ang push token ng phone na ito.
+    await unregisterPush();
     await setToken(null);
 
     setTokenState(null);

@@ -57,9 +57,9 @@ export default function HotelSearchResultsPage() {
     <div className="ww-search-results-page">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
           <div>
-            <span className="ww-brand-name">WanderWise!</span>
+            <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
             <p className="ww-brand-subtitle">{t("hotelsAndLodging")}</p>
           </div>
         </div>

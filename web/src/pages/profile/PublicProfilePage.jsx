@@ -103,8 +103,8 @@ export default function PublicProfilePage() {
     <div className="ww-profile-page">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
         <nav className="ww-nav-links">
           <Link to="/dashboard">{t("navHome")}</Link>

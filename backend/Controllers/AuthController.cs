@@ -45,13 +45,19 @@ public class AuthController : ControllerBase
         if (!SchoolEmailRegex.IsMatch(schoolEmail))
             return BadRequest(new { error = "Please use your official @student.mseuf.edu.ph email." });
 
-        if (string.IsNullOrWhiteSpace(recoveryEmail))
-            return BadRequest(new { error = "A personal/recovery email is required." });
+        if (!InputRules.IsEmail(recoveryEmail))
+            return BadRequest(new { error = "Please enter a valid personal/recovery email." });
+        if (string.Equals(recoveryEmail, schoolEmail, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Use a personal email that is different from your school email." });
 
         var alreadyRegistered = await _db.Users.AnyAsync(u => u.Email == schoolEmail);
         if (alreadyRegistered)
             return Conflict(new { error = "An account with that school email already exists." });
 
+        if (await SentRecentlyAsync(schoolEmail, "register"))
+            return StatusCode(429, new { error = "A code was just sent. Please wait a minute before asking for a new one." });
+
+        AttemptGuard.Reset($"otp:register:{schoolEmail.ToLowerInvariant()}");
         var code = GenerateCode();
         _db.OtpCodes.Add(new OtpCode
         {
@@ -76,11 +82,18 @@ public class AuthController : ControllerBase
         if (!SchoolEmailRegex.IsMatch(schoolEmail))
             return BadRequest(new { error = "Please use your official @student.mseuf.edu.ph email." });
 
-        if (string.IsNullOrWhiteSpace(request.RecoveryEmail))
-            return BadRequest(new { error = "A recovery email is required." });
+        var firstName = InputRules.CleanName(request.FirstName);
+        var lastName = InputRules.CleanName(request.LastName);
+        var recoveryEmail = request.RecoveryEmail?.Trim() ?? "";
+        var personError = InputRules.PersonError(firstName, lastName, schoolEmail, recoveryEmail, request.Cellphone, request.Password, out var phone);
+        if (personError != null)
+            return BadRequest(new { error = personError });
 
-        if (request.Password.Length < 8)
-            return BadRequest(new { error = "Password must be at least 8 characters." });
+        if (!TryParseDob(request.Dob, out var dob))
+            return BadRequest(new { error = "Invalid date of birth." });
+        var dobError = InputRules.DobError(dob);
+        if (dobError != null)
+            return BadRequest(new { error = dobError });
 
         var alreadyRegistered = await _db.Users.AnyAsync(u => u.Email == schoolEmail);
         if (alreadyRegistered)
@@ -90,20 +103,17 @@ public class AuthController : ControllerBase
         if (!otpValid)
             return BadRequest(new { error = "Invalid or expired verification code." });
 
-        if (!TryParseDob(request.Dob, out var dob))
-            return BadRequest(new { error = "Invalid date of birth." });
-
         var studentNumber = schoolEmail.Split('@')[0].ToUpperInvariant();
 
         var user = new User
         {
             StudentNumber = studentNumber,
             Email = schoolEmail,
-            RecoveryEmail = request.RecoveryEmail.Trim(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
+            RecoveryEmail = recoveryEmail,
+            FirstName = firstName,
+            LastName = lastName,
             DateOfBirth = dob,
-            CellphoneNumber = request.Cellphone,
+            CellphoneNumber = phone,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -138,16 +148,22 @@ public class AuthController : ControllerBase
 
         if (!TeacherEmailRegex.IsMatch(schoolEmail))
             return BadRequest(new { error = "Please use your official @mseuf.edu.ph faculty email." });
-        if (string.IsNullOrWhiteSpace(recoveryEmail))
-            return BadRequest(new { error = "A personal/recovery email is required." });
-        if (string.IsNullOrWhiteSpace(employeeId) || employeeId.Length > 20)
-            return BadRequest(new { error = "Please enter your employee ID (up to 20 characters)." });
+        if (!InputRules.IsEmail(recoveryEmail))
+            return BadRequest(new { error = "Please enter a valid personal/recovery email." });
+        if (string.Equals(recoveryEmail, schoolEmail, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Use a personal email that is different from your school email." });
+        if (!InputRules.IsEmployeeId(employeeId))
+            return BadRequest(new { error = "Employee ID must be 3 to 20 letters, numbers or dashes." });
 
         if (await _db.Users.AnyAsync(u => u.Email == schoolEmail))
             return Conflict(new { error = "An account with that email already exists." });
         if (await _db.Users.AnyAsync(u => u.StudentNumber == employeeId))
             return Conflict(new { error = "That employee ID is already registered." });
 
+        if (await SentRecentlyAsync(schoolEmail, "register_teacher"))
+            return StatusCode(429, new { error = "A code was just sent. Please wait a minute before asking for a new one." });
+
+        AttemptGuard.Reset($"otp:register_teacher:{schoolEmail.ToLowerInvariant()}");
         var code = GenerateCode();
         _db.OtpCodes.Add(new OtpCode
         {
@@ -172,12 +188,19 @@ public class AuthController : ControllerBase
 
         if (!TeacherEmailRegex.IsMatch(schoolEmail))
             return BadRequest(new { error = "Please use your official @mseuf.edu.ph faculty email." });
-        if (string.IsNullOrWhiteSpace(request.RecoveryEmail))
-            return BadRequest(new { error = "A recovery email is required." });
-        if (string.IsNullOrWhiteSpace(employeeId) || employeeId.Length > 20)
-            return BadRequest(new { error = "Please enter your employee ID (up to 20 characters)." });
-        if (request.Password.Length < 8)
-            return BadRequest(new { error = "Password must be at least 8 characters." });
+        if (!InputRules.IsEmployeeId(employeeId))
+            return BadRequest(new { error = "Employee ID must be 3 to 20 letters, numbers or dashes." });
+        var firstName = InputRules.CleanName(request.FirstName);
+        var lastName = InputRules.CleanName(request.LastName);
+        var recoveryEmail = request.RecoveryEmail?.Trim() ?? "";
+        var personError = InputRules.PersonError(firstName, lastName, schoolEmail, recoveryEmail, request.Cellphone, request.Password, out var phone);
+        if (personError != null)
+            return BadRequest(new { error = personError });
+        if (!TryParseDob(request.Dob, out var dob))
+            return BadRequest(new { error = "Invalid date of birth." });
+        var dobError = InputRules.DobError(dob);
+        if (dobError != null)
+            return BadRequest(new { error = dobError });
 
         if (await _db.Users.AnyAsync(u => u.Email == schoolEmail))
             return Conflict(new { error = "An account with that email already exists." });
@@ -187,18 +210,15 @@ public class AuthController : ControllerBase
         if (!await VerifyOtpAsync(schoolEmail, "register_teacher", request.OtpCode))
             return BadRequest(new { error = "Invalid or expired verification code." });
 
-        if (!TryParseDob(request.Dob, out var dob))
-            return BadRequest(new { error = "Invalid date of birth." });
-
         var user = new User
         {
             StudentNumber = employeeId,
             Email = schoolEmail,
-            RecoveryEmail = request.RecoveryEmail.Trim(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
+            RecoveryEmail = recoveryEmail,
+            FirstName = firstName,
+            LastName = lastName,
             DateOfBirth = dob,
-            CellphoneNumber = request.Cellphone,
+            CellphoneNumber = phone,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = PortalAccess.RoleTeacher,
             AccountStatus = PortalAccess.StatusActive,
@@ -230,14 +250,22 @@ public class AuthController : ControllerBase
         // The "username" can be the school email or the ID number
         // (student number for students, employee ID for teachers).
         var login = request.Email?.Trim() ?? "";
-        var user = login.Length == 0
-            ? null
-            : await _db.Users.FirstOrDefaultAsync(u => u.Email == login || u.StudentNumber == login);
+        if (login.Length == 0 || login.Length > 150 || string.IsNullOrEmpty(request.Password) || request.Password.Length > 100)
+            return Unauthorized(new { error = "Invalid username or password." });
+
+        // After 8 wrong passwords for the same username, wait 15 minutes.
+        var guardKey = "login:" + login.ToLowerInvariant();
+        if (AttemptGuard.IsLocked(guardKey, 8, 15))
+            return StatusCode(429, new { error = "Too many wrong tries. Please wait 15 minutes, or reset your password.", code = "too_many_attempts" });
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == login || u.StudentNumber == login);
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
+            AttemptGuard.Fail(guardKey, 15);
             await ActivityLogger.LogAsync(_db, user?.Id, ActivityLogger.LoginFailed, login, HttpContext);
             return Unauthorized(new { error = "Invalid username or password." });
         }
+        AttemptGuard.Reset(guardKey);
 
         if (user.AccountStatus == PortalAccess.StatusPending)
         {
@@ -316,7 +344,11 @@ public class AuthController : ControllerBase
         var user = await _db.Users.FindAsync(userId);
         if (user is null) return NotFound();
 
-        user.AvatarUrl = request.AvatarBase64;
+        var avatar = request.AvatarBase64 ?? "";
+        if (!avatar.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase) || avatar.Length > 3_000_000)
+            return BadRequest(new { error = "Please choose an image smaller than 2 MB." });
+
+        user.AvatarUrl = avatar;
         user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -332,8 +364,13 @@ public class AuthController : ControllerBase
         var user = await _db.Users.FindAsync(userId);
         if (user is null) return NotFound();
 
-        user.Bio = request.Bio;
-        user.Location = request.Location;
+        var bio = request.Bio?.Trim();
+        var location = request.Location?.Trim();
+        if (bio?.Length > 500) return BadRequest(new { error = "Bio is too long (500 characters max)." });
+        if (location?.Length > 255) return BadRequest(new { error = "Location is too long (255 characters max)." });
+
+        user.Bio = bio;
+        user.Location = location;
         user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
@@ -353,6 +390,10 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(user.RecoveryEmail))
             return BadRequest(new { error = "This account has no recovery email on file." });
 
+        if (await SentRecentlyAsync(schoolEmail, "reset"))
+            return StatusCode(429, new { error = "A code was just sent. Please wait a minute before asking for a new one." });
+
+        AttemptGuard.Reset($"otp:reset:{schoolEmail.ToLowerInvariant()}");
         var code = GenerateCode();
         _db.OtpCodes.Add(new OtpCode
         {
@@ -374,8 +415,9 @@ public class AuthController : ControllerBase
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
 
-        if (request.NewPassword.Length < 8)
-            return BadRequest(new { error = "Password must be at least 8 characters." });
+        var passwordError = InputRules.PasswordError(request.NewPassword);
+        if (passwordError != null)
+            return BadRequest(new { error = passwordError });
 
         var otpValid = await VerifyOtpAsync(schoolEmail, "reset", request.OtpCode);
         if (!otpValid)
@@ -405,9 +447,22 @@ public class AuthController : ControllerBase
 
     private static string GenerateCode() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
 
+    // True when a code for this email was sent less than a minute ago.
+    private async Task<bool> SentRecentlyAsync(string email, string purpose)
+    {
+        var since = DateTime.UtcNow.AddSeconds(-60);
+        return await _db.OtpCodes.AnyAsync(o => o.Email == email && o.Purpose == purpose && o.CreatedAt > since);
+    }
+
     private async Task<bool> VerifyOtpAsync(string email, string purpose, string code)
     {
-        if (string.IsNullOrWhiteSpace(code)) return false;
+        code = code?.Trim() ?? "";
+        if (code.Length != 6 || !code.All(char.IsDigit)) return false;
+
+        // 5 wrong codes: the codes sent so far stop working and a new one
+        // has to be requested (stops guessing the 6 digits).
+        var guardKey = $"otp:{purpose}:{email.ToLowerInvariant()}";
+        if (AttemptGuard.IsLocked(guardKey, 5, 10)) return false;
 
         var candidates = await _db.OtpCodes
             .Where(o => o.Email == email && o.Purpose == purpose && o.ConsumedAt == null && o.ExpiresAt > DateTime.UtcNow)
@@ -415,7 +470,17 @@ public class AuthController : ControllerBase
             .ToListAsync();
 
         var match = candidates.FirstOrDefault(o => BCrypt.Net.BCrypt.Verify(code, o.CodeHash));
-        if (match is null) return false;
+        if (match is null)
+        {
+            AttemptGuard.Fail(guardKey, 10);
+            if (AttemptGuard.IsLocked(guardKey, 5, 10))
+            {
+                foreach (var c in candidates) c.ConsumedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+            return false;
+        }
+        AttemptGuard.Reset(guardKey);
 
         match.ConsumedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -424,12 +489,9 @@ public class AuthController : ControllerBase
 
     private static bool TryParseDob(string raw, out DateOnly dob)
     {
-        var formats = new[] { "MM/dd/yyyy", "yyyy-MM-dd", "M/d/yyyy" };
-        foreach (var format in formats)
-        {
-            if (DateOnly.TryParseExact(raw, format, out dob))
-                return true;
-        }
-        return DateOnly.TryParse(raw, out dob);
+        var formats = new[] { "yyyy-MM-dd", "MM/dd/yyyy", "M/d/yyyy" };
+        return DateOnly.TryParseExact((raw ?? "").Trim(), formats,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out dob);
     }
 }

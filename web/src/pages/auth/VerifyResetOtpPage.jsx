@@ -21,8 +21,8 @@ export default function VerifyResetOtpPage() {
       <div className="wanderwise-reset">
         <header className="ww-navbar">
           <div className="ww-brand">
-            <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-            <span className="ww-brand-name">WanderWise!</span>
+            <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+            <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
           </div>
         </header>
         <main className="ww-reset-wrapper">
@@ -44,6 +44,10 @@ export default function VerifyResetOtpPage() {
     setError("");
     if (!otp.trim()) {
       setError(t("otpErrEmpty"));
+      return;
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      setError(t("valOtp"));
       return;
     }
     // The actual OTP check happens together with the new password on the
@@ -74,8 +78,8 @@ export default function VerifyResetOtpPage() {
     <div className="wanderwise-reset">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
       </header>
 
@@ -100,7 +104,9 @@ export default function VerifyResetOtpPage() {
             className="ww-field-input"
             placeholder="123456"
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
             maxLength={6}
           />
 

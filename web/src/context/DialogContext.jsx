@@ -57,8 +57,8 @@ export function DialogProvider({ children }) {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="ww-dialog-brand">
-              <img src="/assets/logo.jpg" alt="" className="ww-dialog-logo" />
-              <span>WanderWise!</span>
+              <img src="/assets/brand/logo.png" alt="" className="ww-dialog-logo" />
+              <span>WanderWise</span>
             </div>
             <p className="ww-dialog-message">{dialog.message}</p>
             <div className="ww-dialog-actions">

@@ -1874,8 +1874,8 @@ export default function TripPlanBuilderPage() {
     <div className={`ww-builder-page ${canEdit ? "" : "ww-builder-readonly"}`}>
       <header className="ww-builder-topbar">
         <div className="ww-brand">
-          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
         <div className="ww-builder-topbar-actions">
           <span

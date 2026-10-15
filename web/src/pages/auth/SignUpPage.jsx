@@ -3,6 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
+import {
+  dobLimits,
+  keepDigits,
+  keepEmail,
+  keepNameChars,
+  registrationErrors,
+} from "../../utils/validation";
+
+// Student sign-up. Every field is checked here first (letters only for
+// names, 11-digit 09 mobile number, calendar for the birthday, strong
+// password) and the backend checks the same rules again.
+const FILTERS = {
+  firstName: keepNameChars,
+  lastName: keepNameChars,
+  schoolEmail: keepEmail,
+  recoveryEmail: keepEmail,
+  cellphone: (v) => keepDigits(v, 11),
+};
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -19,39 +37,34 @@ export default function RegisterPage() {
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const limits = dobLimits();
 
   const handleChange = (field) => (e) => {
-    setForm({ ...form, [field]: e.target.value });
+    const filter = FILTERS[field];
+    const value = filter ? filter(e.target.value) : e.target.value;
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const handleSubmit = async () => {
+  const fieldClass = (field) => `ww-field-input${errors[field] ? " has-error" : ""}`;
+  const fieldError = (field) =>
+    errors[field] ? (
+      <div className="ww-field-error" role="alert">
+        {t(errors[field])}
+      </div>
+    ) : null;
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
     setError("");
 
-    if (
-      !form.firstName ||
-      !form.lastName ||
-      !form.schoolEmail ||
-      !form.recoveryEmail ||
-      !form.dob ||
-      !form.cellphone ||
-      !form.password ||
-      !form.confirmPassword
-    ) {
-      setError(t("registerErrFillAll"));
-      return;
-    }
-    if (!/^[^@\s]+@student\.mseuf\.edu\.ph$/i.test(form.schoolEmail.trim())) {
-      setError(t("registerErrSchoolEmail"));
-      return;
-    }
-    if (form.password.length < 8) {
-      setError(t("registerErrPasswordLength"));
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError(t("registerErrPasswordMismatch"));
+    const found = registrationErrors(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      setError(t("valFixFields"));
       return;
     }
 
@@ -72,7 +85,15 @@ export default function RegisterPage() {
       }
       // Carry the whole form forward — the account is only created after
       // the OTP is confirmed on the next page.
-      navigate("/register/verify-otp", { state: { ...form } });
+      navigate("/register/verify-otp", {
+        state: {
+          ...form,
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          schoolEmail: form.schoolEmail.trim(),
+          recoveryEmail: form.recoveryEmail.trim(),
+        },
+      });
     } catch (err) {
       setError(t("networkError"));
     } finally {
@@ -84,91 +105,109 @@ export default function RegisterPage() {
     <div className="wanderwise-register">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <img
-            src="/assets/logo.jpg"
-            alt="WanderWise logo"
-            className="ww-logo"
-          />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
       </header>
 
       <main className="ww-register-wrapper">
-        <div className="ww-register-card">
+        <form className="ww-register-card" onSubmit={handleSubmit} noValidate>
           <button
             type="button"
             className="ww-back-btn"
             aria-label="Go back"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
           >
             <Icon name="arrow-left" />
           </button>
 
           <h1 className="ww-register-title">{t("registerTitle")}</h1>
 
-          <label className="ww-field-label">{t("firstName")}</label>
+          <label className="ww-field-label" htmlFor="reg-first">{t("firstName")}</label>
           <input
+            id="reg-first"
             type="text"
-            className="ww-field-input"
+            autoComplete="given-name"
+            maxLength={50}
+            className={fieldClass("firstName")}
             placeholder={t("enterFirstName")}
             value={form.firstName}
             onChange={handleChange("firstName")}
           />
+          {fieldError("firstName")}
 
-          <label className="ww-field-label">{t("lastName")}</label>
+          <label className="ww-field-label" htmlFor="reg-last">{t("lastName")}</label>
           <input
+            id="reg-last"
             type="text"
-            className="ww-field-input"
+            autoComplete="family-name"
+            maxLength={50}
+            className={fieldClass("lastName")}
             placeholder={t("enterLastName")}
             value={form.lastName}
             onChange={handleChange("lastName")}
           />
+          {fieldError("lastName")}
 
-          <label className="ww-field-label">{t("schoolEmail")}</label>
+          <label className="ww-field-label" htmlFor="reg-school">{t("schoolEmail")}</label>
           <input
-            type="text"
-            className="ww-field-input"
+            id="reg-school"
+            type="email"
+            autoComplete="username"
+            className={fieldClass("schoolEmail")}
             placeholder={t("enterStudentEmail")}
             value={form.schoolEmail}
             onChange={handleChange("schoolEmail")}
           />
+          {fieldError("schoolEmail")}
 
-          <label className="ww-field-label">
-            {t("recoveryEmailLabel")}
-          </label>
+          <label className="ww-field-label" htmlFor="reg-recovery">{t("recoveryEmailLabel")}</label>
           <input
+            id="reg-recovery"
             type="email"
-            className="ww-field-input"
+            autoComplete="email"
+            className={fieldClass("recoveryEmail")}
             placeholder={t("enterGmailAccount")}
             value={form.recoveryEmail}
             onChange={handleChange("recoveryEmail")}
           />
+          {fieldError("recoveryEmail")}
 
-          <label className="ww-field-label">{t("dobLabel")}</label>
+          <label className="ww-field-label" htmlFor="reg-dob">{t("dobLabel")}</label>
           <input
-            type="text"
-            className="ww-field-input"
-            placeholder={t("enterDob")}
+            id="reg-dob"
+            type="date"
+            autoComplete="bday"
+            min={limits.min}
+            max={limits.max}
+            className={`${fieldClass("dob")} ww-date-field`}
             value={form.dob}
             onChange={handleChange("dob")}
           />
+          {fieldError("dob")}
 
-          <label className="ww-field-label">{t("cellphoneNumber")}</label>
+          <label className="ww-field-label" htmlFor="reg-phone">{t("cellphoneNumber")}</label>
           <input
-            type="text"
-            className="ww-field-input"
-            placeholder={t("enterCellphoneNumber")}
+            id="reg-phone"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel"
+            maxLength={11}
+            className={fieldClass("cellphone")}
+            placeholder={t("valPhoneHint")}
             value={form.cellphone}
             onChange={handleChange("cellphone")}
           />
+          {fieldError("cellphone")}
 
-          <label className="ww-field-label">
-            {t("createPasswordLabel")}
-          </label>
+          <label className="ww-field-label" htmlFor="reg-password">{t("createPasswordLabel")}</label>
           <div className="ww-password-field">
             <input
+              id="reg-password"
               type={showPassword ? "text" : "password"}
-              className="ww-field-input"
+              autoComplete="new-password"
+              maxLength={100}
+              className={fieldClass("password")}
               placeholder={t("enterPassword")}
               value={form.password}
               onChange={handleChange("password")}
@@ -182,12 +221,16 @@ export default function RegisterPage() {
               <Icon name={showPassword ? "eye" : "eye-off"} />
             </button>
           </div>
+          {fieldError("password") || <div className="ww-field-hint">{t("valPasswordHint")}</div>}
 
-          <label className="ww-field-label">{t("confirmPassword")}</label>
+          <label className="ww-field-label" htmlFor="reg-confirm">{t("confirmPassword")}</label>
           <div className="ww-password-field">
             <input
+              id="reg-confirm"
               type={showConfirmPassword ? "text" : "password"}
-              className="ww-field-input"
+              autoComplete="new-password"
+              maxLength={100}
+              className={fieldClass("confirmPassword")}
               placeholder={t("confirmPasswordPlaceholder")}
               value={form.confirmPassword}
               onChange={handleChange("confirmPassword")}
@@ -201,17 +244,13 @@ export default function RegisterPage() {
               <Icon name={showConfirmPassword ? "eye" : "eye-off"} />
             </button>
           </div>
+          {fieldError("confirmPassword")}
 
-          {error && <div style={{ color: '#8b0000', marginBottom: 12 }}>{error}</div>}
-          <button
-            className="ww-register-submit"
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading}
-          >
+          {error && <div className="ww-portal-error" role="alert">{error}</div>}
+          <button className="ww-register-submit" type="submit" disabled={loading}>
             {loading ? t("sendingCode") : t("register")}
           </button>
-        </div>
+        </form>
       </main>
     </div>
   );

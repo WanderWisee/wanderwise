@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
+import { notifyAuthChanged } from "../../context/AppDataContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
 
@@ -20,8 +21,8 @@ export default function VerifyRegisterOtpPage() {
       <div className="wanderwise-register">
         <header className="ww-navbar">
           <div className="ww-brand">
-            <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-            <span className="ww-brand-name">WanderWise!</span>
+            <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+            <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
           </div>
         </header>
         <main className="ww-register-wrapper">
@@ -72,6 +73,10 @@ export default function VerifyRegisterOtpPage() {
       setError(t("otpErrEmpty"));
       return;
     }
+    if (!/^\d{6}$/.test(otp)) {
+      setError(t("valOtp"));
+      return;
+    }
 
     setLoading(true);
     try {
@@ -96,6 +101,7 @@ export default function VerifyRegisterOtpPage() {
       }
       if (data?.token) {
         localStorage.setItem("wanderwise_token", data.token);
+        notifyAuthChanged();
       }
       await continuePendingInvite();
     } catch (err) {
@@ -131,8 +137,8 @@ export default function VerifyRegisterOtpPage() {
     <div className="wanderwise-register">
       <header className="ww-navbar">
         <div className="ww-brand">
-          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
       </header>
 
@@ -156,10 +162,12 @@ export default function VerifyRegisterOtpPage() {
           <label className="ww-field-label">{t("verificationCode")}</label>
           <input
             type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
             className="ww-field-input"
             placeholder="123456"
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
             maxLength={6}
           />
 

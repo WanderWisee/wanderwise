@@ -5,35 +5,34 @@ import { View, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoiding
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
-import { register, sendRegisterOtp, SCHOOL_EMAIL_REGEX } from '../services/authService';
+import { register, sendRegisterOtp } from '../services/authService';
 import { consumePendingJoin } from '../services/pendingJoin';
 import { useApp } from '../context/AppContext';
 import Backdrop from '../components/Backdrop';
 import { Wordmark } from '../components/ui';
+import BirthdayPicker from '../components/BirthdayPicker';
+import {
+  dobBounds,
+  fromMdy,
+  keepDigits,
+  keepEmail,
+  keepNameChars,
+  registrationErrors,
+  toMdy,
+} from '../utils/validation';
 
 // Parehong daloy ng web: (1) punan ang form → magpapadala ng 6-digit code
 // sa personal/recovery email → (2) ilagay ang code → gagawin ang account.
 
-// "01172004" -> "01/17/2004" habang nagta-type
-function formatDobInput(text) {
-  const digits = text.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-function isValidDob(dob) {
-  const m = dob.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!m) return false;
-  const month = Number(m[1]);
-  const day = Number(m[2]);
-  const year = Number(m[3]);
-  const d = new Date(year, month - 1, day);
-  return (
-    d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day &&
-    year > 1900 && d < new Date()
-  );
-}
+// Bawat field ay sinusuri: letra lang sa pangalan, 11-digit na 09 number,
+// kalendaryo para sa birthday, at password na may letra at numero.
+const FILTERS = {
+  firstName: keepNameChars,
+  lastName: keepNameChars,
+  schoolEmail: keepEmail,
+  recoveryEmail: keepEmail,
+  cellphone: (v) => keepDigits(v, 11),
+};
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -53,29 +52,25 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [dobOpen, setDobOpen] = useState(false);
+  const bounds = dobBounds();
 
-  const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
-
-  function validate() {
-    const f = form;
-    if (!f.firstName.trim() || !f.lastName.trim() || !f.schoolEmail.trim() || !f.recoveryEmail.trim() ||
-        !f.dob || !f.cellphone.trim() || !f.password || !f.confirmPassword) {
-      return t('registerErrFillAll');
-    }
-    if (!SCHOOL_EMAIL_REGEX.test(f.schoolEmail.trim())) return t('registerErrSchoolEmail');
-    if (!/^\S+@\S+\.\S+$/.test(f.recoveryEmail.trim())) return t('registerErrRecoveryEmail');
-    if (!isValidDob(f.dob)) return t('registerErrDob');
-    if (f.password.length < 8) return t('registerErrPasswordLength');
-    if (f.password !== f.confirmPassword) return t('registerErrPasswordMismatch');
-    return null;
-  }
+  const set = (key) => (value) => {
+    const filter = FILTERS[key];
+    setForm((f) => ({ ...f, [key]: filter ? filter(value) : value }));
+    setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
+  };
+  const inputStyle = (key, extra = null) => [styles.input, extra, errors[key] && styles.inputError];
+  const fieldError = (key) => (errors[key] ? <Text style={styles.fieldError}>{t(errors[key])}</Text> : null);
 
   async function handleSendCode() {
     setError(null);
     setInfo(null);
-    const problem = validate();
-    if (problem) {
-      setError(problem);
+    const found = registrationErrors(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      setError(t('valFixFields'));
       return;
     }
     setLoading(true);
@@ -93,7 +88,7 @@ export default function SignupScreen() {
   async function handleVerify() {
     setError(null);
     if (!/^\d{6}$/.test(otpCode.trim())) {
-      setError(t('otpErrEmpty'));
+      setError(t('valOtp'));
       return;
     }
     setLoading(true);
@@ -153,25 +148,33 @@ export default function SignupScreen() {
                 <Text style={styles.cardTitle}>{t('registerTitle')}</Text>
 
                 <View style={styles.nameRow}>
-                  <TextInput
-                    style={[styles.input, { flex: 1, minWidth: 0 }]}
-                    placeholder={t('firstName')}
-                    placeholderTextColor={Colors.brown600}
-                    value={form.firstName}
-                    onChangeText={set('firstName')}
-                    autoComplete="given-name"
-                  />
-                  <TextInput
-                    style={[styles.input, { flex: 1, minWidth: 0 }]}
-                    placeholder={t('lastName')}
-                    placeholderTextColor={Colors.brown600}
-                    value={form.lastName}
-                    onChangeText={set('lastName')}
-                    autoComplete="family-name"
-                  />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <TextInput
+                      style={inputStyle('firstName')}
+                      placeholder={t('firstName')}
+                      placeholderTextColor={Colors.brown600}
+                      value={form.firstName}
+                      onChangeText={set('firstName')}
+                      autoComplete="given-name"
+                      maxLength={50}
+                    />
+                    {fieldError('firstName')}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <TextInput
+                      style={inputStyle('lastName')}
+                      placeholder={t('lastName')}
+                      placeholderTextColor={Colors.brown600}
+                      value={form.lastName}
+                      onChangeText={set('lastName')}
+                      autoComplete="family-name"
+                      maxLength={50}
+                    />
+                    {fieldError('lastName')}
+                  </View>
                 </View>
                 <TextInput
-                  style={styles.input}
+                  style={inputStyle('schoolEmail')}
                   placeholder={t('studentEmailPlaceholder')}
                   placeholderTextColor={Colors.brown600}
                   autoCapitalize="none"
@@ -180,8 +183,9 @@ export default function SignupScreen() {
                   value={form.schoolEmail}
                   onChangeText={set('schoolEmail')}
                 />
+                {fieldError('schoolEmail')}
                 <TextInput
-                  style={styles.input}
+                  style={inputStyle('recoveryEmail')}
                   placeholder={t('recoveryEmailPlaceholder')}
                   placeholderTextColor={Colors.brown600}
                   autoCapitalize="none"
@@ -190,40 +194,61 @@ export default function SignupScreen() {
                   value={form.recoveryEmail}
                   onChangeText={set('recoveryEmail')}
                 />
+                {fieldError('recoveryEmail')}
+                <TouchableOpacity
+                  style={[...inputStyle('dob'), styles.dateField]}
+                  onPress={() => setDobOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('dobPick')}
+                >
+                  <Text style={[styles.dateText, !form.dob && { color: Colors.brown600 }]}>
+                    {form.dob || t('dobPick')}
+                  </Text>
+                  <AppIcon name="calendar" style={styles.dateIcon} />
+                </TouchableOpacity>
+                {fieldError('dob')}
                 <TextInput
-                  style={styles.input}
-                  placeholder={t('dobPlaceholder')}
+                  style={inputStyle('cellphone')}
+                  placeholder={t('valPhonePlaceholder')}
                   placeholderTextColor={Colors.brown600}
                   keyboardType="number-pad"
-                  value={form.dob}
-                  onChangeText={(text) => set('dob')(formatDobInput(text))}
-                  maxLength={10}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder={t('cellphoneNumber')}
-                  placeholderTextColor={Colors.brown600}
-                  keyboardType="phone-pad"
                   value={form.cellphone}
                   onChangeText={set('cellphone')}
-                  maxLength={15}
+                  maxLength={11}
                 />
+                {fieldError('cellphone')}
                 <TextInput
-                  style={styles.input}
+                  style={inputStyle('password')}
                   placeholder={t('createPasswordLabel')}
                   placeholderTextColor={Colors.brown600}
                   secureTextEntry
                   value={form.password}
                   onChangeText={set('password')}
                   textContentType="newPassword"
+                  maxLength={100}
                 />
+                {fieldError('password') || <Text style={styles.fieldHint}>{t('valPasswordHint')}</Text>}
                 <TextInput
-                  style={styles.input}
+                  style={inputStyle('confirmPassword')}
                   placeholder={t('confirmPassword')}
                   placeholderTextColor={Colors.brown600}
                   secureTextEntry
                   value={form.confirmPassword}
                   onChangeText={set('confirmPassword')}
+                  maxLength={100}
+                />
+                {fieldError('confirmPassword')}
+
+                <BirthdayPicker
+                  visible={dobOpen}
+                  value={fromMdy(form.dob)}
+                  min={bounds.min}
+                  max={bounds.max}
+                  onClose={() => setDobOpen(false)}
+                  onConfirm={(date) => {
+                    set('dob')(toMdy(date));
+                    setDobOpen(false);
+                  }}
                 />
 
                 {error && <Text style={styles.errorText}>{error}</Text>}
@@ -301,6 +326,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.brown900,
     paddingVertical: 8, marginBottom: 18,
   },
+  inputError: { borderBottomColor: Colors.error, borderBottomWidth: 1.5 },
+  fieldError: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.error, marginTop: -12, marginBottom: 14 },
+  fieldHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: -12, marginBottom: 14 },
+  dateField: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  dateText: { fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900 },
+  dateIcon: { fontSize: 18, color: Colors.brown900 },
   otpInput: { fontSize: 26, letterSpacing: 10, textAlign: 'center', fontFamily: 'Poppins_600SemiBold' },
   errorText: {
     fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12,

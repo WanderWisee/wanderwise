@@ -39,6 +39,8 @@ public class WanderWiseDbContext : DbContext
     public DbSet<ClassMember> ClassMembers => Set<ClassMember>();
     public DbSet<ClassAnnouncement> ClassAnnouncements => Set<ClassAnnouncement>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    // Mobile push notifications (Expo push tokens)
+    public DbSet<PushToken> PushTokens => Set<PushToken>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.StudentNumber).IsUnique();

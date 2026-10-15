@@ -37,8 +37,8 @@ export default function HomePage() {
     <div className="wanderwise-home ww-landing">
       <header className="ww-navbar ww-lp-nav">
         <a className="ww-brand" href="#top">
-          <img src="/assets/logo.jpg" alt="WanderWise logo" className="ww-logo" />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </a>
         <nav className="ww-lp-links" aria-label={t("lpSections")}>
           <a href="#features">{t("lpNavFeatures")}</a>
@@ -202,7 +202,7 @@ function AppPreview() {
         <span /><span /><span />
       </div>
       <div className="ww-lp-app-top">
-        <img src="/assets/logo.jpg" alt="" />
+        <img src="/assets/brand/logo.png" alt="" />
         <strong>Trip to Batangas</strong>
         <em>● Saved</em>
       </div>

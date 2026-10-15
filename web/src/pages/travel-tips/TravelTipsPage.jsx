@@ -114,11 +114,11 @@ export default function TravelTipsPage() {
       <header className="ww-navbar">
         <div className="ww-brand">
           <img
-            src="/assets/logo.jpg"
+            src="/assets/brand/logo.png"
             alt="WanderWise logo"
             className="ww-logo"
           />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
         <nav className="ww-nav-links">
           <Link to="/dashboard">{t("navHome")}</Link>

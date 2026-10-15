@@ -2,11 +2,13 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Colors } from '../constants/theme';
 import { AppProvider, useApp } from '../context/AppContext';
 import { DialogProvider } from '../context/DialogContext';
+import { notificationRoute } from '../utils/notificationText';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,6 +33,28 @@ function AuthGate() {
       router.replace('/(tabs)/home');
     }
   }, [ready, isLoggedIn, segments, router]);
+
+  // Pag-tap sa push notification: buksan ang tamang screen (trip, klase,
+  // journal), o ang Notifications kung walang tiyak na screen.
+  useEffect(() => {
+    if (!ready || !isLoggedIn) return;
+    let handled = '';
+    const openFrom = (response: Notifications.NotificationResponse | null) => {
+      if (!response) return;
+      const id = response.notification.request.identifier;
+      if (id === handled) return;
+      handled = id;
+      const data: any = response.notification.request.content.data || {};
+      const route = notificationRoute({ link: data.link }) || '/notifications';
+      router.push(route as any);
+    };
+    // App opened by tapping a notification while it was closed.
+    const N: any = Notifications;
+    const last = N.getLastNotificationResponse ? N.getLastNotificationResponse() : N.getLastNotificationResponseAsync?.();
+    Promise.resolve(last).then(openFrom).catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(openFrom);
+    return () => sub.remove();
+  }, [ready, isLoggedIn, router]);
 
   // Takpan ang protektadong screen habang inililipat pa sa Login, para
   // hindi ito sumilip. (Kailangang naka-mount ang Stack para gumana ang redirect.)

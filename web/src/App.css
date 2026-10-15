@@ -9248,3 +9248,84 @@ textarea:focus-visible {
   width: 14px;
   height: 14px;
 }
+
+/* ---------------------------------------------------------------------
+   21. BRAND + FORM CHECKS
+   Same logo and WANDERWISE wordmark as the mobile app, and red
+   messages under sign-up fields that need fixing.
+   --------------------------------------------------------------------- */
+.ww-logo {
+  width: auto;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ww-brand-wordmark {
+  display: block;
+  height: 17px;
+  width: auto;
+  max-width: 200px;
+}
+
+.ww-dialog-logo,
+.ww-lp-app-top img {
+  width: auto;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+@media (max-width: 640px) {
+  .ww-logo {
+    width: auto;
+    height: 34px;
+  }
+
+  .ww-brand-wordmark {
+    height: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .ww-brand-wordmark {
+    height: 12px;
+  }
+}
+
+.ww-field-input.has-error,
+.ww-field-input.has-error:hover,
+.ww-field-input.has-error:focus {
+  border-color: #b42318;
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+}
+
+.ww-field-error,
+.ww-field-hint {
+  margin: -12px 0 14px;
+  font-size: var(--ww-fs-xs);
+  line-height: 1.4;
+}
+
+.ww-field-error {
+  color: #b42318;
+  font-weight: 500;
+}
+
+.ww-field-hint {
+  color: var(--ww-text-subtle);
+}
+
+.ww-date-field {
+  cursor: pointer;
+}
+
+.ww-date-field::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.ww-register-card .ww-portal-error {
+  margin: 4px 0 12px;
+}

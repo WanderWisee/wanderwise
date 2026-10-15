@@ -98,9 +98,9 @@ export default function NotificationWatcher() {
           if (!canPopUp || !isFresh) return;
 
           const { t: tt, formatTime: ft } = textRef.current;
-          const popup = new Notification("WanderWise!", {
+          const popup = new Notification("WanderWise", {
             body: notificationText(n, tt, ft),
-            icon: "/assets/logo.jpg",
+            icon: "/assets/brand/logo.png",
             tag: `ww-${n.id}`,
           });
           popup.onclick = () => {

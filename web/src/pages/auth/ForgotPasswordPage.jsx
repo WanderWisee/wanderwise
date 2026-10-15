@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
+import { EMAIL_RE } from "../../utils/validation";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -19,6 +20,10 @@ export default function ForgotPasswordPage() {
     setError("");
     if (!email.trim()) {
       setError(t("forgotErrEmpty"));
+      return;
+    }
+    if (!EMAIL_RE.test(email.trim())) {
+      setError(t("valEmail"));
       return;
     }
 
@@ -49,11 +54,11 @@ export default function ForgotPasswordPage() {
       <header className="ww-navbar">
         <div className="ww-brand">
           <img
-            src="/assets/logo.jpg"
+            src="/assets/brand/logo.png"
             alt="WanderWise logo"
             className="ww-logo"
           />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
       </header>
 

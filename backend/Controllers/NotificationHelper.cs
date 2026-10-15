@@ -95,6 +95,9 @@ public static class NotificationHelper
         // Real push (laptop + phone, even when WanderWise is closed) via
         // OneSignal. Does nothing until the OneSignal keys are in .env.
         await OneSignalPush.SendAsync(userId, message, link);
+
+        // Push to the WanderWise Android app (phones that saved a push token).
+        await ExpoPush.SendAsync(db, userId, type, message, link);
     }
 
     // Everyone on a trip: the owner plus every crew member.

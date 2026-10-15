@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
+import { passwordProblem } from "../../utils/validation";
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
@@ -27,8 +28,9 @@ export default function ResetPasswordPage() {
       setError(t("resetErrSessionExpired"));
       return;
     }
-    if (newPassword.length < 8) {
-      setError(t("registerErrPasswordLength"));
+    const problem = passwordProblem(newPassword);
+    if (problem) {
+      setError(t(problem));
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -65,11 +67,11 @@ export default function ResetPasswordPage() {
       <header className="ww-navbar">
         <div className="ww-brand">
           <img
-            src="/assets/logo.jpg"
+            src="/assets/brand/logo.png"
             alt="WanderWise logo"
             className="ww-logo"
           />
-          <span className="ww-brand-name">WanderWise!</span>
+          <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
       </header>
 

@@ -32,7 +32,7 @@ public static class OneSignalPush
             ["app_id"] = appId,
             ["target_channel"] = "push",
             ["include_aliases"] = new { external_id = new[] { userId.ToString() } },
-            ["headings"] = new { en = "WanderWise!" },
+            ["headings"] = new { en = "WanderWise" },
             ["contents"] = new { en = message },
             // The mobile app reads "link" to open the right screen.
             ["data"] = new { link },

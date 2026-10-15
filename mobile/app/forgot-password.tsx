@@ -10,6 +10,7 @@ import { useApp } from '../context/AppContext';
 import { useDialog } from '../context/DialogContext';
 import Backdrop from '../components/Backdrop';
 import { Wordmark } from '../components/ui';
+import { passwordProblem } from '../utils/validation';
 
 // Parehong daloy ng web: school email → code sa recovery email → bagong password.
 export default function ForgotPasswordScreen() {
@@ -53,8 +54,9 @@ export default function ForgotPasswordScreen() {
       setError(t('otpErrEmpty'));
       return;
     }
-    if (newPassword.length < 8) {
-      setError(t('registerErrPasswordLength'));
+    const pwProblem = passwordProblem(newPassword);
+    if (pwProblem) {
+      setError(t(pwProblem));
       return;
     }
     if (newPassword !== confirm) {

@@ -6,21 +6,24 @@ import { Image } from 'expo-image';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
-// Totoong mapa gamit ang OpenStreetMap data (CARTO Voyager tiles).
-// Hindi na tile.openstreetmap.org ang gamit: hinaharang nito ang APK
-// ("Access blocked — tile usage policy"), pero gumagana ang CARTO sa
-// Expo Go at sa APK. Gamit ang expo-image para siguradong maipadala ang
-// User-Agent sa Android. Kinukuwenta ang zoom para magkasya lahat ng pin,
+// Totoong mapa gamit ang Esri World Street Map tiles (galing sa OpenStreetMap
+// at iba pang data). Hindi na tile.openstreetmap.org (403 "Access blocked" sa
+// APK) at hindi na CARTO ("API KEY REQUIRED" sa APK); ang Esri tiles ay walang
+// kailangang API key. Gamit ang expo-image para maipadala ang headers.
+// Kinukuwenta ang zoom para magkasya lahat ng pin,
 // tapos inilalatag ang mga tile bilang <Image>. Pag-tap: bubukas ang buong
 // mapa sa openstreetmap.org para makapag-zoom/pan ang user.
 //
 // markers: [{ latitude, longitude, label?, color? }]
 
 const TILE = 256;
-const TILE_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+// Pansinin: z / y / x ang ayos sa Esri (hindi z / x / y).
 const tileUrl = (z, x, y) =>
-  `https://${TILE_SUBDOMAINS[(x + y) % TILE_SUBDOMAINS.length]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
-const TILE_HEADERS = { 'User-Agent': 'WanderWise-Mobile/1.0 (capstone project)' };
+  `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
+const TILE_HEADERS = {
+  'User-Agent': 'WanderWise-Mobile/1.0 (+https://www.wanderwise.site)',
+  Referer: 'https://www.wanderwise.site/',
+};
 
 // Sentro ng Pilipinas kapag walang pin
 const PH_CENTER = { latitude: 12.3, longitude: 122.5, zoom: 5 };
@@ -165,7 +168,7 @@ export default function OsmMap({
       )}
 
       <View style={styles.attribution} pointerEvents="none">
-        <Text style={styles.attributionText}>© OpenStreetMap contributors © CARTO</Text>
+        <Text style={styles.attributionText}>Tiles © Esri · © OpenStreetMap contributors</Text>
       </View>
       <View style={styles.expandBadge} pointerEvents="none">
         <AppIcon name="expand" style={styles.expandText} />

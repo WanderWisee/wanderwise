@@ -2,7 +2,7 @@ import AppIcon, { IconLabel } from '../../components/AppIcon';
 import { Text, TextInput } from '../../components/Typography';
 import { useState, useCallback, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, Linking, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
@@ -23,6 +23,7 @@ const BOOKING_SITES = [
 ];
 
 export default function HomeScreen() {
+  const { top: topInset } = useSafeAreaInsets();
   const router = useRouter();
   const { t, user, prefs } = useApp();
   const [trips, setTrips] = useState([]);
@@ -109,6 +110,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topInset, backgroundColor: Colors.white }} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
         <View style={styles.header}>
@@ -286,7 +288,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12,
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, minHeight: 68, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.line,
   },
   bellButton: {
     width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.white,

@@ -1,7 +1,7 @@
-import { IconLabel } from '../../components/AppIcon';
+import AppIcon, { IconLabel } from '../../components/AppIcon';
 import { Text } from '../../components/Typography';
 import { useCallback, useRef, useState } from 'react';
-import { Image, Linking, RefreshControl, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
+import { Image, Linking, RefreshControl, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
@@ -155,7 +155,20 @@ export default function TourScreen() {
             {!attendanceOpen && <Text style={styles.text}>{attendanceNote}</Text>}
             {(data.roster || []).map((person: any) => <View key={person.userId} style={{ gap: 8 }}>
               <View style={styles.row}><Avatar person={person} size={36} /><View style={{ flex: 1 }}><Text style={styles.text}>{fullName(person)}</Text><Text style={styles.text}>{person.present ? t('present') : t('absent')}</Text></View>
-                {canManage && <Switch accessibilityLabel={`${t('attendance')}: ${fullName(person)}`} value={person.present} disabled={busy || !attendanceOpen} trackColor={{ true: Colors.brown900 }} onValueChange={(present) => run(() => markAttendance(id, { date, userId: person.userId, present }))} />}
+                {canManage && (
+                  <TouchableOpacity
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={`${t('attendance')}: ${fullName(person)}`}
+                    accessibilityState={{ checked: !!person.present, disabled: busy || !attendanceOpen }}
+                    disabled={busy || !attendanceOpen}
+                    onPress={() => run(() => markAttendance(id, { date, userId: person.userId, present: !person.present }))}
+                    style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: busy || !attendanceOpen ? 0.45 : 1 }}
+                  >
+                    <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: person.present ? Colors.brown900 : Colors.brown600, backgroundColor: person.present ? Colors.brown900 : Colors.white, alignItems: 'center', justifyContent: 'center' }}>
+                      {!!person.present && <AppIcon name="check" size={17} color={Colors.mint} />}
+                    </View>
+                  </TouchableOpacity>
+                )}
               </View>
               {!!person.photo && <Image source={{ uri: person.photo }} accessibilityLabel={t('checkedIn')} style={{ height: 140, borderRadius: 12 }} />}
             </View>)}

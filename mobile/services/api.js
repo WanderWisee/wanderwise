@@ -115,6 +115,7 @@ export async function request(
   );
 
   let response;
+  let responseText;
 
   try {
     response = await fetch(`${API_URL}${path}`, {
@@ -126,6 +127,7 @@ export async function request(
           : undefined,
       signal: controller.signal,
     });
+    responseText = await response.text();
   } catch (error) {
     const timedOut = error?.name === 'AbortError';
 
@@ -140,7 +142,6 @@ export async function request(
     clearTimeout(timer);
   }
 
-  const responseText = await response.text();
   let data = null;
 
   if (responseText) {

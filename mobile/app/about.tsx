@@ -1,6 +1,6 @@
 import AppIcon from '../components/AppIcon';
 import { Text } from '../components/Typography';
-import { View, StyleSheet } from 'react-native';
+import { View, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Image as SvgImage } from 'react-native-svg';
@@ -33,10 +33,10 @@ export default function AboutScreen() {
 
       <FadeScrollView fadeHeight={24} contentContainerStyle={styles.content}>
         <View style={styles.brand} accessible accessibilityRole="image" accessibilityLabel="WanderWise">
-          <Svg width={80} height={98} viewBox="795 637 1410 1726" accessible={false}>
+          <Svg width={80} height={98} viewBox="795 637 1410 1726" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })}>
             <SvgImage href={require('../assets/brand/logo.png')} width={3000} height={3000} />
           </Svg>
-          <Svg width={220} height={24} viewBox="617 1425 1758 165" accessible={false}>
+          <Svg width={220} height={24} viewBox="617 1425 1758 165" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })}>
             <SvgImage href={require('../assets/brand/wordmark.png')} width={3000} height={3000} />
           </Svg>
         </View>

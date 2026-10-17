@@ -2,7 +2,7 @@ import AppIcon, { IconLabel } from '../../components/AppIcon';
 import { Text, TextInput } from '../../components/Typography';
 import { useCallback, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Linking, Modal, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { HOTEL_DESTINATIONS } from '../../constants/destinations';
@@ -33,6 +33,7 @@ export default function HotelsScreen() {
 }
 
 function HotelsContent({ params }) {
+  const { top: topInset } = useSafeAreaInsets();
   const router = useRouter();
   const { t, formatDate, prefs } = useApp();
   const { alert, confirm, toast } = useDialog();
@@ -159,6 +160,7 @@ function HotelsContent({ params }) {
 
   return (
     <View style={styles.screen}>
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topInset, backgroundColor: Colors.white }} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
         <View style={styles.header}>
@@ -189,9 +191,13 @@ function HotelsContent({ params }) {
           <Text style={styles.pageTitle}>{t('hotelsHeroTitle')}</Text>
           <Text style={styles.pageSubtitle}>{t('hotelsHeroSubtitle')}</Text>
 
-          <View style={styles.inputWrap}>
+          <View style={styles.searchCard}>
+          <Text style={styles.formLabel}>{t('discoverWhereToGo')}</Text>
+          <View style={[styles.inputWrap, styles.inputRow]}>
+            <AppIcon name="search" size={20} color={Colors.brown600} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { flex: 1, minWidth: 0 }]}
+              accessibilityLabel={t('hotelsSearchPlaceholder')}
               placeholder={t('hotelsSearchPlaceholder')}
               placeholderTextColor={Colors.brown600}
               value={search}
@@ -199,10 +205,17 @@ function HotelsContent({ params }) {
               returnKeyType="search"
               onSubmitEditing={handleSearch}
             />
+            {!!search && (
+              <TouchableOpacity style={styles.clearButton} onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel={t('clearSearch')}>
+                <AppIcon name="x" size={18} color={Colors.brown600} />
+              </TouchableOpacity>
+            )}
           </View>
 
-          <TouchableOpacity style={styles.inputWrap} onPress={() => setPickerFor('search')} activeOpacity={0.7}>
-            <Text style={dateRange ? styles.dateRangeText : styles.dateRangePlaceholder}>
+          <Text style={styles.formLabel}>{t('bookingCheckIn')} / {t('bookingCheckOut')}</Text>
+          <TouchableOpacity style={[styles.inputWrap, styles.inputRow]} onPress={() => setPickerFor('search')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('selectDates')}>
+            <AppIcon name="calendar" size={20} color={Colors.brown600} />
+            <Text style={[dateRange ? styles.dateRangeText : styles.dateRangePlaceholder, { flex: 1 }]}>
               {dateRange ? `${formatParts(dateRange.start, prefs.dateFormat)} — ${formatParts(dateRange.end, prefs.dateFormat)}` : t('selectDates')}
             </Text>
           </TouchableOpacity>
@@ -220,9 +233,10 @@ function HotelsContent({ params }) {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-            <Text style={styles.searchButtonText}>{t('search')}</Text>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch} accessibilityRole="button">
+            <IconLabel name="search" textStyle={styles.searchButtonText}>{t('search')}</IconLabel>
           </TouchableOpacity>
+          </View>
 
           {!!loadError && <ErrorState message={loadError} onRetry={loadBookings} retryLabel={t('tryAgain')} />}
           {/* ===== Destinations ===== */}
@@ -396,8 +410,11 @@ function HotelsContent({ params }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, minHeight: 68, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.line },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  searchCard: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line, borderRadius: 20, padding: 16, marginBottom: 32 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  clearButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -10, marginRight: -12 },
   tripBanner: {
     backgroundColor: Colors.brown900, borderRadius: 14, padding: 14, marginBottom: 18, gap: 6,
   },
@@ -405,7 +422,7 @@ const styles = StyleSheet.create({
   tripBannerLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
   pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900 },
   pageSubtitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown600, marginTop: 8, marginBottom: 24 },
-  inputWrap: { minHeight: 52, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12 },
+  inputWrap: { minHeight: 52, borderRadius: 14, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12 },
   searchInput: { zIndex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, padding: 0 },
   dateRangeText: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900, zIndex: 1 },
   dateRangePlaceholder: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600, zIndex: 1 },
@@ -414,7 +431,7 @@ const styles = StyleSheet.create({
   counterButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream, borderRadius: 12 },
   counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
   counterValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, minWidth: 20, textAlign: 'center' },
-  searchButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
+  searchButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

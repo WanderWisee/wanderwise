@@ -8,7 +8,7 @@ import {
   SquareCheck, Star, Luggage as Suitcase, Ticket, Trash2, TriangleAlert, User, Users,
   Utensils, Wallet, X, Ban, Maximize2, type LucideIcon,
 } from 'lucide-react-native';
-import { StyleSheet, View, type ColorValue, type StyleProp, type TextStyle } from 'react-native';
+import { StyleSheet, View, Platform, type ColorValue, type StyleProp, type TextStyle } from 'react-native';
 import { Colors } from '../constants/theme';
 import { Text } from './Typography';
 
@@ -33,7 +33,7 @@ export default function AppIcon({ name, size = 22, color = Colors.brown900, styl
   const Icon = icons[name] || CircleHelp;
   const textStyle = StyleSheet.flatten(style);
   return <Icon size={textStyle?.fontSize || size} color={textStyle?.color as string || color}
-    strokeWidth={2} fill={filled ? color : 'none'} accessible={false} />;
+    strokeWidth={2} fill={filled ? color : 'none'} {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })} />;
 }
 
 export function IconLabel({ name, children, textStyle, size = 18, color, trailing = false }: {

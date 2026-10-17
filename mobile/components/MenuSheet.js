@@ -1,126 +1,121 @@
 import AppIcon from './AppIcon';
 import { Text } from './Typography';
-import { useEffect, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, Dimensions } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Modal, Pressable, Animated, ScrollView, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { fetchNotifications, fullName } from '../services/userService';
 import { Avatar } from './ui';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
-
-const MENU_ITEMS = [
-  { key: 'classes', labelKey: 'myClasses', icon: 'graduation', tint: '#C9D9C4', route: '/classes' },
-  { key: 'notifications', labelKey: 'notificationsTitle', icon: 'bell', tint: '#F4D9A8', route: '/notifications' },
-  { key: 'settings', labelKey: 'settingsTitle', icon: 'settings', tint: '#C9D9C4', route: '/settings' },
-  { key: 'history', labelKey: 'history', icon: 'clock', tint: '#D9C4D0', route: '/history' },
-  { key: 'language', labelKey: 'language', icon: 'globe', tint: '#B8D4D9', route: '/language' },
-  { key: 'join', labelKey: 'joinWithLink', icon: 'link', tint: '#F4D9A8', route: '/join' },
-  { key: 'about', labelKey: 'aboutUs', icon: 'info', tint: '#C9D9C4', route: '/about' },
+const MENU_GROUPS = [
+  [
+    { key: 'classes', labelKey: 'myClasses', icon: 'graduation', route: '/classes' },
+    { key: 'notifications', labelKey: 'notificationsTitle', icon: 'bell', route: '/notifications' },
+    { key: 'join', labelKey: 'joinWithLink', icon: 'link', route: '/join' },
+  ],
+  [
+    { key: 'settings', labelKey: 'settingsTitle', icon: 'settings', route: '/settings' },
+    { key: 'history', labelKey: 'history', icon: 'clock', route: '/history' },
+  ],
+  [
+    { key: 'language', labelKey: 'language', icon: 'globe', route: '/language' },
+    { key: 'about', labelKey: 'aboutUs', icon: 'info', route: '/about' },
+  ],
 ];
 
-export default function MenuSheet({ visible, onClose }) {
+export default function MenuSheet({ visible, onClose, onShareProfile = null }) {
   const router = useRouter();
-  const [slideAnim] = useState(() => new Animated.Value(DRAWER_WIDTH));
-  const [overlayAnim] = useState(() => new Animated.Value(0));
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [progress] = useState(() => new Animated.Value(0));
+  const closing = useRef(false);
   const { t, user, signOut } = useApp();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    if (visible) {
-      fetchNotifications()
-        .then((list) => setUnread(list.filter((n) => !n.isRead).length))
-        .catch(() => {});
-      Animated.parallel([
-        Animated.timing(slideAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
-        Animated.timing(overlayAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
-      ]).start();
-    } else {
-      slideAnim.setValue(DRAWER_WIDTH);
-      overlayAnim.setValue(0);
-    }
-  }, [visible, slideAnim, overlayAnim]);
+    if (!visible) { progress.setValue(0); return; }
+    closing.current = false;
+    let active = true;
+    fetchNotifications()
+      .then((list) => { if (active) setUnread(list.filter((n) => !n.isRead).length); })
+      .catch(() => {});
+    Animated.timing(progress, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+    return () => { active = false; progress.stopAnimation(); };
+  }, [visible, progress]);
 
-  function handleClose() {
-    Animated.parallel([
-      Animated.timing(slideAnim, { toValue: DRAWER_WIDTH, duration: 220, useNativeDriver: true }),
-      Animated.timing(overlayAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
-    ]).start(() => onClose());
+  function handleClose(afterClose = null) {
+    if (closing.current) return;
+    closing.current = true;
+    Animated.timing(progress, { toValue: 0, duration: 180, useNativeDriver: true }).start(({ finished }) => {
+      if (!finished) return;
+      onClose();
+      afterClose?.();
+    });
   }
 
-  async function handleLogout() {
-    handleClose();
-    await signOut();
-    router.replace('/');
+  function open(route) { handleClose(() => router.push(route)); }
+
+  function handleLogout() {
+    handleClose(async () => {
+      await signOut();
+      router.replace('/');
+    });
   }
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <View style={StyleSheet.absoluteFill}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
-          <Animated.View style={[styles.overlay, { opacity: overlayAnim }]} />
+    <Modal visible={visible} transparent animationType="none" onRequestClose={() => handleClose()}>
+      <View style={styles.container}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => handleClose()} accessibilityRole="button" accessibilityLabel={t('closeMenu')}>
+          <Animated.View style={[styles.overlay, { opacity: progress }]} />
         </Pressable>
-
         <Animated.View
-          style={[
-            styles.drawer,
-            { width: DRAWER_WIDTH, transform: [{ translateX: slideAnim }] },
-          ]}
+          accessibilityViewIsModal
+          onAccessibilityEscape={() => handleClose()}
+          style={[styles.sheet, { maxHeight: height - insets.top - 16, paddingBottom: Math.max(16, insets.bottom), transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }) }] }]}
         >
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.cream }]} />
-
-          <View style={styles.content}>
-            <Text style={styles.title}>{t('menu')}</Text>
-
-            <TouchableOpacity
-              style={styles.profileRow}
-              onPress={() => {
-                handleClose();
-                router.push('/settings/account');
-              }}
-              activeOpacity={0.7}
-            >
-              <Avatar person={user} size={48} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.profileName} numberOfLines={1}>{fullName(user, t('student'))}</Text>
-                <Text style={styles.profileLink}>{t('editProfile')}</Text>
-              </View>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-
-            {/* Menu items */}
-            <View style={styles.itemsList}>
-              {MENU_ITEMS.map((item) => (
-                <TouchableOpacity
-                  key={item.key}
-                  style={styles.menuRow}
-                  onPress={() => {
-                    handleClose();
-                    router.push(item.route);
-                  }}
-                  activeOpacity={0.6}
-                >
-                  <View style={[styles.iconBadge, { backgroundColor: item.tint }]}>
-                    <AppIcon name={item.icon} size={20} />
-                  </View>
-                  <Text style={styles.menuLabel}>{t(item.labelKey)}</Text>
-                  {item.key === 'notifications' && unread > 0 && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
-                    </View>
-                  )}
-                  <AppIcon name="chevron-right" style={styles.chevron} />
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-              <AppIcon name="logout" style={styles.logoutIcon} />
-              <Text style={styles.logoutText}>{t('logout')}</Text>
+          <View style={styles.handle} />
+          <View style={styles.headingRow}>
+            <Text accessibilityRole="header" style={styles.title}>{t('menu')}</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('closeMenu')} style={styles.closeButton} onPress={() => handleClose()}>
+              <AppIcon name="x" size={20} color={Colors.brown600} />
             </TouchableOpacity>
           </View>
+          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+            <TouchableOpacity style={styles.profileRow} accessibilityRole="button" accessibilityLabel={t('editProfile')} onPress={() => open('/settings/account')} activeOpacity={0.75}>
+              <Avatar person={user} size={48} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.profileName} numberOfLines={1}>{fullName(user, t('student'))}</Text>
+                {!!user?.email && <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text>}
+                <Text style={styles.profileLink}>{t('editProfile')}</Text>
+              </View>
+              <AppIcon name="chevron-right" size={18} color={Colors.brown600} />
+            </TouchableOpacity>
+            {onShareProfile && (
+              <TouchableOpacity style={styles.shareRow} accessibilityRole="button" onPress={() => handleClose(onShareProfile)} activeOpacity={0.7}>
+                <View style={styles.iconBadge}><AppIcon name="external" size={20} color={Colors.teal} /></View>
+                <Text style={styles.menuLabel}>{t('shareProfile')}</Text>
+                <AppIcon name="chevron-right" size={17} color={Colors.brown600} />
+              </TouchableOpacity>
+            )}
+            {MENU_GROUPS.map((group, groupIndex) => (
+              <View key={groupIndex} style={styles.group}>
+                {group.map((item, index) => (
+                  <TouchableOpacity key={item.key} style={[styles.menuRow, index !== group.length - 1 && styles.rowDivider]} accessibilityRole="button" onPress={() => open(item.route)} activeOpacity={0.65}>
+                    <View style={styles.iconBadge}><AppIcon name={item.icon} size={20} color={Colors.teal} /></View>
+                    <Text style={styles.menuLabel}>{t(item.labelKey)}</Text>
+                    {item.key === 'notifications' && unread > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text></View>}
+                    <AppIcon name="chevron-right" size={17} color={Colors.brown600} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.logoutButton} accessibilityRole="button" onPress={handleLogout} activeOpacity={0.75}>
+            <AppIcon name="logout" size={19} color={Colors.error} />
+            <Text style={styles.logoutText}>{t('logout')}</Text>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     </Modal>
@@ -128,66 +123,27 @@ export default function MenuSheet({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(51,28,8,0.5)',
-  },
-  drawer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-    shadowColor: Colors.brown900,
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: -6, height: 0 },
-    elevation: 12,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 26, color: Colors.brown900, marginBottom: 22,
-  },
-  profileRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18,
-  },
-  avatar: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF',
-    borderWidth: 1, borderColor: Colors.line,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  profileName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900 },
-  profileLink: {
-    fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600,
-    textDecorationLine: 'underline', marginTop: 2,
-  },
-  divider: { height: 1, backgroundColor: Colors.line, marginBottom: 18 },
-  itemsList: { flex: 1 },
-  menuRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 13,
-  },
-  iconBadge: {
-    width: 36, height: 36, borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  menuLabel: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14.5, color: Colors.brown900 },
-  chevron: { fontSize: 17, color: Colors.brown600 },
-  badge: {
-    minWidth: 20, height: 20, borderRadius: 10, backgroundColor: Colors.error,
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5,
-  },
-  badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 10.5, color: '#FFFFFF' },
-  logoutButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.brown900, borderRadius: 14, height: 50, marginBottom: 30,
-    shadowColor: Colors.brown900, shadowOpacity: 0.2, shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 }, elevation: 3,
-  },
-  logoutIcon: { fontSize: 14, color: Colors.mint },
-  logoutText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
+  container: { flex: 1, justifyContent: 'flex-end' },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(51,28,8,0.4)' },
+  sheet: { width: '100%', maxWidth: 560, alignSelf: 'center', backgroundColor: Colors.cream, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 10, overflow: 'hidden' },
+  handle: { width: 40, height: 4, backgroundColor: Colors.line, borderRadius: 2, alignSelf: 'center', marginBottom: 4 },
+  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
+  title: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, color: Colors.brown900 },
+  closeButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
+  scroll: { flexShrink: 1 },
+  content: { paddingHorizontal: 20, paddingBottom: 4, gap: 14 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: Colors.line },
+  profileName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, lineHeight: 23, color: Colors.brown900 },
+  profileEmail: { fontFamily: 'Poppins_400Regular', fontSize: 11, lineHeight: 18, color: Colors.brown600 },
+  profileLink: { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 20, color: Colors.teal, marginTop: 4 },
+  shareRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, padding: 12, backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: Colors.line },
+  group: { backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 12 },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10 },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
+  iconBadge: { width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
+  menuLabel: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 14, lineHeight: 22, color: Colors.brown900 },
+  badge: { minWidth: 22, minHeight: 22, borderRadius: 11, backgroundColor: Colors.brown900, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, color: Colors.mint },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 48, marginHorizontal: 20, marginTop: 12, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line, borderRadius: 14, paddingVertical: 12 },
+  logoutText: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: Colors.error },
 });

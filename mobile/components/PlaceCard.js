@@ -71,6 +71,9 @@ export default function PlaceCard({
         onLongPress={onLongPress}
         delayLongPress={300}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={place.name}
+        accessibilityState={selecting ? { selected } : { expanded }}
       >
         {selecting && (
           <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
@@ -110,9 +113,9 @@ export default function PlaceCard({
           )}
         </View>
 
-        <View style={styles.thumb}>
-          <AppIcon name="pin" style={{ fontSize: 22 }} />
-        </View>
+        {!selecting && <View style={styles.expandIndicator}>
+          <AppIcon name={expanded ? 'chevron-down' : 'chevron-right'} size={20} color={Colors.brown600} />
+        </View>}
       </TouchableOpacity>
 
       {expanded && !selecting && (
@@ -243,13 +246,10 @@ const styles = StyleSheet.create({
   chipDayText: { color: Colors.brown900, fontFamily: 'Poppins_600SemiBold' },
   chipVisited: { backgroundColor: 'rgba(47,111,95,0.12)' },
   chipVisitedText: { color: Colors.teal, fontFamily: 'Poppins_600SemiBold' },
-  thumb: {
-    width: 56, height: 56, borderRadius: 12, backgroundColor: Colors.cream2,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  expandIndicator: { width: 24, alignItems: 'center', justifyContent: 'center' },
 
   details: { marginTop: 16, borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 16 },
-  notesInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, minHeight: 52, paddingVertical: 8, textAlignVertical: 'top' },
+  notesInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, minHeight: 80, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, borderRadius: 12, padding: 12, textAlignVertical: 'top' },
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   actionButton: { minHeight: 44, justifyContent: 'center', backgroundColor: Colors.cream, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   actionText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown900 },

@@ -822,8 +822,10 @@ function TripDetailContent({ id }) {
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={{ paddingBottom: 40 }}
-        stickyHeaderIndices={[2]}
+        stickyHeaderIndices={[3]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={(e) => {
           scrollYRef.current = e.nativeEvent.contentOffset.y;
@@ -874,22 +876,39 @@ function TripDetailContent({ id }) {
                 <AppIcon name="pencil" style={styles.editHint} />
               </TouchableOpacity>
             )}
-            {saving && <ActivityIndicator size="small" color={Colors.brown600} />}
           </View>
+
+          {canEdit ? (
+            <View accessibilityLiveRegion="polite" style={styles.saveStatus}>
+              {persistence.status === 'saving' ? <ActivityIndicator size="small" color={Colors.brown600} /> : (
+                <AppIcon name={persistence.status === 'failed' ? 'warning' : dirty ? 'clock' : 'check'} size={15} color={persistence.status === 'failed' ? Colors.error : Colors.teal} />
+              )}
+              <TouchableOpacity
+                accessibilityRole="button"
+                disabled={persistence.status === 'saving' || (!dirty && persistence.status !== 'failed')}
+                onPress={() => persist(tripRef.current)}
+                hitSlop={10}
+              >
+                <Text style={[styles.saveStatusText, persistence.status === 'failed' && { color: Colors.error }]}>
+                  {t(persistence.status === 'failed' ? 'saveFailedRetry' : persistence.status === 'saving' ? 'savingLabel' : dirty ? 'unsavedLabel' : 'savedLabel')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : <Text style={styles.saveStatusText}>{t('viewOnlyNotice')}</Text>}
 
           <TouchableOpacity disabled={!canEdit} onPress={() => setDatesOpen(true)} style={styles.metaButton} activeOpacity={0.7}>
             <IconLabel name="calendar" textStyle={styles.tripDates}>{trip.startDate || trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : t('setTripDates')}</IconLabel>
-            <AppIcon name="pencil" style={styles.editHint} />
+            {canEdit && <AppIcon name="pencil" style={styles.editHint} />}
           </TouchableOpacity>
 
           <View style={styles.metaRow}>
             <View style={styles.buddiesRow}>
               <IconLabel name="user" textStyle={styles.tripDates}>{t('travelBuddies')}</IconLabel>
-              <TouchableOpacity style={styles.miniCounter} disabled={!canEdit} onPress={() => changeBuddies(-1)} hitSlop={6}>
+              <TouchableOpacity style={[styles.miniCounter, (!canEdit || !trip.travelBuddiesCount) && styles.controlDisabled]} accessibilityLabel={`${t('remove')} ${t('travelBuddies')}`} disabled={!canEdit || !trip.travelBuddiesCount} onPress={() => changeBuddies(-1)} hitSlop={6}>
                 <AppIcon name="minus" style={styles.miniCounterText} />
               </TouchableOpacity>
               <Text style={styles.buddiesValue}>{trip.travelBuddiesCount}</Text>
-              <TouchableOpacity style={styles.miniCounter} disabled={!canEdit} onPress={() => changeBuddies(1)} hitSlop={6}>
+              <TouchableOpacity style={[styles.miniCounter, !canEdit && styles.controlDisabled]} accessibilityLabel={`${t('add')} ${t('travelBuddies')}`} disabled={!canEdit} onPress={() => changeBuddies(1)} hitSlop={6}>
                 <AppIcon name="plus" style={styles.miniCounterText} />
               </TouchableOpacity>
             </View>
@@ -905,22 +924,24 @@ function TripDetailContent({ id }) {
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 20, paddingBottom: 12, gap: 10 }}>
-          {!canEdit && <Text style={styles.emptyTextSmall}>{t('viewOnlyNotice')}</Text>}
-          {canEdit && <TouchableOpacity accessibilityRole="button" disabled={persistence.status === 'saving'} onPress={() => persist(tripRef.current)}>
-            <Text style={[styles.linkAction, persistence.status === 'failed' && { color: Colors.error }]}>{t(persistence.status === 'failed' ? 'saveFailedRetry' : persistence.status === 'saving' ? 'savingLabel' : dirty ? 'unsavedLabel' : 'savedLabel')}</Text>
-          </TouchableOpacity>}
+        <View style={styles.tripActions}>
+
           {!!sectionError && <TouchableOpacity onPress={loadResources}><Text style={{ color: Colors.error }}>{t('sectionLoadFailed')}</Text></TouchableOpacity>}
-          <TouchableOpacity style={styles.newListButtonMinimal} onPress={() => router.push({ pathname: '/tour/[id]', params: { id: String(id) } } as any)}><IconLabel trailing name="star" textStyle={styles.newListButtonMinimalText}>{t('tourDay')}</IconLabel></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" style={styles.tourDayButton} onPress={() => router.push({ pathname: '/tour/[id]', params: { id: String(id) } } as any)}>
+            <IconLabel name="calendar" textStyle={styles.tourDayButtonText}>{t('tourDay')}</IconLabel>
+            <AppIcon name="chevron-right" size={18} color={Colors.brown600} />
+          </TouchableOpacity>
         </View>
 
-        {/* 2: Sticky header — tabs, at day pills kapag nasa Itinerary */}
+        {/* 3: Sticky header — tabs, at day pills kapag nasa Itinerary */}
         <View style={styles.stickyHeader} onLayout={(e) => (stickyHeaderHeightRef.current = e.nativeEvent.layout.height)}>
           <View style={styles.tabBar}>
             {TABS.map((tab) => (
               <TouchableOpacity
                 key={tab.key}
                 style={styles.tabItem}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activeTab === tab.key }}
                 onPress={() => {
                   setActiveTab(tab.key);
                   setExpandedPlaceKey(null);
@@ -941,6 +962,8 @@ function TripDetailContent({ id }) {
               {days.map((day) => (
                 <TouchableOpacity
                   key={day.key}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: activeDayKey === day.key }}
                   style={[styles.dayPill, activeDayKey === day.key && styles.dayPillActive]}
                   onPress={() => scrollToDay(day.key)}
                 >
@@ -951,7 +974,7 @@ function TripDetailContent({ id }) {
           )}
         </View>
 
-        {/* 3: Tab content */}
+        {/* 4: Tab content */}
         <View style={styles.tabContent} onLayout={(e) => (tabContentYRef.current = e.nativeEvent.layout.y)}>
           {activeTab === 'Overview' && (
             <>
@@ -1128,7 +1151,10 @@ function TripDetailContent({ id }) {
                       style={[styles.daySection, dIndex !== 0 && styles.daySectionDivider]}
                       onLayout={(e) => (dayOffsetsRef.current[day.key] = e.nativeEvent.layout.y)}
                     >
-                      <Text style={styles.dayHeading}>{day.label}</Text>
+                      <View style={styles.dayHeader}>
+                        <Text accessibilityRole="header" style={styles.dayHeading}>{day.label}</Text>
+                        <Text style={styles.stopCount}>{stops.length} {t(stops.length === 1 ? 'itineraryStop' : 'itineraryStops')}</Text>
+                      </View>
                       {canEdit && stops.length >= 3 && <TouchableOpacity accessibilityRole="button" disabled={!!optimizing} onPress={() => optimizeDay(day.key)} style={{ paddingVertical: 12 }}><Text style={styles.linkAction}>{t(optimizing === day.key ? 'optimizing' : 'optimizeDay')}</Text></TouchableOpacity>}
 
                       {stays.map((b) => (
@@ -1185,7 +1211,7 @@ function TripDetailContent({ id }) {
                           onChangeText={(text) => setDayInputs((prev) => ({ ...prev, [day.key]: text }))}
                           onSubmitEditing={() => addPlaceToDay(day.key)}
                         />
-                        <TouchableOpacity style={styles.addPlaceButton} onPress={() => addPlaceToDay(day.key)} disabled={saving}>
+                        <TouchableOpacity style={[styles.addPlaceButton, (saving || !(dayInputs[day.key] || '').trim()) && styles.controlDisabled]} accessibilityRole="button" accessibilityLabel={t('addNewPlacePlaceholder')} onPress={() => addPlaceToDay(day.key)} disabled={saving || !(dayInputs[day.key] || '').trim()}>
                           <AppIcon name="plus" style={styles.addPlaceButtonText} />
                         </TouchableOpacity>
                       </View>
@@ -1442,30 +1468,35 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   tripName: { flex: 1, fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900 },
   tripNameInput: { paddingVertical: 2, borderBottomWidth: 1, borderBottomColor: Colors.line },
-  metaButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, alignSelf: 'flex-start' },
+  metaButton: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, minHeight: 44, marginTop: 8, alignSelf: 'flex-start' },
   editHint: { fontSize: 12, color: Colors.brown600 },
   tripDates: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  buddiesRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  buddiesRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   miniCounter: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center' },
   miniCounterText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900 },
   buddiesValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.brown900, minWidth: 14, textAlign: 'center' },
-  crewRow: { flexDirection: 'row', alignItems: 'center' },
+  crewRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
   crewMore: { fontFamily: 'Poppins_600SemiBold', fontSize: 11, color: Colors.brown600, marginLeft: 4 },
 
-  stickyHeader: { backgroundColor: Colors.cream, borderBottomWidth: 1, borderBottomColor: Colors.line },
-  tabBar: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 18 },
-  tabItem: { marginRight: 24, paddingBottom: 12 },
-  tabText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14.5, color: Colors.brown600 },
-  tabTextActive: { color: Colors.brown900 },
-  tabUnderline: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: Colors.brown900 },
+  tripActions: { paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+  saveStatus: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, minHeight: 24 },
+  saveStatusText: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 20, color: Colors.brown600 },
+  tourDayButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line },
+  tourDayButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 22, color: Colors.brown900, flex: 1 },
+  controlDisabled: { opacity: 0.4 },
+  dayHeader: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 16 },
+  stopCount: { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 20, color: Colors.brown600, backgroundColor: Colors.cream2, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  stickyHeader: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.line },
+  tabBar: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 4 },
+  tabItem: { flex: 1, minHeight: 52, paddingHorizontal: 4, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  tabText: { fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 21, color: Colors.brown600, textAlign: 'center' },
+  tabTextActive: { fontFamily: 'Poppins_600SemiBold', color: Colors.teal },
+  tabUnderline: { position: 'absolute', bottom: 0, left: 12, right: 12, height: 3, borderRadius: 2, backgroundColor: Colors.teal },
 
-  dayPillRow: { gap: 10, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
-  dayPill: {
-    backgroundColor: Colors.cream2, borderRadius: 20, paddingHorizontal: 16, height: 36,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  dayPillActive: { backgroundColor: Colors.brown900 },
+  dayPillRow: { gap: 8, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  dayPill: { backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  dayPillActive: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
   dayPillText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
   dayPillTextActive: { color: Colors.mint },
 
@@ -1492,32 +1523,22 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
 
-  daySection: { paddingBottom: 16 },
+  daySection: { paddingBottom: 24 },
   daySectionDivider: { borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 22 },
-  dayHeading: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900, marginBottom: 16 },
+  dayHeading: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900, flexShrink: 1 },
   stayBanner: {
     backgroundColor: Colors.tintSky, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
   },
   stayText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown900 },
-  reorderRow: { flexDirection: 'row', gap: 10, marginTop: 6, justifyContent: 'flex-end' },
+  reorderRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, justifyContent: 'flex-end' },
   reorderButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.cream2 },
   reorderText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown900 },
 
-  addPlaceRow: { flexDirection: 'row', gap: 10, marginBottom: 12, marginTop: 2 },
-  addPlaceInput: {
-    flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,
-    backgroundColor: Colors.cream2, borderRadius: 12, borderWidth: 1, borderColor: Colors.line,
-    paddingHorizontal: 14, paddingVertical: 12,
-  },
-  addPlaceButton: {
-    width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.brown900,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  addPlaceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 12 },
+  addPlaceInput: { flex: 1, minWidth: 0, minHeight: 52, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, backgroundColor: Colors.white, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 14, paddingVertical: 14 },
+  addPlaceButton: { width: 52, height: 52, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
   addPlaceButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.mint },
-  iconSquareButton: {
-    width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.cream2,
-    borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
-  },
+  iconSquareButton: { width: 44, height: 52, borderRadius: 14, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.teal },
   emptyText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600 },
   emptyTextSmall: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: GREY_PLACEHOLDER, paddingVertical: 4, marginBottom: 6 },

@@ -64,18 +64,12 @@ export default function DirectionsConnector({ from, to, destination }) {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingLeft: 14, marginBottom: 10,
-  },
-  modeButton: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: 8, marginBottom: 12 },
+  modeButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, minWidth: 52, minHeight: 44, borderRadius: 12, backgroundColor: Colors.cream2 },
   modeIcon: { fontSize: 14 },
   caret: { fontSize: 10, color: Colors.brown600 },
-  summary: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600 },
-  directionsLink: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown900,
-    textDecorationLine: 'underline',
-  },
+  summary: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 20, color: Colors.brown600, flexShrink: 1 },
+  directionsLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, lineHeight: 20, color: Colors.teal, paddingVertical: 12 },
   dashedLine: {
     flex: 1, height: 1, marginLeft: 4,
     borderWidth: 1, borderStyle: 'dashed', borderRadius: 1, borderColor: Colors.line,

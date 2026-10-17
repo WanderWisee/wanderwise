@@ -2,9 +2,10 @@ import AppIcon, { IconLabel } from '../../components/AppIcon';
 import { Text } from '../../components/Typography';
 import { useState, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Image, Share, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { WEB_URL } from '../../constants/config';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
@@ -20,6 +21,7 @@ import { fullName } from '../../services/userService';
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 export default function ProfileScreen() {
+  const { top: topInset } = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { t, user, refreshUser } = useApp();
@@ -114,24 +116,27 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topInset, backgroundColor: Colors.white }} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.push('/search')} style={styles.menuButton} accessibilityLabel={t('searchForAStudent')}>
             <AppIcon name="search" style={{ fontSize: 15 }} />
           </TouchableOpacity>
-          <View style={{ flex: 1 }} />
+          <Text style={styles.headerTitle}>{t('navProfile')}</Text>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.menuButton} accessibilityLabel={t('menu')}>
             <AppIcon name="menu" style={{ fontSize: 18 }} />
           </TouchableOpacity>
         </View>
 
         <ScrollView
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <View style={styles.identitySection}>
-            <Avatar person={user} size={88} style={{ marginBottom: 12 }} />
+            <LinearGradient pointerEvents="none" colors={['#3a2416', '#5a3a22', '#2f6f5f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.identityCover} />
+            <View style={styles.avatarFrame}><Avatar person={user} size={88} /></View>
 
             <Text style={styles.username}>{user ? fullName(user, t('student')) : ' '}</Text>
             {!!user?.email && <Text style={styles.email}>{user.email}</Text>}
@@ -155,26 +160,15 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.editButton} onPress={() => router.push('/settings/account')}>
-                <IconLabel name="pencil" textStyle={styles.editButtonText}>{t('edit')}</IconLabel>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.shareButton} onPress={shareProfile}>
-                <IconLabel name="external" textStyle={styles.shareButtonText}>{t('share')}</IconLabel>
-              </TouchableOpacity>
-            </View>
+
           </View>
 
-          <View style={styles.divider} />
-
           <View style={styles.tabRow}>
-            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('trips')}>
+            <TouchableOpacity style={[styles.tabButton, activeTab === 'trips' && styles.tabButtonActive]} accessibilityRole="tab" accessibilityState={{ selected: activeTab === 'trips' }} onPress={() => setActiveTab('trips')}>
               <IconLabel name="pin" textStyle={[styles.tabText, activeTab === 'trips' && styles.tabTextActive]}>{capitalize(t('trips'))}</IconLabel>
-              {activeTab === 'trips' && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('journal')}>
+            <TouchableOpacity style={[styles.tabButton, activeTab === 'journal' && styles.tabButtonActive]} accessibilityRole="tab" accessibilityState={{ selected: activeTab === 'journal' }} onPress={() => setActiveTab('journal')}>
               <IconLabel name="book" textStyle={[styles.tabText, activeTab === 'journal' && styles.tabTextActive]}>{t('journal')}</IconLabel>
-              {activeTab === 'journal' && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           </View>
 
@@ -195,8 +189,8 @@ export default function ProfileScreen() {
                 ) : trips.length === 0 ? (
                   <EmptyState icon="suitcase" title={t('noTripsYetPlanOne')} />
                 ) : (
-                  trips.map((trip, index) => (
-                    <View key={trip.id} style={index !== trips.length - 1 ? styles.tripRowDivider : null}>
+                  trips.map((trip) => (
+                    <View key={trip.id} style={styles.tripCard}>
                       <TripListItem
                         trip={trip}
                         onPress={() => router.push(`/trip/${trip.id}`)}
@@ -243,7 +237,7 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
 
-        <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
+        <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} onShareProfile={shareProfile} />
 
         <TripActionsSheet
           visible={!!actionsTrip}
@@ -265,49 +259,44 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, minHeight: 68, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.line },
   menuButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  content: { paddingTop: 0, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
 
-  identitySection: { alignItems: 'center', marginBottom: 24, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: Colors.line },
+  identitySection: { alignItems: 'center', marginBottom: 0, backgroundColor: Colors.white, paddingHorizontal: 20, paddingBottom: 24, paddingTop: 72, overflow: 'hidden' },
+  headerTitle: { flex: 1, textAlign: 'center', fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
+  identityCover: { position: 'absolute', top: 0, left: 0, right: 0, height: 120 },
+  avatarFrame: { padding: 5, backgroundColor: Colors.white, borderRadius: 52, marginBottom: 12 },
+  tabButtonActive: { borderBottomWidth: 3, borderBottomColor: Colors.teal },
   username: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 32, letterSpacing: -0.4, color: Colors.brown900, textAlign: 'center' },
   email: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600, marginTop: 4, textAlign: 'center' },
   bio: { fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 21, color: Colors.brown600, marginTop: 12, textAlign: 'center' },
-  location: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginTop: 4 },
+  location: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 20, color: Colors.brown600, marginTop: 8 },
 
   statsRow: { flexDirection: 'row', alignItems: 'center', width: '100%', paddingVertical: 16, marginVertical: 20, borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.line },
   statItem: { alignItems: 'center', flex: 1, paddingHorizontal: 4 },
-  statValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900 },
+  statValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, lineHeight: 30, color: Colors.brown900 },
   statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, lineHeight: 17, color: Colors.brown600, marginTop: 4, textAlign: 'center' },
   statDivider: { width: 1, height: 28, backgroundColor: Colors.line },
 
-  actionRow: { flexDirection: 'row', gap: 10, width: '100%' },
-  editButton: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
-  editButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
-  shareButton: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 14, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
-  shareButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
 
-  divider: { height: 0 },
 
-  tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.line, marginBottom: 20 },
-  tabButton: { flex: 1, alignItems: 'center', paddingVertical: 14 },
+  tabRow: { flexDirection: 'row', backgroundColor: Colors.white, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: Colors.line, marginBottom: 24 },
+  tabButton: { flex: 1, minHeight: 52, paddingHorizontal: 8, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
   tabText: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown600 },
-  tabTextActive: { fontFamily: 'Poppins_600SemiBold', color: Colors.brown900 },
-  tabUnderline: {
-    position: 'absolute', bottom: -1, height: 2, width: '55%', backgroundColor: Colors.brown900,
-  },
+  tabTextActive: { fontFamily: 'Poppins_600SemiBold', color: Colors.teal },
 
-  tabContent: { paddingHorizontal: 2 },
+  tabContent: { paddingHorizontal: 20 },
   sectionHeader: {
     flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12,
   },
-  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flex: 1 },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flexGrow: 1, flexShrink: 1 },
   addButton: { backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 12, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   addButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
-  tripRowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.line },
+  tripCard: { backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 12, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14, marginTop: 8 },
-  gridCard: { width: '48%', backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
-  gridImage: { width: '100%', height: 120, backgroundColor: Colors.cream2 },
+  gridCard: { width: '48%', backgroundColor: Colors.white, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
+  gridImage: { width: '100%', height: 124, backgroundColor: Colors.cream2 },
   gridTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, lineHeight: 20, color: Colors.brown900, paddingHorizontal: 12, paddingTop: 12 },
-  gridMeta: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.brown600, paddingHorizontal: 10, paddingTop: 4, paddingBottom: 10 },
+  gridMeta: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 12 },
 });

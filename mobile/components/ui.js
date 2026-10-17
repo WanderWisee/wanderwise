@@ -1,7 +1,7 @@
 import AppIcon from './AppIcon';
 import { Text, TextInput } from './Typography';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Svg, { Image as SvgImage } from 'react-native-svg';
 import { Image as RemoteImage } from 'expo-image';
 import { Colors, Fonts, Layout, Radius, cardShadow } from '../constants/theme';
@@ -16,10 +16,10 @@ export function Wordmark() {
   return (
     <View style={styles.wordmarkRow} accessible accessibilityRole="image" accessibilityLabel="WanderWise">
       {/* Frame the artwork within the transparent 3000px source canvases. */}
-      <Svg width={34} height={42} viewBox="795 637 1410 1726" accessible={false}>
+      <Svg width={34} height={42} viewBox="795 637 1410 1726" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })}>
         <SvgImage href={require('../assets/brand/logo.png')} width={3000} height={3000} />
       </Svg>
-      <Svg width={156} height={18} viewBox="617 1425 1758 165" accessible={false}>
+      <Svg width={156} height={18} viewBox="617 1425 1758 165" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })}>
         <SvgImage href={require('../assets/brand/wordmark.png')} width={3000} height={3000} />
       </Svg>
     </View>

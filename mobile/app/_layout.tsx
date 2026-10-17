@@ -11,6 +11,7 @@ import { DialogProvider } from '../context/DialogContext';
 import { notificationRoute } from '../utils/notificationText';
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 300, fade: true });
 
 // Mga screen na puwedeng buksan kahit hindi naka-login.
 const PUBLIC_ROUTES = ['index', 'login', 'signup', 'forgot-password', 'about', 'join'];

@@ -2,7 +2,7 @@ import AppIcon from '../../components/AppIcon';
 import { Text, TextInput } from '../../components/Typography';
 import { useCallback, useMemo, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
@@ -14,6 +14,7 @@ import { Avatar, EmptyState, Wordmark } from '../../components/ui';
 // posts ng LAHAT ng estudyante, naka-grupo kada lugar.
 
 export default function GuidesScreen() {
+  const { top: topInset } = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { t } = useApp();
@@ -95,6 +96,7 @@ export default function GuidesScreen() {
 
   return (
     <View style={styles.screen}>
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topInset, backgroundColor: Colors.white }} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
         <View style={styles.header}>
@@ -119,8 +121,13 @@ export default function GuidesScreen() {
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
-              clearButtonMode="while-editing"
+              accessibilityLabel={t('discoverWhereToGo')}
             />
+            {!!search && (
+              <TouchableOpacity onPress={() => setSearch('')} style={styles.clearButton} accessibilityRole="button" accessibilityLabel={t('clearSearch')}>
+                <AppIcon name="x" size={18} color={Colors.brown600} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {feedError && <Text style={styles.offlineNote}>{t('storiesOffline')}</Text>}
@@ -181,7 +188,7 @@ export default function GuidesScreen() {
             {destinations.map((dest) => (
               <TouchableOpacity
                 key={dest.name}
-                style={[styles.gridCard, !dest.hasGuide && { opacity: 0.75 }]}
+                style={styles.gridCard}
                 onPress={() => openStories(keywordFor(dest.name), dest.name)}
                 activeOpacity={0.85}
               >
@@ -207,11 +214,12 @@ export default function GuidesScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, minHeight: 68, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.line },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center' },
   pageTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 26, lineHeight: 36, letterSpacing: -0.7, color: Colors.brown900, marginBottom: 20 },
   searchWrap: { minHeight: 52, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Colors.line, marginBottom: 28, overflow: 'hidden' },
   searchInput: { fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, minHeight: 52, paddingHorizontal: 12, paddingVertical: 14 },
+  clearButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   offlineNote: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginBottom: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
@@ -225,7 +233,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: Colors.brown900, marginBottom: 8,
   },
   authorsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  authorsText: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
+  authorsText: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600 },
   itineraryButton: { backgroundColor: Colors.brown900, borderRadius: 12, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
@@ -233,5 +241,5 @@ const styles = StyleSheet.create({
   gridImage: { width: '100%', height: 110, backgroundColor: Colors.cream2 },
   gridBody: { padding: 12, minHeight: 82 },
   gridName: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 21, color: Colors.brown900, marginBottom: 8 },
-  noStories: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600 },
+  noStories: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600 },
 });

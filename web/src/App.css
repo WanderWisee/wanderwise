@@ -8636,6 +8636,26 @@ button.ww-builder-dates-edit > span {
   margin: 0 auto 40px;
 }
 
+.ww-lp-about-logo {
+  display: block;
+  width: auto;
+  height: 100px;
+  margin: 20px auto 24px;
+  object-fit: contain;
+}
+
+.ww-lp-about-wordmark {
+  margin: 0 auto 20px;
+  width: min(280px, 100%);
+  line-height: 1;
+}
+
+.ww-lp-about-wordmark img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .ww-lp-about-badge {
   display: inline-grid;
   place-items: center;

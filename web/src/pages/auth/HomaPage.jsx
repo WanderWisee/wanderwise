@@ -133,9 +133,11 @@ export default function HomePage() {
         {/* ---- About Us (same content as the mobile app) ---- */}
         <section id="about" className="ww-lp-section ww-lp-about">
           <div className="ww-lp-about-head">
-            <span className="ww-lp-about-badge" aria-hidden="true"><Icon name="compass" /></span>
             <p className="ww-lp-eyebrow">{t("aboutUs")}</p>
-            <h2 className="ww-lp-h2">WanderWise</h2>
+            <img className="ww-lp-about-logo" src="/assets/brand/logo.png" alt="" />
+            <h2 className="ww-lp-about-wordmark">
+              <img src="/assets/brand/wordmark.png" alt="WanderWise" />
+            </h2>
             <p className="ww-lp-sub">Your travel companion for smarter trips</p>
           </div>
           <div className="ww-lp-about-grid">

@@ -42,7 +42,7 @@ export default function PublicProfilePage() {
   // Same "strip trailing Travel <word>, then reappend Travel Story" trick
   // used in Profile/Guides, so journal titles look consistent everywhere.
   const getDisplayTitle = (title) => {
-    const bare = title.replace(/ Travel \w+$/i, "").trim();
+    const bare = String(title || "").replace(/ Travel \w+$/i, "").trim();
     return `${bare} ${t("travelStorySuffix")}`;
   };
 

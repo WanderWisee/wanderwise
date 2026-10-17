@@ -167,7 +167,7 @@ export default function ProfilePage() {
     },
   ];
 
-  const displayPlaceName = (j) => j.title.replace(/ Travel \w+$/i, "");
+  const displayPlaceName = (j) => String(j.title || "").replace(/ Travel \w+$/i, "");
 
   const placesVisitedCount = new Set(
     trips.map((t) => t.destination).filter(Boolean).map((d) => d.trim().toLowerCase())

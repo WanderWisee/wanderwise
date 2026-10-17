@@ -168,7 +168,16 @@ export default function HotelsPage() {
           checkOut: form.checkOut || null,
         }),
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {
+        // The server answered — show its reason instead of "network error".
+        const d = await resp.json().catch(() => null);
+        setFormError(
+          resp.status === 403
+            ? t("viewOnlyNotice")
+            : d?.error || d?.message || t("tourSaveFailed")
+        );
+        return;
+      }
       const saved = await resp.json();
       setBookings((prev) => [...prev, saved]);
       setForm(emptyForm);

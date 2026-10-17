@@ -106,7 +106,15 @@ export function AppDataProvider({ children }) {
     });
 
     if (!resp.ok) {
-      throw new Error("Failed to save journal entry");
+      // Pass the server's reason along ({error}, or plain text).
+      const text = await resp.text().catch(() => "");
+      let d = null;
+      try {
+        d = JSON.parse(text);
+      } catch {
+        d = { error: text };
+      }
+      throw new Error(d?.error || "");
     }
 
     const saved = await resp.json();
@@ -150,13 +158,11 @@ export function AppDataProvider({ children }) {
     })
       .then(async (resp) => {
         if (!resp.ok) {
-          // An admin deactivated this account: log it out.
+          // Expired token or deactivated account: log it out so the app
+          // goes back to the login page.
           if (resp.status === 401) {
-            const body = await resp.json().catch(() => null);
-            if (body?.error === "account_inactive") {
-              localStorage.removeItem("wanderwise_token");
-              notifyAuthChanged();
-            }
+            localStorage.removeItem("wanderwise_token");
+            notifyAuthChanged();
           }
           throw new Error("Failed to load profile");
         }

@@ -1517,33 +1517,43 @@ export default function TripPlanBuilderPage() {
     }
     setDayNotice((prev) => ({ ...prev, [dayIndex]: null }));
 
-    let createdPlace = null;
-
-    applyChange((prev) => {
-      const lower = value.toLowerCase();
-      let existing = prev.places.find((p) => p.name.trim().toLowerCase() === lower);
+    // Finds a place with this name in "Where to go" or a custom section.
+    const findByName = (state) => {
+      let existing = state.places.find((p) => p.name.trim().toLowerCase() === lowerValue);
       if (!existing) {
-        for (const s of prev.customSections) {
-          existing = s.places.find((p) => p.name.trim().toLowerCase() === lower);
+        for (const s of state.customSections) {
+          existing = s.places.find((p) => p.name.trim().toLowerCase() === lowerValue);
           if (existing) break;
         }
       }
+      return existing;
+    };
 
-      let updatedState = prev;
-      let placeId;
-      if (existing) {
-        placeId = existing.id;
-      } else {
-        const newPlace = {
+    // Build the new place here (not inside the state updater) so it can be
+    // geocoded afterwards — same as addPlace.
+    const newPlace = findByName(tripState)
+      ? null
+      : {
           id: nextPlaceId++,
           number: nextNumber++,
           name: value,
           visited: false,
           geocodeStatus: "pending",
         };
-        createdPlace = newPlace;
+
+    applyChange((prev) => {
+      // Re-check on the newest state, for very fast repeated adds.
+      const existing = findByName(prev);
+
+      let updatedState = prev;
+      let placeId;
+      if (existing) {
+        placeId = existing.id;
+      } else if (newPlace) {
         updatedState = { ...prev, places: [...prev.places, newPlace] };
         placeId = newPlace.id;
+      } else {
+        return prev;
       }
 
       return {
@@ -1555,7 +1565,8 @@ export default function TripPlanBuilderPage() {
         }),
       };
     });
-    if (createdPlace) geocodePlace(createdPlace);
+    // Only when it was really added (view-only crew can't change the trip).
+    if (newPlace && canEditRef.current) geocodePlace(newPlace);
     setDayInputs((prev) => ({ ...prev, [dayIndex]: "" }));
   };
 

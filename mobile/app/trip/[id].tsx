@@ -855,7 +855,9 @@ function TripDetailContent({ id }) {
             {editingName ? (
               <TextInput
                 style={[styles.tripName, styles.tripNameInput]}
-                value={trip.tripName || defaultTripName}
+                value={trip.tripName ?? ''}
+                placeholder={defaultTripName}
+                placeholderTextColor={GREY_PLACEHOLDER}
                 onChangeText={(text) => setTrip({ ...trip, tripName: text })}
                 onBlur={finishRename}
                 onSubmitEditing={finishRename}
@@ -1035,24 +1037,26 @@ function TripDetailContent({ id }) {
                   {section.places.length === 0 && <Text style={styles.emptyTextSmall}>{t('noPlacesInListYet')}</Text>}
 
                   {section.places.map((place, pIndex) => {
+                    // Kapag galing sa trash ng isang list, iyon lang ang mapipili.
+                    const selectable = isSelecting && (!selectingSectionKey || selectingSectionKey === section.key);
                     const isSelected = selectedPlaceKeys.includes(place.key);
                     const isExpanded = expandedPlaceKey === place.key;
                     return (
                       <View key={place.key} style={{ marginBottom: 10 }}>
                         <SwipeToDelete
                           label={t('dialogDelete')}
-                          disabled={!canEdit || isSelecting || isExpanded}
+                          disabled={!canEdit || selectable || isExpanded}
                           onDelete={() => deletePlace(section.key, place.key)}
                         >
                           <PlaceCard
                             place={place}
                             index={pIndex}
                             expanded={isExpanded}
-                            selecting={isSelecting}
+                            selecting={selectable}
                             selected={isSelected}
                             dayLabel={dayLabelFor(place.itineraryDate)}
                             onPress={() => {
-                              if (isSelecting) togglePlaceSelected(place.key);
+                              if (selectable) togglePlaceSelected(place.key);
                               else setExpandedPlaceKey(isExpanded ? null : place.key);
                             }}
                             onLongPress={() => {
@@ -1313,7 +1317,7 @@ function TripDetailContent({ id }) {
                 {days.map((day) => {
                   const expected = allPlaces.filter((p) => p.itineraryDate === day.key).reduce((sum, p) => sum + (p.costs || []).reduce((n, c) => n + Number(c.amount || 0), 0), 0);
                   const actual = expenses.filter((e) => String(e.expenseDate || '').slice(0, 10) === day.key).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-                  return <View key={day.key} style={styles.breakdownRow}><Text style={styles.breakdownLabel}>{formatDate(day.key, 'short')}</Text><Text style={styles.breakdownAmount}>{formatPeso(actual + expected)}</Text><Text style={styles.emptyTextSmall}>{t('expensesHeader')}: {formatPeso(actual)} ? {t('expectedCost')}: {formatPeso(expected)}</Text></View>;
+                  return <View key={day.key} style={styles.breakdownRow}><Text style={styles.breakdownLabel}>{formatDate(day.key, 'short')}</Text><Text style={styles.breakdownAmount}>{formatPeso(actual + expected)}</Text><Text style={styles.emptyTextSmall}>{t('expensesHeader')}: {formatPeso(actual)} · {t('expectedCost')}: {formatPeso(expected)}</Text></View>;
                 })}
               </View>
 

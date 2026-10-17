@@ -30,7 +30,13 @@ export async function consumePendingJoin() {
       return data.tripId;
     }
     return null;
-  } catch {
+  } catch (e) {
+    // 4xx = sira o expired na link: burahin para hindi na subukan ulit
+    // tuwing magla-login. Network/5xx lang ang 'retry'.
+    if (e?.status >= 400 && e?.status < 500) {
+      await AsyncStorage.removeItem(STORAGE_KEYS.pendingJoin).catch(() => {});
+      return null;
+    }
     return 'retry';
   }
 }

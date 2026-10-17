@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
 
@@ -42,6 +43,7 @@ export default function JournalViewPage() {
   };
   const { journalEntries } = useAppData();
   const { t, language } = useLanguage();
+  const { alert } = useDialog();
 
   const timeAgo = (dateString) => {
     const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
@@ -108,7 +110,7 @@ export default function JournalViewPage() {
     fetch(`/api/journal/${id}/view`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-    }).catch((err) => console.warn("Failed to mark journal as viewed:", err));
+    }).catch(() => {}); // best-effort — failures are ignored
   }, [id]);
 
   const handlePostComment = async () => {
@@ -130,9 +132,19 @@ export default function JournalViewPage() {
         const saved = await resp.json();
         setComments((prev) => [...prev, saved]);
         setNewComment("");
+      } else {
+        // Show the server's reason ({error}, or plain text from older endpoints).
+        const raw = await resp.text().catch(() => "");
+        let msg = raw;
+        try {
+          const d = JSON.parse(raw);
+          msg = d?.error || d?.message || "";
+        } catch {}
+        alert(msg || t("commentPostFailed"));
       }
     } catch (err) {
       console.warn("Failed to post comment:", err);
+      alert(t("networkError"));
     } finally {
       setPosting(false);
     }

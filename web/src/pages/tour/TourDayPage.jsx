@@ -214,6 +214,9 @@ export default function TourDayPage() {
   }, [loadTour]);
 
   const canManage = !!tour?.canManage;
+  // Attendance/check-in only on the day itself; past days are view only.
+  const attendanceStatus = tour?.attendanceStatus || "open";
+  const attendanceOpen = attendanceStatus === "open";
   const meeting = tour?.meetingPoint && tour.meetingPoint.latitude != null ? tour.meetingPoint : null;
   const roster = tour?.roster || [];
   const me = roster.find((r) => r.isMe);
@@ -305,7 +308,11 @@ export default function TourDayPage() {
       });
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
-        alert(data?.error === "outside_geofence" ? t("checkInOutside") : t("checkInFailed"));
+        alert(
+          data?.error === "outside_geofence" ? t("checkInOutside")
+            : data?.error === "attendance_closed" ? t("attendanceClosedNote")
+            : t("checkInFailed")
+        );
         return;
       }
       loadTour(true);
@@ -319,7 +326,7 @@ export default function TourDayPage() {
   // ---- 3. Attendance (managers tick by hand) ----
   const [savingAttendanceFor, setSavingAttendanceFor] = useState(null);
   const toggleAttendance = async (person) => {
-    if (!canManage || savingAttendanceFor) return;
+    if (!canManage || !attendanceOpen || savingAttendanceFor) return;
     setSavingAttendanceFor(person.userId);
     // Show the change right away, then save.
     setTour((prev) => ({
@@ -635,7 +642,12 @@ export default function TourDayPage() {
                   </div>
 
                   {/* My check-in */}
-                  {meeting && !editingMeeting && tour.canCheckIn !== false && (
+                  {meeting && !editingMeeting && tour.canCheckIn !== false && !attendanceOpen && (
+                    <p className="ww-tour-hint">
+                      <Icon name="calendar" /> {attendanceStatus === "closed" ? t("attendanceClosedNote") : t("attendanceUpcomingNote")}
+                    </p>
+                  )}
+                  {meeting && !editingMeeting && tour.canCheckIn !== false && attendanceOpen && (
                     <div className="ww-tour-checkin">
                       {me?.present && (
                         <p className="ww-tour-checked">
@@ -695,13 +707,18 @@ export default function TourDayPage() {
                       {presentCount} / {roster.length} {t("presentCount")}
                     </span>
                   </div>
+                  {!attendanceOpen && (
+                    <p className="ww-tour-hint">
+                      {attendanceStatus === "closed" ? t("attendanceClosedNote") : t("attendanceUpcomingNote")}
+                    </p>
+                  )}
                   <div className="ww-tour-roster">
                     {roster.map((r) => (
                       <div className={`ww-tour-person ${r.present ? "present" : ""}`} key={r.userId}>
                         <input
                           type="checkbox"
                           checked={r.present}
-                          disabled={!canManage || savingAttendanceFor === r.userId}
+                          disabled={!canManage || !attendanceOpen || savingAttendanceFor === r.userId}
                           onChange={() => toggleAttendance(r)}
                           aria-label={fullName(r)}
                         />

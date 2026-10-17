@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
         setError(data?.error || t("resetErrFailed"));
         return;
       }
-      navigate("/login");
+      navigate("/login", { state: { notice: t("passwordUpdatedLogin") } });
     } catch (err) {
       setError(t("networkError"));
     } finally {

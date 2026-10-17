@@ -93,6 +93,7 @@ namespace WanderWise.Controllers
 
             // Category is part of the cache key so "Boracay" tourist spots and
             // "Boracay" food spots are cached separately.
+            // (Old saved lists may still contain hotels; SavedJson removes them.)
             var cacheKey = destination.Trim().ToLowerInvariant() + "|" + categoryKey;
 
             // Serve from cache if we have a recent successful result
@@ -106,7 +107,7 @@ namespace WanderWise.Controllers
             var saved = await ReadDbCacheAsync(cacheKey);
             if (saved != null && DateTime.UtcNow - saved.Value.CachedAt < DbCacheDuration)
             {
-                return Content(saved.Value.Json, "application/json");
+                return Content(SavedJson(saved.Value.Json, categoryKey), "application/json");
             }
 
             // The whole lookup gets at most 30 seconds, so the page never
@@ -126,7 +127,7 @@ namespace WanderWise.Controllers
             {
                 _logger.LogWarning("Places: couldn't find '{Destination}' ({Status}) {Error}", destination, geocodeStatus, geocodeError);
                 // An older saved list is better than nothing.
-                if (saved != null) return Content(saved.Value.Json, "application/json");
+                if (saved != null) return Content(SavedJson(saved.Value.Json, categoryKey), "application/json");
                 // Degrade gracefully instead of breaking the UI
                 return Ok(new
                 {
@@ -160,9 +161,9 @@ namespace WanderWise.Controllers
                     "(around:6000,{0},{1})", geo.Lat, geo.Lon);
             }
 
-            // Default = tourist spots (original behaviour). With a category,
-            // search that category's OSM tags inside the same area instead.
-            var tagFilters = hasCategory ? categoryDef.Filters : new[] { @"[""tourism""]" };
+            // Default = tourist spots (sightseeing only, no hotels/motels). With a
+            // category, search that category's OSM tags inside the same area instead.
+            var tagFilters = hasCategory ? categoryDef.Filters : new[] { @"[""tourism""~""^(attraction|museum|viewpoint|gallery|zoo|theme_park|aquarium|artwork|picnic_site)$""]" };
             var typeKey = hasCategory ? categoryDef.TypeKey : "tourism";
             var selectors = string.Concat(tagFilters.Select(f =>
                 $"\n                  node{f}{areaFilter};\n                  way{f}{areaFilter};"));
@@ -185,9 +186,9 @@ namespace WanderWise.Controllers
             // for that kind of place inside the destination instead. Fewer
             // results, but far better than an empty list.
             var source = "overpass";
-            if (places.Count == 0 && overpassError != null && !ct.IsCancellationRequested)
+            if (places.Count == 0 && !ct.IsCancellationRequested)
             {
-                var backup = await NominatimPlacesAsync(client, geo, categoryKey, ct);
+                var backup = await NominatimPlacesAsync(client, geo, destination, categoryKey, ct);
                 if (backup.Count > 0)
                 {
                     places = backup;
@@ -222,7 +223,7 @@ namespace WanderWise.Controllers
             {
                 // The servers are down right now: show the last good list.
                 _logger.LogInformation("Places: servers failed for '{Destination}', using saved list from {CachedAt}", destination, saved.Value.CachedAt);
-                return Content(saved.Value.Json, "application/json");
+                return Content(SavedJson(saved.Value.Json, categoryKey), "application/json");
             }
 
             return Ok(result);
@@ -556,13 +557,42 @@ namespace WanderWise.Controllers
             }
         }
 
+        // Lists saved before the "no hotels in Where to go" change can still
+        // contain hotels/motels. For "Where to go" (no category) take those
+        // out, unless nothing else would be left.
+        private static readonly HashSet<string> LodgingTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "hotel", "motel", "guest_house", "hostel", "apartment", "chalet", "camp_site", "caravan_site",
+        };
+
+        private static string SavedJson(string json, string categoryKey)
+        {
+            if (categoryKey.Length > 0) return json;
+            try
+            {
+                var root = System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject;
+                if (root?["places"] is not System.Text.Json.Nodes.JsonArray list) return json;
+                var keep = list
+                    .Where(p => !LodgingTypes.Contains(p?["type"]?.GetValue<string>() ?? ""))
+                    .Select(p => p!.DeepClone())
+                    .ToList();
+                if (keep.Count == 0 || keep.Count == list.Count) return json;
+                root["places"] = new System.Text.Json.Nodes.JsonArray(keep.ToArray());
+                return root.ToJsonString();
+            }
+            catch
+            {
+                return json;
+            }
+        }
+
         // ---------------- Backup: Nominatim place search ----------------
 
         // Nominatim "special phrases" for each category. With a bounded
         // viewbox, q=[restaurant] returns restaurants inside that box.
         private static readonly Dictionary<string, string[]> NominatimKeywords = new()
         {
-            [""] = new[] { "attraction", "museum", "park", "church", "monument" },
+            [""] = new[] { "tourist attraction", "museum", "park", "church", "monument" },
             ["food"] = new[] { "restaurant", "cafe", "fast food" },
             ["hotel"] = new[] { "hotel", "resort" },
             ["shopping"] = new[] { "mall", "supermarket", "market" },
@@ -571,7 +601,7 @@ namespace WanderWise.Controllers
             ["heritage"] = new[] { "church", "museum", "monument" },
         };
 
-        private async Task<List<object>> NominatimPlacesAsync(HttpClient client, GeoPoint geo, string categoryKey, CancellationToken ct)
+        private async Task<List<object>> NominatimPlacesAsync(HttpClient client, GeoPoint geo, string destination, string categoryKey, CancellationToken ct)
         {
             var places = new List<object>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -609,8 +639,10 @@ namespace WanderWise.Controllers
 
                     try
                     {
-                        var url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&bounded=1&countrycodes=ph" +
-                                  $"&viewbox={viewbox}&q={Uri.EscapeDataString("[" + keyword + "]")}";
+                        // "restaurant in Lucena City" works far better than the
+                        // old "[restaurant]" + bounded box (that often found nothing).
+                        var url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&countrycodes=ph" +
+                                  $"&viewbox={viewbox}&q={Uri.EscapeDataString(keyword + " in " + destination)}";
                         using var response = await client.GetAsync(url, ct);
                         if (!response.IsSuccessStatusCode)
                         {

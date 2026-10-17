@@ -44,7 +44,11 @@ function JoinContent({ onRetry }) {
           router.replace(`/trip/${data.tripId}`);
         } else setError(t('inviteLinkInvalid'));
       })
-      .catch((e) => alive && setError(e.status === 404 ? t('tripNotFoundOrLinkInvalid') : e.message));
+      .catch((e) => {
+        // Sira o expired na link (4xx): huwag nang subukan ulit pagkatapos mag-login.
+        if (e?.status >= 400 && e?.status < 500) void AsyncStorage.removeItem(STORAGE_KEYS.pendingJoin).catch(() => {});
+        if (alive) setError(e.status === 404 ? t('tripNotFoundOrLinkInvalid') : e.message);
+      });
     return () => {
       alive = false;
     };

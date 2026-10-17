@@ -61,21 +61,32 @@ public class AuthController : ControllerBase
 
         AttemptGuard.Reset($"otp:register:{schoolEmail.ToLowerInvariant()}");
         var code = GenerateCode();
-        _db.OtpCodes.Add(new OtpCode
+        var otp = new OtpCode
         {
             Email = schoolEmail,
             Purpose = "register",
             CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
             ExpiresAt = DateTime.UtcNow.AddMinutes(10),
             CreatedAt = DateTime.UtcNow,
-        });
+        };
+        _db.OtpCodes.Add(otp);
         await _db.SaveChangesAsync();
 
         // The code goes to the SCHOOL email: only the real owner of that
         // Outlook mailbox can read it, so nobody can sign up with someone
         // else's student number/email. The personal email is kept only
         // for account recovery (forgot password).
-        await _email.SendOtpEmailAsync(schoolEmail, code, "register");
+        try
+        {
+            await _email.SendOtpEmailAsync(schoolEmail, code, "register");
+        }
+        catch (Exception)
+        {
+            // Email failed: drop the code so the 60s cooldown doesn't block a retry.
+            _db.OtpCodes.Remove(otp);
+            await _db.SaveChangesAsync();
+            return StatusCode(502, new { error = "We couldn't send the code right now. Please try again in a moment." });
+        }
 
         return Ok(new { message = "Verification code sent to your school email. Check your Junk folder too." });
     }
@@ -173,21 +184,32 @@ public class AuthController : ControllerBase
 
         AttemptGuard.Reset($"otp:register_teacher:{schoolEmail.ToLowerInvariant()}");
         var code = GenerateCode();
-        _db.OtpCodes.Add(new OtpCode
+        var otp = new OtpCode
         {
             Email = schoolEmail,
             Purpose = "register_teacher",
             CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
             ExpiresAt = DateTime.UtcNow.AddMinutes(10),
             CreatedAt = DateTime.UtcNow,
-        });
+        };
+        _db.OtpCodes.Add(otp);
         await _db.SaveChangesAsync();
 
         // The code goes to the SCHOOL email: only the real owner of that
         // Outlook mailbox can read it, so nobody can sign up with someone
         // else's student number/email. The personal email is kept only
         // for account recovery (forgot password).
-        await _email.SendOtpEmailAsync(schoolEmail, code, "register");
+        try
+        {
+            await _email.SendOtpEmailAsync(schoolEmail, code, "register");
+        }
+        catch (Exception)
+        {
+            // Email failed: drop the code so the 60s cooldown doesn't block a retry.
+            _db.OtpCodes.Remove(otp);
+            await _db.SaveChangesAsync();
+            return StatusCode(502, new { error = "We couldn't send the code right now. Please try again in a moment." });
+        }
 
         return Ok(new { message = "Verification code sent to your school email. Check your Junk folder too." });
     }
@@ -410,17 +432,28 @@ public class AuthController : ControllerBase
 
         AttemptGuard.Reset($"otp:reset:{schoolEmail.ToLowerInvariant()}");
         var code = GenerateCode();
-        _db.OtpCodes.Add(new OtpCode
+        var otp = new OtpCode
         {
             Email = schoolEmail,
             Purpose = "reset",
             CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
             ExpiresAt = DateTime.UtcNow.AddMinutes(10),
             CreatedAt = DateTime.UtcNow,
-        });
+        };
+        _db.OtpCodes.Add(otp);
         await _db.SaveChangesAsync();
 
-        await _email.SendOtpEmailAsync(user.RecoveryEmail, code, "reset");
+        try
+        {
+            await _email.SendOtpEmailAsync(user.RecoveryEmail, code, "reset");
+        }
+        catch (Exception)
+        {
+            // Email failed: drop the code so the 60s cooldown doesn't block a retry.
+            _db.OtpCodes.Remove(otp);
+            await _db.SaveChangesAsync();
+            return StatusCode(502, new { error = "We couldn't send the code right now. Please try again in a moment." });
+        }
 
         return Ok(new { message = "A verification code was sent to your recovery email." });
     }

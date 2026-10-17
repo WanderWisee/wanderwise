@@ -213,6 +213,14 @@ public class JournalController : ControllerBase
         return NoContent();
     }
 
+    // Journal views aren't tracked (no table for it); this just accepts the
+    // call so the app doesn't get a 404.
+    [HttpPost("{id:int}/view")]
+    public IActionResult RecordView(int id)
+    {
+        return NoContent();
+    }
+
     // --- Comments: on the whole journal entry, not on a specific place ---
 
     [HttpGet("{id:int}/comments")]
@@ -240,9 +248,9 @@ public class JournalController : ControllerBase
     public async Task<IActionResult> AddComment(int id, [FromBody] CreateCommentRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Text))
-            return BadRequest("Comment can't be empty.");
+            return BadRequest(new { error = "Comment can't be empty." });
         if (request.Text.Trim().Length > MaxComment)
-            return BadRequest($"Comments must be {MaxComment} characters or less.");
+            return BadRequest(new { error = $"Comments must be {MaxComment} characters or less." });
 
         var entry = await _db.JournalEntries.FirstOrDefaultAsync(j => j.Id == id);
         if (entry is null) return NotFound();

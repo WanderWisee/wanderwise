@@ -202,7 +202,7 @@ function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = nu
 
               </>}
               {/* Crew */}
-              {!!crewError && <TouchableOpacity onPress={loadCrew}><Text style={styles.removeText}>{crewError} ? {t('tryAgain')}</Text></TouchableOpacity>}
+              {!!crewError && <TouchableOpacity onPress={loadCrew}><Text style={styles.removeText}>{crewError} · {t('tryAgain')}</Text></TouchableOpacity>}
               <Text style={[styles.label, { marginTop: 18 }]}>{t('crewOnThisTrip')}</Text>
               {crew.length <= 1 && <Text style={styles.muted}>{t('noCrewYet')}</Text>}
               {crew.map((m) => (

@@ -12,6 +12,7 @@ export default function TripPlanningPage() {
   const [endDate, setEndDate] = useState("");
   const [people, setPeople] = useState(0);
   const [destinationOptions, setDestinationOptions] = useState([]);
+  const [destinationError, setDestinationError] = useState("");
 
   const navigate = useNavigate();
 
@@ -32,23 +33,26 @@ export default function TripPlanningPage() {
 
   const handleLetsGo = async () => {
     const trimmed = destination.trim();
-    if (trimmed) {
-      try {
-        // If it's not in the list yet, this adds it — so the database
-        // keeps growing with whatever people actually search for.
-        await fetch("/api/destinations/ensure", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: trimmed }),
-        });
-      } catch (err) {
-        // Non-blocking — still let the user continue planning even if
-        // this couldn't be saved.
-      }
+    // A trip needs a destination — stay here until one is entered.
+    if (!trimmed) {
+      setDestinationError(t("destinationRequired"));
+      return;
+    }
+    try {
+      // If it's not in the list yet, this adds it — so the database
+      // keeps growing with whatever people actually search for.
+      await fetch("/api/destinations/ensure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+    } catch (err) {
+      // Non-blocking — still let the user continue planning even if
+      // this couldn't be saved.
     }
 
     navigate("/trip-plan", {
-      state: { destination, startDate, endDate, people },
+      state: { destination: trimmed, startDate, endDate, people },
     });
   };
 
@@ -90,9 +94,17 @@ export default function TripPlanningPage() {
             className="ww-planning-input"
             placeholder={t("whereAreYouHeaded")}
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={(e) => {
+              setDestination(e.target.value);
+              if (destinationError) setDestinationError("");
+            }}
             list="destination-options"
           />
+          {destinationError && (
+            <div role="alert" style={{ color: "#b42318", fontSize: 14, marginTop: 6 }}>
+              {destinationError}
+            </div>
+          )}
           <datalist id="destination-options">
             {destinationOptions.map((d) => (
               <option key={d.id} value={d.name} />

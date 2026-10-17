@@ -75,13 +75,25 @@ export default function TourScreen() {
       const code = e.data?.error;
       setActionError(code === 'outside_geofence'
         ? `${t('meetingPoint')}: ${e.data.distanceMeters} m / ${e.data.radiusMeters} m. ${t('checkInHint')}`
+        : code === 'no_meeting_point' ? t('meetingMissing')
+        : code === 'attendance_closed' ? t('attendanceClosedNote')
+        : code === 'photo_required' ? t('tourPhotoRequired')
+        : code === 'photo_too_large' ? t('tourPhotoTooLarge')
+        : e.status === 403 ? t('tourNotAllowed')
         : e.message);
     } finally { busyRef.current = false; setBusy(false); }
   }
   async function position() {
     const permission = await Location.requestForegroundPermissionsAsync();
     if (!permission.granted) { setPermissionError(true); throw new Error(t('locationNeeded')); }
-    return (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })).coords;
+    // Puwedeng matagal ang GPS: 15s lang, tapos huling alam na lokasyon.
+    let timer: any;
+    const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 15000); });
+    let pos: any = await Promise.race([Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null), timeout]);
+    clearTimeout(timer);
+    if (!pos) pos = await Location.getLastKnownPositionAsync().catch(() => null);
+    if (!pos) throw new Error(t('locationUnavailable'));
+    return pos.coords;
   }
   async function takeCheckIn() {
     if (!(await ImagePicker.requestCameraPermissionsAsync()).granted) { setPermissionError(true); throw new Error(t('cameraNeeded')); }
@@ -99,6 +111,10 @@ export default function TourScreen() {
     await run(() => kind === 'activity' ? deleteActivity(id, item) : deleteAnnouncement(id, item));
   }
   const meeting = data?.meetingPoint;
+  // Sa mismong araw lang puwede ang attendance/check-in; view-only ang nakaraan.
+  const attendanceStatus = data?.attendanceStatus || 'open';
+  const attendanceOpen = attendanceStatus === 'open';
+  const attendanceNote = attendanceStatus === 'closed' ? t('attendanceClosedNote') : t('attendanceUpcomingNote');
   const canManage = !!data?.canManage;
   const days = tripDays(trip);
   const myAttendance = data?.roster?.find((person: any) => person.isMe);
@@ -119,7 +135,9 @@ export default function TourScreen() {
               <OsmMap markers={[{ ...meeting, label: meeting.name }]} height={180} />
               <Text style={styles.text}>{t('checkInHint')}</Text>
               {myAttendance?.checkedInAt && <IconLabel name="check" textStyle={styles.text}>{t('checkedIn')} · {timeAgo(myAttendance.checkedInAt)}</IconLabel>}
-              {data.canCheckIn && <PrimaryButton label={t('checkInNow')} loading={busy} onPress={() => run(takeCheckIn)} />}
+              {data.canCheckIn && (attendanceOpen
+                ? <PrimaryButton label={t('checkInNow')} loading={busy} onPress={() => run(takeCheckIn)} />
+                : <Text style={styles.text}>{attendanceNote}</Text>)}
             </> : <Text style={styles.text}>{t('meetingMissing')}</Text>}
             {canManage && <>
               <Field label={t('meetingName')} value={meetingName} onChangeText={setMeetingName} maxLength={200} />
@@ -134,9 +152,10 @@ export default function TourScreen() {
             </>}
           </StudentCard>
           <StudentCard title={t('attendance')}>
+            {!attendanceOpen && <Text style={styles.text}>{attendanceNote}</Text>}
             {(data.roster || []).map((person: any) => <View key={person.userId} style={{ gap: 8 }}>
               <View style={styles.row}><Avatar person={person} size={36} /><View style={{ flex: 1 }}><Text style={styles.text}>{fullName(person)}</Text><Text style={styles.text}>{person.present ? t('present') : t('absent')}</Text></View>
-                {canManage && <Switch accessibilityLabel={`${t('attendance')}: ${fullName(person)}`} value={person.present} disabled={busy} trackColor={{ true: Colors.brown900 }} onValueChange={(present) => run(() => markAttendance(id, { date, userId: person.userId, present }))} />}
+                {canManage && <Switch accessibilityLabel={`${t('attendance')}: ${fullName(person)}`} value={person.present} disabled={busy || !attendanceOpen} trackColor={{ true: Colors.brown900 }} onValueChange={(present) => run(() => markAttendance(id, { date, userId: person.userId, present }))} />}
               </View>
               {!!person.photo && <Image source={{ uri: person.photo }} accessibilityLabel={t('checkedIn')} style={{ height: 140, borderRadius: 12 }} />}
             </View>)}

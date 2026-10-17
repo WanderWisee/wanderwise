@@ -13,6 +13,11 @@ import { useApp } from '../context/AppContext';
 import { useDialog } from '../context/DialogContext';
 import { createJournalEntry } from '../services/journalService';
 
+// Draft na walang base64 (masyadong malaki para sa AsyncStorage); photoUri lang ang itatabi.
+function draftJson(place, entries, hotels, hotelName, hotelDesc) {
+  return JSON.stringify({ place, entries: entries.map(({ photoData, ...rest }) => rest), hotels, hotelName, hotelDesc });
+}
+
 function makeEmptyEntry() {
   return {
     id: `entry_${Date.now()}_${Math.random()}`,
@@ -45,7 +50,7 @@ export default function NewPostScreen() {
   const postingRef = useRef(false);
   const navigation = useNavigation();
   const draftKey = `wanderwise_journal_draft_${user?.userId}`;
-  const hasContent = entries.some((e) => e.photoData || e.description || e.placeName) || !!place.trim() || hotels.length > 0 || !!hotelName.trim();
+  const hasContent = entries.some((e) => e.photoData || e.photoUri || e.description || e.placeName) || !!place.trim() || hotels.length > 0 || !!hotelName.trim();
   const restoredNotice = useEffectEvent(() => toast(t('draftRestored')));
   useEffect(() => {
     if (!user?.userId) return;
@@ -55,7 +60,7 @@ export default function NewPostScreen() {
       try {
         const draft = JSON.parse(raw);
         if (!Array.isArray(draft.entries) || !draft.entries.length) return;
-        setPlace(draft.place || ''); setEntries(draft.entries); setHotels(draft.hotels || []);
+        setPlace(draft.place || ''); setEntries(draft.entries.map((e) => ({ ...makeEmptyEntry(), ...e, photoData: e.photoData || null }))); setHotels(draft.hotels || []);
         setHotelName(draft.hotelName || ''); setHotelDesc(draft.hotelDesc || '');
         restoredNotice();
       } catch { /* Ignore an invalid draft. */ }
@@ -65,7 +70,7 @@ export default function NewPostScreen() {
   useEffect(() => {
     if (!draftReady || leaving) return;
     const timer = setTimeout(() => {
-      AsyncStorage.setItem(draftKey, JSON.stringify({ place, entries, hotels, hotelName, hotelDesc })).then(() => setDraftError('')).catch(() => setDraftError(t('draftSaveFailed')));
+      AsyncStorage.setItem(draftKey, draftJson(place, entries, hotels, hotelName, hotelDesc)).then(() => setDraftError('')).catch(() => setDraftError(t('draftSaveFailed')));
     }, 400);
     return () => clearTimeout(timer);
   }, [draftReady, leaving, draftKey, place, entries, hotels, hotelName, hotelDesc, t]);
@@ -73,8 +78,9 @@ export default function NewPostScreen() {
     if (postingRef.current) return;
     void confirm({ title: t('leaveDraft'), message: t('draftKept'), confirmLabel: t('leave'), cancelLabel: t('keepEditing') }).then(async (ok) => {
       if (!ok) return;
-      try { await AsyncStorage.setItem(draftKey, JSON.stringify({ place, entries, hotels, hotelName, hotelDesc })); }
-      catch { await alert(t('draftSaveFailed')); return; }
+      // Kahit hindi ma-save ang draft, tuloy pa rin ang pag-alis.
+      try { await AsyncStorage.setItem(draftKey, draftJson(place, entries, hotels, hotelName, hotelDesc)); }
+      catch { await alert(t('draftSaveFailed')); }
       setLeaving(true); setTimeout(() => navigation.dispatch(data.action), 0);
     });
   });
@@ -151,9 +157,25 @@ export default function NewPostScreen() {
       alert(t('missingPlaceTitle'), t('missingPlaceMessage'));
       return;
     }
-    const filledEntries = entries.filter((e) => e.photoData);
-    if (filledEntries.length === 0) {
+    const withPhoto = entries.filter((e) => e.photoData || e.photoUri);
+    if (withPhoto.length === 0) {
       alert(t('chooseAPhotoFirst'));
+      return;
+    }
+    postingRef.current = true;
+    setPosting(true);
+    // Galing sa draft (photoUri lang): gawing base64 ulit bago ipadala.
+    let filledEntries;
+    try {
+      filledEntries = await Promise.all(withPhoto.map(async (e) => {
+        if (e.photoData) return e;
+        const img = await manipulateAsync(e.photoUri, [], { compress: 0.6, format: SaveFormat.JPEG, base64: true });
+        return { ...e, photoData: `data:image/jpeg;base64,${img.base64}` };
+      }));
+    } catch (e) {
+      postingRef.current = false;
+      setPosting(false);
+      alert(t('couldntReadPhoto'), e.message);
       return;
     }
     // Isama ang hotel na naka-type pero hindi pa na-"+ add".
@@ -178,8 +200,6 @@ export default function NewPostScreen() {
       })),
     };
 
-    postingRef.current = true;
-    setPosting(true);
     try {
       const created = await createJournalEntry(payload);
       toast(t('postedBanner'));

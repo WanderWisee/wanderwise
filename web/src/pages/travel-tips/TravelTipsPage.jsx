@@ -51,7 +51,7 @@ export default function TravelTipsPage() {
   // it. Either way, Guides should always show a consistent
   // "<Place> Travel Story" heading — strip whatever single word follows
   // "Travel" at the end (if any), then add "Travel Story" back.
-  const bareTitle = (title) => title.replace(/ Travel \w+$/i, "").trim();
+  const bareTitle = (title) => String(title || "").replace(/ Travel \w+$/i, "").trim();
   const getDisplayTitle = (title) => `${bareTitle(title)} ${t("travelStorySuffix")}`;
 
   // The word to look for in journal titles: "Baguio City" → "Baguio",
@@ -91,7 +91,7 @@ export default function TravelTipsPage() {
   // destination's name? (e.g. "El Nido, Palawan Travel Story" matches
   // the "El Nido, Palawan" destination card.)
   const matchesDestination = (journalTitle, destName) =>
-    journalTitle.toLowerCase().includes(keywordFor(destName).toLowerCase());
+    String(journalTitle || "").toLowerCase().includes(keywordFor(destName).toLowerCase());
 
   const journalsFor = (destName) => allJournals.filter((j) => matchesDestination(j.title, destName));
 
@@ -101,7 +101,7 @@ export default function TravelTipsPage() {
   const unmatchedGroups = Object.values(
     allJournals
       .filter((j) => !destinations.some((d) => matchesDestination(j.title, d.name)))
-      .filter((j) => j.title.toLowerCase().includes(search.toLowerCase()))
+      .filter((j) => String(j.title || "").toLowerCase().includes(search.toLowerCase()))
       .reduce((groups, j) => {
         const key = bareTitle(j.title).toLowerCase();
         (groups[key] = groups[key] || []).push(j);

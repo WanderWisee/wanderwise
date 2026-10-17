@@ -93,7 +93,18 @@ public class ExpensesController : ControllerBase
             await NotificationHelper.CheckBudgetAsync(_db, trip);
         }
 
-        return Ok(expense);
+        // Plain object, not the EF entity (its navigation props can loop in JSON).
+        return Ok(new
+        {
+            id = expense.Id,
+            tripId = expense.TripId,
+            placeId = expense.PlaceId,
+            category = expense.Category,
+            amount = expense.Amount,
+            description = expense.Description,
+            expenseDate = expense.ExpenseDate,
+            createdAt = expense.CreatedAt,
+        });
     }
 
     [HttpDelete("{expenseId:int}")]

@@ -4,6 +4,7 @@ import NavbarMenu from "../../components/NavbarMenu";
 import { useAppData } from "../../context/AppDataContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
+import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
 
@@ -11,6 +12,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
+  const { alert } = useDialog();
   // Formatting + notification choices, saved to the account and used by
   // every page (dates, times, distances, and which notifications arrive).
   const { prefs, updatePrefs, formatDate, formatTime, formatDistance } = usePreferences();
@@ -23,9 +25,7 @@ export default function SettingsPage() {
   };
   const {
     profileName,
-    setProfileName,
     profileEmail,
-    setProfileEmail,
     profileAvatar,
     setProfileAvatar,
     profileBio,
@@ -44,33 +44,62 @@ export default function SettingsPage() {
 
   const handleAvatarClick = () => avatarInputRef.current?.click();
 
-  const handleAvatarChange = (e) => {
+  // Shrink the picture to max 512px JPEG before uploading, so a big phone
+  // photo doesn't get rejected for size.
+  const shrinkAvatar = (file, maxSide = 512) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff"; // transparent PNGs get a white background
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.8));
+        };
+        img.onerror = () => reject(new Error(""));
+        img.src = dataUrl;
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = ""; // lets the same file be picked again
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result; // "data:image/png;base64,...."
+    const token = localStorage.getItem("wanderwise_token");
+    if (!token) return;
+
+    const previous = profileAvatar;
+    try {
+      const base64 = await shrinkAvatar(file); // "data:image/jpeg;base64,...."
       setProfileAvatar(base64); // shows up immediately in the UI
-
-      const token = localStorage.getItem("wanderwise_token");
-      if (!token) return;
-
-      try {
-        await fetch("/api/me/avatar", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ avatarBase64: base64 }),
-        });
-      } catch (err) {
-        // Network error — picture still shows for now, but won't
-        // survive a reload until this call succeeds.
+      const resp = await fetch("/api/me/avatar", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatarBase64: base64 }),
+      });
+      if (!resp.ok) {
+        const d = await resp.json().catch(() => null);
+        throw new Error(d?.error || d?.message || "");
       }
-    };
-    reader.readAsDataURL(file);
+      alert(t("avatarUpdated"));
+    } catch (err) {
+      // Not saved — put the old picture back and say why.
+      setProfileAvatar(previous);
+      alert(err.message || t("avatarUpdateFailed"));
+    }
   };
 
   const [chosenSection, setActiveSection] = useState(
@@ -105,10 +134,6 @@ export default function SettingsPage() {
   ];
 
   const handleSaveAccount = async () => {
-    // Name/Email are still local-only — not wired to the backend yet.
-    setProfileName(name);
-    setProfileEmail(email);
-
     // Bio/Location ARE wired to the backend — this is what shows up on
     // your public profile when another student searches for you.
     setProfileBio(bio);
@@ -118,7 +143,7 @@ export default function SettingsPage() {
     const token = localStorage.getItem("wanderwise_token");
     if (token) {
       try {
-        await fetch("/api/me/profile", {
+        const resp = await fetch("/api/me/profile", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -126,9 +151,14 @@ export default function SettingsPage() {
           },
           body: JSON.stringify({ bio, location: profileLocationInput }),
         });
+        if (resp.ok) {
+          alert(t("profileSavedMsg"));
+        } else {
+          const d = await resp.json().catch(() => null);
+          alert(d?.error || t("profileSaveFailed"));
+        }
       } catch (err) {
-        // Network error — the fields still show locally for now, but
-        // won't survive a reload until this call succeeds.
+        alert(t("networkError"));
       }
     }
     setSavingAccount(false);
@@ -225,12 +255,12 @@ export default function SettingsPage() {
 
               <label className="ww-settings-field">
                 <span>{t("accountName")}</span>
-                <input value={name} onChange={(e) => setName(e.target.value)} readOnly={isTeacher} />
+                <input value={name} readOnly />
               </label>
 
               <label className="ww-settings-field">
                 <span>{t("accountEmail")}</span>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} readOnly={isTeacher} />
+                <input value={email} readOnly />
               </label>
 
               {/* Bio + location are for the student's public profile. */}

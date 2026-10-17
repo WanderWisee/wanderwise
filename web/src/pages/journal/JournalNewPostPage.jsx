@@ -60,7 +60,7 @@ export default function JournalNewPostPage() {
   const [storyTitle, setStoryTitle] = useState(
     location.state?.destination
       ? `${location.state.destination} ${t("travelStorySuffix")}`
-      : t("enterDestinationStory")
+      : ""
   );
   const [editingTitle, setEditingTitle] = useState(false);
 
@@ -192,10 +192,16 @@ export default function JournalNewPostPage() {
   };
 
   const handlePost = async () => {
+    // Don't post a story without a real title.
+    if (!storyTitle.trim()) {
+      alert(t("storyTitleRequired"));
+      setEditingTitle(true);
+      return;
+    }
     setPosting(true);
     try {
       const payload = {
-        title: storyTitle,
+        title: storyTitle.trim(),
         coverImage: entries[0]?.img || null,
         places: entries.map((e, idx) => ({
           placeName: e.place,
@@ -212,7 +218,7 @@ export default function JournalNewPostPage() {
       await addJournalEntry(payload);
       setPosted(true);
     } catch (err) {
-      alert(t("journalSaveError"));
+      alert(err.message || t("journalSaveError"));
     } finally {
       setPosting(false);
     }
@@ -326,6 +332,7 @@ export default function JournalNewPostPage() {
               <input
                 className="ww-section-name-input-inline"
                 value={storyTitle}
+                placeholder={t("enterDestinationStory")}
                 onChange={(e) => setStoryTitle(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") setEditingTitle(false);
@@ -333,17 +340,17 @@ export default function JournalNewPostPage() {
                 autoFocus
               />
             ) : (
-              <span>{storyTitle}</span>
+              // Empty title: show the prompt as a hint; click it to edit.
+              <span
+                onClick={() => setEditingTitle(true)}
+                style={storyTitle ? undefined : { opacity: 0.5, cursor: "pointer" }}
+              >
+                {storyTitle || t("enterDestinationStory")}
+              </span>
             )}{" "}
             <span
               className="ww-edit-icon"
-              onClick={() =>
-                setEditingTitle((v) => {
-                  const next = !v;
-                  if (next) setStoryTitle("");
-                  return next;
-                })
-              }
+              onClick={() => setEditingTitle((v) => !v)}
               style={{ cursor: "pointer" }}
             >
               <Icon name="pencil" />

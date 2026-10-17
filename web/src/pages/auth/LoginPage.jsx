@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { notifyAuthChanged } from "../../context/AppDataContext";
 import { homeForRole } from "../../utils/portal";
@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  // e.g. "Password updated" after a reset.
+  const notice = location.state?.notice;
   const { t } = useLanguage();
 
   // If the person got here from a shared trip's "Log In to join" button,
@@ -104,6 +107,12 @@ export default function LoginPage() {
           </button>
 
           <h1 className="ww-login-title">{t("loginTitle")}</h1>
+
+          {notice && (
+            <div role="status" style={{ color: "#1a7f37", marginBottom: 12 }}>
+              {notice}
+            </div>
+          )}
 
           <label className="ww-field-label">{t("loginUsername")}</label>
           <input

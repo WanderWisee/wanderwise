@@ -16,6 +16,9 @@ SplashScreen.preventAutoHideAsync();
 const PUBLIC_ROUTES = ['index', 'login', 'signup', 'forgot-password', 'about', 'join'];
 // Sa mga ito, kapag naka-login na, diretso na sa Home.
 const AUTH_ONLY_ROUTES = ['index', 'login', 'signup', 'forgot-password'];
+// Nasa labas ng effect para hindi na ulit buksan ang parehong cold-start
+// notification pagkatapos mag-logout at mag-login.
+let handledNotificationId = '';
 
 function AuthGate() {
   const { ready, isLoggedIn } = useApp();
@@ -38,12 +41,11 @@ function AuthGate() {
   // journal), o ang Notifications kung walang tiyak na screen.
   useEffect(() => {
     if (!ready || !isLoggedIn || Platform.OS === 'web') return;
-    let handled = '';
     const openFrom = (response: Notifications.NotificationResponse | null) => {
       if (!response) return;
       const id = response.notification.request.identifier;
-      if (id === handled) return;
-      handled = id;
+      if (id === handledNotificationId) return;
+      handledNotificationId = id;
       const data: any = response.notification.request.content.data || {};
       const route = notificationRoute({ link: data.link }) || '/notifications';
       router.push(route as any);

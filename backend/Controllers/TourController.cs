@@ -53,6 +53,17 @@ public class TourController : ControllerBase
 
     private static bool IsManager(string? role) => role == "owner" || role == "editor";
 
+    // Today in the Philippines (UTC+8, no daylight saving). Attendance and
+    // check-in only work on the day itself: past days are view-only, so
+    // nobody can mark yesterday's attendance after the fact.
+    private static DateOnly PhToday() => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8));
+
+    private static string AttendanceStatus(DateOnly day)
+    {
+        var today = PhToday();
+        return day == today ? "open" : day < today ? "closed" : "upcoming";
+    }
+
     private static DateOnly? ParseDate(string? raw) =>
         !string.IsNullOrWhiteSpace(raw) && DateOnly.TryParse(raw, out var d) ? d : null;
 
@@ -163,6 +174,9 @@ public class TourController : ControllerBase
             // Teachers only watch; the teacher who owns a field trip runs it
             // but doesn't check in themselves.
             canCheckIn = role != "teacher" && !(trip.ClassId != null && role == "owner"),
+            // "open" (today), "closed" (past day, view only) or "upcoming".
+            attendanceStatus = AttendanceStatus(day.Value),
+            attendanceOpen = AttendanceStatus(day.Value) == "open",
             meetingPoint = setting == null ? null : new
             {
                 name = setting.MeetingPlaceName,
@@ -224,6 +238,7 @@ public class TourController : ControllerBase
         if (!IsManager(role)) return Forbid();
         var day = ParseDate(request.Date);
         if (day is null) return BadRequest("date is required (yyyy-MM-dd).");
+        if (AttendanceStatus(day.Value) != "open") return BadRequest(new { error = "attendance_closed" });
 
         var onTrip = request.UserId == trip.UserId ||
                      await _db.TripMembers.AnyAsync(m => m.TripId == tripId && m.UserId == request.UserId);
@@ -256,6 +271,7 @@ public class TourController : ControllerBase
         if (myRole == "teacher" || (trip.ClassId != null && myRole == "owner")) return Forbid();
         var day = ParseDate(request.Date);
         if (day is null) return BadRequest(new { error = "bad_date" });
+        if (AttendanceStatus(day.Value) != "open") return BadRequest(new { error = "attendance_closed" });
 
         if (string.IsNullOrWhiteSpace(request.Photo) || !request.Photo.StartsWith("data:image/"))
             return BadRequest(new { error = "photo_required" });

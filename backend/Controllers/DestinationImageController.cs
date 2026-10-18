@@ -95,6 +95,14 @@ namespace WanderWiseApi.Controllers
                         }
                     }
 
+                    // Some articles (e.g. "Boracay") have no lead image set, so the
+                    // lookup above finds nothing. Fall back to the best-matching
+                    // photo on Wikimedia Commons for that name.
+                    if (foundUrl == null)
+                    {
+                        foundUrl = await CommonsPhotoAsync(client, name.Trim());
+                    }
+
                     var result = new { found = foundUrl != null, url = foundUrl };
                     _cache[cacheKey] = (DateTime.UtcNow, result);
                     return Ok(result);
@@ -109,6 +117,46 @@ namespace WanderWiseApi.Controllers
 
             var exhausted = new { found = false, url = (string?)null };
             return Ok(exhausted);
+        }
+
+        // Searches Wikimedia Commons for a photo (jpg/png) of the place and
+        // returns a ready-made thumbnail URL, or null if none is found.
+        private static async Task<string?> CommonsPhotoAsync(HttpClient client, string name)
+        {
+            try
+            {
+                var url = "https://commons.wikimedia.org/w/api.php" +
+                    "?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=8" +
+                    "&prop=imageinfo&iiprop=url|mime&iiurlwidth=800" +
+                    $"&gsrsearch={Uri.EscapeDataString(name + " filetype:bitmap")}";
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+
+                using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                if (!doc.RootElement.TryGetProperty("query", out var query) ||
+                    !query.TryGetProperty("pages", out var pages)) return null;
+
+                string? best = null;
+                var bestIndex = int.MaxValue;
+                foreach (var page in pages.EnumerateObject())
+                {
+                    var index = page.Value.TryGetProperty("index", out var ix) ? ix.GetInt32() : int.MaxValue;
+                    if (index >= bestIndex) continue;
+                    if (!page.Value.TryGetProperty("imageinfo", out var infos) || infos.GetArrayLength() == 0) continue;
+                    var info = infos[0];
+                    var mime = info.TryGetProperty("mime", out var m) ? m.GetString() : null;
+                    if (mime != "image/jpeg" && mime != "image/png") continue;
+                    var thumb = info.TryGetProperty("thumburl", out var t) ? t.GetString() : null;
+                    if (string.IsNullOrEmpty(thumb)) continue;
+                    best = thumb;
+                    bestIndex = index;
+                }
+                return best;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

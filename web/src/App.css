@@ -9566,42 +9566,6 @@ textarea:focus-visible {
   color: var(--ww-on-btn);
 }
 
-/* Notifications: same look as the mobile app — dark brown icon in a
-   rounded cream tile, and "Mark all as read" as an underlined link. */
-.ww-notif-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  border: none;
-  background: #efe9d8;
-  color: #331c08;
-  font-size: 22px;
-}
-
-.ww-notif-readall {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 0;
-  border: none;
-  background: none;
-  color: #5f4e3a;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.ww-notif-readall:hover {
-  color: #331c08;
-}
-
-.ww-notif-icon .ww-icon {
-  width: 22px;
-  height: 22px;
-}
-
 /* Notification rows: separate cards with a small gap, like the mobile app.
    Unread = just a teal outline (no coloured fill). */
 .ww-notifications-list {

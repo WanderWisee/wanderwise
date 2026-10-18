@@ -69,24 +69,14 @@ export function notificationText(n, t, formatTime) {
   }
 }
 
-// Same icons as the mobile app (mobile/utils/notificationText.js).
 export function notificationIcon(type) {
   switch (type) {
-    case "announcement":
-    case "class_announcement":
-      return "message";
-    case "class_added":
-    case "class_removed":
-      return "graduation-cap";
-    case "journal_hidden":
-      return "ban";
     case "trip_start":
-      return "luggage";
+      return "briefcase";
     case "activity":
       return "clock";
     case "checkin":
-    case "booking_added":
-      return "hotel";
+      return "bed";
     case "crew_added":
     case "crew_joined":
     case "crew_removed":
@@ -97,14 +87,32 @@ export function notificationIcon(type) {
     case "trip_updated":
       return "pencil";
     case "expense_added":
-      return "wallet";
+      return "banknote";
+    case "booking_added":
+      return "bed";
     case "budget_80":
-    case "budget_over":
       return "alert-triangle";
+    case "budget_over":
+      return "alert-circle";
     case "trip_ended":
       return "book-open";
+    case "announcement":
+      return "megaphone";
     case "password_changed":
-      return "lock-keyhole";
+      return "lock";
+    case "class_added":
+    case "teacher_approved":
+      return "graduation-cap";
+    case "class_announcement":
+      return "megaphone";
+    case "student_joined":
+      return "user-plus";
+    case "class_removed":
+      return "log-out";
+    case "teacher_pending":
+      return "graduation-cap";
+    case "journal_hidden":
+      return "ban";
     default:
       return "bell";
   }

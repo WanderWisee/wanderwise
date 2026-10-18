@@ -401,6 +401,66 @@ public class AuthController : ControllerBase
 
     // Saves the bio/location shown on the public profile (search feature).
     [Authorize]
+    // ---------------- Delete my account (Data Privacy Act) ----------------
+    // Permanently removes the signed-in user and everything that belongs to
+    // them. The password is asked again so nobody can do it from an
+    // unlocked phone by accident.
+    [HttpPost("/api/me/delete")]
+    [Authorize]
+    public async Task<IActionResult> DeleteMyAccount([FromBody] DeleteAccountRequest request)
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+        if (user.Role == PortalAccess.RoleAdmin)
+            return BadRequest(new { error = "The admin account can't be deleted here." });
+        if (string.IsNullOrEmpty(request.Password) || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            return BadRequest(new { error = "Wrong password." });
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        // 1. Trips this user owns, and everything inside them.
+        var tripIds = await _db.Trips.Where(t => t.UserId == userId).Select(t => t.Id).ToListAsync();
+        var placeIds = await _db.TripPlaces.Where(p => tripIds.Contains(p.TripId)).Select(p => p.Id).ToListAsync();
+        await _db.Expenses.Where(e => tripIds.Contains(e.TripId) || (e.PlaceId != null && placeIds.Contains(e.PlaceId.Value))).ExecuteDeleteAsync();
+        await _db.TripPlaces.Where(p => tripIds.Contains(p.TripId)).ExecuteDeleteAsync();
+        await _db.TripSections.Where(s => tripIds.Contains(s.TripId)).ExecuteDeleteAsync();
+        await _db.TripMembers.Where(m => tripIds.Contains(m.TripId)).ExecuteDeleteAsync();
+        await _db.TripViews.Where(v => tripIds.Contains(v.TripId)).ExecuteDeleteAsync();
+        await _db.TripBookings.Where(b => tripIds.Contains(b.TripId)).ExecuteDeleteAsync();
+        await _db.TripAttendance.Where(a => tripIds.Contains(a.TripId)).ExecuteDeleteAsync();
+        await _db.TripAnnouncements.Where(a => tripIds.Contains(a.TripId)).ExecuteDeleteAsync();
+        await _db.TripActivities.Where(a => tripIds.Contains(a.TripId)).ExecuteDeleteAsync();
+        await _db.TripDaySettings.Where(d => tripIds.Contains(d.TripId)).ExecuteDeleteAsync();
+
+        // 2. Their place in other people's trips.
+        await _db.TripMembers.Where(m => m.UserId == userId).ExecuteDeleteAsync();
+        await _db.TripViews.Where(v => v.UserId == userId).ExecuteDeleteAsync();
+        await _db.TripAttendance.Where(a => a.UserId == userId).ExecuteDeleteAsync();
+        await _db.TripAttendance.Where(a => a.MarkedBy == userId).ExecuteUpdateAsync(s => s.SetProperty(a => a.MarkedBy, (int?)null));
+        await _db.TripAnnouncements.Where(a => a.UserId == userId).ExecuteDeleteAsync();
+        await _db.TripActivities.Where(a => a.CreatedBy == userId).ExecuteDeleteAsync();
+        await _db.TripBookings.Where(b => b.CreatedBy == userId).ExecuteDeleteAsync();
+
+        // 3. Classes: their memberships, and (for a teacher) their classes.
+        var classIds = await _db.Classes.Where(c => c.TeacherId == userId).Select(c => c.Id).ToListAsync();
+        await _db.Trips.Where(t => t.ClassId != null && classIds.Contains(t.ClassId.Value)).ExecuteUpdateAsync(s => s.SetProperty(t => t.ClassId, (int?)null));
+        await _db.ClassAnnouncements.Where(a => classIds.Contains(a.ClassId) || a.AuthorId == userId).ExecuteDeleteAsync();
+        await _db.ClassMembers.Where(m => classIds.Contains(m.ClassId) || m.StudentId == userId).ExecuteDeleteAsync();
+        await _db.Classes.Where(c => c.TeacherId == userId).ExecuteDeleteAsync();
+
+        // 4. Trips, login codes, and the account. Journal stories, comments,
+        // notifications, settings and push tokens go with it (ON DELETE CASCADE).
+        await _db.Trips.Where(t => t.UserId == userId).ExecuteDeleteAsync();
+        await _db.OtpCodes.Where(o => o.Email == user.Email).ExecuteDeleteAsync();
+        // Keep the activity log for the admin, but without the link to the person.
+        await _db.ActivityLogs.Where(l => l.UserId == userId).ExecuteUpdateAsync(s => s.SetProperty(l => l.UserId, (int?)null));
+        await _db.Users.Where(u => u.Id == userId).ExecuteDeleteAsync();
+
+        await tx.CommitAsync();
+        return NoContent();
+    }
+
     [HttpPut("/api/me/profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
     {

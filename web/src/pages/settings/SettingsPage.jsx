@@ -12,7 +12,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
-  const { alert } = useDialog();
+  const { alert, confirm } = useDialog();
   // Formatting + notification choices, saved to the account and used by
   // every page (dates, times, distances, and which notifications arrive).
   const { prefs, updatePrefs, formatDate, formatTime, formatDistance } = usePreferences();
@@ -132,6 +132,41 @@ export default function SettingsPage() {
     { key: "notifComments", hintKey: "notifCommentsHint" },
     { key: "notifTripUpdates", hintKey: "notifTripUpdatesHint" },
   ];
+
+  // ---- Delete my account (Data Privacy Act) ----
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      alert(t("deleteAccountNeedPassword"));
+      return;
+    }
+    const ok = await confirm(t("deleteAccountConfirm"), { danger: true, confirmLabel: t("deleteAccountBtn") });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const resp = await fetch("/api/me/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("wanderwise_token")}`,
+        },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      if (resp.ok) {
+        localStorage.removeItem("wanderwise_token");
+        await alert(t("deleteAccountDone"));
+        window.location.href = "/";
+        return;
+      }
+      const d = await resp.json().catch(() => null);
+      alert(d?.error || t("deleteAccountFailed"));
+    } catch {
+      alert(t("networkError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSaveAccount = async () => {
     // Bio/Location ARE wired to the backend — this is what shows up on
@@ -289,6 +324,22 @@ export default function SettingsPage() {
               <button className="ww-settings-save-btn" onClick={handleSaveAccount} disabled={savingAccount}>
                 {savingAccount ? t("saving") : t("save")}
               </button>
+
+              <div className="ww-danger-zone">
+                <h3>{t("deleteAccountTitle")}</h3>
+                <p>{t("deleteAccountHint")}</p>
+                <input
+                  type="password"
+                  className="ww-field-input"
+                  autoComplete="current-password"
+                  placeholder={t("deleteAccountPassword")}
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                />
+                <button type="button" className="ww-danger-btn" onClick={handleDeleteAccount} disabled={deleting}>
+                  {deleting ? t("saving") : t("deleteAccountBtn")}
+                </button>
+              </div>
               </>
               )}
             </div>

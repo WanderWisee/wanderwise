@@ -9491,3 +9491,41 @@ textarea:focus-visible {
   line-height: 1.6;
   color: var(--ww-text-muted);
 }
+
+/* Settings: Delete my account */
+.ww-danger-zone {
+  margin-top: 32px;
+  padding: 18px;
+  border: 1px solid var(--ww-danger);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-danger-50);
+}
+.ww-danger-zone h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: var(--ww-danger);
+}
+.ww-danger-zone p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ww-text-muted);
+}
+.ww-danger-zone .ww-field-input {
+  margin-bottom: 12px;
+}
+.ww-danger-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ww-danger);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ww-danger-btn:hover:not(:disabled) {
+  background: var(--ww-danger-hover);
+}
+.ww-danger-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

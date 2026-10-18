@@ -20,6 +20,11 @@ public class RegisterCompleteRequest
     public bool AcceptedPrivacy { get; set; }
 }
 
+public class DeleteAccountRequest
+{
+    public string Password { get; set; } = string.Empty;
+}
+
 public class LoginRequest
 {
     public string Email { get; set; } = string.Empty;

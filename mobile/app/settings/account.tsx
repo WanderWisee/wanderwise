@@ -8,8 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
-import { fullName, updateAvatar, updateProfile } from '../../services/userService';
-import { Avatar, Field, PrimaryButton, ScreenHeader } from '../../components/ui';
+import { deleteMyAccount, fullName, updateAvatar, updateProfile } from '../../services/userService';
+import { Avatar, Field, OutlineButton, PrimaryButton, ScreenHeader } from '../../components/ui';
 
 // Parehong Settings → Account ng web. Ang pangalan at email ay galing sa
 // registration at hindi pa nababago sa backend, kaya naka-lock dito;
@@ -21,8 +21,27 @@ export default function AccountScreen() {
 
 function AccountContent() {
   const router = useRouter();
-  const { t, user, setUser, refreshUser } = useApp();
-  const { toast, alert } = useDialog();
+  const { t, user, setUser, refreshUser, signOut } = useApp();
+  const { toast, alert, confirm } = useDialog();
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!deletePassword) { alert(t('deleteAccountNeedPassword')); return; }
+    const ok = await confirm({ title: t('deleteAccountTitle'), message: t('deleteAccountConfirm'), confirmLabel: t('deleteAccountBtn'), cancelLabel: t('cancel'), danger: true });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await deleteMyAccount(deletePassword);
+      await signOut();
+      toast(t('deleteAccountDone'));
+      router.replace('/');
+    } catch (e) {
+      alert(t('deleteAccountFailed'), e.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState(user?.location || '');
   const [saving, setSaving] = useState(false);
@@ -106,6 +125,20 @@ function AccountContent() {
           />
 
           <PrimaryButton label={t('save')} onPress={handleSave} loading={saving} style={{ alignSelf: 'stretch', marginTop: 8 }} />
+
+          {/* Burahin ang account (Data Privacy Act) */}
+          <View style={styles.dangerZone}>
+            <Text style={styles.dangerTitle}>{t('deleteAccountTitle')}</Text>
+            <Text style={styles.dangerHint}>{t('deleteAccountHint')}</Text>
+            <Field
+              label={t('deleteAccountPassword')}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+            <OutlineButton danger label={deleting ? t('saving') : t('deleteAccountBtn')} onPress={handleDelete} disabled={deleting} />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -113,6 +146,9 @@ function AccountContent() {
 }
 
 const styles = StyleSheet.create({
+  dangerZone: { alignSelf: 'stretch', marginTop: 32, paddingTop: 20, borderTopWidth: 1, borderTopColor: Colors.line },
+  dangerTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.error, marginBottom: 6 },
+  dangerHint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 14 },
   screen: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, width: '100%', maxWidth: 560, alignSelf: 'center', alignItems: 'center' },
   avatarWrap: { marginBottom: 8 },

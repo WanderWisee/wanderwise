@@ -7,6 +7,11 @@ export function fetchMe() {
 }
 
 // bio at location lang ang may endpoint sa backend (PUT /api/me/profile).
+// Permanenteng burahin ang sariling account (kailangan ang password).
+export function deleteMyAccount(password) {
+  return api.post('/me/delete', { password });
+}
+
 export function updateProfile({ bio, location }) {
   return api.put('/me/profile', { bio: bio || null, location: location || null });
 }

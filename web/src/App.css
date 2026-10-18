@@ -9601,3 +9601,39 @@ textarea:focus-visible {
   width: 22px;
   height: 22px;
 }
+
+/* Notification rows: separate cards with a small gap, like the mobile app.
+   Unread = just a teal outline (no coloured fill). */
+.ww-notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.ww-notif-item,
+.ww-notif-item:last-child {
+  align-items: center;
+  border: 1px solid rgba(51, 28, 8, 0.14);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.ww-notif-item:hover {
+  background: #f7f4ea;
+}
+
+.ww-notif-unread,
+.ww-notif-unread:hover {
+  border-color: #2f6f5f;
+  background: #fbfdf9;
+}
+
+.ww-notif-dot {
+  margin-top: 0;
+  background: #2f6f5f;
+}

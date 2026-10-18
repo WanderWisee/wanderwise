@@ -120,8 +120,8 @@ export default function NotificationsPage() {
           <h1 className="ww-notifications-title">{t("notificationsTitle")}</h1>
           <div className="ww-notifications-actions">
             {unreadCount > 0 && (
-              <button type="button" className="ww-show-more-btn" style={{ marginTop: 0 }} onClick={handleMarkAllRead}>
-                <Icon name="check" /> {t("markAllRead")}
+              <button type="button" className="ww-notif-readall" onClick={handleMarkAllRead}>
+                <Icon name="check" /> {t("markAllRead")} ({unreadCount})
               </button>
             )}
             <button

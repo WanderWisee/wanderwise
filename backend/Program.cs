@@ -209,16 +209,19 @@ app.Use(async (context, next) =>
 app.UseAuthentication();
 
 // Deactivated accounts (Admin → Users) are logged out on their next
-// request, even if their login token hasn't expired yet.
+// request, even if their login token hasn't expired yet. Same for tokens
+// made before a password reset: a reset logs the account out everywhere.
 app.Use(async (context, next) =>
 {
     if (int.TryParse(context.User.FindFirst("sub")?.Value, out var userId))
     {
         var db = context.RequestServices.GetRequiredService<WanderWiseDbContext>();
-        if (!await AccountGuard.IsActiveAsync(db, userId))
+        var stamp = context.User.FindFirst(JwtService.PasswordStampClaim)?.Value;
+        var problem = await AccountGuard.ProblemAsync(db, userId, stamp);
+        if (problem != null)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new { error = "account_inactive" });
+            await context.Response.WriteAsJsonAsync(new { error = problem });
             return;
         }
     }

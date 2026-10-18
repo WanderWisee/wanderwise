@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using WanderWiseApi.Data;
 using WanderWiseApi.Models;
+using WanderWiseApi.Services;
 
 namespace WanderWiseApi.Controllers;
 
@@ -111,22 +112,43 @@ public static class ActivityLogger
 // in. Statuses are cached for a minute to avoid a DB hit per request.
 public static class AccountGuard
 {
-    private static readonly ConcurrentDictionary<int, (string status, DateTime checkedAt)> Cache = new();
+    // status + password stamp per user, cached for a minute so this check
+    // doesn't hit the database on every request.
+    private static readonly ConcurrentDictionary<int, (string status, string stamp, DateTime checkedAt)> Cache = new();
     private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(1);
 
     public static void Forget(int userId) => Cache.TryRemove(userId, out _);
 
     public static async Task<bool> IsActiveAsync(WanderWiseDbContext db, int userId)
     {
-        if (Cache.TryGetValue(userId, out var hit) && DateTime.UtcNow - hit.checkedAt < CacheFor)
-            return hit.status == PortalAccess.StatusActive;
-
-        var status = await db.Users
-            .Where(u => u.Id == userId)
-            .Select(u => u.AccountStatus)
-            .FirstOrDefaultAsync() ?? PortalAccess.StatusDeactivated;
-
-        Cache[userId] = (status, DateTime.UtcNow);
+        var (status, _) = await LoadAsync(db, userId);
         return status == PortalAccess.StatusActive;
+    }
+
+    // null = the token is fine. "account_inactive" = deactivated or deleted.
+    // "session_expired" = the password was reset after this token was made
+    // (or it is an old token from before password stamps existed).
+    public static async Task<string?> ProblemAsync(WanderWiseDbContext db, int userId, string? tokenStamp)
+    {
+        var (status, stamp) = await LoadAsync(db, userId);
+        if (status != PortalAccess.StatusActive) return "account_inactive";
+        if (string.IsNullOrEmpty(tokenStamp) || tokenStamp != stamp) return "session_expired";
+        return null;
+    }
+
+    private static async Task<(string status, string stamp)> LoadAsync(WanderWiseDbContext db, int userId)
+    {
+        if (Cache.TryGetValue(userId, out var hit) && DateTime.UtcNow - hit.checkedAt < CacheFor)
+            return (hit.status, hit.stamp);
+
+        var row = await db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.AccountStatus, u.PasswordHash })
+            .FirstOrDefaultAsync();
+
+        var status = row?.AccountStatus ?? PortalAccess.StatusDeactivated;
+        var stamp = row is null ? "" : JwtService.PasswordStamp(row.PasswordHash);
+        Cache[userId] = (status, stamp, DateTime.UtcNow);
+        return (status, stamp);
     }
 }

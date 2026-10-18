@@ -557,6 +557,14 @@ public class AuthController : ControllerBase
             null,
             new { });
 
+        // Log out every device: old login tokens stop matching the new
+        // password (see JwtService.PasswordStamp). Clear the cached check so
+        // it applies right away, and remove the phones' push tokens so a
+        // logged-out phone stops getting this account's notifications (the
+        // app saves a new one on the next login).
+        AccountGuard.Forget(user.Id);
+        await _db.PushTokens.Where(p => p.UserId == user.Id).ExecuteDeleteAsync();
+
         return Ok(new { message = "Password updated successfully." });
     }
 

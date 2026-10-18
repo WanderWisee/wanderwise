@@ -488,12 +488,12 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> SendResetOtp([FromBody] ForgotPasswordSendOtpRequest request)
     {
         var schoolEmail = request.SchoolEmail?.Trim() ?? "";
+        // Same answer whether or not the account exists, so nobody can use
+        // this page to find out which emails are registered.
+        const string genericMessage = "If an account exists for that email, a verification code was sent to its recovery email.";
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == schoolEmail);
-        if (user is null)
-            return NotFound(new { error = "No account found with that school email." });
-
-        if (string.IsNullOrWhiteSpace(user.RecoveryEmail))
-            return BadRequest(new { error = "This account has no recovery email on file." });
+        if (user is null || string.IsNullOrWhiteSpace(user.RecoveryEmail))
+            return Ok(new { message = genericMessage });
 
         if (await SentRecentlyAsync(schoolEmail, "reset"))
             return StatusCode(429, new { error = "A code was just sent. Please wait a minute before asking for a new one." });
@@ -523,7 +523,7 @@ public class AuthController : ControllerBase
             return StatusCode(502, new { error = "We couldn't send the code right now. Please try again in a moment." });
         }
 
-        return Ok(new { message = "A verification code was sent to your recovery email." });
+        return Ok(new { message = genericMessage });
     }
 
     [HttpPost("/api/forgot-password/reset")]
@@ -541,7 +541,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "Invalid or expired verification code." });
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == schoolEmail);
-        if (user is null) return NotFound();
+        if (user is null) return BadRequest(new { error = "Invalid or expired verification code." });
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;

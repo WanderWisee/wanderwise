@@ -109,7 +109,7 @@ export const translations = {
     verifyAndCreate: "Verify & Create Account",
     resendCode: "Resend code",
     enterVerificationCodeTitle: "Enter Verification Code",
-    verifyResetSubtitle: "We sent a 6-digit code to the recovery Gmail on file for",
+    verifyResetSubtitle: "If there's an account for this email, we sent a 6-digit code to its recovery email:",
 
     // ===== Dashboard =====
     yourTravelStories: "Your Travel Stories",
@@ -626,7 +626,7 @@ export const translations = {
     verifyAndCreate: "I-verify at Gumawa ng Account",
     resendCode: "Ipadala ulit ang code",
     enterVerificationCodeTitle: "Ilagay ang Verification Code",
-    verifyResetSubtitle: "Nagpadala kami ng 6-digit na code sa recovery Gmail na nakarehistro para kay",
+    verifyResetSubtitle: "Kung may account para sa email na ito, nagpadala kami ng 6-digit na code sa recovery email nito:",
 
     // ===== Dashboard =====
     yourTravelStories: "Ang Iyong mga Kwento sa Paglalakbay",

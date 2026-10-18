@@ -13,6 +13,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { startLiveSync } from '../utils/liveSync';
 import { registerForPush, unregisterPush } from '../services/pushService';
+import { flushPendingSaves } from '../services/tripService';
+import { clearOfflineData, getCached, setCached } from '../services/offlineStore';
 import { STORAGE_KEYS } from '../constants/config';
 import { translations } from '../i18n/translations';
 import { mobileTranslations } from '../i18n/mobileStrings';
@@ -126,6 +128,7 @@ export function AppProvider({ children }) {
       if (ticket !== userLoadRef.current) return;
 
       setUser(me);
+      void setCached('me', me);
 
       if (settings && !pendingPrefsRef.current) {
         const merged = {
@@ -187,6 +190,10 @@ export function AppProvider({ children }) {
         setTokenState(savedToken);
 
         if (savedToken) {
+          // Offline mode: show the saved profile until /me answers.
+          getCached('me').then((me) => {
+            if (alive && me) setUser((current) => current || me);
+          });
           void loadUser();
         }
       } finally {
@@ -227,6 +234,7 @@ export function AppProvider({ children }) {
         }
 
         setUser(me);
+        void setCached('me', me);
 
         // Do not replace preferences changed during this request.
         if (
@@ -275,9 +283,35 @@ export function AppProvider({ children }) {
         userLoadRef.current += 1;
         setTokenState(null);
         setUser(null);
+        void clearOfflineData();
       }),
     []
   );
+
+  // Offline mode: send trip edits saved on the phone once it's online
+  // again — every 30 seconds and whenever the app comes back to the front.
+  useEffect(() => {
+    if (!token) return;
+
+    let active =
+      AppState.currentState !== 'background' &&
+      AppState.currentState !== 'inactive';
+
+    return startLiveSync(
+      () => flushPendingSaves(),
+      {
+        interval: 30000,
+        isActive: () => active,
+        subscribe: (wake) => {
+          const subscription = AppState.addEventListener('change', (state) => {
+            active = state === 'active';
+            wake();
+          });
+          return () => subscription.remove();
+        },
+      }
+    );
+  }, [token]);
 
   // Push notifications: i-save ang push token ng phone kapag naka-login.
   useEffect(() => {
@@ -298,9 +332,17 @@ export function AppProvider({ children }) {
   const signOut = useCallback(async () => {
     userLoadRef.current += 1;
 
+    // Try once to send offline trip edits before they are cleared
+    // (at most 5 seconds, so sign out never hangs without internet).
+    await Promise.race([
+      flushPendingSaves().catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
+
     // Habang naka-login pa: tanggalin ang push token ng phone na ito.
     await unregisterPush();
     await setToken(null);
+    await clearOfflineData();
 
     setTokenState(null);
     setUser(null);

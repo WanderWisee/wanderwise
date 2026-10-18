@@ -11,9 +11,12 @@ import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
 import {
-  fetchTripById, saveTrip, deleteTrip, leaveTrip, markTripViewed,
+  fetchTripById, saveTripOrQueue, deleteTrip, leaveTrip, markTripViewed,
   fetchExpenses, createExpense, deleteExpense, fetchCrew, fetchTripBookings,
 } from '../../services/tripService';
+import {
+  getCached, getPendingSave, removePendingSave, isOffline, onOfflineChange, markTripOpen,
+} from '../../services/offlineStore';
 import { nearestRoute } from '../../utils/routeOptimization';
 import PlaceSuggestions from '../../components/PlaceSuggestions';
 import { hasCoords, getRoute } from '../../services/geoService';
@@ -178,7 +181,40 @@ function TripDetailContent({ id }) {
   const [loadError, setLoadError] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [saving, setSaving] = useState(false);
-  const persistence = useQueuedSave((body) => saveTrip(id, body));
+
+  // ===== Offline mode + simultaneous crew edits =====
+  // baseVersion = the trip version (from the server) these edits started
+  // from; the server refuses a save with 409 if a crewmate saved in between.
+  const baseVersionRef = useRef(null);
+  const [offline, setOfflineState] = useState(isOffline());
+  const [savedOnPhone, setSavedOnPhone] = useState(false);
+  useEffect(() => onOfflineChange(setOfflineState), []);
+  useEffect(() => markTripOpen(id), [id]);
+
+  const persistence = useQueuedSave(async (body) => {
+    let result;
+    try {
+      result = await saveTripOrQueue(id, body, baseVersionRef.current);
+    } catch (e) {
+      if (e.status !== 409) throw e;
+      const keepMine = await confirm({
+        title: t('tripChangedTitle'),
+        message: t('tripChangedMessage'),
+        confirmLabel: t('keepMyChanges'),
+        cancelLabel: t('loadLatestVersion'),
+      });
+      if (!keepMine) {
+        // Drop this edit and show what the crewmate saved.
+        await removePendingSave(id);
+        setSavedOnPhone(false);
+        setTimeout(() => { void loadTrip(() => true, true); }, 0);
+        return;
+      }
+      result = await saveTripOrQueue(id, body, null); // replace theirs
+    }
+    setSavedOnPhone(result.queued);
+    if (result.data?.version) baseVersionRef.current = result.data.version;
+  });
   const canEdit = trip?.myRole === 'owner' || trip?.myRole === 'editor';
   const navigation = useNavigation();
   const dirty = !!trip && canEdit && (!!persistence.savedBody && JSON.stringify(buildSaveBody(trip)) !== persistence.savedBody || persistence.status !== 'saved');
@@ -256,16 +292,41 @@ function TripDetailContent({ id }) {
     setSectionError(results.some((r) => r.status === 'rejected'));
   }
 
-  async function loadTrip(isCurrent = () => true) {
-    if (dirtyRef.current) { await loadResources(); return; }
+  async function loadTrip(isCurrent = () => true, force = false) {
+    // Offline mode: edits saved on this phone go up first (auto-sync), so
+    // the server copy never overwrites them.
+    const pending = force ? null : await getPendingSave(id);
+    if (pending) {
+      if (!tripRef.current) {
+        const cached = await getCached(`trip:${id}`);
+        if (cached && isCurrent()) {
+          const local = hydrateTrip({ ...cached, ...pending.body, sections: pending.body.sections });
+          setTrip(local);
+          baseVersionRef.current = pending.baseVersion || null;
+          setSavedOnPhone(true);
+          const localDays = buildDaysFromRange(local.startDate, local.endDate);
+          setActiveDayKey((prev) => localDays.some((d) => d.key === prev) ? prev : localDays[0]?.key);
+          setLoading(false);
+          void loadResources();
+        }
+      }
+      if (tripRef.current) {
+        if (persistence.status !== 'saving') await persistence.save(buildSaveBody(tripRef.current));
+        return;
+      }
+    }
+    if (dirtyRef.current && !force) { await loadResources(); return; }
+    if (force) dirtyRef.current = false;
     const snapshot = tripRef.current;
     try {
       const data = await fetchTripById(id);
-      if (!isCurrent() || dirtyRef.current || tripRef.current !== snapshot) return;
+      if (!isCurrent() || (!force && (dirtyRef.current || tripRef.current !== snapshot))) return;
       const hydrated = hydrateTrip(data);
-      if (!snapshot || JSON.stringify(buildSaveBody(snapshot)) !== JSON.stringify(buildSaveBody(hydrated)) || snapshot.myRole !== hydrated.myRole) {
+      if (force || !snapshot || JSON.stringify(buildSaveBody(snapshot)) !== JSON.stringify(buildSaveBody(hydrated)) || snapshot.myRole !== hydrated.myRole) {
         setTrip(hydrated); tripRef.current = hydrated;
       }
+      baseVersionRef.current = data.version || null;
+      if (!isOffline()) setSavedOnPhone(false);
       persistence.accept(buildSaveBody(hydrated));
       setLoadError(null);
       void markTripViewed(id);
@@ -890,11 +951,18 @@ function TripDetailContent({ id }) {
                 hitSlop={10}
               >
                 <Text style={[styles.saveStatusText, persistence.status === 'failed' && { color: Colors.error }]}>
-                  {t(persistence.status === 'failed' ? 'saveFailedRetry' : persistence.status === 'saving' ? 'savingLabel' : dirty ? 'unsavedLabel' : 'savedLabel')}
+                  {t(persistence.status === 'failed' ? 'saveFailedRetry' : persistence.status === 'saving' ? 'savingLabel' : dirty ? 'unsavedLabel' : savedOnPhone ? 'savedOnPhone' : 'savedLabel')}
                 </Text>
               </TouchableOpacity>
             </View>
           ) : <Text style={styles.saveStatusText}>{t('viewOnlyNotice')}</Text>}
+
+          {offline && (
+            <View style={styles.offlineBanner}>
+              <AppIcon name="info" size={15} color={Colors.brown600} />
+              <Text style={styles.offlineText}>{t(canEdit ? 'offlineBannerEdit' : 'offlineBannerView')}</Text>
+            </View>
+          )}
 
           <TouchableOpacity disabled={!canEdit} onPress={() => setDatesOpen(true)} style={styles.metaButton} activeOpacity={0.7}>
             <IconLabel name="calendar" textStyle={styles.tripDates}>{trip.startDate || trip.endDate ? formatDateRange(trip.startDate, trip.endDate) : t('setTripDates')}</IconLabel>
@@ -1481,6 +1549,8 @@ const styles = StyleSheet.create({
 
   tripActions: { paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
   saveStatus: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, minHeight: 24 },
+  offlineBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: Colors.cream2 },
+  offlineText: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 18, color: Colors.brown600 },
   saveStatusText: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 20, color: Colors.brown600 },
   tourDayButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line },
   tourDayButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, lineHeight: 22, color: Colors.brown900, flex: 1 },

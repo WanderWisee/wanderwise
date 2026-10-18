@@ -1,4 +1,26 @@
 import { api } from './api';
+import {
+  getCached, setCached, getPendingSave, setPendingSave, removePendingSave,
+  listPendingTripIds, isTripOpen, isOfflineError, setOffline,
+} from './offlineStore';
+
+// Offline mode: GETs keep a copy on the phone; when there's no connection
+// the saved copy is returned instead of an error.
+async function withCache(name, load) {
+  try {
+    const data = await load();
+    void setCached(name, data);
+    setOffline(false);
+    return data;
+  } catch (error) {
+    if (isOfflineError(error)) {
+      setOffline(true);
+      const cached = await getCached(name);
+      if (cached != null) return cached;
+    }
+    throw error;
+  }
+}
 
 // Lahat ng tawag tungkol sa trips — parehong endpoints ng web
 // (TripsController, ExpensesController, BookingsController).
@@ -26,13 +48,15 @@ export async function ensureDestination(name) {
 
 // ===== Trips =====
 
-export async function fetchTrips() {
-  const data = await api.get('/trips');
-  return Array.isArray(data) ? data : [];
+export function fetchTrips() {
+  return withCache('trips', async () => {
+    const data = await api.get('/trips');
+    return Array.isArray(data) ? data : [];
+  });
 }
 
 export function fetchTripById(tripId) {
-  return api.get(`/trips/${tripId}`);
+  return withCache(`trip:${tripId}`, () => api.get(`/trips/${tripId}`));
 }
 
 export function createTrip(body) {
@@ -42,6 +66,59 @@ export function createTrip(body) {
 // Buong pag-save ng trip (title, dates, sections/places lahat sabay)
 export function saveTrip(tripId, body) {
   return api.put(`/trips/${tripId}`, body);
+}
+
+// Offline-aware save. baseVersion = the trip version this edit started from
+// (the server answers 409 "trip_changed" if a crewmate saved in between).
+// No connection → the edit goes to the outbox and { queued: true } is returned.
+export async function saveTripOrQueue(tripId, body, baseVersion) {
+  try {
+    const data = await api.put(`/trips/${tripId}`, { ...body, baseVersion: baseVersion || null });
+    await removePendingSave(tripId);
+    if (data) void setCached(`trip:${tripId}`, data);
+    setOffline(false);
+    return { queued: false, data };
+  } catch (error) {
+    if (!isOfflineError(error)) throw error;
+    setOffline(true);
+    await setPendingSave(tripId, { body, baseVersion: baseVersion || null });
+    return { queued: true, data: null };
+  }
+}
+
+// Background sync of the outbox (AppContext runs this every 30 s and when
+// the app comes back to the front). Trips open on screen sync themselves.
+let flushing = null;
+
+export function flushPendingSaves() {
+  if (flushing) return flushing;
+  flushing = (async () => {
+    const ids = await listPendingTripIds();
+    for (const tripId of ids) {
+      if (isTripOpen(tripId)) continue;
+      const entry = await getPendingSave(tripId);
+      if (!entry || entry.conflict) continue;
+      try {
+        const data = await api.put(`/trips/${tripId}`, { ...entry.body, baseVersion: entry.baseVersion || null });
+        await removePendingSave(tripId);
+        if (data) void setCached(`trip:${tripId}`, data);
+        setOffline(false);
+      } catch (error) {
+        if (isOfflineError(error)) { setOffline(true); break; }
+        if (error.status === 401) break;
+        if (error.status === 409) {
+          // A crewmate changed the trip: keep the edit; the trip screen asks
+          // "keep mine / load latest" the next time it is opened.
+          await setPendingSave(tripId, { ...entry, conflict: true });
+          continue;
+        }
+        // 400/403/404: the edit can't be applied anymore (trip deleted,
+        // edit access removed, invalid data) — drop it.
+        await removePendingSave(tripId);
+      }
+    }
+  })().finally(() => { flushing = null; });
+  return flushing;
 }
 
 export function deleteTrip(tripId) {
@@ -62,9 +139,11 @@ export async function markTripViewed(tripId) {
 
 // ===== Crew / sharing =====
 
-export async function fetchCrew(tripId) {
-  const data = await api.get(`/trips/${tripId}/crew`);
-  return Array.isArray(data) ? data : [];
+export function fetchCrew(tripId) {
+  return withCache(`crew:${tripId}`, async () => {
+    const data = await api.get(`/trips/${tripId}/crew`);
+    return Array.isArray(data) ? data : [];
+  });
 }
 
 export function addCrewMember(tripId, userId) {
@@ -92,9 +171,11 @@ export function fetchSharedTrip(shareToken) {
 // Kasama sa GET ang mga per-place cost (may placeId) at ang hiwalay na
 // "Add Expense" entries (placeId = null).
 
-export async function fetchExpenses(tripId) {
-  const data = await api.get(`/trips/${tripId}/expenses`);
-  return Array.isArray(data) ? data : [];
+export function fetchExpenses(tripId) {
+  return withCache(`expenses:${tripId}`, async () => {
+    const data = await api.get(`/trips/${tripId}/expenses`);
+    return Array.isArray(data) ? data : [];
+  });
 }
 
 export function createExpense(tripId, { placeId = null, category, amount, description, expenseDate = null }) {
@@ -113,9 +194,11 @@ export function deleteExpense(tripId, expenseId) {
 
 // ===== Bookings (hotel na na-book sa Agoda/Klook/etc.) =====
 
-export async function fetchTripBookings(tripId) {
-  const data = await api.get(`/trips/${tripId}/bookings`);
-  return Array.isArray(data) ? data : [];
+export function fetchTripBookings(tripId) {
+  return withCache(`bookings:${tripId}`, async () => {
+    const data = await api.get(`/trips/${tripId}/bookings`);
+    return Array.isArray(data) ? data : [];
+  });
 }
 
 export async function fetchMyBookings() {

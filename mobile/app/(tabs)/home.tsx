@@ -8,6 +8,7 @@ import { Colors } from '../../constants/theme';
 import { GUIDE_DESTINATIONS, keywordFor } from '../../constants/destinations';
 import { useApp } from '../../context/AppContext';
 import { fetchTrips } from '../../services/tripService';
+import { isOffline, onOfflineChange } from '../../services/offlineStore';
 import { fetchNotifications } from '../../services/userService';
 import { geocodeDestination } from '../../services/geoService';
 import TripListItem from '../../components/TripListItem';
@@ -29,6 +30,8 @@ export default function HomeScreen() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [offline, setOfflineState] = useState(isOffline());
+  useEffect(() => onOfflineChange(setOfflineState), []);
   const [refreshing, setRefreshing] = useState(false);
   const [unread, setUnread] = useState(0);
   const [tripPins, setTripPins] = useState([]);
@@ -139,6 +142,10 @@ export default function HomeScreen() {
               <Text style={styles.greeting}>
                 {t('helloPrefix')} {user.firstName}!
               </Text>
+            )}
+
+            {offline && !error && (
+              <Text style={styles.offlineNote}>{t('homeOfflineNote')}</Text>
             )}
 
             {error ? (
@@ -285,6 +292,11 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  offlineNote: {
+    fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600,
+    backgroundColor: Colors.white, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10,
+    marginBottom: 10, overflow: 'hidden',
+  },
   screen: { flex: 1, backgroundColor: Colors.cream },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

@@ -9545,3 +9545,12 @@ textarea:focus-visible {
   animation: none;
   cursor: default;
 }
+
+/* Landing page top bar: the section being read is highlighted, same look
+   as the current page in the inner pages' navbar (pill + accent line). */
+.ww-lp-links a.active {
+  background-color: var(--ww-surface-3);
+  color: var(--ww-text);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--ww-accent);
+}

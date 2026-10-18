@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../App.css";
@@ -29,22 +29,83 @@ const STEPS = [
   ["lpStep4", "lpStep4Text"],
 ];
 
+// Sections linked from the top bar, in page order.
+const NAV_SECTIONS = [
+  ["features", "lpNavFeatures"],
+  ["who", "lpNavWho"],
+  ["how", "lpNavHow"],
+  ["about", "aboutUs"],
+];
+
 export default function HomePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const headerRef = useRef(null);
+  const linksRef = useRef(null);
+
+  // Scroll indicator: the top-bar link of the section being read gets the
+  // same highlight as the current page in the inner pages' navbar.
+  const [activeSection, setActiveSection] = useState("");
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = (headerRef.current?.getBoundingClientRect().bottom || 0) + 48;
+      let current = "";
+      for (const [id] of NAV_SECTIONS) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+      }
+      // At the very bottom the last section counts as read, even if short.
+      const atBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom) current = NAV_SECTIONS[NAV_SECTIONS.length - 1][0];
+      setActiveSection(current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  // Phones: the links row scrolls sideways — keep the active one in view.
+  useEffect(() => {
+    const nav = linksRef.current;
+    if (!nav || !activeSection || nav.scrollWidth <= nav.clientWidth) return;
+    const link = nav.querySelector(`a[href="#${activeSection}"]`);
+    if (!link) return;
+    const navBox = nav.getBoundingClientRect();
+    const linkBox = link.getBoundingClientRect();
+    const left = nav.scrollLeft + (linkBox.left - navBox.left) - (navBox.width - linkBox.width) / 2;
+    nav.scrollTo({ left, behavior: "smooth" });
+  }, [activeSection]);
 
   return (
     <div className="wanderwise-home ww-landing">
-      <header className="ww-navbar ww-lp-nav">
+      <header className="ww-navbar ww-lp-nav" ref={headerRef}>
         <a className="ww-brand" href="#top">
           <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
           <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </a>
-        <nav className="ww-lp-links" aria-label={t("lpSections")}>
-          <a href="#features">{t("lpNavFeatures")}</a>
-          <a href="#who">{t("lpNavWho")}</a>
-          <a href="#how">{t("lpNavHow")}</a>
-          <a href="#about">{t("aboutUs")}</a>
+        <nav className="ww-lp-links" aria-label={t("lpSections")} ref={linksRef}>
+          {NAV_SECTIONS.map(([id, label]) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className={activeSection === id ? "active" : undefined}
+              aria-current={activeSection === id ? "location" : undefined}
+            >
+              {t(label)}
+            </a>
+          ))}
         </nav>
         <div className="ww-lp-nav-actions">
           <button type="button" className="ww-lp-text-btn" onClick={() => navigate("/login")}>

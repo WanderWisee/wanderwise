@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import FadeScrollView from '../components/FadeScrollView';
 import { useApp } from '../context/AppContext';
+import { useDialog } from '../context/DialogContext';
+import { confirmLogout } from '../utils/confirmLogout';
 
 const SETTINGS_ITEMS = [
   { key: 'account', labelKey: 'settingsAccount', icon: 'user', tint: '#F4D9A8', route: '/settings/account' },
@@ -16,8 +18,10 @@ const SETTINGS_ITEMS = [
 export default function SettingsScreen() {
   const router = useRouter();
   const { t, signOut } = useApp();
+  const { confirm } = useDialog();
 
   async function handleLogout() {
+    if (!(await confirmLogout(confirm, t))) return;
     await signOut();
     router.replace('/');
   }

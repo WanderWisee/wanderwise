@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
+import { useDialog } from '../context/DialogContext';
+import { confirmLogout } from '../utils/confirmLogout';
 import { fetchNotifications, fullName } from '../services/userService';
 import { Avatar } from './ui';
 
@@ -32,6 +34,7 @@ export default function MenuSheet({ visible, onClose, onShareProfile = null }) {
   const [progress] = useState(() => new Animated.Value(0));
   const closing = useRef(false);
   const { t, user, signOut } = useApp();
+  const { confirm } = useDialog();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -58,7 +61,9 @@ export default function MenuSheet({ visible, onClose, onShareProfile = null }) {
   function open(route) { handleClose(() => router.push(route)); }
 
   function handleLogout() {
+    // Close the menu first, then ask (the question shows on the screen).
     handleClose(async () => {
+      if (!(await confirmLogout(confirm, t))) return;
       await signOut();
       router.replace('/');
     });

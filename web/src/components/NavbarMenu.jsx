@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { notifyAuthChanged, useAppData } from "../context/AppDataContext";
+import { useDialog } from "../context/DialogContext";
 import "../App.css";
 
 export default function NavbarMenu() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { profileRole } = useAppData();
+  const { confirm } = useDialog();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -27,8 +29,11 @@ export default function NavbarMenu() {
     navigate(path, state ? { state } : undefined);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setOpen(false);
+    // Ask first, so a mis-click doesn't log the person out.
+    const ok = await confirm(t("logoutConfirmMessage"), { confirmLabel: t("logout") });
+    if (!ok) return;
     localStorage.removeItem("wanderwise_token");
     // Clears the previous account's profile/journals right away.
     notifyAuthChanged();

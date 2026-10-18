@@ -62,6 +62,7 @@ export const translations = {
     history: "History",
     language: "Language",
     logout: "Log out",
+    logoutConfirmMessage: "Are you sure you want to log out?",
 
     // ===== Register / Sign Up =====
     registerErrFillAll: "Please fill in all fields.",
@@ -1082,6 +1083,7 @@ export const translations = {
     history: "Kasaysayan",
     language: "Wika",
     logout: "Mag-log out",
+    logoutConfirmMessage: "Sigurado ka bang gusto mong mag-log out?",
 
     // fil
     locationNotFoundFor: "Hindi nahanap ang lokasyon para sa",

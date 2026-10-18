@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: Colors.brown900, borderRadius: 12, height: 40,
     alignItems: 'center', justifyContent: 'center',
   },
-  readButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
+  readButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.onButton },
   profileButton: {
     flex: 1, borderRadius: 12, height: 40, borderWidth: 1.4, borderColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',

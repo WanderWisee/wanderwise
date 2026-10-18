@@ -1377,7 +1377,7 @@ function TripDetailContent({ id }) {
                 />
                 <TouchableOpacity style={styles.addExpenseButton} onPress={handleAddExpense} disabled={saving}>
                   {saving ? (
-                    <ActivityIndicator size="small" color={Colors.mint} />
+                    <ActivityIndicator size="small" color={Colors.onButton} />
                   ) : (
                     <IconLabel name="plus" textStyle={styles.addExpenseButtonText}>{t('addExpenseBtn')}</IconLabel>
                   )}
@@ -1607,7 +1607,7 @@ const styles = StyleSheet.create({
   addPlaceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 12 },
   addPlaceInput: { flex: 1, minWidth: 0, minHeight: 52, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: Colors.brown900, backgroundColor: Colors.white, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 14, paddingVertical: 14 },
   addPlaceButton: { width: 52, height: 52, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
-  addPlaceButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.mint },
+  addPlaceButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: Colors.onButton },
   iconSquareButton: { width: 44, height: 52, borderRadius: 14, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   iconSquareButtonActive: { backgroundColor: Colors.tintSage, borderColor: Colors.teal },
   emptyText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600 },
@@ -1653,7 +1653,7 @@ const styles = StyleSheet.create({
   addExpenseButton: {
     backgroundColor: Colors.brown900, borderRadius: 12, height: 44, alignItems: 'center', justifyContent: 'center',
   },
-  addExpenseButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  addExpenseButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.onButton },
   breakdownCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 20, gap: 16 },
   breakdownRow: { gap: 6 },
   breakdownLabel: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900, marginRight: 10 },

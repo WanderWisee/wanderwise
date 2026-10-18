@@ -181,5 +181,5 @@ const styles = StyleSheet.create({
   cancel: { flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   cancelText: { fontFamily: Fonts.medium, fontSize: 14, color: Colors.brown900 },
   confirm: { flex: 1, height: 44, borderRadius: 12, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
-  confirmText: { fontFamily: Fonts.semibold, fontSize: 14, color: Colors.mint },
+  confirmText: { fontFamily: Fonts.semibold, fontSize: 14, color: Colors.onButton },
 });

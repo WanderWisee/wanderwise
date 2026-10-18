@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: 15.5,
-    color: Colors.mint,
+    color: Colors.onButton,
   },
   outlineButton: {
     flex: 1,

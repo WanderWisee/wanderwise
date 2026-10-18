@@ -85,8 +85,8 @@ export default function NotificationsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListHeaderComponent={
             unread > 0 ? (
-              <TouchableOpacity onPress={readAll} style={styles.readAll}>
-                <IconLabel name="check" textStyle={styles.readAllText}>{t('markAllRead')} ({unread})</IconLabel>
+              <TouchableOpacity onPress={readAll} style={styles.readAll} accessibilityRole="button">
+                <IconLabel name="check" size={15} color={WEB_TEAL} textStyle={styles.readAllText}>{t('markAllRead')}</IconLabel>
               </TouchableOpacity>
             ) : null
           }
@@ -98,7 +98,7 @@ export default function NotificationsScreen() {
           renderItem={({ item: n }) => (
             <TouchableOpacity style={[styles.row, !n.isRead && styles.rowUnread]} onPress={() => open(n)} activeOpacity={0.7}>
               <View style={styles.iconBadge}>
-                <AppIcon name={notificationIcon(n.type)} size={22} />
+                <AppIcon name={notificationIcon(n.type)} size={18} color={WEB_TEAL} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.text, !n.isRead && { fontFamily: 'Poppins_600SemiBold' }]}>
@@ -115,6 +115,12 @@ export default function NotificationsScreen() {
   );
 }
 
+// Same look as the web's Notifications page: teal icons in a round tile,
+// and a teal pill "Mark all as read" button.
+const WEB_TEAL = '#2F6F5F';
+const WEB_TEAL_50 = '#E8F2EE';
+const WEB_TEAL_200 = '#A9D6CC';
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.cream },
   gear: {
@@ -122,8 +128,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center',
   },
   list: { paddingHorizontal: 20, paddingBottom: 30 },
-  readAll: { alignSelf: 'flex-end', paddingVertical: 6, marginBottom: 8 },
-  readAllText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
+  readAll: {
+    alignSelf: 'flex-end', marginBottom: 10, minHeight: 36, paddingHorizontal: 14, justifyContent: 'center',
+    borderRadius: 999, borderWidth: 1, borderColor: WEB_TEAL_200, backgroundColor: WEB_TEAL_50,
+  },
+  readAllText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: WEB_TEAL },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 10,
@@ -131,7 +140,8 @@ const styles = StyleSheet.create({
   },
   rowUnread: { borderColor: Colors.teal, backgroundColor: '#FBFDF9' },
   iconBadge: {
-    width: 38, height: 38, borderRadius: 12, backgroundColor: Colors.cream2,
+    width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFDF4',
+    borderWidth: 1, borderColor: '#E6DFC0',
     alignItems: 'center', justifyContent: 'center',
   },
   text: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, lineHeight: 19, color: Colors.brown900 },

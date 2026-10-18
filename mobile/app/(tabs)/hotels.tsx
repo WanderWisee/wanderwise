@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   counterButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 22, color: Colors.brown900 },
   counterValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: Colors.brown900, minWidth: 20, textAlign: 'center' },
   searchButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.onButton },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   sectionIconBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flex: 1 },
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   hotelName: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 6 },
   hotelAmenities: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.brown600, marginBottom: 12 },
   dealButton: { backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 16, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
-  dealButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  dealButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.onButton },
   overlay: { flex: 1, backgroundColor: 'rgba(51,28,8,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cream, borderTopLeftRadius: 22, borderTopRightRadius: 22,

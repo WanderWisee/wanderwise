@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brown900, borderRadius: 14, minHeight: 52, paddingVertical: 14,
     alignItems: 'center', justifyContent: 'center',
   },
-  searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
+  searchButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.onButton },
 
   horizontalListContent: { gap: 14, paddingRight: 6 },
   destinationCardHorizontal: { width: 200, borderRadius: 20, backgroundColor: Colors.white, overflow: 'hidden', borderWidth: 1, borderColor: Colors.line },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brown900, borderRadius: 12, minHeight: 44,
     alignItems: 'center', justifyContent: 'center', marginHorizontal: 14, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10,
   },
-  itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
+  itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.onButton },
 
   bookingCardHorizontal: {
     width: 160, height: 90, borderRadius: 12, alignItems: 'center', justifyContent: 'center',

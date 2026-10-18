@@ -148,7 +148,7 @@ export default function NewTripScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.mint} />
+            <ActivityIndicator color={Colors.onButton} />
           ) : (
             <Text style={styles.submitButtonText}>{t('letsGo')}</Text>
           )}
@@ -203,5 +203,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12,
   },
   submitButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  submitButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15.5, color: Colors.mint },
+  submitButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15.5, color: Colors.onButton },
 });

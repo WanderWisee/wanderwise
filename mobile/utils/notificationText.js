@@ -62,42 +62,50 @@ export function notificationText(n, t, formatTime) {
   }
 }
 
+// Same icons as the web (web/src/utils/notificationText.js).
 export function notificationIcon(type) {
   switch (type) {
+    case 'trip_start':
+      return 'briefcase';
+    case 'activity':
+      return 'clock';
+    case 'checkin':
+    case 'booking_added':
+      return 'bed';
+    case 'crew_added':
+    case 'crew_joined':
+    case 'crew_removed':
+    case 'crew_left':
+      return 'users';
+    case 'comment':
+      return 'message';
+    case 'trip_updated':
+      return 'pencil';
+    case 'expense_added':
+      return 'banknote';
+    case 'budget_80':
+      return 'warning';
+    case 'budget_over':
+      return 'alert-circle';
+    case 'trip_ended':
+      return 'book';
     case 'announcement':
-    case 'class_announcement': return 'message';
+    case 'class_announcement':
+      return 'megaphone';
+    case 'password_changed':
+      return 'lock';
     case 'class_added':
-    case 'class_removed': return 'graduation';
-    case 'journal_hidden': return 'ban';
-    case "trip_start":
-      return "suitcase";
-    case "activity":
-      return "clock";
-    case "checkin":
-      return "hotel";
-    case "crew_added":
-    case "crew_joined":
-    case "crew_removed":
-    case "crew_left":
-      return "users";
-    case "comment":
-      return "message";
-    case "trip_updated":
-      return "pencil";
-    case "expense_added":
-      return "wallet";
-    case "booking_added":
-      return "hotel";
-    case "budget_80":
-      return "warning";
-    case "budget_over":
-      return "warning";
-    case "trip_ended":
-      return "book";
-    case "password_changed":
-      return "lock";
+    case 'teacher_approved':
+    case 'teacher_pending':
+      return 'graduation';
+    case 'student_joined':
+      return 'user-plus';
+    case 'class_removed':
+      return 'logout';
+    case 'journal_hidden':
+      return 'ban';
     default:
-      return "bell";
+      return 'bell';
   }
 }
 // Ang "link" ng notification ay para sa web ("/trip-plan?tripId=5",

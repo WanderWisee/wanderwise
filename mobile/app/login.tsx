@@ -98,7 +98,7 @@ export default function LoginScreen() {
 
             <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
               {loading ? (
-                <ActivityIndicator color={Colors.mint} />
+                <ActivityIndicator color={Colors.onButton} />
               ) : (
                 <Text style={styles.primaryButtonText}>{t('logIn')}</Text>
               )}
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12,
   },
   primaryButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.onButton },
   linkRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, marginTop: 20 },
   linkText: { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 20, color: Colors.teal, paddingVertical: 12 },
 });

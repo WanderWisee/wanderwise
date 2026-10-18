@@ -65,7 +65,7 @@ export function PrimaryButton({ label, onPress, loading = false, disabled = fals
       activeOpacity={0.85}
     >
       {loading ? (
-        <ActivityIndicator color={Colors.mint} />
+        <ActivityIndicator color={Colors.onButton} />
       ) : (
         <Text style={[styles.primaryButtonText, small && { fontSize: 13 }]}>{label}</Text>
       )}
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
   },
   primaryButtonSmall: { minHeight: Layout.touchTarget, paddingVertical: 10, borderRadius: 12, paddingHorizontal: 14 },
-  primaryButtonText: { fontFamily: Fonts.semibold, fontSize: 15, color: Colors.mint },
+  primaryButtonText: { fontFamily: Fonts.semibold, fontSize: 15, color: Colors.onButton },
   outlineButton: {
     minHeight: Layout.controlHeight, paddingVertical: 14, borderRadius: Radius.control, borderWidth: 1, borderColor: Colors.line,
     backgroundColor: Colors.white,

@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   dangerButton: { backgroundColor: Colors.error },
-  confirmText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
+  confirmText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.onButton },
   dangerText: { color: '#FFFFFF' },
   toast: {
     position: 'absolute', bottom: 96, alignSelf: 'center',

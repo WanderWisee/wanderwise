@@ -178,7 +178,7 @@ export default function JournalViewScreen() {
               maxLength={1000}
             />
             <TouchableOpacity style={styles.sendButton} onPress={send} disabled={sending || !text.trim()}>
-              {sending ? <ActivityIndicator color={Colors.mint} size="small" /> : <Text style={styles.sendText}>{t('send')}</Text>}
+              {sending ? <ActivityIndicator color={Colors.onButton} size="small" /> : <Text style={styles.sendText}>{t('send')}</Text>}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -226,5 +226,5 @@ const styles = StyleSheet.create({
     height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  sendText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  sendText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.onButton },
 });

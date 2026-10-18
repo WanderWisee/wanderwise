@@ -280,5 +280,5 @@ const styles = StyleSheet.create({
   costCancel: { flex: 1, minHeight: 44, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.line, alignItems: 'center', justifyContent: 'center' },
   costCancelText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
   costAdd: { flex: 1, minHeight: 44, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
-  costAddText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.mint },
+  costAddText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.onButton },
 });

@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, lineHeight: 26, letterSpacing: -0.3, color: Colors.brown900, flexGrow: 1, flexShrink: 1 },
   addButton: { backgroundColor: Colors.brown900, borderRadius: 12, paddingHorizontal: 12, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
-  addButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  addButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.onButton },
   tripCard: { backgroundColor: Colors.white, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, paddingHorizontal: 12, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14, marginTop: 8 },
   gridCard: { width: '48%', backgroundColor: Colors.white, borderRadius: 14, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },

@@ -639,7 +639,7 @@ html[data-ww-unread] .ww-nav-icons > :nth-child(2)::after {
   border: 1px solid transparent;
   border-radius: var(--ww-r-md);
   background-color: var(--ww-btn);
-  color: var(--ww-on-btn);
+  color: var(--ww-on-btn-text);
   font-family: var(--ww-font-body);
   font-size: var(--ww-fs-base);
   font-weight: 600;
@@ -9553,4 +9553,15 @@ textarea:focus-visible {
   color: var(--ww-text);
   font-weight: 700;
   box-shadow: inset 0 -2px 0 var(--ww-accent);
+}
+
+/* Dark #331C08 buttons: text is #FEFCF3 (was mint). Other buttons keep
+   their own colours. */
+:root {
+  --ww-on-btn-text: #fefcf3;
+}
+
+/* The red warning button keeps its previous text colour. */
+.ww-warning-modal-ok-btn {
+  color: var(--ww-on-btn);
 }

@@ -301,7 +301,7 @@ export default function SignupScreen() {
 
                 <TouchableOpacity style={[styles.primaryButton, hasErrors && { opacity: 0.5 }]} onPress={handleSendCode} disabled={loading || hasErrors}>
                   {loading ? (
-                    <ActivityIndicator color={Colors.mint} />
+                    <ActivityIndicator color={Colors.onButton} />
                   ) : (
                     <Text style={styles.primaryButtonText}>{t('register')}</Text>
                   )}
@@ -333,7 +333,7 @@ export default function SignupScreen() {
 
                 <TouchableOpacity style={styles.primaryButton} onPress={handleVerify} disabled={loading}>
                   {loading ? (
-                    <ActivityIndicator color={Colors.mint} />
+                    <ActivityIndicator color={Colors.onButton} />
                   ) : (
                     <Text style={styles.primaryButtonText}>{t('verifyAndCreate')}</Text>
                   )}
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     textAlign: 'center', marginBottom: 18,
   },
   primaryButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.onButton },
   consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
   consentBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   consentBoxOn: { backgroundColor: Colors.brown900 },

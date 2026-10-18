@@ -94,6 +94,6 @@ const styles = StyleSheet.create({
     shadowColor: Colors.brown900, shadowOpacity: 0.15, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
-  logoutIcon: { fontSize: 15, color: Colors.mint },
-  logoutText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  logoutIcon: { fontSize: 15, color: Colors.onButton },
+  logoutText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.onButton },
 });

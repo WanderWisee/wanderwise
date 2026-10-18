@@ -6,6 +6,8 @@ export const Colors = {
   brown900: '#331C08',
   brown800: '#3D2814',
   brown600: '#5F4E3A',
+  // Text on every button (buttons are brown900 #331C08).
+  onButton: '#FEFCF3',
   // Match the mint sampled from the supplied logo (buttons, tabs, badges).
   mint: '#89D4D0',
   // Teal = links and highlights on light backgrounds

@@ -163,7 +163,7 @@ export default function ForgotPasswordScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={Colors.mint} />
+                <ActivityIndicator color={Colors.onButton} />
               ) : (
                 <Text style={styles.primaryButtonText}>
                   {step === 'email' ? t('continueBtn') : t('resetPasswordTitle')}
@@ -200,6 +200,6 @@ const styles = StyleSheet.create({
   otpInput: { fontSize: 26, letterSpacing: 10, textAlign: 'center', fontFamily: 'Poppins_600SemiBold' },
   errorText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.error, marginBottom: 12 },
   primaryButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.onButton },
   linkText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
 });

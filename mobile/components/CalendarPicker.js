@@ -206,5 +206,5 @@ const styles = StyleSheet.create({
     flex: 1, height: 44, borderRadius: 12, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center',
   },
-  dateConfirmButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.mint },
+  dateConfirmButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.onButton },
 });

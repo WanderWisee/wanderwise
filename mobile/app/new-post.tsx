@@ -425,7 +425,7 @@ export default function NewPostScreen() {
       <View style={styles.publishBar}>
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ busy: posting, disabled: posting || !draftReady }} style={[styles.postButton, (posting || !draftReady) && { opacity: 0.6 }]} onPress={handlePost} disabled={posting || !draftReady} activeOpacity={0.85}>
           {posting ? (
-            <ActivityIndicator color={Colors.mint} />
+            <ActivityIndicator color={Colors.onButton} />
           ) : (
             <Text style={styles.postButtonText}>{t('postToJournal')}</Text>
           )}
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
   ratingButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   chipInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   addMark: { width: 44, height: 52, borderRadius: 12, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
-  addMarkText: { fontSize: 18, color: Colors.mint },
+  addMarkText: { fontSize: 18, color: Colors.onButton },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   chip: { minHeight: 44, justifyContent: 'center', backgroundColor: Colors.cream, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   chipText: { fontSize: 12, lineHeight: 20, color: Colors.brown900 },
@@ -487,5 +487,5 @@ const styles = StyleSheet.create({
   hotelEntryDesc: { fontSize: 12, lineHeight: 19, color: Colors.brown600, marginTop: 4 },
   publishBar: { backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.line, paddingHorizontal: 20, paddingVertical: 12 },
   postButton: { width: '100%', maxWidth: 520, alignSelf: 'center', backgroundColor: Colors.brown900, borderRadius: 14, minHeight: 52, padding: 14, alignItems: 'center', justifyContent: 'center' },
-  postButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  postButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.onButton },
 });

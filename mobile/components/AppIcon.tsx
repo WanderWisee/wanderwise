@@ -6,9 +6,10 @@ import {
   Map, MapPin, Menu, MessageCircle, Minus, MoreHorizontal, Pencil, Plane,
   Plus, Radio, Receipt, Search, Send, Settings, ShoppingBag, Sparkles,
   SquareCheck, Star, Luggage as Suitcase, Ticket, Trash2, TriangleAlert, User, Users,
-  Utensils, Wallet, X, Ban, Maximize2, type LucideIcon,
+  Utensils, Wallet, X, Ban, Maximize2, Briefcase, Bed, Banknote, Megaphone, CircleAlert,
+  UserPlus, type LucideIcon,
 } from 'lucide-react-native';
-import { StyleSheet, View, Platform, type ColorValue, type StyleProp, type TextStyle } from 'react-native';
+import { StyleSheet, View, type ColorValue, type StyleProp, type TextStyle } from 'react-native';
 import { Colors } from '../constants/theme';
 import { Text } from './Typography';
 
@@ -25,6 +26,9 @@ const icons: Record<string, LucideIcon> = {
   settings: Settings, shopping: ShoppingBag, sparkles: Sparkles, 'square-check': SquareCheck,
   star: Star, suitcase: Suitcase, ticket: Ticket, trash: Trash2, warning: TriangleAlert,
   user: User, users: Users, utensils: Utensils, wallet: Wallet, ban: Ban, expand: Maximize2, x: X,
+  // Same icons as the web's notifications list
+  briefcase: Briefcase, bed: Bed, banknote: Banknote, megaphone: Megaphone,
+  'alert-circle': CircleAlert, 'user-plus': UserPlus,
 };
 
 export default function AppIcon({ name, size = 22, color = Colors.brown900, style, filled = false }: {
@@ -33,7 +37,7 @@ export default function AppIcon({ name, size = 22, color = Colors.brown900, styl
   const Icon = icons[name] || CircleHelp;
   const textStyle = StyleSheet.flatten(style);
   return <Icon size={textStyle?.fontSize || size} color={textStyle?.color as string || color}
-    strokeWidth={2} fill={filled ? color : 'none'} {...(Platform.OS === 'web' ? { 'aria-hidden': true } : { accessible: false })} />;
+    strokeWidth={2} fill={filled ? color : 'none'} accessible={false} />;
 }
 
 export function IconLabel({ name, children, textStyle, size = 18, color, trailing = false }: {

@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   authorsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   authorsText: { fontFamily: 'Poppins_400Regular', fontSize: 12, lineHeight: 19, color: Colors.brown600 },
   itineraryButton: { backgroundColor: Colors.brown900, borderRadius: 12, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
-  itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.mint },
+  itineraryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13.5, color: Colors.onButton },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
   gridCard: { width: '48%', backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, overflow: 'hidden' },
   gridImage: { width: '100%', height: 110, backgroundColor: Colors.cream2 },

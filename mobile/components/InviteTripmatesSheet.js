@@ -191,7 +191,7 @@ function InviteContent({ visible, onClose, tripId, onChanged = null, onLeft = nu
                       disabled={already || busyId === p.id}
                     >
                       {busyId === p.id ? (
-                        <ActivityIndicator size="small" color={Colors.mint} />
+                        <ActivityIndicator size="small" color={Colors.onButton} />
                       ) : (
                         <Text style={styles.smallButtonText}>{already ? 'check' : t('add')}</Text>
                       )}
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     minWidth: 58, height: 32, borderRadius: 10, backgroundColor: Colors.brown900,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12,
   },
-  smallButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.mint },
+  smallButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.onButton },
   removeText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12.5, color: Colors.error },
   leaveRow: { borderTopWidth: 1, borderTopColor: Colors.line, paddingTop: 16, marginTop: 12 },
   leaveText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: Colors.error },

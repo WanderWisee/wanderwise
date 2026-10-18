@@ -232,39 +232,15 @@ public class ClassesController : ControllerBase
 
     // ================= TEACHER: roster =================
 
+    // Teachers can no longer add students themselves: a student joins only
+    // with the class code, so no student's data is shown to a teacher
+    // without the student agreeing (Data Privacy Act).
     [HttpPost("/api/teacher/classes/{classId:int}/students")]
     public async Task<IActionResult> AddStudent(int classId, [FromBody] AddStudentRequest request)
     {
         var cls = await LoadMyClassAsTeacherAsync(classId);
         if (cls is null) return NotFound();
-
-        var key = request.StudentNumber?.Trim() ?? "";
-        if (key.Length == 0) return BadRequest(new { error = "student_number_required" });
-
-        var student = await _db.Users.FirstOrDefaultAsync(u =>
-            (u.StudentNumber == key.ToUpper() || u.Email == key) &&
-            u.Role == PortalAccess.RoleStudent && u.AccountStatus == PortalAccess.StatusActive);
-        if (student is null) return NotFound(new { error = "student_not_found" });
-
-        var result = await AddStudentToClassAsync(cls, student);
-        if (result is OkObjectResult)
-        {
-            var teacher = await _db.Users.FindAsync(CurrentUserId);
-            var teacherName = NotificationHelper.FullName(teacher);
-            await NotificationHelper.CreateAsync(
-                _db, student.Id, NotificationHelper.ClassAdded,
-                $"{teacherName} added you to the class {ClassLabel(cls)}.",
-                $"/classes/{cls.Id}",
-                new { actorName = teacherName, className = ClassLabel(cls) },
-                $"class_added:{cls.Id}:{student.Id}");
-            return Ok(new
-            {
-                userId = student.Id,
-                firstName = student.FirstName,
-                lastName = student.LastName,
-            });
-        }
-        return result;
+        return BadRequest(new { error = "join_with_code" });
     }
 
     [HttpDelete("/api/teacher/classes/{classId:int}/students/{studentId:int}")]
@@ -346,7 +322,6 @@ public class ClassesController : ControllerBase
                 lastName = student.LastName,
                 studentNumber = student.StudentNumber,
                 email = student.Email,
-                cellphone = student.CellphoneNumber,
                 avatarUrl = student.AvatarUrl,
                 bio = student.Bio,
                 joinedAt = member.JoinedAt,

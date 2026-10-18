@@ -163,22 +163,7 @@ function StudentsTab({ cls, reload }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { confirm } = useDialog();
-  const [studentNumber, setStudentNumber] = useState("");
-  const [msg, setMsg] = useState(null);
   const [filter, setFilter] = useState("");
-
-  const add = async (e) => {
-    e.preventDefault();
-    if (!studentNumber.trim()) return;
-    const r = await api(`/api/teacher/classes/${cls.id}/students`, { method: "POST", body: { studentNumber } });
-    if (r.ok) {
-      setMsg({ ok: true, text: `${t("studentAdded")}: ${fullName(r.data)}` });
-      setStudentNumber("");
-      reload();
-    } else if (r.status === 409) setMsg({ ok: false, text: t("studentAlreadyInClass") });
-    else if (r.status === 404) setMsg({ ok: false, text: t("addStudentNotFound") });
-    else setMsg({ ok: false, text: t("portalSaveFailed") });
-  };
 
   const remove = async (s) => {
     if (!(await confirm(`${t("confirmRemoveStudent")} ${fullName(s)}?`, { danger: true, confirmLabel: t("removeLabel") }))) return;
@@ -194,12 +179,10 @@ function StudentsTab({ cls, reload }) {
 
   return (
     <section className="ww-portal-card">
-      <form className="ww-portal-inline-form" onSubmit={add}>
-        <input className="ww-field-input" value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)}
-          placeholder={t("addStudentPlaceholder")} />
-        <button type="submit" className="ww-search-btn" disabled={!studentNumber.trim()}>＋ {t("addStudent")}</button>
-      </form>
-      {msg && <p className={msg.ok ? "ww-portal-ok" : "ww-portal-error"}>{msg.text}</p>}
+      {/* Students join themselves with the class code (their consent). */}
+      <p className="ww-portal-hint">
+        {t("studentsJoinWithCode")} <code className="ww-portal-code">{cls.joinCode}</code>
+      </p>
 
       {(cls.students || []).length === 0 ? (
         <div className="ww-portal-empty">

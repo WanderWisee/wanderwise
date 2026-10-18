@@ -92,7 +92,6 @@ function StudentDetail() {
           <h1 className="ww-portal-title">{fullName(s)}</h1>
           <p className="ww-portal-muted">
             <code>{s.studentNumber}</code> · {s.email}
-            {s.cellphone && <> · <Icon name="smartphone" /> {s.cellphone}</>}
           </p>
           {s.bio && <p className="ww-portal-muted small">“{s.bio}”</p>}
           <p className="ww-portal-muted small">{t("joinedClassOn")} {formatDate(toLocalDate(s.joinedAt))}</p>

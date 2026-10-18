@@ -114,12 +114,21 @@ public class TourController : ControllerBase
             .Where(a => a.TripId == tripId && a.DayDate == day.Value)
             .ToListAsync();
 
+        // A teacher only sees check-in photos/locations of students in
+        // their own classes, not of other people on the trip.
+        var myStudentIds = role == "teacher"
+            ? await _db.ClassMembers
+                .Where(m => _db.Classes.Any(c => c.Id == m.ClassId && c.TeacherId == CurrentUserId))
+                .Select(m => m.StudentId)
+                .ToListAsync()
+            : new List<int>();
+
         var roster = people.Select(u =>
         {
             var a = attendance.FirstOrDefault(x => x.UserId == u.Id);
             // Photos/locations are shown to managers, and to each student
             // for their own check-in only.
-            var canSeeProof = manager || role == "teacher" || u.Id == CurrentUserId;
+            var canSeeProof = manager || (role == "teacher" && myStudentIds.Contains(u.Id)) || u.Id == CurrentUserId;
             return new
             {
                 userId = u.Id,

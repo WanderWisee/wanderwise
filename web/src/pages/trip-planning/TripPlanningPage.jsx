@@ -41,9 +41,13 @@ export default function TripPlanningPage() {
     try {
       // If it's not in the list yet, this adds it — so the database
       // keeps growing with whatever people actually search for.
+      const token = localStorage.getItem("wanderwise_token");
       await fetch("/api/destinations/ensure", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ name: trimmed }),
       });
     } catch (err) {

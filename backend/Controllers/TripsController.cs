@@ -68,10 +68,13 @@ public class TripsController : ControllerBase
         if (await PortalAccess.HasRoleAsync(_db, CurrentUserId, PortalAccess.RoleTeacher))
             return Forbid();
 
+        var invalid = TripError(request);
+        if (invalid != null) return BadRequest(new { error = invalid });
+
         var trip = new Trip
         {
             UserId = CurrentUserId,
-            Title = request.Title,
+            Title = CleanTitle(request.Title),
             TripName = CleanTripName(request.TripName),
             Destination = request.Destination,
             StartDate = ParseDate(request.StartDate),
@@ -98,6 +101,9 @@ public class TripsController : ControllerBase
         if (trip is null) return NotFound();
         if (!await CanEditTripAsync(trip)) return Forbid();
 
+        var invalid = TripError(request);
+        if (invalid != null) return BadRequest(new { error = invalid });
+
         // Snapshot of the trip BEFORE saving, to tell whether anything the
         // crew would care about actually changed (the page also saves when
         // nothing changed, e.g. right after opening a trip).
@@ -113,7 +119,7 @@ public class TripsController : ControllerBase
                 p.Name, p.ItineraryDate?.ToString("yyyy-MM-dd"), p.ItineraryOrder,
                 p.ScheduledTime?.ToString("HH:mm"), p.Visited)));
 
-        trip.Title = request.Title;
+        trip.Title = CleanTitle(request.Title);
         trip.TripName = CleanTripName(request.TripName);
         trip.Destination = request.Destination;
         trip.StartDate = ParseDate(request.StartDate);
@@ -676,6 +682,64 @@ public class TripsController : ControllerBase
         var name = (raw ?? "").Trim();
         if (name.Length == 0) return null;
         return name.Length > 150 ? name[..150] : name;
+    }
+
+    // Server-side check of everything the builder sends. The pages already
+    // limit these, but the API can be called directly, so the same limits
+    // are enforced here (sizes match the database columns).
+    private const decimal MaxMoney = 99_999_999m; // decimal(10,2)
+    private const int MaxSections = 100;
+    private const int MaxPlaces = 500;
+    private const int MaxCostsPerPlace = 50;
+
+    private static string? TripError(SaveTripRequest r)
+    {
+        if (r is null) return "Trip details are missing.";
+        if ((r.Destination ?? "").Trim().Length > 150) return "Destination is too long (max 150 characters).";
+        if (r.BudgetTotal < 0 || r.BudgetTotal > MaxMoney) return "Budget must be between 0 and 99,999,999.";
+        if (r.TravelBuddiesCount < 0 || r.TravelBuddiesCount > 500) return "Number of people must be between 0 and 500.";
+
+        var start = ParseDate(r.StartDate);
+        var end = ParseDate(r.EndDate);
+        if (start.HasValue && end.HasValue && end.Value < start.Value) return "End date can't be before the start date.";
+
+        var sections = r.Sections ?? new List<SectionDto>();
+        if (sections.Count > MaxSections) return $"Too many lists (max {MaxSections}).";
+        var placeCount = 0;
+        foreach (var sec in sections)
+        {
+            if (sec is null) return "A list is empty.";
+            if ((sec.Name ?? "").Trim().Length > 100) return "A list name is too long (max 100 characters).";
+            var places = sec.Places ?? new List<PlaceDto>();
+            placeCount += places.Count;
+            if (placeCount > MaxPlaces) return $"Too many places (max {MaxPlaces}).";
+            foreach (var pl in places)
+            {
+                if (pl is null) return "A place is empty.";
+                var placeName = (pl.Name ?? "").Trim();
+                if (placeName.Length > 150) return "A place name is too long (max 150 characters).";
+                if ((pl.Notes ?? "").Length > 5000) return "Notes are too long (max 5,000 characters).";
+                if (pl.Latitude is < -90 or > 90 || pl.Longitude is < -180 or > 180) return "A place has an invalid location.";
+                var costs = pl.Costs ?? new List<CostDto>();
+                if (costs.Count > MaxCostsPerPlace) return $"Too many costs on one place (max {MaxCostsPerPlace}).";
+                foreach (var c in costs)
+                {
+                    if (c is null) return "A cost is empty.";
+                    if ((c.Category ?? "").Trim().Length > 50) return "A cost category is too long (max 50 characters).";
+                    if (c.Amount < 0 || c.Amount > MaxMoney) return "A cost must be between 0 and 99,999,999.";
+                }
+            }
+        }
+        return null;
+    }
+
+    // trips.title is varchar(100); the pages build it as "Trip to <destination>",
+    // so a long destination is cut here instead of failing the save.
+    private static string? CleanTitle(string? raw)
+    {
+        if (raw is null) return null;
+        var t = raw.Trim();
+        return t.Length > 100 ? t[..100] : t;
     }
 
     private static DateOnly? ParseDate(string? raw)

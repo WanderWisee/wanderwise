@@ -63,13 +63,26 @@ public class ExpensesController : ControllerBase
         if (!await CanAccessTripAsync(tripId)) return NotFound();
         if (!await CanEditTripAsync(tripId)) return Forbid();
 
+        // Server-side checks (sizes match the expenses table).
+        if (request is null) return BadRequest(new { error = "Expense details are missing." });
+        var category = (request.Category ?? "").Trim();
+        var description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        if (category.Length == 0) return BadRequest(new { error = "Category is required." });
+        if (category.Length > 50) return BadRequest(new { error = "Category is too long (max 50 characters)." });
+        if (description != null && description.Length > 255) return BadRequest(new { error = "Description is too long (max 255 characters)." });
+        if (request.Amount <= 0 || request.Amount > 99_999_999m) return BadRequest(new { error = "Amount must be more than 0 and at most 99,999,999." });
+        // A place can only be linked if it is part of this same trip.
+        if (request.PlaceId.HasValue &&
+            !await _db.TripPlaces.AnyAsync(p => p.Id == request.PlaceId.Value && p.TripId == tripId))
+            return BadRequest(new { error = "That place is not part of this trip." });
+
         var expense = new Expense
         {
             TripId = tripId,
             PlaceId = request.PlaceId,
-            Category = request.Category,
+            Category = category,
             Amount = request.Amount,
-            Description = request.Description,
+            Description = description,
             ExpenseDate = request.ExpenseDate,
             CreatedAt = DateTime.UtcNow,
         };

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WanderWiseApi.Data;
@@ -70,12 +71,16 @@ public class DestinationsController : ControllerBase
     // Called when the user submits a destination that isn't in the
     // dropdown suggestions yet — finds a matching row (case-insensitive),
     // or creates a new one so the list keeps growing over time.
+    // Login required, so random visitors can't fill the table with junk.
+    [Authorize]
     [HttpPost("/api/destinations/ensure")]
     public async Task<IActionResult> EnsureDestination([FromBody] EnsureDestinationRequest request)
     {
         var name = request.Name?.Trim() ?? "";
         if (string.IsNullOrWhiteSpace(name))
             return BadRequest(new { error = "Destination name is required." });
+        if (name.Length > 150)
+            return BadRequest(new { error = "Destination name is too long (max 150 characters)." });
 
         var existing = await _db.Destinations
             .FirstOrDefaultAsync(d => d.Name.ToLower() == name.ToLower());

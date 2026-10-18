@@ -9692,3 +9692,14 @@ textarea:focus-visible {
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
+
+@media (max-width: 520px) {
+  .ww-portal-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ww-portal-stat {
+    padding: 12px;
+    column-gap: 10px;
+  }
+}

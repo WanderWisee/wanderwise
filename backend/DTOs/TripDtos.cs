@@ -11,6 +11,11 @@ public class SaveTripRequest
     public int TravelBuddiesCount { get; set; }
     public decimal BudgetTotal { get; set; }
     public List<SectionDto> Sections { get; set; } = new();
+    // Optional: the "version" of the trip this edit was based on (from the
+    // last GET). If someone else saved the trip since then, the save is
+    // refused with 409 "trip_changed" so the app can ask what to do.
+    // Left empty (the website) = always save, same as before.
+    public string? BaseVersion { get; set; }
 }
 
 public class SectionDto
@@ -60,6 +65,9 @@ public class TripResponse
     // True when a teacher made this trip as a class field trip (students
     // can't leave it on their own).
     public bool IsClassTrip { get; set; }
+    // Fingerprint of the trip's content (see TripsController.ContentVersion).
+    // Changes only when the plan itself changes, not on saves that change nothing.
+    public string? Version { get; set; }
     public List<SectionResponse> Sections { get; set; } = new();
 }
 

@@ -1,4 +1,7 @@
+using System.Globalization;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -103,6 +106,16 @@ public class TripsController : ControllerBase
 
         var invalid = TripError(request);
         if (invalid != null) return BadRequest(new { error = invalid });
+
+        // Simultaneous edits: the app sends the version it started from. If
+        // a crewmate saved a different plan in the meantime, don't silently
+        // overwrite it — the app shows "keep mine / load latest".
+        if (!string.IsNullOrWhiteSpace(request.BaseVersion))
+        {
+            var current = await BuildTripResponseAsync(trip);
+            if (current.Version != request.BaseVersion.Trim())
+                return Conflict(new { error = "trip_changed", version = current.Version });
+        }
 
         // Snapshot of the trip BEFORE saving, to tell whether anything the
         // crew would care about actually changed (the page also saves when
@@ -235,6 +248,12 @@ public class TripsController : ControllerBase
         var trip = await GetAccessibleTripAsync(id);
         if (trip is null) return NotFound();
 
+        return Ok(await BuildTripResponseAsync(trip));
+    }
+
+    private async Task<TripResponse> BuildTripResponseAsync(Trip trip)
+    {
+        var id = trip.Id;
         var sections = await _db.TripSections.Where(s => s.TripId == id).OrderBy(s => s.SortOrder).ToListAsync();
         var places = await _db.TripPlaces.Where(p => p.TripId == id).OrderBy(p => p.SortOrder).ToListAsync();
         var placeIds = places.Select(p => p.Id).ToList();
@@ -272,7 +291,34 @@ public class TripsController : ControllerBase
             });
         }
 
-        return Ok(response);
+        response.Version = ContentVersion(response);
+        return response;
+    }
+
+    // Short fingerprint of everything the plan contains (not row ids, which
+    // change on every full-replace save). Same plan = same version.
+    private static string ContentVersion(TripResponse r)
+    {
+        static string N(object? v) => Convert.ToString(v, CultureInfo.InvariantCulture) ?? "";
+        var sb = new StringBuilder();
+        sb.Append(N(r.Title)).Append('|').Append(N(r.TripName)).Append('|').Append(N(r.Destination)).Append('|')
+          .Append(N(r.StartDate)).Append('|').Append(N(r.EndDate)).Append('|')
+          .Append(N(r.TravelBuddiesCount)).Append('|').Append(N(r.BudgetTotal));
+        foreach (var sec in r.Sections)
+        {
+            sb.Append("\n#S").Append(sec.IsDefault).Append('|').Append(N(sec.Name));
+            foreach (var p in sec.Places)
+            {
+                sb.Append("\n#P").Append(N(p.Name)).Append('|').Append(N(p.ItineraryDate)).Append('|')
+                  .Append(N(p.ItineraryOrder)).Append('|').Append(N(p.Latitude)).Append('|')
+                  .Append(N(p.Longitude)).Append('|').Append(N(p.Notes)).Append('|')
+                  .Append(N(p.ScheduledTime)).Append('|').Append(p.Visited);
+                foreach (var c in p.Costs)
+                    sb.Append("\n#C").Append(N(c.Category)).Append('|').Append(N(c.Amount));
+            }
+        }
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(sb.ToString()));
+        return Convert.ToHexString(hash, 0, 8);
     }
 
     // Trips you own, PLUS trips you've joined as crew — so a trip you

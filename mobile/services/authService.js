@@ -35,6 +35,7 @@ export async function register(form) {
       cellphone: form.cellphone.trim(),
       password: form.password,
       otpCode: form.otpCode.trim(),
+      acceptedPrivacy: !!form.acceptedPrivacy,
     },
     { auth: false }
   );

@@ -48,6 +48,7 @@ export default function TeacherRegisterPage() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [agreed, setAgreed] = useState(false);
   const [touched, setTouched] = useState({});
   const [dobBad, setDobBad] = useState(false);
   const limits = dobLimits();
@@ -88,6 +89,7 @@ export default function TeacherRegisterPage() {
     setTouched(Object.fromEntries(Object.keys(form).map((k) => [k, true])));
     setErrors(found);
     if (Object.keys(found).length > 0) return setError(t("valFixFields"));
+    if (!agreed) return setError(t("consentRequired"));
 
     setLoading(true);
     const r = await api("/api/register/teacher/send-otp", {
@@ -117,6 +119,7 @@ export default function TeacherRegisterPage() {
         schoolEmail: form.schoolEmail.trim(),
         recoveryEmail: form.recoveryEmail.trim(),
         otpCode: otpCode.trim(),
+        acceptedPrivacy: agreed,
       },
     });
     setLoading(false);
@@ -233,6 +236,18 @@ export default function TeacherRegisterPage() {
                 placeholder={t("confirmPasswordPlaceholder")}
               />
               {fieldError("confirmPassword")}
+
+              <label className="ww-consent">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => { setAgreed(e.target.checked); setError(""); }}
+                />
+                <span>
+                  {t("consentAgree")}{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer">{t("privacyNotice")}</a>
+                </span>
+              </label>
 
               {error && <div className="ww-portal-error">{error}</div>}
               <button className="ww-register-submit" type="button" onClick={sendCode} disabled={loading || hasErrors}>

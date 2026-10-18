@@ -39,6 +39,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [agreed, setAgreed] = useState(false);
   const [touched, setTouched] = useState({});
   const [dobBad, setDobBad] = useState(false);
   const [error, setError] = useState("");
@@ -86,6 +87,10 @@ export default function RegisterPage() {
       setError(t("valFixFields"));
       return;
     }
+    if (!agreed) {
+      setError(t("consentRequired"));
+      return;
+    }
 
     setLoading(true);
     try {
@@ -107,6 +112,7 @@ export default function RegisterPage() {
       navigate("/register/verify-otp", {
         state: {
           ...form,
+          acceptedPrivacy: agreed,
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           schoolEmail: form.schoolEmail.trim(),
@@ -264,6 +270,18 @@ export default function RegisterPage() {
             </button>
           </div>
           {fieldError("confirmPassword")}
+
+          <label className="ww-consent">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => { setAgreed(e.target.checked); setError(""); }}
+            />
+            <span>
+              {t("consentAgree")}{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer">{t("privacyNotice")}</a>
+            </span>
+          </label>
 
           {error && <div className="ww-portal-error" role="alert">{error}</div>}
           <button className="ww-register-submit" type="submit" disabled={loading || hasErrors}>

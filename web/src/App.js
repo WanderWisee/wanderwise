@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/auth/HomaPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
+import PrivacyPage from './pages/legal/PrivacyPage';
 import VerifyRegisterOtpPage from './pages/auth/VerifyRegisterOtpPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import VerifyResetOtpPage from './pages/auth/VerifyResetOtpPage';
@@ -57,6 +58,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<SignUpPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/register/verify-otp" element={<VerifyRegisterOtpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/verify-otp" element={<VerifyResetOtpPage />} />

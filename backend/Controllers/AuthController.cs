@@ -107,6 +107,8 @@ public class AuthController : ControllerBase
         if (personError != null)
             return BadRequest(new { error = personError });
 
+        if (!request.AcceptedPrivacy)
+            return BadRequest(new { error = "Please read and agree to the Privacy Notice to create an account." });
         if (!TryParseDob(request.Dob, out var dob))
             return BadRequest(new { error = "Invalid date of birth." });
         var dobError = InputRules.DobError(dob);
@@ -140,6 +142,8 @@ public class AuthController : ControllerBase
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
         await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.RegisterStudent, user.Email, HttpContext);
+        // Record of consent: who agreed, and when (in the activity log).
+        await ActivityLogger.LogAsync(_db, user.Id, "privacy_consent", "Agreed to Privacy Notice v1", HttpContext);
 
         var token = _jwt.GenerateToken(user);
         return Ok(new AuthResponse
@@ -231,6 +235,8 @@ public class AuthController : ControllerBase
         var personError = InputRules.PersonError(firstName, lastName, schoolEmail, recoveryEmail, request.Cellphone, request.Password, out var phone);
         if (personError != null)
             return BadRequest(new { error = personError });
+        if (!request.AcceptedPrivacy)
+            return BadRequest(new { error = "Please read and agree to the Privacy Notice to create an account." });
         if (!TryParseDob(request.Dob, out var dob))
             return BadRequest(new { error = "Invalid date of birth." });
         var dobError = InputRules.DobError(dob);
@@ -263,6 +269,8 @@ public class AuthController : ControllerBase
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
         await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.RegisterTeacher, $"{user.Email} ({employeeId})", HttpContext);
+        // Record of consent: who agreed, and when (in the activity log).
+        await ActivityLogger.LogAsync(_db, user.Id, "privacy_consent", "Agreed to Privacy Notice v1", HttpContext);
 
         // Logged in right away, like the student sign-up.
         var token = _jwt.GenerateToken(user);

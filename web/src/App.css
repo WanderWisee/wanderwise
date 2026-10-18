@@ -9455,3 +9455,39 @@ textarea:focus-visible {
     background-size: 100% 260px;
   }
 }
+
+/* Privacy consent (sign-up) and Privacy Notice page */
+.ww-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 14px;
+  font-size: 13px;
+  color: var(--ww-text-muted);
+  cursor: pointer;
+}
+.ww-consent input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--ww-btn);
+}
+.ww-consent a {
+  color: var(--ww-text);
+  font-weight: 600;
+  text-decoration: underline;
+}
+.ww-privacy-card {
+  max-width: 720px;
+}
+.ww-privacy-section h2 {
+  font-size: 16px;
+  margin: 18px 0 6px;
+  color: var(--ww-text);
+}
+.ww-privacy-section p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ww-text-muted);
+}

@@ -55,6 +55,7 @@ export default function SignupScreen() {
   const [info, setInfo] = useState(null);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [agreed, setAgreed] = useState(false);
   const [dobOpen, setDobOpen] = useState(false);
   const bounds = dobBounds();
 
@@ -84,6 +85,10 @@ export default function SignupScreen() {
       setError(t('valFixFields'));
       return;
     }
+    if (!agreed) {
+      setError(t('consentRequired'));
+      return;
+    }
     setLoading(true);
     try {
       await sendRegisterOtp({ schoolEmail: form.schoolEmail, recoveryEmail: form.recoveryEmail });
@@ -104,7 +109,7 @@ export default function SignupScreen() {
     }
     setLoading(true);
     try {
-      await register({ ...form, otpCode });
+      await register({ ...form, otpCode, acceptedPrivacy: agreed });
       await signIn();
       const joinedTripId = await consumePendingJoin();
       router.replace(joinedTripId === 'retry' ? '/join' : joinedTripId ? `/trip/${joinedTripId}` : '/(tabs)/home');
@@ -264,6 +269,22 @@ export default function SignupScreen() {
                 />
                 {fieldError('confirmPassword')}
 
+                <View style={styles.consentRow}>
+                  <TouchableOpacity
+                    onPress={() => { setAgreed((v) => !v); setError(null); }}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: agreed }}
+                    hitSlop={8}
+                    style={[styles.consentBox, agreed && styles.consentBoxOn]}
+                  >
+                    {agreed && <AppIcon name="check" style={{ fontSize: 13, color: Colors.mint }} />}
+                  </TouchableOpacity>
+                  <Text style={styles.consentText}>
+                    {t('consentAgree')}{' '}
+                    <Text style={styles.linkText} onPress={() => router.push('/privacy')}>{t('privacyNotice')}</Text>
+                  </Text>
+                </View>
+
                 <BirthdayPicker
                   visible={dobOpen}
                   value={fromMdy(form.dob)}
@@ -357,5 +378,9 @@ const styles = StyleSheet.create({
   },
   primaryButton: { minHeight: 52, paddingVertical: 14, borderRadius: 14, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   primaryButtonText: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.mint },
+  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
+  consentBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: Colors.brown900, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  consentBoxOn: { backgroundColor: Colors.brown900 },
+  consentText: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600 },
   linkText: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, textDecorationLine: 'underline' },
 });

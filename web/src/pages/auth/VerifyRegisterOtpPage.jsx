@@ -92,6 +92,7 @@ export default function VerifyRegisterOtpPage() {
           cellphone: form.cellphone,
           password: form.password,
           otpCode: otp.trim(),
+          acceptedPrivacy: !!form.acceptedPrivacy,
         }),
       });
       const data = await resp.json().catch(() => null);

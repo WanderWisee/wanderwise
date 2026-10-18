@@ -16,6 +16,8 @@ public class RegisterCompleteRequest
     public string Cellphone { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string OtpCode { get; set; } = string.Empty;
+    // Ticked "I agree to the Privacy Notice" (Data Privacy Act, RA 10173).
+    public bool AcceptedPrivacy { get; set; }
 }
 
 public class LoginRequest
@@ -71,6 +73,8 @@ public class TeacherRegisterRequest
     public string Cellphone { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string OtpCode { get; set; } = string.Empty;
+    // Ticked "I agree to the Privacy Notice" (Data Privacy Act, RA 10173).
+    public bool AcceptedPrivacy { get; set; }
 }
 
 public class MeResponse

@@ -9529,3 +9529,19 @@ textarea:focus-visible {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Trip Plan Builder top bar: the "Trip Plan" chip keeps its button look,
+   but it has no action, so no hover colour change or animation. */
+.ww-builder-topbar .ww-trip-plan-btn,
+.ww-builder-topbar .ww-trip-plan-btn:hover,
+.ww-builder-topbar .ww-trip-plan-btn:focus,
+.ww-builder-topbar .ww-trip-plan-btn:active {
+  background-color: var(--ww-surface);
+  border-color: var(--ww-border-strong);
+  color: var(--ww-text);
+  box-shadow: none;
+  transform: none;
+  transition: none;
+  animation: none;
+  cursor: default;
+}

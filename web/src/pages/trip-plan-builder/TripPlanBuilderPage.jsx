@@ -5,6 +5,7 @@ import DateRangePicker from "../../components/DateRangePicker";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialog } from "../../context/DialogContext";
 import { usePreferences } from "../../context/PreferencesContext";
+import { useAppData } from "../../context/AppDataContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
 
@@ -733,6 +734,17 @@ export default function TripPlanBuilderPage() {
   const goToTopMenu = (path) => {
     setTopMenuOpen(false);
     navigate(path);
+  };
+
+  // Teachers (and the admin) open students' trips from their portal: give
+  // them a Back button and a menu that fits them (no student Home/Profile).
+  const { profileRole } = useAppData();
+  const isPortalUser = profileRole === "teacher" || profileRole === "admin";
+  const portalHome = profileRole === "admin" ? "/admin" : "/teacher";
+  const showBackButton = isPortalUser || myRole === "teacher";
+  const handleBack = () => {
+    if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+    else navigate(isPortalUser ? portalHome : "/dashboard");
   };
 
   const [showEditTrip, setShowEditTrip] = useState(false);
@@ -2000,6 +2012,11 @@ export default function TripPlanBuilderPage() {
           <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
         <div className="ww-builder-topbar-actions">
+          {showBackButton && (
+            <button type="button" className="ww-builder-back" onClick={handleBack}>
+              <Icon name="arrow-left" /> {t("back")}
+            </button>
+          )}
           <span
             className="ww-undo-redo"
             onClick={handleUndo}
@@ -2026,15 +2043,30 @@ export default function TripPlanBuilderPage() {
             </span>
             {topMenuOpen && (
               <div className="ww-menu-panel">
-                <p className="ww-menu-item" onClick={() => goToTopMenu("/dashboard")}>
-                  {t("navHome")}
-                </p>
-                <p className="ww-menu-item" onClick={() => goToTopMenu("/travel-tips")}>
-                  {t("navGuides")}
-                </p>
-                <p className="ww-menu-item" onClick={() => goToTopMenu("/profile")}>
-                  {t("navProfile")}
-                </p>
+                {isPortalUser ? (
+                  <>
+                    <p className="ww-menu-item" onClick={() => goToTopMenu(portalHome)}>
+                      {profileRole === "admin" ? t("adminPanel") : t("navClasses")}
+                    </p>
+                    {profileRole === "teacher" && (
+                      <p className="ww-menu-item" onClick={() => goToTopMenu("/travel-tips")}>
+                        {t("navGuides")}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="ww-menu-item" onClick={() => goToTopMenu("/dashboard")}>
+                      {t("navHome")}
+                    </p>
+                    <p className="ww-menu-item" onClick={() => goToTopMenu("/travel-tips")}>
+                      {t("navGuides")}
+                    </p>
+                    <p className="ww-menu-item" onClick={() => goToTopMenu("/profile")}>
+                      {t("navProfile")}
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>

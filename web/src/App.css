@@ -9637,3 +9637,24 @@ textarea:focus-visible {
   margin-top: 0;
   background: #2f6f5f;
 }
+
+/* Trip Plan Builder: Back button for teachers viewing a student's trip. */
+.ww-builder-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: var(--ww-r-pill);
+  background: var(--ww-surface);
+  color: var(--ww-text);
+  font-family: inherit;
+  font-size: var(--ww-fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ww-builder-back:hover {
+  background: var(--ww-surface-2);
+}

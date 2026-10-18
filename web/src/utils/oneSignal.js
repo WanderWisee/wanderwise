@@ -11,6 +11,7 @@ export const ONESIGNAL_APP_ID = "57f8e7f3-e31c-44cd-b3ad-8aa929b478c1";
 export const isOneSignalEnabled = () => ONESIGNAL_APP_ID.trim() !== "";
 
 let initStarted = false;
+let initFailed = false;
 let linkedUserId = null;
 
 function withOneSignal(fn) {
@@ -30,11 +31,18 @@ export function initOneSignal() {
   document.head.appendChild(script);
 
   withOneSignal(async (OneSignal) => {
-    await OneSignal.init({
-      appId: ONESIGNAL_APP_ID,
-      // Lets push work on http://localhost while developing/demoing.
-      allowLocalhostAsSecureOrigin: true,
-    });
+    try {
+      await OneSignal.init({
+        appId: ONESIGNAL_APP_ID,
+        // Lets push work on http://localhost while developing/demoing.
+        allowLocalhostAsSecureOrigin: true,
+      });
+    } catch (err) {
+      // e.g. "Can only be used on: <other site>" when the Site URL in the
+      // OneSignal dashboard doesn't match this website.
+      initFailed = true;
+      console.warn("OneSignal could not start:", err?.message || err);
+    }
   });
 }
 
@@ -67,14 +75,42 @@ export function logoutOneSignal() {
 }
 
 // Asks the browser for permission (must be called from a button click).
+// If OneSignal can't start, the browser's own prompt is used instead, so the
+// "Turn on pop-ups" button always does something (before, it did nothing).
+function nativePermission() {
+  if (typeof Notification === "undefined") return Promise.resolve("unsupported");
+  try {
+    return Promise.resolve(Notification.requestPermission()).catch(() => Notification.permission);
+  } catch {
+    return Promise.resolve(Notification.permission);
+  }
+}
+
 export async function requestPushPermission() {
-  if (!isOneSignalEnabled()) {
-    return typeof Notification !== "undefined" ? Notification.requestPermission() : "unsupported";
+  if (!isOneSignalEnabled() || initFailed || !window.OneSignal) {
+    return nativePermission();
   }
   return new Promise((resolve) => {
+    let done = false;
+    const finish = (value) => {
+      if (done) return;
+      done = true;
+      resolve(value);
+    };
+    // Safety net: OneSignal didn't answer in time → browser prompt.
+    const timer = setTimeout(() => nativePermission().then(finish), 4000);
     withOneSignal(async (OneSignal) => {
-      await OneSignal.Notifications.requestPermission();
-      resolve(typeof Notification !== "undefined" ? Notification.permission : "unsupported");
+      try {
+        await OneSignal.Notifications.requestPermission();
+      } catch {
+        // fall through to whatever the browser says
+      }
+      clearTimeout(timer);
+      if (!done && typeof Notification !== "undefined" && Notification.permission === "default") {
+        finish(await nativePermission());
+      } else {
+        finish(typeof Notification !== "undefined" ? Notification.permission : "unsupported");
+      }
     });
   });
 }

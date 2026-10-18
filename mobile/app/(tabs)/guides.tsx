@@ -161,7 +161,7 @@ export default function GuidesScreen() {
                       )}
                       <View style={styles.cardBody}>
                         <Text style={styles.destinationName} numberOfLines={2}>
-                          {place} {t('travelStorySuffix')}
+                          {place}
                         </Text>
                         {authorsRow(group)}
                         <View style={styles.itineraryButton}>

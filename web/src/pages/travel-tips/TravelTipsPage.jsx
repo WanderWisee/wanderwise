@@ -52,7 +52,6 @@ export default function TravelTipsPage() {
   // "<Place> Travel Story" heading — strip whatever single word follows
   // "Travel" at the end (if any), then add "Travel Story" back.
   const bareTitle = (title) => String(title || "").replace(/ Travel \w+$/i, "").trim();
-  const getDisplayTitle = (title) => `${bareTitle(title)} ${t("travelStorySuffix")}`;
 
   // The word to look for in journal titles: "Baguio City" → "Baguio",
   // "Siargao Island" → "Siargao", "El Nido, Palawan" → "El Nido".
@@ -160,7 +159,7 @@ export default function TravelTipsPage() {
                 style={{ cursor: "pointer" }}
               >
                 <img src={j.coverImage} alt={j.title} />
-                <h3>{getDisplayTitle(j.title)}</h3>
+                <h3>{bareTitle(j.title)}</h3>
                 {renderAuthors(group)}
                 <button
                   className="ww-itinerary-btn"

@@ -32,15 +32,24 @@ export default function CalendarPicker(props) {
   return props.visible ? <CalendarContent {...props} /> : null;
 }
 
-function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
+// Past days can't be picked (same as the website's date picker); pass
+// allowPast to turn that off.
+function CalendarContent({ visible, onClose, onConfirm, initialRange, allowPast = false }) {
   const today = new Date();
-  const [viewYear, setViewYear] = useState(initialRange?.start?.year || today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(initialRange?.start?.month ?? today.getMonth());
+  const todayParts = { year: today.getFullYear(), month: today.getMonth(), day: today.getDate() };
+  const isPast = (d) => !allowPast && isBefore(d, todayParts);
+
+  const startsInPast = !!initialRange?.start && isPast(initialRange.start);
+  const [viewYear, setViewYear] = useState(!startsInPast && initialRange?.start?.year || today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(!startsInPast && initialRange?.start ? initialRange.start.month : today.getMonth());
   const [start, setStart] = useState(initialRange?.start || null);
   const [end, setEnd] = useState(initialRange?.end || null);
   const { t, prefs } = useApp();
 
+  const canGoBack = allowPast || viewYear > todayParts.year || (viewYear === todayParts.year && viewMonth > todayParts.month);
+
   function goPrevMonth() {
+    if (!canGoBack) return;
     if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
     else setViewMonth((m) => m - 1);
   }
@@ -51,6 +60,7 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
 
   function handleDayPress(day) {
     const picked = { year: viewYear, month: viewMonth, day };
+    if (isPast(picked)) return;
     if (!start || (start && end)) {
       setStart(picked);
       setEnd(null);
@@ -83,7 +93,7 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <Pressable style={styles.calendarCard} onPress={(e) => e.stopPropagation()}>
           <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={goPrevMonth} style={styles.calendarNavButton}>
+            <TouchableOpacity onPress={goPrevMonth} disabled={!canGoBack} style={[styles.calendarNavButton, !canGoBack && { opacity: 0.3 }]}>
               <AppIcon name="arrow-left" style={styles.calendarNavText} />
             </TouchableOpacity>
             <Text style={styles.calendarMonthLabel}>{MONTH_NAMES[viewMonth]} {viewYear}</Text>
@@ -101,13 +111,14 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
           <View style={styles.calendarGrid}>
             {cells.map((day, i) => {
               const status = cellStatus(day);
+              const past = !!day && isPast({ year: viewYear, month: viewMonth, day });
               return (
                 <TouchableOpacity
                   key={i}
                   accessibilityRole="button"
                   accessibilityLabel={day ? formatDate({ year: viewYear, month: viewMonth, day }, prefs.dateFormat) : undefined}
-                  accessibilityState={{ selected: status === 'selected' || status === 'range-start' || status === 'range-end' }}
-                  disabled={!day}
+                  accessibilityState={{ selected: status === 'selected' || status === 'range-start' || status === 'range-end', disabled: !day || past }}
+                  disabled={!day || past}
                   onPress={() => day && handleDayPress(day)}
                   style={styles.dayCell}
                 >
@@ -119,6 +130,7 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange }) {
                     ]}>
                       <Text style={[
                         styles.dayCellText,
+                        past && styles.dayCellTextPast,
                         (status === 'in-range' || status === 'selected' || status === 'range-start' || status === 'range-end') && styles.dayCellTextSelected,
                       ]}>
                         {day}
@@ -190,6 +202,7 @@ const styles = StyleSheet.create({
   dayCellInnerRange: { backgroundColor: Colors.brown900, opacity: 0.55 },
   dayCellInnerSelected: { backgroundColor: Colors.brown900, opacity: 1 },
   dayCellText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900 },
+  dayCellTextPast: { color: Colors.placeholder, textDecorationLine: 'line-through' },
   dayCellTextSelected: { fontFamily: 'Poppins_600SemiBold', color: Colors.mint },
   calendarSummary: {
     marginTop: 14, paddingVertical: 10, alignItems: 'center',

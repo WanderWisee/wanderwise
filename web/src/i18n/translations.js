@@ -330,6 +330,9 @@ export const translations = {
     discoverWhereToGo: "Discover where to go",
     newTravelTips: "New Travel Tips",
     travelStorySuffix: "Travel Story",
+    journalFromTrip: "From your trip",
+    journalTripPlacesHint: "Places from this trip are filled in as you add photos:",
+    journalCoverFromTrip: "The trip's photo will be the cover of your story.",
 
     // ===== Travel Guide (destination guide) =====
     travelJourneySuffix: "Travel Journey",
@@ -949,6 +952,9 @@ export const translations = {
     discoverWhereToGo: "Alamin kung saan pupunta",
     newTravelTips: "Mga Bagong Tip sa Paglalakbay",
     travelStorySuffix: "Kwento ng Paglalakbay",
+    journalFromTrip: "Mula sa trip mo",
+    journalTripPlacesHint: "Kusang ilalagay ang mga lugar ng trip na ito habang nagdadagdag ka ng litrato:",
+    journalCoverFromTrip: "Ang litrato ng trip ang magiging cover ng kwento mo.",
 
     // ===== Travel Guide (destination guide) =====
     travelJourneySuffix: "Paglalakbay",

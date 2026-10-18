@@ -13,6 +13,8 @@ import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { useDialog } from '../context/DialogContext';
 import { createJournalEntry } from '../services/journalService';
+import { fetchTrips, fetchTripById } from '../services/tripService';
+import { fetchDestinationImage } from '../services/geoService';
 import { journalEntryHasContent, journalEntriesMissingPhotos } from '../utils/journalValidation';
 
 // Draft na walang base64 (masyadong malaki para sa AsyncStorage); photoUri lang ang itatabi.
@@ -53,6 +55,77 @@ export default function NewPostScreen() {
   const [draftError, setDraftError] = useState('');
   const [leaving, setLeaving] = useState(false);
   const postingRef = useRef(false);
+
+  // ---- Fill in from a trip ----
+  // From the "trip is over" notification or the trip menu (?tripId=), or by
+  // tapping one of the student's trips: its places are added below (each
+  // only needs a photo) and the trip's photo becomes the cover.
+  const [myTrips, setMyTrips] = useState([]);
+  const [selectedTripId, setSelectedTripId] = useState('');
+  const [tripCover, setTripCover] = useState(null);
+  const [tripPlaces, setTripPlaces] = useState([]);
+  const tripParamApplied = useRef(false);
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetchTrips().then((list) => setMyTrips(Array.isArray(list) ? list : [])).catch(() => setMyTrips([]));
+  }, [isLoggedIn]);
+
+  function clearTrip() {
+    setSelectedTripId('');
+    setTripCover(null);
+    setTripPlaces([]);
+  }
+
+  async function applyTrip(tripId) {
+    const key = String(tripId || '');
+    if (!key) return;
+    setSelectedTripId(key);
+    try {
+      const trip = await fetchTripById(key);
+      const names = [];
+      (trip?.sections || []).forEach((sec) => (sec.places || []).forEach((pl) => {
+        const name = String(pl.name || '').trim();
+        if (name && !names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
+      }));
+      const destination = String(trip?.destination || '').trim();
+      if (destination) setPlace((prev) => (prev.trim() ? prev : destination));
+      // The itinerary's places are offered under "Spot name" to pick from.
+      setTripPlaces(names);
+      setTripCover(destination ? await fetchDestinationImage(destination) : null);
+    } catch {
+      setTripCover(null);
+    }
+  }
+
+  // Typing the place: if it is the destination of one of the student's
+  // trips, that trip's places and photo are used.
+  function handlePlaceChange(text) {
+    setPlace(text);
+    const typed = text.trim().toLowerCase();
+    const match = myTrips.find((trip) => String(trip.destination || '').trim().toLowerCase() === typed);
+    if (match && typed) {
+      if (String(match.id) !== selectedTripId) void applyTrip(match.id);
+      return;
+    }
+    const current = myTrips.find((trip) => String(trip.id) === selectedTripId);
+    if (current && !typed.includes(String(current.destination || '').trim().toLowerCase())) clearTrip();
+  }
+
+  const tripDestinations = [];
+  myTrips.forEach((trip) => {
+    const d = String(trip.destination || '').trim();
+    if (d && !tripDestinations.some((x) => x.dest.toLowerCase() === d.toLowerCase())) tripDestinations.push({ dest: d, id: trip.id });
+  });
+  const placeSuggestions = tripDestinations.filter((x) => {
+    const typed = place.trim().toLowerCase();
+    return x.dest.toLowerCase() !== typed && (!typed || x.dest.toLowerCase().includes(typed));
+  }).slice(0, 6);
+
+  useEffect(() => {
+    if (!draftReady || tripParamApplied.current || !params.tripId) return;
+    tripParamApplied.current = true;
+    void applyTrip(String(params.tripId));
+  }, [draftReady, params.tripId]); // eslint-disable-line react-hooks/exhaustive-deps
   const navigation = useNavigation();
   const draftKey = `wanderwise_journal_draft_${user?.userId}`;
   const hasContent = entries.some(journalEntryHasContent) || !!place.trim() || hotels.length > 0 || !!hotelName.trim() || !!hotelDesc.trim();
@@ -196,7 +269,8 @@ export default function NewPostScreen() {
     // Laging "<lugar> Travel Story" ang title para mag-grupo nang tama sa Guides.
     const payload = {
       title: `${where} Travel Story`,
-      coverImage: filledEntries[0].photoData,
+      // Trip's photo first; the first photo added if the trip has none.
+      coverImage: tripCover || filledEntries[0].photoData,
       places: filledEntries.map((e, idx) => ({
         placeName: e.placeName.trim() || where,
         imageUrl: e.photoData,
@@ -242,9 +316,23 @@ export default function NewPostScreen() {
           placeholder={t('egBoracay')}
           placeholderTextColor={Colors.brown600}
           value={place}
-          onChangeText={setPlace}
+          onChangeText={handlePlaceChange}
         />
 
+        {placeSuggestions.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 6 }} keyboardShouldPersistTaps="handled">
+            {placeSuggestions.map((x) => (
+              <TouchableOpacity
+                key={x.dest}
+                accessibilityRole="button"
+                onPress={() => { setPlace(x.dest); void applyTrip(x.id); }}
+                style={styles.tripChip}
+              >
+                <IconLabel name="pin" size={14} textStyle={styles.tripChipText}>{x.dest}</IconLabel>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
         </View>
         <View style={styles.placesHeading}><Text style={styles.sectionTitle}>{t('journalYourPlaces')}</Text><Text style={styles.entryCount}>{entries.length}</Text></View>
         {entries.map((entry, index) => {
@@ -287,7 +375,7 @@ export default function NewPostScreen() {
                 )}
               </TouchableOpacity>
 
-              <Text style={styles.photoHint}>{t(index === 0 ? 'journalCoverHint' : 'journalPhotoHint')}</Text>
+              <Text style={styles.photoHint}>{t(index === 0 && !tripCover ? 'journalCoverHint' : 'journalPhotoHint')}</Text>
               <Text style={styles.fieldLabel}>{t('spotName')}</Text>
               <TextInput
                 style={[styles.input, { marginBottom: 18 }]}
@@ -296,6 +384,21 @@ export default function NewPostScreen() {
                 value={entry.placeName}
                 onChangeText={(text) => updateEntry(entry.id, { placeName: text })}
               />
+              {(() => {
+                // Places from the trip's itinerary: pick the one this photo is of.
+                const usedElsewhere = entries.filter((o) => o.id !== entry.id).map((o) => o.placeName.trim().toLowerCase());
+                const choices = tripPlaces.filter((n) => !usedElsewhere.includes(n.toLowerCase()) && n.toLowerCase() !== entry.placeName.trim().toLowerCase());
+                if (!choices.length) return null;
+                return (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingBottom: 14, marginTop: -8 }}>
+                    {choices.map((n) => (
+                      <TouchableOpacity key={n} accessibilityRole="button" onPress={() => updateEntry(entry.id, { placeName: n })} style={styles.tripChip}>
+                        <IconLabel name="pin" size={14} textStyle={styles.tripChipText}>{n}</IconLabel>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                );
+              })()}
 
               <Text style={[styles.fieldLabel, { marginTop: 20 }]}>{t('yourStory')}</Text>
               <TextInput
@@ -441,6 +544,13 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24, width: '100%', maxWidth: 560, alignSelf: 'center' },
   composerTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 28, lineHeight: 37, letterSpacing: -0.7, color: Colors.brown900 },
   destinationBlock: { backgroundColor: Colors.cream, borderRadius: 18, padding: 16 },
+  tripChip: { maxWidth: 220, minHeight: 40, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: Colors.line, backgroundColor: Colors.white },
+  tripChipActive: { backgroundColor: Colors.brown900, borderColor: Colors.brown900 },
+  tripChipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
+  tripChipTextActive: { color: Colors.onButton },
+  tripHint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, lineHeight: 19, color: Colors.brown600, marginTop: 8 },
+  tripCoverRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
+  tripCoverImage: { width: 64, height: 44, borderRadius: 8, backgroundColor: Colors.cream2 },
   placesHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 4 },
   entryCount: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.teal, backgroundColor: Colors.cream, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   entryNumber: { width: 34, height: 34, borderRadius: 11, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },

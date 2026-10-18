@@ -210,8 +210,9 @@ public static class NotificationHelper
                 await CreateAsync(
                     db, userId, TripEnded,
                     $"Your trip to {tripName} is over! Write your story in the Journal.",
-                    JournalLink,
-                    new { tripDestination = tripName },
+                    // The journal page fills in this trip's places and photo.
+                    $"{JournalLink}?tripId={trip.Id}",
+                    new { tripDestination = tripName, tripId = trip.Id },
                     $"trip_ended:{trip.Id}:{trip.EndDate!.Value:yyyy-MM-dd}");
                 continue;
             }

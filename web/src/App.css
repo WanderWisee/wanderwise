@@ -9667,3 +9667,30 @@ textarea:focus-visible {
     column-gap: 10px;
   }
 }
+
+/* Journal: places from the trip's itinerary, picked under "Add a place". */
+.ww-journal-place-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.ww-journal-place-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--ww-border-strong);
+  border-radius: 999px;
+  background: var(--ww-surface);
+  color: var(--ww-text);
+  font-family: inherit;
+  font-size: var(--ww-fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ww-journal-place-chip:hover {
+  background: var(--ww-surface-2);
+}

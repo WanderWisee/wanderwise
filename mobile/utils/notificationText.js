@@ -115,6 +115,11 @@ export function notificationRoute(n) {
   const cls = link.match(/\/classes\/(\d+)/);
   if (cls) return `/classes/${cls[1]}`;
   if (link === '/classes') return '/classes';
+  // "Trip is over! Write your story" → the journal composer, filled in from that trip.
+  if (link.startsWith('/journal/new')) {
+    const fromTrip = link.match(/tripId=(\d+)/);
+    return fromTrip ? `/new-post?tripId=${fromTrip[1]}` : '/new-post';
+  }
   const trip = link.match(/tripId=(\d+)/);
   if (trip && link.includes('/tour')) {
     const day = link.match(/[?&]date=(\d{4}-\d{2}-\d{2})/);

@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import NavbarMenu from "../../components/NavbarMenu";
 import PlaceMap from "../../components/PlaceMap";
 import { useAppData } from "../../context/AppDataContext";
@@ -63,6 +63,93 @@ export default function JournalNewPostPage() {
       : ""
   );
   const [editingTitle, setEditingTitle] = useState(false);
+
+  // ---- Fill in from a trip ----
+  // Opened from the "trip is over" notification (?tripId=) or by picking
+  // one of the student's trips here: the trip's places are filled in as
+  // photos are added, and the trip's photo becomes the cover.
+  const [searchParams] = useSearchParams();
+  const [myTrips, setMyTrips] = useState([]);
+  const [selectedTripId, setSelectedTripId] = useState(
+    searchParams.get("tripId") || (location.state?.tripId ? String(location.state.tripId) : "")
+  );
+  const [tripPlaces, setTripPlaces] = useState([]);
+  const [tripCover, setTripCover] = useState(null);
+  const authHeaders = () => {
+    try {
+      const token = localStorage.getItem("wanderwise_token");
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  };
+
+  // Typing (or picking) a place in the title: if it is the destination of
+  // one of the student's trips, that trip's places and photo are used and
+  // the title becomes "<place> Travel Story".
+  const suffix = t("travelStorySuffix");
+  const tripDestinations = [];
+  myTrips.forEach((trip) => {
+    const d = (trip.destination || "").trim();
+    if (d && !tripDestinations.some((x) => x.toLowerCase() === d.toLowerCase())) tripDestinations.push(d);
+  });
+  const handleTitleChange = (value) => {
+    const typed = value.replace(new RegExp(`\\s*${suffix}\\s*$`, "i"), "").trim().toLowerCase();
+    const match = myTrips.find((trip) => (trip.destination || "").trim().toLowerCase() === typed);
+    if (match && typed) {
+      setStoryTitle(`${match.destination.trim()} ${suffix}`);
+      setSelectedTripId(String(match.id));
+      return;
+    }
+    setStoryTitle(value);
+    const current = myTrips.find((trip) => String(trip.id) === selectedTripId);
+    if (current && !value.toLowerCase().includes((current.destination || "").trim().toLowerCase())) {
+      setSelectedTripId("");
+    }
+  };
+
+  useEffect(() => {
+    fetch("/api/trips", { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => setMyTrips(Array.isArray(list) ? list : []))
+      .catch(() => setMyTrips([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTripId) {
+      setTripPlaces([]);
+      setTripCover(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/trips/${selectedTripId}`, { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((trip) => {
+        if (cancelled || !trip) return;
+        const names = [];
+        (trip.sections || []).forEach((sec) =>
+          (sec.places || []).forEach((pl) => {
+            const name = (pl.name || "").trim();
+            if (name && !names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
+          })
+        );
+        setTripPlaces(names);
+        const destination = (trip.destination || "").trim();
+        if (destination) {
+          setStoryTitle((prev) => prev.trim() ? prev : `${destination} ${t("travelStorySuffix")}`);
+          fetch(`/api/destination-image?name=${encodeURIComponent(destination)}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((img) => { if (!cancelled) setTripCover(img && img.found && img.url ? img.url : null); })
+            .catch(() => {});
+        } else {
+          setTripCover(null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTripId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [hasUploadedPhoto, setHasUploadedPhoto] = useState(false);
@@ -202,7 +289,8 @@ export default function JournalNewPostPage() {
     try {
       const payload = {
         title: storyTitle.trim(),
-        coverImage: entries[0]?.img || null,
+        // Trip's photo first; the first uploaded photo if the trip has none.
+        coverImage: tripCover || entries[0]?.img || null,
         places: entries.map((e, idx) => ({
           placeName: e.place,
           imageUrl: e.img,
@@ -333,7 +421,8 @@ export default function JournalNewPostPage() {
                 className="ww-section-name-input-inline"
                 value={storyTitle}
                 placeholder={t("enterDestinationStory")}
-                onChange={(e) => setStoryTitle(e.target.value)}
+                list="ww-journal-trip-destinations"
+                onChange={(e) => handleTitleChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") setEditingTitle(false);
                 }}
@@ -357,6 +446,9 @@ export default function JournalNewPostPage() {
             </span>
           </h1>
 
+          <datalist id="ww-journal-trip-destinations">
+            {tripDestinations.map((d) => <option key={d} value={d} />)}
+          </datalist>
           <div className="ww-journal-upload-card">
             <h2>{t("uploadAPhoto")}</h2>
             <p className="ww-journal-upload-note">
@@ -387,6 +479,10 @@ export default function JournalNewPostPage() {
             </button>
           </div>
 
+          <datalist id="ww-journal-trip-places">
+            {tripPlaces.map((n) => <option key={n} value={n} />)}
+          </datalist>
+
           {hasUploadedPhoto && (
             <>
               <hr className="ww-journal-divider" />
@@ -400,9 +496,34 @@ export default function JournalNewPostPage() {
                       <input
                         className="ww-journal-place-input"
                         placeholder={t("addAPlace")}
+                        list="ww-journal-trip-places"
                         value={entry.place}
                         onChange={(e) => updateEntry(entry.id, "place", e.target.value)}
                       />
+                      {/* Places from the trip's itinerary: pick the one this photo is of. */}
+                      {(() => {
+                        const usedElsewhere = entries
+                          .filter((o) => o.id !== entry.id)
+                          .map((o) => o.place.trim().toLowerCase());
+                        const choices = tripPlaces.filter(
+                          (n) => !usedElsewhere.includes(n.toLowerCase()) && n.toLowerCase() !== entry.place.trim().toLowerCase()
+                        );
+                        if (choices.length === 0) return null;
+                        return (
+                          <div className="ww-journal-place-chips">
+                            {choices.map((n) => (
+                              <button
+                                type="button"
+                                key={n}
+                                className="ww-journal-place-chip"
+                                onClick={() => updateEntry(entry.id, "place", n)}
+                              >
+                                <Icon name="map-pin" /> {n}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
 
                       <div className="ww-journal-stars">
                         {[1, 2, 3, 4, 5].map((n) => (

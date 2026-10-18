@@ -1491,7 +1491,7 @@ function TripDetailContent({ id }) {
               style={styles.sheetRow}
               onPress={() => {
                 setMenuOpen(false);
-                router.push({ pathname: '/new-post', params: { place: trip.destination } });
+                router.push({ pathname: '/new-post', params: { place: trip.destination, tripId: String(id) } });
               }}
             >
               <AppIcon name="book" style={styles.sheetIcon} />

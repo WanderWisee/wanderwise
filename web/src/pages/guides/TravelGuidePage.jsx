@@ -76,6 +76,8 @@ export default function TravelGuidePage() {
     };
   }, [destination]);
   const sections = dbSections || guideSections;
+  // The hotel "Details" button is not shown on the Boracay Island page.
+  const showHotelDetails = !/boracay/i.test(destination);
 
   return (
     <div className="ww-guide-page">
@@ -135,7 +137,9 @@ export default function TravelGuidePage() {
                 <div className="ww-guide-hotel-card" key={h.name}>
                   <p className="ww-guide-hotel-name"><Icon name="bed" /> {h.name}</p>
                   <p className="ww-guide-hotel-desc">{h.description}</p>
-                  <button className="ww-guide-details-btn">{t("details")}</button>
+                  {showHotelDetails && (
+                    <button className="ww-guide-details-btn">{t("details")}</button>
+                  )}
                 </div>
               ))}
             </div>

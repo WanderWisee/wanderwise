@@ -19,7 +19,6 @@ const FEATURES = [
 const AUDIENCE = [
   ["backpack", "lpForStudents", "lpForStudentsText"],
   ["graduation-cap", "lpForTeachers", "lpForTeachersText"],
-  ["shield", "lpForAdmin", "lpForAdminText"],
 ];
 
 const STEPS = [
@@ -165,7 +164,7 @@ export default function HomePage() {
         <section id="who" className="ww-lp-section">
           <p className="ww-lp-eyebrow">{t("lpNavWho")}</p>
           <h2 className="ww-lp-h2">{t("lpWhoTitle")}</h2>
-          <div className="ww-lp-grid ww-lp-grid-3">
+          <div className="ww-lp-grid ww-lp-grid-2">
             {AUDIENCE.map(([icon, title, text]) => (
               <article key={title} className="ww-lp-card ww-lp-card-who">
                 <span className="ww-lp-icon" aria-hidden="true"><Icon name={icon} /></span>

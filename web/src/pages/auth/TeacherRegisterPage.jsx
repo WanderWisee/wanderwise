@@ -189,7 +189,7 @@ export default function TeacherRegisterPage() {
               {fieldError("lastName")}
 
               <label className="ww-field-label">{t("employeeId")}</label>
-              <input className={fieldClass("employeeId")} value={form.employeeId} onChange={handleChange("employeeId")} placeholder={t("enterEmployeeId")} maxLength={20} />
+              <input className={fieldClass("employeeId")} value={form.employeeId} onChange={handleChange("employeeId")} placeholder={t("enterEmployeeId")} maxLength={10} />
               {fieldError("employeeId")}
 
               <label className="ww-field-label">{t("facultyEmail")}</label>

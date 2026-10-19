@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useDialog } from '../../context/DialogContext';
-import { deleteMyAccount, fullName, updateAvatar, updateProfile } from '../../services/userService';
+import { changeMyPassword, deleteMyAccount, fullName, updateAvatar, updateProfile } from '../../services/userService';
 import { Avatar, Field, OutlineButton, PrimaryButton, ScreenHeader } from '../../components/ui';
 
 // Parehong Settings → Account ng web. Ang pangalan at email ay galing sa
@@ -40,6 +40,29 @@ function AccountContent() {
       alert(t('deleteAccountFailed'), e.message);
     } finally {
       setDeleting(false);
+    }
+  }
+  // Palitan ang password
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const [pwError, setPwError] = useState('');
+  const [changingPw, setChangingPw] = useState(false);
+
+  async function handleChangePassword() {
+    setPwError('');
+    if (!pw.current || !pw.next || !pw.confirm) { setPwError(t('fillAllPasswordFields')); return; }
+    if (pw.next.length < 8 || pw.next.length > 100 || !/[A-Za-z]/.test(pw.next) || !/\d/.test(pw.next)) { setPwError(t('passwordRuleMsg')); return; }
+    if (pw.next !== pw.confirm) { setPwError(t('passwordsDontMatch')); return; }
+    if (pw.next === pw.current) { setPwError(t('passwordSameAsOld')); return; }
+    setChangingPw(true);
+    try {
+      await changeMyPassword(pw.current, pw.next);
+      setPw({ current: '', next: '', confirm: '' });
+      toast(t('passwordChangedMsg'));
+    } catch (e) {
+      if (e?.data?.code === 'wrong_password') setPwError(t('currentPasswordWrong'));
+      else setPwError(e?.data?.error || e?.message || t('passwordChangeFailed'));
+    } finally {
+      setChangingPw(false);
     }
   }
   const [bio, setBio] = useState(user?.bio || '');
@@ -126,6 +149,17 @@ function AccountContent() {
 
           <PrimaryButton label={t('save')} onPress={handleSave} loading={saving} style={{ alignSelf: 'stretch', marginTop: 8 }} />
 
+          {/* Palitan ang password */}
+          <View style={styles.dangerZone}>
+            <Text style={styles.sectionTitle}>{t('changePasswordTitle')}</Text>
+            <Text style={styles.dangerHint}>{t('changePasswordHint')}</Text>
+            <Field label={t('currentPassword')} value={pw.current} onChangeText={(v) => setPw((p) => ({ ...p, current: v }))} secureTextEntry autoCapitalize="none" maxLength={100} style={styles.field} />
+            <Field label={t('newPassword')} value={pw.next} onChangeText={(v) => setPw((p) => ({ ...p, next: v }))} secureTextEntry autoCapitalize="none" maxLength={100} style={styles.field} />
+            <Field label={t('confirmNewPassword')} value={pw.confirm} onChangeText={(v) => setPw((p) => ({ ...p, confirm: v }))} secureTextEntry autoCapitalize="none" maxLength={100} style={styles.field} />
+            {!!pwError && <Text style={styles.pwError}>{pwError}</Text>}
+            <PrimaryButton label={t('changePasswordBtn')} onPress={handleChangePassword} loading={changingPw} style={{ alignSelf: 'stretch', marginTop: 4 }} />
+          </View>
+
           {/* Burahin ang account (Data Privacy Act) */}
           <View style={styles.dangerZone}>
             <Text style={styles.dangerTitle}>{t('deleteAccountTitle')}</Text>
@@ -147,6 +181,8 @@ function AccountContent() {
 
 const styles = StyleSheet.create({
   dangerZone: { alignSelf: 'stretch', marginTop: 32, paddingTop: 20, borderTopWidth: 1, borderTopColor: Colors.line },
+  sectionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.brown900, marginBottom: 6 },
+  pwError: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: Colors.error, marginBottom: 8 },
   dangerTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: Colors.error, marginBottom: 6 },
   dangerHint: { fontFamily: 'Poppins_400Regular', fontSize: 12.5, color: Colors.brown600, marginBottom: 14 },
   screen: { flex: 1, backgroundColor: Colors.cream },

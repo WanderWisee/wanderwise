@@ -506,7 +506,7 @@ export default function TourDayPage() {
                 <section className="ww-tour-card ww-tour-card-wide">
                   <div className="ww-tour-card-head">
                     <h2><Icon name="map-pin" /> {t("meetingPointTitle")}</h2>
-                    {canManage && !editingMeeting && (
+                    {canManage && !editingMeeting && attendanceOpen && (
                       <button type="button" className="ww-tour-link" onClick={startEditMeeting}>
                         <Icon name="pencil" /> {meeting ? t("editMeetingPoint") : t("setMeetingPoint")}
                       </button>
@@ -522,7 +522,12 @@ export default function TourDayPage() {
 
                   {!meeting && !editingMeeting && (
                     <p className="ww-expense-empty">
-                      {canManage ? t("meetingPointNotSetManager") : t("meetingPointNotSet")}
+                      {canManage && attendanceOpen ? t("meetingPointNotSetManager") : t("meetingPointNotSet")}
+                    </p>
+                  )}
+                  {canManage && !attendanceOpen && (
+                    <p className="ww-tour-hint">
+                      <Icon name="info" /> {attendanceStatus === "closed" ? t("meetingPointDayPassed") : t("meetingPointTourDayOnly")}
                     </p>
                   )}
 
@@ -578,7 +583,8 @@ export default function TourDayPage() {
                       center={mapCenter || PH_CENTER}
                       zoom={mapCenter ? 16 : 6}
                       style={{ width: "100%", height: "340px" }}
-                      scrollWheelZoom={false}
+                      zoomControl={false}
+                      scrollWheelZoom={true}
                     >
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

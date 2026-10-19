@@ -1,6 +1,7 @@
 // Lahat ng OpenStreetMap-related na tawag: geocoding (Nominatim),
 // routing (OSRM), at directions link (openstreetmap.org).
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL as BASE_URL } from '../constants/config';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
@@ -112,12 +113,39 @@ function haversineKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+// Naka-save din sa phone ang mga route na nakuha na (ilang oras), kaya
+// pagbalik sa trip o pagbukas ulit ng directions, hindi na naglo-load ulit.
+const ROUTE_STORE_KEY = 'ww_routes_v1';
+const ROUTE_STORE_MS = 6 * 60 * 60 * 1000;
+let routeStoreLoaded = null;
+function loadRouteStore() {
+  if (!routeStoreLoaded) {
+    routeStoreLoaded = AsyncStorage.getItem(ROUTE_STORE_KEY)
+      .then((raw) => {
+        const saved = raw ? JSON.parse(raw) : {};
+        Object.entries(saved).forEach(([k, v]) => {
+          if (v && Date.now() - v.at < ROUTE_STORE_MS && !routeCache[k]) routeCache[k] = v;
+        });
+      })
+      .catch(() => {});
+  }
+  return routeStoreLoaded;
+}
+function saveRouteStore() {
+  const fresh = Object.entries(routeCache)
+    .filter(([, v]) => v && v.at && Date.now() - v.at < ROUTE_STORE_MS)
+    .slice(-200);
+  AsyncStorage.setItem(ROUTE_STORE_KEY, JSON.stringify(Object.fromEntries(fresh))).catch(() => {});
+}
+
 // Ibinabalik: { durationMin, distanceKm, estimated }
 // estimated = true kapag hindi naabot ang OSRM at tuwid na layo lang ang ginamit.
 export async function getRoute(from, to, mode = 'walking') {
   const a = { latitude: Number(from.latitude), longitude: Number(from.longitude) };
   const b = { latitude: Number(to.latitude), longitude: Number(to.longitude) };
-  const key = `${mode}:${a.latitude},${a.longitude};${b.latitude},${b.longitude}`;
+  // ~100 m sa pinanggalingan (GPS na gumagalaw nang kaunti), eksakto sa lugar.
+  const key = `${mode}:${a.latitude.toFixed(3)},${a.longitude.toFixed(3)};${b.latitude.toFixed(5)},${b.longitude.toFixed(5)}`;
+  await loadRouteStore();
   if (routeCache[key]) return routeCache[key];
 
   const profile = mode === 'driving' ? 'routed-car' : 'routed-foot';
@@ -134,8 +162,10 @@ export async function getRoute(from, to, mode = 'walking') {
         durationMin: Math.max(1, Math.round(route.duration / 60)),
         distanceKm: route.distance / 1000,
         estimated: false,
+        at: Date.now(),
       };
       routeCache[key] = result;
+      saveRouteStore();
       return result;
     }
   } catch {

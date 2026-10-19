@@ -28,7 +28,7 @@ import CalendarPicker from '../../components/CalendarPicker';
 import OsmMap from '../../components/OsmMap';
 import { Avatar, ChoiceChips, DestinationImage, ErrorState, Loading } from '../../components/ui';
 import { useAutoGeocode } from '../../hooks/useAutoGeocode';
-import { formatPeso, partsToISO, rangeFromISO } from '../../utils/dates';
+import { formatPeso, keepMoney, MAX_MONEY, partsToISO, rangeFromISO } from '../../utils/dates';
 
 const TABS = [
   { key: 'Overview', labelKey: 'overview' },
@@ -649,6 +649,19 @@ function TripDetailContent({ id }) {
   }
 
   async function toggleVisited(sectionKey, placeKey) {
+    // Hindi puwedeng markahang "visited" bago ang araw nito (araw sa
+    // itinerary, o unang araw ng trip kung wala pa sa itinerary).
+    const base = tripRef.current || trip;
+    const place = base?.sections.find((s) => s.key === sectionKey)?.places.find((p) => p.key === placeKey);
+    if (place && !place.visited) {
+      const date = place.itineraryDate || base.startDate;
+      const now = new Date();
+      const today = partsToISO({ year: now.getFullYear(), month: now.getMonth(), day: now.getDate() });
+      if (date && date > today) {
+        alert(t('visitedTooEarlyTitle'), t('visitedTooEarly').replace('{date}', date));
+        return;
+      }
+    }
     await updatePlaceAndSave(sectionKey, placeKey, (p) => ({ ...p, visited: !p.visited }));
   }
 
@@ -679,9 +692,11 @@ function TripDetailContent({ id }) {
   }
 
   async function saveBudget() {
-    const value = parseFloat(String(budgetInput).replace(/,/g, ''));
+    const raw = parseFloat(String(budgetInput).replace(/,/g, ''));
     setEditingBudget(false);
-    if (isNaN(value) || value < 0) return;
+    if (isNaN(raw) || raw < 0) return;
+    const value = Math.round(raw * 100) / 100;
+    if (value > MAX_MONEY) { toast(t('moneyTooHigh')); return; }
     await persist({ ...trip, budgetTotal: value });
   }
 
@@ -841,6 +856,10 @@ function TripDetailContent({ id }) {
   const days = buildDaysFromRange(trip.startDate, trip.endDate);
   const dayLabelFor = (iso) => days.find((d) => d.key === iso)?.label;
   const allPlaces = trip.sections.flatMap((s) => s.places.map((p) => ({ ...p, sectionKey: s.key })));
+  // Iisang numero ang bawat place sa lahat ng list, sa itinerary at sa
+  // mapa (gaya ng web), kaya laging magkatugma.
+  const placeNumbers = {};
+  allPlaces.forEach((p, i) => { placeNumbers[p.key] = i + 1; });
   const mappedPlaces = allPlaces.filter(hasCoords);
 
   // ===== Budget =====
@@ -1048,7 +1067,7 @@ function TripDetailContent({ id }) {
             <>
               {/* Mapa ng lahat ng place na may coordinates */}
               <OsmMap
-                markers={mappedPlaces.map((p) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name }))}
+                markers={mappedPlaces.map((p) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name, number: placeNumbers[p.key] }))}
                 height={180}
                 style={{ marginBottom: 6 }}
                 emptyLabel={allPlaces.length === 0 ? t('mapAddPlacesHint') : t('mapLocatingPlaces')}
@@ -1142,6 +1161,8 @@ function TripDetailContent({ id }) {
                           <PlaceCard
                             place={place}
                             index={pIndex}
+                            number={placeNumbers[place.key]}
+                            notesMode="view"
                             expanded={isExpanded}
                             selecting={selectable}
                             selected={isSelected}
@@ -1172,13 +1193,6 @@ function TripDetailContent({ id }) {
                       onSubmitEditing={() => addPlaceToSection(section.key)}
                       returnKeyType="done"
                     />
-                    <TouchableOpacity
-                      style={styles.iconSquareButton}
-                      onPress={() => addPlaceToSection(section.key, { openNotes: true })}
-                      accessibilityLabel={t('addWithNotes')}
-                    >
-                      <AppIcon name="pencil" style={{ fontSize: 15 }} />
-                    </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.iconSquareButton, isSelecting && styles.iconSquareButtonActive]}
                       onPress={() => (isSelecting ? cancelSelecting() : startSelecting())}
@@ -1247,6 +1261,7 @@ function TripDetailContent({ id }) {
                                 <PlaceCard
                                   place={place}
                                   index={index}
+                                  number={placeNumbers[place.key]}
                                   expanded={isExpanded}
                                   onPress={() => setExpandedPlaceKey(isExpanded ? null : place.key)}
                                   {...placeCardHandlers(place.sectionKey, place)}
@@ -1304,7 +1319,7 @@ function TripDetailContent({ id }) {
                         editable={canEdit}
                       style={styles.budgetInput}
                       value={budgetInput}
-                      onChangeText={setBudgetInput}
+                      onChangeText={(v) => setBudgetInput(keepMoney(v))}
                       keyboardType="decimal-pad"
                       autoFocus
                       onSubmitEditing={saveBudget}
@@ -1314,7 +1329,7 @@ function TripDetailContent({ id }) {
                 ) : (
                   <TouchableOpacity
                     disabled={!canEdit} onPress={() => {
-                      setBudgetInput(budget ? String(budget) : '');
+                      setBudgetInput(budget ? (Math.round(budget * 100) / 100).toFixed(2) : '');
                       setEditingBudget(true);
                     }}
                   >
@@ -1468,6 +1483,7 @@ function TripDetailContent({ id }) {
         onClose={() => setDatesOpen(false)}
         onConfirm={changeDates}
         initialRange={rangeFromISO(trip.startDate, trip.endDate)}
+        dayTour
       />
 
       {/* Iba pang aksyon */}

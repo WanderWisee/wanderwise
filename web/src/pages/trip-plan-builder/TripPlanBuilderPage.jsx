@@ -48,6 +48,26 @@ function addDaysIso(startDateStr, daysToAdd) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function todayIsoLocal() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// Money in the builder (budget, a place's expected cost): 0 – 1,000,000
+// with at most 2 decimal places. The backend checks the same rule.
+const MAX_MONEY = 1000000;
+// Keeps only digits and one dot with up to 2 decimals while typing.
+function keepMoney(value) {
+  let v = String(value ?? "").replace(/[^\d.]/g, "");
+  const dot = v.indexOf(".");
+  if (dot !== -1) v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  return v.slice(0, 10);
+}
+function formatPeso(n) {
+  return (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 // ===== Per-section suggestions =====
 // A custom section's name decides which kind of places to suggest for it,
 // e.g. a section named "Lamon" or "Food trip" gets food spots from
@@ -461,6 +481,9 @@ export default function TripPlanBuilderPage() {
   const canEdit = myRole !== "viewer" && myRole !== "teacher";
   // Class field trip (made by a teacher): students can't leave it.
   const [isClassTrip, setIsClassTrip] = useState(false);
+  // The ?tripId= in the URL is a trip this account can't open (someone
+  // else's trip, or one that doesn't exist): show "Access denied".
+  const [accessDenied, setAccessDenied] = useState(false);
   const canEditRef = useRef(true);
   canEditRef.current = canEdit;
   const saveStatusLabel =
@@ -584,6 +607,14 @@ export default function TripPlanBuilderPage() {
     };
 
     const effectiveTripId = urlTripId ? Number(urlTripId) : tripInfo.tripId;
+    // ?tripId=abc / ?tripId=-1 → not a trip anyone can open.
+    if (urlTripId && !(Number.isInteger(effectiveTripId) && effectiveTripId > 0)) {
+      setMyRole("viewer");
+      canEditRef.current = false;
+      setAccessDenied(true);
+      hasLoadedRef.current = true;
+      return;
+    }
 
     (async () => {
       try {
@@ -647,7 +678,11 @@ export default function TripPlanBuilderPage() {
               console.warn("Failed to load bookings:", err);
             }
           } else {
-            // Trip not found / not owned by this user — nothing to hydrate.
+            // Trip not found / not this user's (or they weren't invited):
+            // never save over it, and show "Access denied" instead.
+            setMyRole("viewer");
+            canEditRef.current = false;
+            setAccessDenied(true);
             hasLoadedRef.current = true;
           }
         } else if (destination.trim()) {
@@ -741,10 +776,12 @@ export default function TripPlanBuilderPage() {
   const { profileRole } = useAppData();
   const isPortalUser = profileRole === "teacher" || profileRole === "admin";
   const portalHome = profileRole === "admin" ? "/admin" : "/teacher";
-  const showBackButton = isPortalUser || myRole === "teacher";
+  // Everyone gets a Back button (students too: back to Profile, Home, …).
+  const showBackButton = true;
+  const homePath = isPortalUser ? portalHome : "/dashboard";
   const handleBack = () => {
     if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
-    else navigate(isPortalUser ? portalHome : "/dashboard");
+    else navigate(homePath);
   };
 
   const [showEditTrip, setShowEditTrip] = useState(false);
@@ -972,6 +1009,66 @@ export default function TripPlanBuilderPage() {
     return null;
   };
 
+  // One number per place everywhere (Where to go first, then the other
+  // lists), so the list, the itinerary and the map pins always match.
+  const placeNumbers = useMemo(() => {
+    const map = {};
+    let n = 0;
+    [...tripState.places, ...tripState.customSections.flatMap((s) => s.places)].forEach((p) => {
+      map[p.id] = ++n;
+    });
+    return map;
+  }, [tripState.places, tripState.customSections]);
+
+  // Places for the map: every list, with the same numbers as above.
+  const mapPlaces = useMemo(
+    () =>
+      [...tripState.places, ...tripState.customSections.flatMap((s) => s.places)].map((p) => ({
+        ...p,
+        displayNumber: placeNumbers[p.id],
+      })),
+    [tripState.places, tripState.customSections, placeNumbers]
+  );
+
+  // The day a place is planned for (from the itinerary), else the trip's
+  // first day. A place can't be marked "visited" before that day.
+  const visitDateFor = (placeId) => {
+    const dayIndex = tripState.days.findIndex((d) => d.placeIds.includes(placeId));
+    if (dayIndex !== -1 && startDate) return addDaysIso(startDate, dayIndex);
+    return startDate || null;
+  };
+  const guardVisited = async (place) => {
+    if (place.visited) return true; // un-marking is always fine
+    const date = visitDateFor(place.id);
+    if (date && date > todayIsoLocal()) {
+      await alert(t("visitedTooEarly").replace("{date}", formatDateRange(date, date)));
+      return false;
+    }
+    return true;
+  };
+
+  // "Pin on map": for a place the map lookup couldn't find, the student
+  // clicks the right spot on the map instead.
+  const [pinningPlace, setPinningPlace] = useState(null); // { id, name }
+  const mapBoxRef = useRef(null);
+  const startPinning = (p) => {
+    setPinningPlace({ id: p.id, name: p.name });
+    mapBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+  const handleMapPick = ({ lat, lng }) => {
+    if (!pinningPlace) return;
+    const id = pinningPlace.id;
+    applyChange((prev) =>
+      updatePlaceEverywhere(prev, id, (p) => ({
+        ...p,
+        lat: Math.round(lat * 1e6) / 1e6,
+        lng: Math.round(lng * 1e6) / 1e6,
+        geocodeStatus: "pinned",
+      }))
+    );
+    setPinningPlace(null);
+  };
+
   const updatePlaceEverywhere = (state, placeId, updater) => {
     if (state.places.some((p) => p.id === placeId)) {
       return {
@@ -1150,7 +1247,9 @@ export default function TripPlanBuilderPage() {
     setNewPlaceInput("");
   };
 
-  const toggleVisited = (placeId) => {
+  const toggleVisited = async (placeId) => {
+    const found = findPlaceWithOrigin(tripState, placeId);
+    if (found && !(await guardVisited(found.place))) return;
     applyChange((prev) => updatePlaceEverywhere(prev, placeId, (p) => ({ ...p, visited: !p.visited })));
   };
 
@@ -1296,7 +1395,9 @@ export default function TripPlanBuilderPage() {
     }));
   };
 
-  const toggleSectionPlaceVisited = (sectionId, placeId) => {
+  const toggleSectionPlaceVisited = async (sectionId, placeId) => {
+    const found = findPlaceWithOrigin(tripState, placeId);
+    if (found && !(await guardVisited(found.place))) return;
     applyChange((prev) => ({
       ...prev,
       customSections: prev.customSections.map((s) =>
@@ -1762,7 +1863,29 @@ export default function TripPlanBuilderPage() {
     if (targets.length === 0) return;
     let cancelled = false;
 
+    // Travel times already looked up (this browser, last few hours) show
+    // right away — coming back from Directions doesn't load them again.
+    const TRAVEL_KEY = "ww_travel_v1";
+    const TRAVEL_MS = 6 * 60 * 60 * 1000;
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(TRAVEL_KEY) || "{}"); } catch { saved = {}; }
+    const keyFor = (p) =>
+      `${userLocation.lat.toFixed(3)},${userLocation.lng.toFixed(3)}>${Number(p.lat).toFixed(5)},${Number(p.lng).toFixed(5)}`;
+    const remember = (p, info) => {
+      try {
+        const all = JSON.parse(localStorage.getItem(TRAVEL_KEY) || "{}");
+        all[keyFor(p)] = { ...info, at: Date.now() };
+        const keep = Object.entries(all).filter(([, v]) => Date.now() - v.at < TRAVEL_MS).slice(-200);
+        localStorage.setItem(TRAVEL_KEY, JSON.stringify(Object.fromEntries(keep)));
+      } catch { /* storage blocked/full: skip */ }
+    };
+
     targets.forEach((p) => {
+      const hit = saved[keyFor(p)];
+      if (hit && Date.now() - hit.at < TRAVEL_MS) {
+        setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: false, distanceM: hit.distanceM, durationS: hit.durationS } }));
+        return;
+      }
       setPlaceTravelInfo((prev) => ({ ...prev, [p.id]: { loading: true } }));
       const url = `https://router.project-osrm.org/route/v1/driving/${userLocation.lng},${userLocation.lat};${p.lng},${p.lat}?overview=false`;
       fetch(url)
@@ -1771,6 +1894,7 @@ export default function TripPlanBuilderPage() {
           if (cancelled) return;
           if (data.code === "Ok" && data.routes && data.routes[0]) {
             const route = data.routes[0];
+            remember(p, { distanceM: route.distance, durationS: route.duration });
             setPlaceTravelInfo((prev) => ({
               ...prev,
               [p.id]: { loading: false, distanceM: route.distance, durationS: route.duration },
@@ -1810,14 +1934,18 @@ export default function TripPlanBuilderPage() {
   // Where to go and the itinerary only opens the form on the card clicked.
   const openAddCost = (costKey) => {
     setAddingCostFor(costKey);
+    setCostError("");
     setCostCategory(COST_CATEGORIES[0]);
     setCustomCostCategory("");
     setCostAmount("");
   };
 
+  const [costError, setCostError] = useState("");
   const confirmAddCost = (placeId) => {
-    const amount = Number(costAmount);
-    if (!amount || amount <= 0) return;
+    const amount = Math.round(Number(costAmount) * 100) / 100;
+    if (!costAmount || !amount || amount <= 0) return setCostError(t("costAmountRequired"));
+    if (amount > MAX_MONEY) return setCostError(t("moneyTooHigh"));
+    setCostError("");
     const category =
       costCategory === "Other" && customCostCategory.trim()
         ? customCostCategory.trim()
@@ -1848,12 +1976,17 @@ export default function TripPlanBuilderPage() {
   const [budgetInput, setBudgetInput] = useState(budgetTotal);
 
   const openEditBudget = () => {
-    setBudgetInput(budgetTotal);
+    setBudgetError("");
+    setBudgetInput(budgetTotal ? (Math.round(Number(budgetTotal) * 100) / 100).toFixed(2) : "");
     setShowEditBudget(true);
   };
 
+  const [budgetError, setBudgetError] = useState("");
   const handleSaveBudget = () => {
-    applyChange((prev) => ({ ...prev, budgetTotal: Number(budgetInput) || 0 }));
+    const value = Math.round((Number(budgetInput) || 0) * 100) / 100;
+    if (value < 0 || value > MAX_MONEY) return setBudgetError(t("moneyTooHigh"));
+    setBudgetError("");
+    applyChange((prev) => ({ ...prev, budgetTotal: value }));
     setShowEditBudget(false);
   };
 
@@ -1973,13 +2106,15 @@ export default function TripPlanBuilderPage() {
             />
           )}
           <input
-            type="number"
-            min="0"
+            type="text"
+            inputMode="decimal"
             placeholder={`₱ ${t("amount")}`}
             value={costAmount}
-            onChange={(e) => setCostAmount(e.target.value)}
+            onChange={(e) => { setCostAmount(keepMoney(e.target.value)); setCostError(""); }}
+            onKeyDown={(e) => { if (e.key === "Enter") confirmAddCost(p.id); }}
           />
           <button onClick={() => confirmAddCost(p.id)}>{t("add")}</button>
+          {costError && <p className="ww-money-error" role="alert">{costError}</p>}
         </div>
       )}
 
@@ -1989,7 +2124,7 @@ export default function TripPlanBuilderPage() {
             <div className="ww-cost-line" key={c.id}>
               <span>{COST_CATEGORY_KEYS[c.category] ? t(COST_CATEGORY_KEYS[c.category]) : c.category}</span>
               <span>
-                ₱{c.amount.toLocaleString()}
+                ₱{formatPeso(c.amount)}
                 <span className="ww-cost-remove" onClick={() => removeCost(p.id, c.id)}>
                   <Icon name="x" />
                 </span>
@@ -1997,17 +2132,125 @@ export default function TripPlanBuilderPage() {
             </div>
           ))}
           <div className="ww-cost-total">
-            {t("expectedCost")}: ₱{p.costs.reduce((sum, c) => sum + c.amount, 0).toLocaleString()}
+            {t("expectedCost")}: ₱{formatPeso(p.costs.reduce((sum, c) => sum + c.amount, 0))}
           </div>
         </div>
       )}
     </>
   );
 
+  // ---- Print / Save as PDF ----
+  // Opens a clean, printer-friendly copy of the itinerary in a new tab and
+  // shows the browser's print dialog (choose "Save as PDF" there).
+  const handlePrintItinerary = () => {
+    const esc = (v) =>
+      String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const title = tripName.trim() || defaultTripName;
+    const scheduled = new Set(days.flatMap((d) => d.placeIds));
+    const placeRow = (p) => {
+      const cost = (p.costs || []).reduce((sum, c) => sum + Number(c.amount || 0), 0);
+      return `<tr>
+        <td class="n">${placeNumbers[p.id] ?? ""}</td>
+        <td class="time">${p.time ? esc(formatTime(p.time)) : "—"}</td>
+        <td><strong>${esc(p.name)}</strong>${p.visited ? ` <span class="tag">${esc(t("visited"))}</span>` : ""}${
+          p.note ? `<div class="note">${esc(p.note)}</div>` : ""
+        }${
+          (p.costs || []).length
+            ? `<div class="costs">${p.costs
+                .map((c) => `${esc(COST_CATEGORY_KEYS[c.category] ? t(COST_CATEGORY_KEYS[c.category]) : c.category)}: ₱${formatPeso(c.amount)}`)
+                .join(" · ")}</div>`
+            : ""
+        }</td>
+        <td class="money">${cost ? `₱${formatPeso(cost)}` : ""}</td>
+      </tr>`;
+    };
+    const table = (rows) =>
+      `<table><thead><tr><th>#</th><th>${esc(t("printTime"))}</th><th>${esc(t("printPlace"))}</th><th class="money">${esc(t("expectedCost"))}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    const dayHtml = days
+      .map((day) => {
+        const ps = day.placeIds.map((id) => findPlaceWithOrigin(tripState, id)?.place).filter(Boolean);
+        return `<section><h2>${esc(day.label)}</h2>${
+          ps.length ? table(ps.map(placeRow).join("")) : `<p class="empty">${esc(t("printNoPlaces"))}</p>`
+        }</section>`;
+      })
+      .join("");
+    const unscheduled = [...places, ...customSections.flatMap((sec) => sec.places)].filter((p) => !scheduled.has(p.id));
+    const otherHtml = unscheduled.length
+      ? `<section><h2>${esc(t("printNotScheduled"))}</h2>${table(unscheduled.map(placeRow).join(""))}</section>`
+      : "";
+    const totalExpected = [...places, ...customSections.flatMap((sec) => sec.places)].reduce(
+      (sum, p) => sum + (p.costs || []).reduce((a, c) => a + Number(c.amount || 0), 0),
+      0
+    );
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)} — WanderWise</title>
+<style>
+  body { font-family: Poppins, Arial, sans-serif; color: #2b1c12; margin: 32px; }
+  header { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #331c08; padding-bottom: 12px; }
+  header img { height: 40px; }
+  h1 { margin: 0; font-size: 22px; }
+  .meta { margin: 12px 0 20px; font-size: 13px; line-height: 1.7; }
+  h2 { font-size: 16px; margin: 22px 0 8px; color: #2f6f5f; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #e6dfc0; vertical-align: top; }
+  th { background: #f7f4ea; }
+  .n { width: 28px; } .time { width: 80px; white-space: nowrap; } .money { text-align: right; white-space: nowrap; }
+  .note { margin-top: 3px; color: #5c4a33; white-space: pre-wrap; }
+  .costs { margin-top: 3px; font-size: 12px; color: #5c4a33; }
+  .tag { font-size: 11px; color: #2f6f5f; }
+  .empty { color: #5c4a33; font-size: 13px; }
+  .total { margin-top: 20px; text-align: right; font-weight: 700; }
+  footer { margin-top: 28px; font-size: 11px; color: #5c4a33; }
+  section { break-inside: avoid; }
+  @media print { body { margin: 12mm; } }
+</style></head><body>
+<header><img src="${window.location.origin}/assets/brand/logo.png" alt=""><h1>${esc(title)}</h1></header>
+<div class="meta">
+  <div><strong>${esc(t("printDestination"))}:</strong> ${esc(destination || "—")}</div>
+  <div><strong>${esc(t("printDates"))}:</strong> ${startDate && endDate ? esc(formatDateRange(startDate, endDate)) : "—"}</div>
+  <div><strong>${esc(t("travelBuddies"))}:</strong> ${Number(people) || 0}</div>
+  <div><strong>${esc(t("budget"))}:</strong> ₱${formatPeso(budgetTotal)}</div>
+</div>
+${dayHtml}${otherHtml}
+<p class="total">${esc(t("printTotalExpected"))}: ₱${formatPeso(totalExpected)}</p>
+<footer>${esc(t("printFooter"))} ${esc(new Date().toLocaleString())}</footer>
+<script>window.onload = function () { setTimeout(function () { window.print(); }, 300); };</script>
+</body></html>`;
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert(t("printPopupBlocked"));
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  };
+
+  if (accessDenied) {
+    return (
+      <div className="ww-builder-page">
+        <div className="ww-access-denied">
+          <Icon name="lock" />
+          <h1>{t("accessDeniedTitle")}</h1>
+          <p>{t("accessDeniedText")}</p>
+          <button type="button" className="ww-search-btn" onClick={() => navigate(homePath, { replace: true })}>
+            {t("backToHome")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`ww-builder-page ${canEdit ? "" : "ww-builder-readonly"}`}>
       <header className="ww-builder-topbar">
-        <div className="ww-brand">
+        <div
+          className="ww-brand ww-brand-link"
+          role="link"
+          tabIndex={0}
+          title={t("navHome")}
+          onClick={() => navigate(homePath)}
+          onKeyDown={(e) => { if (e.key === "Enter") navigate(homePath); }}
+        >
           <img src="/assets/brand/logo.png" alt="WanderWise logo" className="ww-logo" />
           <img src="/assets/brand/wordmark.png" alt="WanderWise" className="ww-brand-wordmark" />
         </div>
@@ -2032,6 +2275,9 @@ export default function TripPlanBuilderPage() {
           >
             <Icon name="redo" /> {t("redo")}
           </span>
+          <button type="button" className="ww-builder-back" onClick={handlePrintItinerary} title={t("printItineraryHint")}>
+            <Icon name="download" /> {t("printItinerary")}
+          </button>
           <button className="ww-trip-plan-btn">{t("tripPlanBtn")}</button>
           <div className="ww-menu-wrapper" ref={topMenuRef}>
             <span
@@ -2167,11 +2413,19 @@ export default function TripPlanBuilderPage() {
             </div>
           )}
 
-          <div className="ww-builder-map">
+          <div className="ww-builder-map" ref={mapBoxRef}>
+            {pinningPlace && (
+              <div className="ww-pin-banner" role="status">
+                <span><Icon name="map-pin" /> {t("pinOnMapHelp").replace("{name}", pinningPlace.name)}</span>
+                <button type="button" className="ww-pin-cancel" onClick={() => setPinningPlace(null)}>{t("cancel")}</button>
+              </div>
+            )}
             <TripMap
-              places={places}
+              places={mapPlaces}
               destinationMarker={destinationCoords}
               destinationLabel={destination}
+              pinMode={!!pinningPlace}
+              onPick={handleMapPick}
             />
           </div>
 
@@ -2339,7 +2593,7 @@ export default function TripPlanBuilderPage() {
             <div className="ww-place-card" key={p.id}>
               <p className="ww-place-name">
                 {renderSelectBox("whereToGo", p)}
-                <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
+                <Icon name="map-pin" />{placeNumbers[p.id]} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
               </p>
 
               {/* Shown when our free (OpenStreetMap) lookup could NOT
@@ -2367,18 +2621,16 @@ export default function TripPlanBuilderPage() {
                   >
                     {t("viewOnGoogleMaps")} <Icon name="external-link" />
                   </a>
+                  {canEdit && (
+                    <button type="button" className="ww-pin-btn" onClick={() => startPinning(p)}>
+                      <Icon name="map-pin" /> {t("pinOnMap")}
+                    </button>
+                  )}
                 </div>
               )}
 
-              <input
-                className="ww-place-notes-input"
-                placeholder={t("addNotesPlaceholder")}
-                value={p.note || ""}
-                onChange={(e) => updatePlaceNote(p.id, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.target.blur();
-                }}
-              />
+              {/* Notes are written in the itinerary (bottom); here they're only shown. */}
+              {p.note && <p className="ww-place-note-preview"><Icon name="pencil" /> {p.note}</p>}
               <p
                 className="ww-mark-visited"
                 onClick={() => toggleVisited(p.id)}
@@ -2516,17 +2768,18 @@ export default function TripPlanBuilderPage() {
                 <div className="ww-place-card" key={p.id}>
                   <p className="ww-place-name">
                     {renderSelectBox(section.id, p)}
-                    <Icon name="map-pin" />{i + 1} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
+                    <Icon name="map-pin" />{placeNumbers[p.id]} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
                   </p>
-                  <input
-                    className="ww-place-notes-input"
-                    placeholder={t("addNotesPlaceholder")}
-                    value={p.note || ""}
-                    onChange={(e) => updatePlaceNote(p.id, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.target.blur();
-                    }}
-                  />
+                  {canEdit && p.lat == null && p.geocodeStatus !== "pending" && (
+                    <div className="ww-unverified-warning">
+                      <span className="ww-unverified-warning-icon"><Icon name="alert-triangle" /></span>
+                      <span className="ww-unverified-warning-text">{t("notOnMapWarning")}</span>
+                      <button type="button" className="ww-pin-btn" onClick={() => startPinning(p)}>
+                        <Icon name="map-pin" /> {t("pinOnMap")}
+                      </button>
+                    </div>
+                  )}
+                  {p.note && <p className="ww-place-note-preview"><Icon name="pencil" /> {p.note}</p>}
                   <p
                     className="ww-mark-visited"
                     onClick={() => toggleSectionPlaceVisited(section.id, p.id)}
@@ -2673,7 +2926,7 @@ export default function TripPlanBuilderPage() {
                           );
                         });
                     })()}
-                    {dayPlaces.map(({ place: p, number }, i) => (
+                    {dayPlaces.map(({ place: p }, i) => (
                       <React.Fragment key={p.id}>
                         <div
                           className="ww-place-card ww-itinerary-place"
@@ -2695,7 +2948,7 @@ export default function TripPlanBuilderPage() {
                           </div>
                           <div>
                             <p className="ww-place-name">
-                              <Icon name="map-pin" />{number} {p.name}
+                              <Icon name="map-pin" />{placeNumbers[p.id]} {p.name}
                               {/* Tells the student up front which places
                                   have no confirmed location, so they know
                                   why a place is skipped by "Optimize route"
@@ -2704,6 +2957,11 @@ export default function TripPlanBuilderPage() {
                                 <span className="ww-no-location-tag" title={t("locationUnverifiedWarning")}>
                                   <Icon name="alert-triangle" /> {t("noLocationTag")}
                                 </span>
+                              )}
+                              {(p.lat == null || p.lng == null) && canEdit && (
+                                <button type="button" className="ww-pin-btn" onClick={() => startPinning(p)}>
+                                  <Icon name="map-pin" /> {t("pinOnMap")}
+                                </button>
                               )}
                             </p>
                             <input
@@ -2896,6 +3154,7 @@ export default function TripPlanBuilderPage() {
               startDate={editForm.startDate}
               endDate={editForm.endDate}
               minDate={null}
+              dayTour
               onChange={({ startDate: s, endDate: e }) => setEditForm({ ...editForm, startDate: s, endDate: e })}
             />
             <hr className="ww-planning-divider" />
@@ -2927,12 +3186,16 @@ export default function TripPlanBuilderPage() {
             <h1 className="ww-planning-title">{t("editBudget")}</h1>
             <label className="ww-planning-label">{t("totalBudgetLabel")}</label>
             <input
-              type="number"
-              min="0"
+              type="text"
+              inputMode="decimal"
               className="ww-planning-input"
+              placeholder="0.00"
               value={budgetInput}
-              onChange={(e) => setBudgetInput(e.target.value)}
+              onChange={(e) => { setBudgetInput(keepMoney(e.target.value)); setBudgetError(""); }}
+              onBlur={() => budgetInput !== "" && setBudgetInput((Number(budgetInput) || 0).toFixed(2))}
             />
+            <p className="ww-money-hint">{t("moneyLimitHint")}</p>
+            {budgetError && <p className="ww-money-error" role="alert">{budgetError}</p>}
             <div className="ww-modal-actions">
               <button className="ww-modal-cancel-btn" onClick={() => setShowEditBudget(false)}>
                 {t("cancel")}

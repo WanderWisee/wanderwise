@@ -5,7 +5,7 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '../constants/theme';
 import TimePickerSheet from './TimePickerSheet';
 import { useApp } from '../context/AppContext';
-import { formatPeso } from '../utils/dates';
+import { formatPeso, keepMoney, MAX_MONEY } from '../utils/dates';
 
 const GREY_PLACEHOLDER = '#A8A29B';
 // Naka-save sa English (gaya ng web); isinasalin lang kapag ipinapakita.
@@ -34,6 +34,10 @@ export default function PlaceCard({
   onSetTime,
   onAddCost,
   onRemoveCost,
+  number = null,
+  // 'edit' = puwedeng isulat ang notes (itinerary); 'view' = ipinapakita lang
+  // (Where to go at ibang list — sa itinerary lang isinusulat ang notes).
+  notesMode = 'edit',
 }) {
   const { t, formatTime } = useApp();
   const catLabel = (cat) => (COST_CATEGORY_KEYS[cat] ? t(COST_CATEGORY_KEYS[cat]) : cat);
@@ -42,6 +46,7 @@ export default function PlaceCard({
   const [costCategory, setCostCategory] = useState(COST_CATEGORIES[0]);
   const [customCategory, setCustomCategory] = useState('');
   const [costAmount, setCostAmount] = useState('');
+  const [costError, setCostError] = useState('');
 
   const costs = place.costs || [];
   const totalCost = costs.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
@@ -52,11 +57,13 @@ export default function PlaceCard({
     setCostAmount('');
     setCustomCategory('');
     setCostCategory(COST_CATEGORIES[0]);
+    setCostError('');
   }
 
   function confirmCost() {
-    const amount = Number(costAmount);
-    if (!amount || amount <= 0) return;
+    const amount = Math.round(Number(costAmount) * 100) / 100;
+    if (!costAmount || !amount || amount <= 0) { setCostError(t('costAmountRequired')); return; }
+    if (amount > MAX_MONEY) { setCostError(t('moneyTooHigh')); return; }
     const category =
       costCategory === 'Other' && customCategory.trim() ? customCategory.trim() : costCategory;
     onAddCost({ id: `cost_${Date.now()}`, category, amount });
@@ -82,7 +89,7 @@ export default function PlaceCard({
         )}
 
         <View style={styles.numberBadge}>
-          <Text style={styles.numberText}>{index + 1}</Text>
+          <Text style={styles.numberText}>{number ?? index + 1}</Text>
         </View>
 
         <View style={{ flex: 1 }}>
@@ -120,6 +127,9 @@ export default function PlaceCard({
 
       {expanded && !selecting && (
         <View style={styles.details}>
+          {notesMode === 'view' ? (
+            !!place.notes && <Text style={styles.notesPreview}>{place.notes}</Text>
+          ) : (
           <TextInput
             editable={!readOnly}
             accessibilityLabel={t('addNotesPlaceholder')}
@@ -131,6 +141,7 @@ export default function PlaceCard({
             onEndEditing={onEndNotes}
             multiline
           />
+          )}
 
           <View pointerEvents={readOnly ? 'none' : 'auto'} style={[styles.actionsRow, readOnly && { display: 'none' }]}>
             <TouchableOpacity onPress={onToggleVisited} style={styles.actionButton}>
@@ -192,9 +203,10 @@ export default function PlaceCard({
                 placeholder={`${t('amount')} (₱)`}
                 placeholderTextColor={GREY_PLACEHOLDER}
                 value={costAmount}
-                onChangeText={setCostAmount}
+                onChangeText={(v) => { setCostAmount(keepMoney(v)); setCostError(''); }}
                 keyboardType="decimal-pad"
               />
+              {!!costError && <Text style={styles.costError}>{costError}</Text>}
 
               <View style={styles.costFormActions}>
                 <TouchableOpacity style={styles.costCancel} onPress={resetCostForm}>
@@ -223,6 +235,8 @@ export default function PlaceCard({
 }
 
 const styles = StyleSheet.create({
+  notesPreview: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginBottom: 10 },
+  costError: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: Colors.error, marginBottom: 8 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: Colors.line },
   cardSelected: { borderColor: Colors.brown900, borderWidth: 1.5 },
 

@@ -172,6 +172,18 @@ function SubmissionCard({ row, assignment, classId, onSaved, formatDate, formatT
                   {overBudget && <em className="ww-portal-over"> · {t("overAssignmentBudget")}</em>}
                 </span>
                 <span className="ww-link-text">{t("openItinerary")} →</span>
+                {trip.startDate && (
+                  <span
+                    className="ww-link-text"
+                    role="link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/trip-plan/tour?tripId=${trip.id}`);
+                    }}
+                  >
+                    🧭 {t("viewTourDetails")} →
+                  </span>
+                )}
               </div>
             )}
             {s.note && <p className="ww-portal-note">“{s.note}”</p>}

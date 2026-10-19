@@ -215,6 +215,10 @@ public class TourController : ControllerBase
         if (!IsManager(role)) return Forbid();
         var day = ParseDate(request.Date);
         if (day is null) return BadRequest("date is required (yyyy-MM-dd).");
+        // The meeting point is set on the tour day itself (not weeks or
+        // months before) — same window as attendance and check-in.
+        if (AttendanceStatus(day.Value) != "open")
+            return BadRequest(new { error = AttendanceStatus(day.Value) == "upcoming" ? "meeting_point_not_yet" : "attendance_closed" });
         if (request.Latitude is null || request.Longitude is null)
             return BadRequest("Pick a meeting place that has a location.");
 

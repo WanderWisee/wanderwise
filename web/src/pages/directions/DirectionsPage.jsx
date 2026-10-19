@@ -45,6 +45,55 @@ function formatDuration(seconds) {
 }
 
 
+// ---- Saved routes ----
+// A route that was already looked up is kept in this browser for a few
+// hours, so going back to the trip and opening Directions again shows it
+// right away instead of loading it again.
+const ROUTE_CACHE_KEY = "ww_routes_v1";
+const ROUTE_CACHE_MS = 6 * 60 * 60 * 1000;
+const ROUTE_CACHE_MAX = 8;
+const ORIGIN_KEY = "ww_last_origin";
+const ORIGIN_MS = 10 * 60 * 1000;
+
+function routeKey(origin, lat, lng) {
+  // ~100 m around where you are, exact spot for the place.
+  return `${origin.lat.toFixed(3)},${origin.lng.toFixed(3)}>${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
+}
+function readRouteCache(key) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
+    const hit = all[key];
+    return hit && Date.now() - hit.at < ROUTE_CACHE_MS ? hit.routes : null;
+  } catch {
+    return null;
+  }
+}
+function writeRouteCache(key, routes) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
+    all[key] = { at: Date.now(), routes };
+    const keep = Object.entries(all)
+      .filter(([, v]) => v && Date.now() - v.at < ROUTE_CACHE_MS)
+      .sort((a, b) => b[1].at - a[1].at)
+      .slice(0, ROUTE_CACHE_MAX);
+    localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(Object.fromEntries(keep)));
+  } catch {
+    // Storage full or blocked: just don't save it this time.
+    try { localStorage.removeItem(ROUTE_CACHE_KEY); } catch { /* ignore */ }
+  }
+}
+function readLastOrigin() {
+  try {
+    const o = JSON.parse(sessionStorage.getItem(ORIGIN_KEY) || "null");
+    return o && Date.now() - o.at < ORIGIN_MS ? { lat: o.lat, lng: o.lng } : null;
+  } catch {
+    return null;
+  }
+}
+function saveLastOrigin(o) {
+  try { sessionStorage.setItem(ORIGIN_KEY, JSON.stringify({ ...o, at: Date.now() })); } catch { /* ignore */ }
+}
+
 function FitBoundsToRoute({ routeCoords }) {
   const map = useMap();
   useEffect(() => {
@@ -73,11 +122,15 @@ export default function DirectionsPage() {
   // user's current location.
   const { placeName, lat, lng, origin: passedOrigin } = location.state || {};
 
-  const [origin, setOrigin] = useState(passedOrigin || null);
+  const [origin, setOrigin] = useState(() => passedOrigin || readLastOrigin());
   const [locationError, setLocationError] = useState(null);
 
   useEffect(() => {
-    if (passedOrigin || !navigator.geolocation) return;
+    if (origin) saveLastOrigin(origin);
+  }, [origin]);
+
+  useEffect(() => {
+    if (origin || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => {
@@ -85,6 +138,7 @@ export default function DirectionsPage() {
         setLocationError("directionsLocationDenied");
       }
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [passedOrigin]);
 
   // Every route OSRM offers (the main one plus alternatives), each as
@@ -98,8 +152,16 @@ export default function DirectionsPage() {
   useEffect(() => {
     if (!origin || lat == null || lng == null) return;
     let cancelled = false;
-    setLoadingRoute(true);
     setRouteError(null);
+    const cacheKey = routeKey(origin, lat, lng);
+    const saved = readRouteCache(cacheKey);
+    if (saved && saved.length) {
+      setRoutes(saved);
+      setSelectedRoute(0);
+      setLoadingRoute(false);
+      return;
+    }
+    setLoadingRoute(true);
     // OSRM — free, OpenStreetMap-based routing, no API key needed. Uses
     // the exact same coordinates already confirmed/pinned in the trip
     // builder, so the route drawn here always matches what the student
@@ -112,15 +174,16 @@ export default function DirectionsPage() {
       .then((data) => {
         if (cancelled) return;
         if (data.code === "Ok" && data.routes && data.routes.length > 0) {
-          setRoutes(
-            data.routes.map((route) => ({
-              coords: route.geometry.coordinates.map(([rlng, rlat]) => [rlat, rlng]),
-              distanceM: route.distance,
-              durationS: route.duration,
-              // Main roads used, e.g. "Maharlika Highway, SLEX".
-              via: (route.legs || []).map((leg) => leg.summary).filter(Boolean).join(", "),
-            }))
-          );
+          const found = data.routes.map((route) => ({
+            // 5 decimals (~1 m) is plenty and keeps the saved copy small.
+            coords: route.geometry.coordinates.map(([rlng, rlat]) => [+rlat.toFixed(5), +rlng.toFixed(5)]),
+            distanceM: route.distance,
+            durationS: route.duration,
+            // Main roads used, e.g. "Maharlika Highway, SLEX".
+            via: (route.legs || []).map((leg) => leg.summary).filter(Boolean).join(", "),
+          }));
+          setRoutes(found);
+          writeRouteCache(cacheKey, found);
           setSelectedRoute(0); // OSRM lists the fastest first
         } else {
           setRouteError("directionsNoRoute");

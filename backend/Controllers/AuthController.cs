@@ -176,7 +176,7 @@ public class AuthController : ControllerBase
         if (string.Equals(recoveryEmail, schoolEmail, StringComparison.OrdinalIgnoreCase))
             return BadRequest(new { error = "Use a personal email that is different from your school email." });
         if (!InputRules.IsEmployeeId(employeeId))
-            return BadRequest(new { error = "Employee ID must be 3 to 20 letters, numbers or dashes." });
+            return BadRequest(new { error = "Employee ID must be exactly 10 letters, numbers or dashes." });
 
         if (await _db.Users.AnyAsync(u => u.Email == schoolEmail))
             return Conflict(new { error = "An account with that email already exists." });
@@ -228,7 +228,7 @@ public class AuthController : ControllerBase
         if (!TeacherEmailRegex.IsMatch(schoolEmail))
             return BadRequest(new { error = "Please use your official @mseuf.edu.ph faculty email." });
         if (!InputRules.IsEmployeeId(employeeId))
-            return BadRequest(new { error = "Employee ID must be 3 to 20 letters, numbers or dashes." });
+            return BadRequest(new { error = "Employee ID must be exactly 10 letters, numbers or dashes." });
         var firstName = InputRules.CleanName(request.FirstName);
         var lastName = InputRules.CleanName(request.LastName);
         var recoveryEmail = request.RecoveryEmail?.Trim() ?? "";
@@ -481,6 +481,53 @@ public class AuthController : ControllerBase
         return Ok(new { bio = user.Bio, location = user.Location });
     }
 
+    // ---------------- Change password (signed in) ----------------
+    // Settings → Account → Change password. The current password is asked
+    // again. Every other device is logged out (old tokens stop matching the
+    // new password — see JwtService.PasswordStamp); this device gets a fresh
+    // token back so it stays logged in.
+    [Authorize]
+    [HttpPost("/api/me/password")]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return NotFound();
+
+        var guardKey = "change-password:" + userId;
+        if (AttemptGuard.IsLocked(guardKey, 5, 15))
+            return StatusCode(429, new { error = "Too many wrong tries. Please wait 15 minutes, or use Forgot password.", code = "too_many_attempts" });
+
+        if (string.IsNullOrEmpty(request.CurrentPassword) || request.CurrentPassword.Length > 100
+            || !BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            AttemptGuard.Fail(guardKey, 15);
+            return BadRequest(new { error = "Your current password is wrong.", code = "wrong_password" });
+        }
+        AttemptGuard.Reset(guardKey);
+
+        var passwordError = InputRules.PasswordError(request.NewPassword);
+        if (passwordError != null)
+            return BadRequest(new { error = passwordError, code = "weak_password" });
+        if (request.NewPassword == request.CurrentPassword)
+            return BadRequest(new { error = "Your new password must be different from your current one.", code = "same_password" });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        await ActivityLogger.LogAsync(_db, user.Id, ActivityLogger.PasswordReset, "changed in settings", HttpContext);
+
+        await NotificationHelper.CreateAsync(
+            _db, user.Id, NotificationHelper.PasswordChanged,
+            "Your WanderWise password was changed. If this wasn't you, reset it right away.",
+            null,
+            new { });
+
+        AccountGuard.Forget(user.Id);
+        return Ok(new { message = "Password changed.", token = _jwt.GenerateToken(user) });
+    }
+
     // ---------------- Forgot password ----------------
 
     [HttpPost("/api/forgot-password/send-otp")]
@@ -619,4 +666,11 @@ public class AuthController : ControllerBase
             System.Globalization.CultureInfo.InvariantCulture,
             System.Globalization.DateTimeStyles.None, out dob);
     }
+}
+
+// Body of POST /api/me/password.
+public class ChangePasswordRequest
+{
+    public string? CurrentPassword { get; set; }
+    public string? NewPassword { get; set; }
 }

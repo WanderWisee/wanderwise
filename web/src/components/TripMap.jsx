@@ -1,5 +1,5 @@
 import React from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import Icon from "./Icon";
@@ -39,16 +39,28 @@ const destinationIcon = L.divIcon({
 
 const PH_CENTER = [12.8797, 121.7740]; // center of the Philippines
 
+// "Pin on map": the next click on the map sets the place's location.
+function PickOnClick({ active, onPick }) {
+  useMapEvents({
+    click(e) {
+      if (active && onPick) onPick({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
+}
+
 // Plain marker map — no route drawing here. The full itinerary route was
 // removed (redundant with the dedicated Directions page), and the
 // single-place "how do I get there" route now lives entirely on its own
 // /directions page, so this component stays focused on just showing pins.
-export default function TripMap({ places, destinationMarker, destinationLabel }) {
-  // Number each place by its position in the master "Where to go?"
-  // list (not wherever it happened to get typed in) — this is what
-  // shows inside the orange pin.
-  const numbered = places.map((p, i) => ({ ...p, displayNumber: i + 1 }));
-  const geocoded = numbered.filter((p) => p.lat && p.lng);
+//
+// Zoom with the mouse wheel / trackpad (or pinch on a phone) — there are
+// no +/- buttons.
+export default function TripMap({ places, destinationMarker, destinationLabel, pinMode = false, onPick }) {
+  // Each place carries the same number it has in the lists
+  // (displayNumber); older callers without it get their list position.
+  const numbered = places.map((p, i) => ({ ...p, displayNumber: p.displayNumber ?? i + 1 }));
+  const geocoded = numbered.filter((p) => p.lat != null && p.lng != null);
 
   const center = destinationMarker
     ? [destinationMarker.lat, destinationMarker.lng]
@@ -58,29 +70,34 @@ export default function TripMap({ places, destinationMarker, destinationLabel })
   const zoom = destinationMarker || geocoded.length > 0 ? 12 : 6;
 
   return (
-    <MapContainer
-      key={`${center[0]}-${center[1]}`} // re-centers when the primary pin changes
-      center={center}
-      zoom={zoom}
-      style={{ width: "100%", height: "420px", borderRadius: "8px" }}
-      scrollWheelZoom={false}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div className={pinMode ? "ww-trip-map ww-trip-map-pinning" : "ww-trip-map"}>
+      <MapContainer
+        key={`${center[0]}-${center[1]}`} // re-centers when the primary pin changes
+        center={center}
+        zoom={zoom}
+        style={{ width: "100%", height: "420px", borderRadius: "8px" }}
+        zoomControl={false}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-      {destinationMarker && (
-        <Marker position={[destinationMarker.lat, destinationMarker.lng]} icon={destinationIcon}>
-          <Popup><Icon name="target" /> {destinationLabel || "Trip destination"}</Popup>
-        </Marker>
-      )}
+        <PickOnClick active={pinMode} onPick={onPick} />
 
-      {geocoded.map((p) => (
-        <Marker key={p.id} position={[p.lat, p.lng]} icon={makeNumberedPinIcon(p.displayNumber)}>
-          <Popup><Icon name="map-pin" />{p.displayNumber} {p.name}</Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+        {destinationMarker && (
+          <Marker position={[destinationMarker.lat, destinationMarker.lng]} icon={destinationIcon}>
+            <Popup><Icon name="target" /> {destinationLabel || "Trip destination"}</Popup>
+          </Marker>
+        )}
+
+        {geocoded.map((p) => (
+          <Marker key={p.id} position={[p.lat, p.lng]} icon={makeNumberedPinIcon(p.displayNumber)}>
+            <Popup><Icon name="map-pin" />{p.displayNumber} {p.name}</Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
 }

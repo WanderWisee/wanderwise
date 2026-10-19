@@ -9694,3 +9694,164 @@ textarea:focus-visible {
 .ww-journal-place-chip:hover {
   background: var(--ww-surface-2);
 }
+
+/* Landing "Who it's for": two audience cards (students, teachers). */
+.ww-lp-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 560px) {
+  .ww-lp-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Trip Plan Builder: the WanderWise logo goes back home. */
+.ww-brand-link {
+  cursor: pointer;
+}
+
+/* Trip Plan Builder: someone else's trip in the URL. */
+.ww-access-denied {
+  max-width: 440px;
+  margin: 96px auto;
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--ww-surface);
+  border: 1px solid var(--ww-border);
+  border-radius: 16px;
+}
+
+.ww-access-denied > svg {
+  width: 40px;
+  height: 40px;
+  color: var(--ww-primary);
+}
+
+.ww-access-denied h1 {
+  margin: 12px 0 8px;
+  font-size: 1.4rem;
+}
+
+.ww-access-denied p {
+  margin: 0 0 20px;
+  color: var(--ww-text-muted, #6b6b6b);
+}
+
+/* Settings → Account: change password. */
+.ww-password-zone {
+  margin-top: 32px;
+  padding: 18px;
+  border: 1px solid var(--ww-border);
+  border-radius: var(--ww-r-sm);
+  background: var(--ww-surface);
+}
+
+.ww-password-zone h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.ww-password-zone > p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ww-text-muted);
+}
+
+.ww-password-zone .ww-field-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.ww-password-zone .ww-password-error {
+  color: var(--ww-danger);
+  font-weight: 600;
+}
+
+/* Builder: money inputs (budget, expected cost). */
+.ww-money-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ww-text-muted);
+}
+
+.ww-money-error {
+  flex-basis: 100%;
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ww-danger);
+}
+
+/* Builder: a place's note, shown (not edited) in Where to go / lists. */
+.ww-place-note-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 4px 0 6px;
+  font-size: 13px;
+  color: var(--ww-text-muted);
+  white-space: pre-wrap;
+}
+
+/* Builder: "Pin on map" for places the map lookup couldn't find. */
+.ww-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--ww-primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ww-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ww-pin-btn:hover {
+  background: var(--ww-surface-2);
+}
+
+.ww-pin-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--ww-primary);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.ww-pin-cancel {
+  padding: 4px 12px;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ww-trip-map-pinning .leaflet-container {
+  cursor: crosshair;
+  outline: 3px solid var(--ww-primary);
+}
+
+.ww-builder-readonly .ww-pin-btn {
+  display: none !important;
+}

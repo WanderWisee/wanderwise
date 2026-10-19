@@ -17,7 +17,11 @@ public static class InputRules
     // Philippine mobile number: 09XXXXXXXXX (also accepts +639... / 639...).
     private static readonly Regex PhoneRegex = new(@"^09\d{9}$", RegexOptions.Compiled);
 
-    private static readonly Regex EmployeeIdRegex = new(@"^[A-Z0-9\-]{3,20}$", RegexOptions.Compiled);
+    // Employee IDs are an exact length (keep in sync with EMPLOYEE_ID_LENGTH
+    // in web/src/utils/validation.js).
+    public const int EmployeeIdLength = 10;
+    private static readonly Regex EmployeeIdRegex = new(@"^[A-Z0-9\-]{10}$", RegexOptions.Compiled);
+    private static readonly Regex TermRegex = new(@"^(\d{4})-(\d{4})$", RegexOptions.Compiled);
 
     public static string CleanName(string? raw) => Regex.Replace((raw ?? "").Trim(), @"\s{2,}", " ");
 
@@ -28,6 +32,18 @@ public static class InputRules
         !string.IsNullOrWhiteSpace(email) && email.Length <= 150 && EmailRegex.IsMatch(email);
 
     public static bool IsEmployeeId(string id) => EmployeeIdRegex.IsMatch(id);
+
+    // School term like "2026-2027": the second year must be the next year.
+    // Empty is fine (the term is optional).
+    public static bool IsTerm(string? term)
+    {
+        if (string.IsNullOrWhiteSpace(term)) return true;
+        var m = TermRegex.Match(term.Trim());
+        if (!m.Success) return false;
+        var a = int.Parse(m.Groups[1].Value);
+        var b = int.Parse(m.Groups[2].Value);
+        return a >= 2000 && a <= 2099 && b == a + 1;
+    }
 
     // Returns the number as 09XXXXXXXXX, or null when it isn't a valid PH mobile number.
     public static string? NormalizePhone(string? raw)

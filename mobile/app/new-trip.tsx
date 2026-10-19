@@ -41,6 +41,11 @@ export default function NewTripScreen() {
       setError(t('enterDestinationError'));
       return;
     }
+    // Kailangan ang petsa para sa day-by-day itinerary (isang araw = day tour).
+    if (!dateRange) {
+      setError(t('datesRequired'));
+      return;
+    }
     setLoading(true);
     try {
       const trimmed = destination.trim();
@@ -161,6 +166,7 @@ export default function NewTripScreen() {
         onClose={() => setPickerOpen(false)}
         onConfirm={setDateRange}
         initialRange={dateRange}
+        dayTour
       />
     </SafeAreaView>
   );

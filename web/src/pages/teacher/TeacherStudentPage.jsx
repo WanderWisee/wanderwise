@@ -135,7 +135,7 @@ function StudentDetail() {
                   </button>
                   {trip.startDate && (
                     <button type="button" className="ww-link-btn" onClick={() => navigate(`/trip-plan/tour?tripId=${trip.id}`)}>
-                      <Icon name="compass" /> {t("attendanceTitle")}
+                      <Icon name="compass" /> {t("viewTourDetails")}
                     </button>
                   )}
                 </div>
@@ -154,7 +154,7 @@ function StudentDetail() {
           <>
             {checkInPoints.length > 0 && (
               <div className="ww-tour-map ww-portal-map">
-                <MapContainer center={mapPoints[0]} zoom={14} style={{ height: 280, width: "100%" }} scrollWheelZoom={false}>
+                <MapContainer center={mapPoints[0]} zoom={14} style={{ height: 280, width: "100%" }} zoomControl={false} scrollWheelZoom={true}>
                   <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   <FitAll points={mapPoints} />
                   {checkInPoints.map((a, i) => (

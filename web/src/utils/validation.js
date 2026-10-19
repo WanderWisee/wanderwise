@@ -11,12 +11,27 @@ export const STUDENT_EMAIL_RE = /^[^@\s]+@student\.mseuf\.edu\.ph$/i;
 export const TEACHER_EMAIL_RE = /^[^@\s]+@mseuf\.edu\.ph$/i;
 // Philippine mobile number: 11 digits starting with 09 (e.g. 09171234567).
 export const PH_MOBILE_RE = /^09\d{9}$/;
-export const EMPLOYEE_ID_RE = /^[A-Za-z0-9-]{3,20}$/;
+// Employee IDs are an exact length (change EMPLOYEE_ID_LENGTH here and in
+// backend InputRules.cs together if the school's format is different).
+export const EMPLOYEE_ID_LENGTH = 10;
+export const EMPLOYEE_ID_RE = new RegExp(`^[A-Za-z0-9-]{${EMPLOYEE_ID_LENGTH}}$`);
+// School term: "2026-2027" (the second year is the next year).
+export const TERM_RE = /^(\d{4})-(\d{4})$/;
+export const keepTerm = (value) => value.replace(/[–—]/g, "-").replace(/[^\d-]/g, "").slice(0, 9);
+// Returns a translation key when the term is wrong, or "" when it's fine
+// (an empty term is allowed — it's optional).
+export function termProblem(value) {
+  const v = (value || "").trim();
+  if (!v) return "";
+  const m = TERM_RE.exec(v);
+  if (!m || Number(m[2]) !== Number(m[1]) + 1 || Number(m[1]) < 2000 || Number(m[1]) > 2099) return "valTerm";
+  return "";
+}
 
 // Input filters: run on every keystroke so a field can't hold bad characters.
 export const keepNameChars = (value) => value.replace(NOT_NAME_CHARS, "").replace(/\s{2,}/g, " ").slice(0, 50);
 export const keepDigits = (value, max = 11) => value.replace(/\D/g, "").slice(0, max);
-export const keepEmployeeId = (value) => value.replace(/[^A-Za-z0-9-]/g, "").toUpperCase().slice(0, 20);
+export const keepEmployeeId = (value) => value.replace(/[^A-Za-z0-9-]/g, "").toUpperCase().slice(0, EMPLOYEE_ID_LENGTH);
 export const keepEmail = (value) => value.replace(/\s/g, "").slice(0, 120);
 
 function isoDate(d) {

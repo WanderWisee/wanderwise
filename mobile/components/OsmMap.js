@@ -14,7 +14,8 @@ import { useApp } from '../context/AppContext';
 // tapos inilalatag ang mga tile bilang <Image>. Pag-tap: bubukas ang buong
 // mapa sa openstreetmap.org para makapag-zoom/pan ang user.
 //
-// markers: [{ latitude, longitude, label?, color? }]
+// markers: [{ latitude, longitude, label?, color?, number? }]
+// number = numerong ipapakita sa pin (kapareho ng nasa list); wala = 1, 2, 3…
 
 const TILE = 256;
 // Pansinin: z / y / x ang ayos sa Esri (hindi z / x / y).
@@ -155,7 +156,7 @@ export default function OsmMap({
         layout.pins.map((pin) => (
           <View key={`pin-${pin.index}`} pointerEvents="none" style={[styles.pinWrap, { left: pin.left - 13, top: pin.top - 30 }]}>
             <View style={[styles.pin, pin.color ? { backgroundColor: pin.color } : null]}>
-              <Text style={styles.pinText}>{numbered ? pin.index + 1 : '•'}</Text>
+              <Text style={styles.pinText}>{numbered ? (pin.number ?? pin.index + 1) : '•'}</Text>
             </View>
             <View style={[styles.pinTail, pin.color ? { borderTopColor: pin.color } : null]} />
           </View>

@@ -4,6 +4,7 @@ import PortalHeader, { RoleGate } from "../../components/PortalHeader";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAppData } from "../../context/AppDataContext";
 import { api } from "../../utils/portal";
+import { keepTerm, termProblem } from "../../utils/validation";
 import "../../App.css";
 import Icon from "../../components/Icon";
 
@@ -45,6 +46,8 @@ function TeacherHome() {
   const createClass = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
+    const termErr = termProblem(form.term);
+    if (termErr) return setError(termErr);
     setSaving(true);
     const r = await api("/api/teacher/classes", { method: "POST", body: form });
     setSaving(false);
@@ -94,9 +97,12 @@ function TeacherHome() {
             </label>
             <label>
               {t("termLabel")}
-              <input className="ww-field-input" value={form.term} maxLength={100}
-                onChange={(e) => setForm({ ...form, term: e.target.value })}
+              <input className="ww-field-input" value={form.term} maxLength={9} inputMode="numeric"
+                onChange={(e) => setForm({ ...form, term: keepTerm(e.target.value) })}
                 placeholder={t("termPlaceholder")} />
+              {termProblem(form.term) && form.term.length >= 9 && (
+                <span className="ww-portal-error">{t("valTerm")}</span>
+              )}
             </label>
           </div>
           <div className="ww-portal-actions">

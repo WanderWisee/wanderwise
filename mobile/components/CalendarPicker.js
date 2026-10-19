@@ -34,7 +34,7 @@ export default function CalendarPicker(props) {
 
 // Past days can't be picked (same as the website's date picker); pass
 // allowPast to turn that off.
-function CalendarContent({ visible, onClose, onConfirm, initialRange, allowPast = false }) {
+function CalendarContent({ visible, onClose, onConfirm, initialRange, allowPast = false, dayTour = false }) {
   const today = new Date();
   const todayParts = { year: today.getFullYear(), month: today.getMonth(), day: today.getDate() };
   const isPast = (d) => !allowPast && isBefore(d, todayParts);
@@ -146,6 +146,10 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange, allowPast 
             <Text style={styles.calendarSummaryText}>
               {start ? formatDate(start, prefs.dateFormat) : t('startDate')} — {end ? formatDate(end, prefs.dateFormat) : t('endDate')}
             </Text>
+            {/* Day tour: isang araw lang (pindutin ulit ang parehong araw, o i-save agad). */}
+            {dayTour && !!start && (!end || dateKey(end) === dateKey(start)) && (
+              <Text style={styles.dayTourHint}>{t('dayTourHint')}</Text>
+            )}
           </View>
 
           <View style={styles.dateCardActions}>
@@ -154,9 +158,9 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange, allowPast 
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.dateConfirmButton}
-              disabled={!start || !end}
+              disabled={!start || (!dayTour && !end)}
               onPress={() => {
-                onConfirm({ start, end });
+                onConfirm({ start, end: end || start }); // walang end = day tour
                 onClose();
               }}
             >
@@ -170,6 +174,7 @@ function CalendarContent({ visible, onClose, onConfirm, initialRange, allowPast 
 }
 
 const styles = StyleSheet.create({
+  dayTourHint: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: Colors.teal, marginTop: 4, textAlign: 'center' },
   modalBackdrop: {
     flex: 1, backgroundColor: 'rgba(51,28,8,0.45)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20,

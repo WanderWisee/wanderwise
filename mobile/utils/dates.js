@@ -42,7 +42,18 @@ export function nightsBetween(startISO, endISO) {
 
 export function formatPeso(amount) {
   const n = Number(amount) || 0;
-  const fixed = Math.abs(n) >= 1000 || Number.isInteger(n) ? Math.round(n).toString() : n.toFixed(2);
+  // Laging 2 decimal places (centavos), gaya ng web: ₱1,250.00
+  const fixed = Math.abs(n).toFixed(2);
   const [whole, dec] = fixed.split('.');
-  return `₱${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${dec ? `.${dec}` : ''}`;
+  return `${n < 0 ? '-' : ''}₱${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${dec}`;
+}
+
+// Pera sa trip (budget, expected cost): 0 – 1,000,000, hanggang 2 decimal places.
+export const MAX_MONEY = 1000000;
+// Habang nagta-type: digits at isang tuldok lang, hanggang 2 decimals.
+export function keepMoney(value) {
+  let v = String(value ?? '').replace(/[^\d.]/g, '');
+  const dot = v.indexOf('.');
+  if (dot !== -1) v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, '').slice(0, 2);
+  return v.slice(0, 10);
 }

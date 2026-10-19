@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, setToken } from './api';
 
 // Account, profile, at settings — parehong endpoints ng web.
 
@@ -74,4 +74,12 @@ export function initials(person) {
     .map((w) => w[0])
     .join('')
     .toUpperCase();
+}
+
+// Palitan ang password (kailangan ang kasalukuyang password). Ibang device
+// ay mala-logout; ang phone na ito ay may bagong token kaya naka-login pa rin.
+export async function changeMyPassword(currentPassword, newPassword) {
+  const data = await api.post('/me/password', { currentPassword, newPassword });
+  if (data?.token) await setToken(data.token);
+  return data;
 }

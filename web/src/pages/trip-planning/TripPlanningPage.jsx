@@ -13,6 +13,7 @@ export default function TripPlanningPage() {
   const [people, setPeople] = useState(0);
   const [destinationOptions, setDestinationOptions] = useState([]);
   const [destinationError, setDestinationError] = useState("");
+  const [dateError, setDateError] = useState("");
 
   const navigate = useNavigate();
 
@@ -38,6 +39,13 @@ export default function TripPlanningPage() {
       setDestinationError(t("destinationRequired"));
       return;
     }
+    // Dates are needed for the day-by-day itinerary. Only a start date =
+    // a day tour (one day).
+    if (!startDate) {
+      setDateError(t("datesRequired"));
+      return;
+    }
+    const finalEnd = endDate || startDate;
     try {
       // If it's not in the list yet, this adds it — so the database
       // keeps growing with whatever people actually search for.
@@ -56,7 +64,7 @@ export default function TripPlanningPage() {
     }
 
     navigate("/trip-plan", {
-      state: { destination: trimmed, startDate, endDate, people },
+      state: { destination: trimmed, startDate, endDate: finalEnd, people },
     });
   };
 
@@ -122,11 +130,18 @@ export default function TripPlanningPage() {
           <DateRangePicker
             startDate={startDate}
             endDate={endDate}
+            dayTour
             onChange={({ startDate: s, endDate: e }) => {
               setStartDate(s);
               setEndDate(e);
+              if (s) setDateError("");
             }}
           />
+          {dateError && (
+            <div role="alert" style={{ color: "#b42318", fontSize: 14, marginTop: 6 }}>
+              {dateError}
+            </div>
+          )}
 
           <hr className="ww-planning-divider" />
 

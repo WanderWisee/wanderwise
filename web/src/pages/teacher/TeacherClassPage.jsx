@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
 import { api, fullName, initials, toLocalDate } from "../../utils/portal";
+import { keepTerm, termProblem } from "../../utils/validation";
 import ClassSummaryTab from "./ClassSummaryTab";
 import "../../App.css";
 import Icon from "../../components/Icon";
@@ -55,6 +56,7 @@ function TeacherClass() {
 
   const saveClass = async (e) => {
     e.preventDefault();
+    if (termProblem(form.term)) return;
     const r = await api(`/api/teacher/classes/${classId}`, { method: "PUT", body: form });
     if (r.ok) {
       setEditing(false);
@@ -109,12 +111,13 @@ function TeacherClass() {
                 <input className="ww-field-input" value={form.section} maxLength={100} onChange={(e) => setForm({ ...form, section: e.target.value })} />
               </label>
               <label>{t("termLabel")}
-                <input className="ww-field-input" value={form.term} maxLength={100} onChange={(e) => setForm({ ...form, term: e.target.value })} />
+                <input className="ww-field-input" value={form.term} maxLength={9} inputMode="numeric" placeholder={t("termPlaceholder")} onChange={(e) => setForm({ ...form, term: keepTerm(e.target.value) })} />
+                {termProblem(form.term) && <span className="ww-portal-error">{t("valTerm")}</span>}
               </label>
             </div>
             <div className="ww-portal-actions">
               <button type="button" className="ww-booking-cancel" onClick={() => setEditing(false)}>{t("cancel")}</button>
-              <button type="submit" className="ww-search-btn" disabled={!form.name.trim()}>{t("save")}</button>
+              <button type="submit" className="ww-search-btn" disabled={!form.name.trim() || !!termProblem(form.term)}>{t("save")}</button>
             </div>
           </form>
         ) : (

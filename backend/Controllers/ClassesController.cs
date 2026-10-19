@@ -107,6 +107,7 @@ public class ClassesController : ControllerBase
     {
         if (!await IAmTeacherAsync()) return Forbid();
         if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest(new { error = "name_required" });
+        if (!InputRules.IsTerm(request.Term)) return BadRequest(new { error = "invalid_term" });
 
         var cls = new SchoolClass
         {
@@ -130,6 +131,7 @@ public class ClassesController : ControllerBase
         var cls = await LoadMyClassAsTeacherAsync(classId);
         if (cls is null) return NotFound();
         if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest(new { error = "name_required" });
+        if (!InputRules.IsTerm(request.Term)) return BadRequest(new { error = "invalid_term" });
 
         cls.Name = request.Name.Trim();
         cls.Section = request.Section?.Trim();

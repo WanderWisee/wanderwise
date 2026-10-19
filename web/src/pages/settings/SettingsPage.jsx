@@ -7,6 +7,7 @@ import { usePreferences } from "../../context/PreferencesContext";
 import { useDialog } from "../../context/DialogContext";
 import "../../App.css";
 import Icon from "../../components/Icon";
+import { passwordProblem } from "../../utils/validation";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -165,6 +166,46 @@ export default function SettingsPage() {
       alert(t("networkError"));
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // ---- Change password (students, teachers and the admin) ----
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwError, setPwError] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwError("");
+    if (!pwForm.current || !pwForm.next || !pwForm.confirm) return setPwError(t("valRequired"));
+    const problem = passwordProblem(pwForm.next);
+    if (problem) return setPwError(t(problem));
+    if (pwForm.next !== pwForm.confirm) return setPwError(t("passwordsDontMatch"));
+    if (pwForm.next === pwForm.current) return setPwError(t("passwordSameAsOld"));
+    setChangingPw(true);
+    try {
+      const resp = await fetch("/api/me/password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("wanderwise_token")}`,
+        },
+        body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.next }),
+      });
+      const d = await resp.json().catch(() => null);
+      if (resp.ok) {
+        // The old login stops working everywhere; keep this browser logged in.
+        if (d?.token) localStorage.setItem("wanderwise_token", d.token);
+        setPwForm({ current: "", next: "", confirm: "" });
+        alert(t("passwordChangedMsg"));
+      } else if (d?.code === "wrong_password") {
+        setPwError(t("currentPasswordWrong"));
+      } else {
+        setPwError(d?.error || t("passwordChangeFailed"));
+      }
+    } catch {
+      setPwError(t("networkError"));
+    } finally {
+      setChangingPw(false);
     }
   };
 
@@ -342,6 +383,42 @@ export default function SettingsPage() {
               </div>
               </>
               )}
+
+              <form className="ww-password-zone" onSubmit={handleChangePassword}>
+                <h3><Icon name="lock" /> {t("changePasswordTitle")}</h3>
+                <p>{t("changePasswordHint")}</p>
+                <input
+                  type="password"
+                  className="ww-field-input"
+                  autoComplete="current-password"
+                  placeholder={t("currentPassword")}
+                  maxLength={100}
+                  value={pwForm.current}
+                  onChange={(e) => setPwForm({ ...pwForm, current: e.target.value })}
+                />
+                <input
+                  type="password"
+                  className="ww-field-input"
+                  autoComplete="new-password"
+                  placeholder={t("newPassword")}
+                  maxLength={100}
+                  value={pwForm.next}
+                  onChange={(e) => setPwForm({ ...pwForm, next: e.target.value })}
+                />
+                <input
+                  type="password"
+                  className="ww-field-input"
+                  autoComplete="new-password"
+                  placeholder={t("confirmNewPassword")}
+                  maxLength={100}
+                  value={pwForm.confirm}
+                  onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })}
+                />
+                {pwError && <p className="ww-password-error" role="alert">{pwError}</p>}
+                <button type="submit" className="ww-settings-save-btn" disabled={changingPw}>
+                  {changingPw ? t("saving") : t("changePasswordBtn")}
+                </button>
+              </form>
             </div>
           )}
 

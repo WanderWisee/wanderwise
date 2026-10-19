@@ -77,6 +77,7 @@ export default function TourScreen() {
         ? `${t('meetingPoint')}: ${e.data.distanceMeters} m / ${e.data.radiusMeters} m. ${t('checkInHint')}`
         : code === 'no_meeting_point' ? t('meetingMissing')
         : code === 'attendance_closed' ? t('attendanceClosedNote')
+        : code === 'meeting_point_not_yet' ? t('meetingPointTourDayOnly')
         : code === 'photo_required' ? t('tourPhotoRequired')
         : code === 'photo_too_large' ? t('tourPhotoTooLarge')
         : e.status === 403 ? t('tourNotAllowed')
@@ -139,7 +140,8 @@ export default function TourScreen() {
                 ? <PrimaryButton label={t('checkInNow')} loading={busy} onPress={() => run(takeCheckIn)} />
                 : <Text style={styles.text}>{attendanceNote}</Text>)}
             </> : <Text style={styles.text}>{t('meetingMissing')}</Text>}
-            {canManage && <>
+            {canManage && !attendanceOpen && <Text style={styles.text}>{attendanceStatus === 'closed' ? t('meetingPointDayPassed') : t('meetingPointTourDayOnly')}</Text>}
+            {canManage && attendanceOpen && <>
               <Field label={t('meetingName')} value={meetingName} onChangeText={setMeetingName} maxLength={200} />
               <Field label={t('radiusMeters')} value={radius} onChangeText={setRadius} keyboardType="number-pad" />
               <OutlineButton label={t('useMyLocation')} disabled={busy || !meetingName.trim() || !Number.isFinite(Number(radius)) || Number(radius) < 20 || Number(radius) > 5000} onPress={() => run(async () => {

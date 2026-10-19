@@ -14,6 +14,9 @@ import Icon from "./Icon";
 // Dates go in and out as "YYYY-MM-DD", the same as <input type="date">.
 // minDate defaults to today (no past trips); pass minDate={null} to allow
 // any date (e.g. editing a trip that already started).
+//
+// dayTour: a trip can be one day (start = end). Tap the same day twice,
+// press "Day tour", or close the calendar after picking only the start.
 
 function parseIso(iso) {
   if (!iso) return null;
@@ -57,6 +60,7 @@ export default function DateRangePicker({
   onChange,
   minDate = todayIso(),
   className = "",
+  dayTour = false,
 }) {
   const { t, language } = useLanguage();
   const { formatDateRange } = usePreferences();
@@ -100,13 +104,22 @@ export default function DateRangePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, viewMonth]);
 
+  // Closing with only a start date picked = a day tour (when allowed).
+  const latest = useRef({});
+  latest.current = { startDate, endDate, onChange, dayTour };
+  const close = () => {
+    const cur = latest.current;
+    if (cur.dayTour && cur.startDate && !cur.endDate) cur.onChange({ startDate: cur.startDate, endDate: cur.startDate });
+    setOpen(false);
+  };
+
   // Close when clicking outside or pressing Escape.
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false);
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) close();
     };
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    const onKey = (e) => e.key === "Escape" && close();
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -151,7 +164,9 @@ export default function DateRangePicker({
 
   const label = startDate
     ? endDate
-      ? `${formatDateRange(startDate, endDate)} · ${dayCount} ${t("daysSuffix")}`
+      ? dayTour && dayCount === 1
+        ? `${formatDateRange(startDate, endDate)} · ${t("dayTourLabel")}`
+        : `${formatDateRange(startDate, endDate)} · ${dayCount} ${t("daysSuffix")}`
       : `${formatDateRange(startDate, startDate)} – …`
     : t("selectDates");
 
@@ -226,7 +241,7 @@ export default function DateRangePicker({
         type="button"
         ref={fieldRef}
         className={`ww-drp-field ${startDate ? "" : "placeholder"}`}
-        onClick={() => (open ? setOpen(false) : openCalendar())}
+        onClick={() => (open ? close() : openCalendar())}
       >
         <Icon name="calendar" /> {label}
       </button>
@@ -243,11 +258,23 @@ export default function DateRangePicker({
           onMouseLeave={() => setHoverIso(null)}
         >
           <p className="ww-drp-hint">
-            {!startDate || endDate ? t("pickStartDate") : t("pickEndDate")}
+            {!startDate || endDate ? t("pickStartDate") : dayTour ? t("pickEndDateOrDayTour") : t("pickEndDate")}
           </p>
           {renderMonth(viewMonth)}
           <div className="ww-drp-footer">
-            <span>{dayCount > 0 ? `${dayCount} ${t("daysSuffix")}` : ""}</span>
+            <span>{dayTour && dayCount === 1 ? t("dayTourLabel") : dayCount > 0 ? `${dayCount} ${t("daysSuffix")}` : ""}</span>
+            {dayTour && startDate && !endDate && (
+              <button
+                type="button"
+                className="ww-drp-clear"
+                onClick={() => {
+                  onChange({ startDate, endDate: startDate });
+                  setOpen(false);
+                }}
+              >
+                {t("dayTourBtn")}
+              </button>
+            )}
             <button type="button" className="ww-drp-clear" onClick={clear}>
               {t("clearDates")}
             </button>

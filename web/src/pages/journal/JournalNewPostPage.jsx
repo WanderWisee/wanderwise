@@ -84,18 +84,43 @@ export default function JournalNewPostPage() {
     }
   };
 
+  // Only trips that have already started can get a story — a trip in
+  // December can't be written about in October. (No dates = can't tell, so
+  // it's allowed.) The server checks the same thing.
+  const todayIso = (() => {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  })();
+  const tripStarted = (trip) => !trip.startDate || String(trip.startDate).slice(0, 10) <= todayIso;
+  const startedTrips = myTrips.filter(tripStarted);
+  // A destination that is ONLY in trips that haven't started yet.
+  const notStartedTripFor = (title) => {
+    const typed = (title || "").replace(new RegExp(`\\s*${t("travelStorySuffix")}\\s*$`, "i"), "").trim().toLowerCase();
+    if (!typed) return null;
+    const same = myTrips.filter((trip) => (trip.destination || "").trim().toLowerCase() === typed);
+    return same.length > 0 && !same.some(tripStarted) ? same[0] : null;
+  };
+  const [notYetMsg, setNotYetMsg] = useState("");
+
   // Typing (or picking) a place in the title: if it is the destination of
   // one of the student's trips, that trip's places and photo are used and
   // the title becomes "<place> Travel Story".
   const suffix = t("travelStorySuffix");
   const tripDestinations = [];
-  myTrips.forEach((trip) => {
+  startedTrips.forEach((trip) => {
     const d = (trip.destination || "").trim();
     if (d && !tripDestinations.some((x) => x.toLowerCase() === d.toLowerCase())) tripDestinations.push(d);
   });
   const handleTitleChange = (value) => {
     const typed = value.replace(new RegExp(`\\s*${suffix}\\s*$`, "i"), "").trim().toLowerCase();
-    const match = myTrips.find((trip) => (trip.destination || "").trim().toLowerCase() === typed);
+    const match = startedTrips.find((trip) => (trip.destination || "").trim().toLowerCase() === typed);
+    const future = notStartedTripFor(value);
+    setNotYetMsg(
+      future
+        ? t("journalTripNotStarted").replace("{place}", future.destination.trim()).replace("{date}", String(future.startDate).slice(0, 10))
+        : ""
+    );
     if (match && typed) {
       setStoryTitle(`${match.destination.trim()} ${suffix}`);
       setSelectedTripId(String(match.id));
@@ -126,9 +151,19 @@ export default function JournalNewPostPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((trip) => {
         if (cancelled || !trip) return;
+        // Opened for a trip that hasn't started yet (e.g. an old link):
+        // don't fill anything in from it.
+        if (!tripStarted(trip)) {
+          setNotYetMsg(t("journalTripNotStarted").replace("{place}", (trip.destination || "").trim()).replace("{date}", String(trip.startDate).slice(0, 10)));
+          setSelectedTripId("");
+          return;
+        }
         const names = [];
         (trip.sections || []).forEach((sec) =>
           (sec.places || []).forEach((pl) => {
+            // Only places already visited, or whose day has come.
+            const day = pl.itineraryDate ? String(pl.itineraryDate).slice(0, 10) : "";
+            if (!pl.visited && day && day > todayIso) return;
             const name = (pl.name || "").trim();
             if (name && !names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
           })
@@ -282,6 +317,12 @@ export default function JournalNewPostPage() {
     // Don't post a story without a real title.
     if (!storyTitle.trim()) {
       alert(t("storyTitleRequired"));
+      setEditingTitle(true);
+      return;
+    }
+    const future = notStartedTripFor(storyTitle);
+    if (future) {
+      alert(t("journalTripNotStarted").replace("{place}", future.destination.trim()).replace("{date}", String(future.startDate).slice(0, 10)));
       setEditingTitle(true);
       return;
     }
@@ -445,6 +486,11 @@ export default function JournalNewPostPage() {
               <Icon name="pencil" />
             </span>
           </h1>
+          {notYetMsg && (
+            <p className="ww-journal-not-yet" role="alert" style={{ margin: "4px 0 14px", color: "var(--ww-danger)", fontWeight: 600, fontSize: 14 }}>
+              <Icon name="calendar" /> {notYetMsg}
+            </p>
+          )}
 
           <datalist id="ww-journal-trip-destinations">
             {tripDestinations.map((d) => <option key={d} value={d} />)}

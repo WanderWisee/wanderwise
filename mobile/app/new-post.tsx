@@ -70,6 +70,25 @@ export default function NewPostScreen() {
     fetchTrips().then((list) => setMyTrips(Array.isArray(list) ? list : [])).catch(() => setMyTrips([]));
   }, [isLoggedIn]);
 
+  // Trip na hindi pa nagsisimula (hal. sa December pa): hindi pa puwedeng
+  // isulat ang kwento nito. (Walang petsa = hindi masabi, kaya puwede.)
+  // Sinusuri rin ito ng server.
+  const todayIso = (() => {
+    const d = new Date();
+    const p2 = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  })();
+  const tripStarted = (trip) => !trip?.startDate || String(trip.startDate).slice(0, 10) <= todayIso;
+  const startedTrips = myTrips.filter(tripStarted);
+  const notStartedTripFor = (text) => {
+    const typed = String(text || '').trim().toLowerCase();
+    if (!typed) return null;
+    const same = myTrips.filter((trip) => String(trip.destination || '').trim().toLowerCase() === typed);
+    return same.length > 0 && !same.some(tripStarted) ? same[0] : null;
+  };
+  const notYetText = (trip) => t('journalTripNotStarted').replace('{place}', String(trip.destination || '').trim()).replace('{date}', String(trip.startDate).slice(0, 10));
+  const futureTrip = notStartedTripFor(place);
+
   function clearTrip() {
     setSelectedTripId('');
     setTripCover(null);
@@ -82,8 +101,12 @@ export default function NewPostScreen() {
     setSelectedTripId(key);
     try {
       const trip = await fetchTripById(key);
+      if (!tripStarted(trip)) { clearTrip(); return; }
       const names = [];
       (trip?.sections || []).forEach((sec) => (sec.places || []).forEach((pl) => {
+        // Napuntahan na, o dumating na ang araw nito sa itinerary.
+        const day = pl.itineraryDate ? String(pl.itineraryDate).slice(0, 10) : '';
+        if (!pl.visited && day && day > todayIso) return;
         const name = String(pl.name || '').trim();
         if (name && !names.some((n) => n.toLowerCase() === name.toLowerCase())) names.push(name);
       }));
@@ -102,7 +125,7 @@ export default function NewPostScreen() {
   function handlePlaceChange(text) {
     setPlace(text);
     const typed = text.trim().toLowerCase();
-    const match = myTrips.find((trip) => String(trip.destination || '').trim().toLowerCase() === typed);
+    const match = startedTrips.find((trip) => String(trip.destination || '').trim().toLowerCase() === typed);
     if (match && typed) {
       if (String(match.id) !== selectedTripId) void applyTrip(match.id);
       return;
@@ -112,7 +135,7 @@ export default function NewPostScreen() {
   }
 
   const tripDestinations = [];
-  myTrips.forEach((trip) => {
+  startedTrips.forEach((trip) => {
     const d = String(trip.destination || '').trim();
     if (d && !tripDestinations.some((x) => x.dest.toLowerCase() === d.toLowerCase())) tripDestinations.push({ dest: d, id: trip.id });
   });
@@ -233,6 +256,10 @@ export default function NewPostScreen() {
       alert(t('missingPlaceTitle'), t('missingPlaceMessage'));
       return;
     }
+    if (futureTrip) {
+      alert(t('journalTripNotStartedTitle'), notYetText(futureTrip));
+      return;
+    }
     const missingPhotos = journalEntriesMissingPhotos(entries);
     if (missingPhotos.length) {
       setActiveEntryId(missingPhotos[0].id);
@@ -318,6 +345,7 @@ export default function NewPostScreen() {
           value={place}
           onChangeText={handlePlaceChange}
         />
+        {!!futureTrip && <Text accessibilityRole="alert" style={{ color: Colors.error, fontSize: 13, marginTop: 6 }}>{notYetText(futureTrip)}</Text>}
 
         {placeSuggestions.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 6 }} keyboardShouldPersistTaps="handled">

@@ -171,11 +171,65 @@ public class JournalController : ControllerBase
         return null;
     }
 
+    // A story can't be about a trip (or a place in it) that hasn't happened
+    // yet: e.g. a trip that starts in December can't get a story in October.
+    // Places/destinations that aren't in any of the student's trips are fine.
+    private async Task<string?> NotYetVisitedErrorAsync(CreateJournalEntryRequest r)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8)); // Philippine time
+        var memberTripIds = _db.TripMembers.Where(m => m.UserId == CurrentUserId).Select(m => m.TripId);
+        var trips = await _db.Trips
+            .Where(t => t.UserId == CurrentUserId || memberTripIds.Contains(t.Id))
+            .Select(t => new { t.Id, t.Destination, t.StartDate })
+            .ToListAsync();
+        if (trips.Count == 0) return null;
+        var tripIds = trips.Select(t => t.Id).ToList();
+        var places = await _db.TripPlaces
+            .Where(p => tripIds.Contains(p.TripId))
+            .Select(p => new { p.TripId, p.Name, p.ItineraryDate, p.Visited })
+            .ToListAsync();
+
+        static string Norm(string? v) => (v ?? "").Trim().ToLowerInvariant();
+        bool TripLocked(DateOnly? start) => start.HasValue && start.Value > today;
+
+        // Title "<destination> Travel Story": only trips that have started.
+        var title = Norm(r.Title);
+        foreach (var suffix in new[] { "travel story", "kwento ng paglalakbay" })
+            if (title.EndsWith(suffix)) title = title[..^suffix.Length].Trim();
+        var sameDest = trips.Where(t => title.Length > 0 && Norm(t.Destination) == title).ToList();
+        if (sameDest.Count > 0 && sameDest.All(t => TripLocked(t.StartDate)))
+        {
+            var start = sameDest.Min(t => t.StartDate)!.Value;
+            return $"Your trip to {sameDest[0].Destination?.Trim()} starts on {start:MMMM d, yyyy}. You can write its story once the trip has started.";
+        }
+
+        // Each place: fine if visited, or its day (or its trip's start) has come.
+        foreach (var jp in r.Places ?? new())
+        {
+            var name = Norm(jp.PlaceName);
+            if (name.Length == 0) continue;
+            var matches = places.Where(p => Norm(p.Name) == name).ToList();
+            if (matches.Count == 0) continue;
+            var anyDone = matches.Any(p =>
+            {
+                if (p.Visited) return true;
+                var trip = trips.First(t => t.Id == p.TripId);
+                if (TripLocked(trip.StartDate)) return false;
+                return !p.ItineraryDate.HasValue || p.ItineraryDate.Value <= today;
+            });
+            if (!anyDone)
+                return $"You haven't been to {jp.PlaceName!.Trim()} yet. It's planned for a later date in your trip, so add it to your story after you visit it.";
+        }
+        return null;
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateEntry([FromBody] CreateJournalEntryRequest request)
     {
         var problem = JournalError(request);
         if (problem != null) return BadRequest(new { error = problem });
+        var notYet = await NotYetVisitedErrorAsync(request);
+        if (notYet != null) return BadRequest(new { error = notYet, code = "not_visited_yet" });
 
         var entry = new JournalEntry
         {

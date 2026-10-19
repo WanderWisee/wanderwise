@@ -245,6 +245,8 @@ export const translations = {
     discoverWhereToGo: "Discover where to go",
     newTravelTips: "New Travel Tips",
     travelStorySuffix: "Travel Story",
+    journalTripNotStartedTitle: "Trip hasn't started yet",
+    journalTripNotStarted: "Your trip to {place} starts on {date}. You can write its story once the trip has started.",
 
     // ===== Travel Guide (destination guide) =====
     travelJourneySuffix: "Travel Journey",
@@ -780,6 +782,8 @@ export const translations = {
     discoverWhereToGo: "Alamin kung saan pupunta",
     newTravelTips: "Mga Bagong Tip sa Paglalakbay",
     travelStorySuffix: "Kwento ng Paglalakbay",
+    journalTripNotStartedTitle: "Hindi pa nagsisimula ang trip",
+    journalTripNotStarted: "Sa {date} pa magsisimula ang trip mo sa {place}. Puwede mo itong isulat kapag nagsimula na ang trip.",
 
     // ===== Travel Guide (destination guide) =====
     travelJourneySuffix: "Paglalakbay",

@@ -106,6 +106,8 @@ public class TripsController : ControllerBase
 
         var invalid = TripError(request);
         if (invalid != null) return BadRequest(new { error = invalid });
+        if (request.BudgetTotal > MaxTripMoney && request.BudgetTotal != trip.BudgetTotal)
+            return BadRequest(new { error = "Budget must be between 0 and 1,000,000." });
 
         // Simultaneous edits: the app sends the version it started from. If
         // a crewmate saved a different plan in the meantime, don't silently
@@ -734,10 +736,10 @@ public class TripsController : ControllerBase
     // limit these, but the API can be called directly, so the same limits
     // are enforced here (sizes match the database columns).
     private const decimal MaxMoney = 99_999_999m; // decimal(10,2)
-    // Budget and a place's expected costs: up to 1,000,000 with at most
-    // 2 decimal places (centavos) — same limit as the web and app forms.
+    // New budgets: up to 1,000,000 (the web and app forms also limit each
+    // expected cost to 1,000,000 with 2 decimal places). Older trips saved
+    // with a bigger amount still save — only a NEW amount above it is refused.
     private const decimal MaxTripMoney = 1_000_000m;
-    private static bool HasMoreThanTwoDecimals(decimal v) => decimal.Round(v, 2) != v;
     private const int MaxSections = 100;
     private const int MaxPlaces = 500;
     private const int MaxCostsPerPlace = 50;
@@ -746,7 +748,7 @@ public class TripsController : ControllerBase
     {
         if (r is null) return "Trip details are missing.";
         if ((r.Destination ?? "").Trim().Length > 150) return "Destination is too long (max 150 characters).";
-        if (r.BudgetTotal < 0 || r.BudgetTotal > MaxTripMoney || HasMoreThanTwoDecimals(r.BudgetTotal)) return "Budget must be between 0 and 1,000,000 (up to 2 decimal places).";
+        if (r.BudgetTotal < 0 || r.BudgetTotal > MaxMoney) return "Budget must be between 0 and 99,999,999.";
         if (r.TravelBuddiesCount < 0 || r.TravelBuddiesCount > 500) return "Number of people must be between 0 and 500.";
 
         var start = ParseDate(r.StartDate);
@@ -776,7 +778,7 @@ public class TripsController : ControllerBase
                 {
                     if (c is null) return "A cost is empty.";
                     if ((c.Category ?? "").Trim().Length > 50) return "A cost category is too long (max 50 characters).";
-                    if (c.Amount < 0 || c.Amount > MaxTripMoney || HasMoreThanTwoDecimals(c.Amount)) return "A cost must be between 0 and 1,000,000 (up to 2 decimal places).";
+                    if (c.Amount < 0 || c.Amount > MaxMoney) return "A cost must be between 0 and 99,999,999.";
                 }
             }
         }

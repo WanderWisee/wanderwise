@@ -13,7 +13,7 @@ import { fetchNotifications } from '../../services/userService';
 import { geocodeDestination } from '../../services/geoService';
 import TripListItem from '../../components/TripListItem';
 import OsmMap from '../../components/OsmMap';
-import CalendarPicker, { formatDate } from '../../components/CalendarPicker';
+import CalendarPicker, { rangeLabel } from '../../components/CalendarPicker';
 import { ErrorState, Loading, Wordmark } from '../../components/ui';
 import { partsToISO } from '../../utils/dates';
 
@@ -26,7 +26,7 @@ const BOOKING_SITES = [
 export default function HomeScreen() {
   const { top: topInset } = useSafeAreaInsets();
   const router = useRouter();
-  const { t, user, prefs } = useApp();
+  const { t, user, formatDateRange } = useApp();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -207,9 +207,7 @@ export default function HomeScreen() {
               <TouchableOpacity style={styles.dateRangeField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
                 <AppIcon name="calendar" size={20} color={Colors.brown600} />
                 <Text style={[dateRange ? styles.dateRangeText : styles.dateRangePlaceholder, { flex: 1 }]}>
-                  {dateRange
-                    ? `${formatDate(dateRange.start, prefs.dateFormat)} — ${formatDate(dateRange.end, prefs.dateFormat)}`
-                    : t('selectDates')}
+                  {rangeLabel(dateRange, { t, formatDateRange })}
                 </Text>
                 <AppIcon name="chevron-down" size={16} color={Colors.brown600} />
               </TouchableOpacity>
@@ -284,6 +282,7 @@ export default function HomeScreen() {
           visible={pickerOpen}
           onClose={() => setPickerOpen(false)}
           onConfirm={setDateRange}
+          onClear={() => setDateRange(null)}
           initialRange={dateRange}
         />
       </SafeAreaView>

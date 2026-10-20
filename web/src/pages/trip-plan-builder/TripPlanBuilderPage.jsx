@@ -118,9 +118,34 @@ function detectSectionCategory(sectionName) {
 const placesRequests = new Map();
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Results are also kept in the browser for 6 hours (like the mobile app),
+// so opening the trip again shows the suggestions right away.
+const PLACES_CACHE_MS = 6 * 60 * 60 * 1000;
+function readPlacesCache(key) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(`ww_suggest_${key}`) || "null");
+    return saved && Date.now() - saved.at < PLACES_CACHE_MS && saved.items?.length ? saved.items : null;
+  } catch {
+    return null;
+  }
+}
+function writePlacesCache(key, items) {
+  try {
+    if (items.length) localStorage.setItem(`ww_suggest_${key}`, JSON.stringify({ at: Date.now(), items }));
+  } catch {
+    // storage full or blocked — just skip the cache
+  }
+}
+
 function fetchSuggestedPlaces(destination, category) {
   const key = `${destination.trim().toLowerCase()}|${category || ""}`;
   if (placesRequests.has(key)) return placesRequests.get(key);
+  const cached = readPlacesCache(key);
+  if (cached) {
+    const ready = Promise.resolve(cached);
+    placesRequests.set(key, ready);
+    return ready;
+  }
 
   const url =
     `/api/places?destination=${encodeURIComponent(destination)}` +
@@ -146,6 +171,7 @@ function fetchSuggestedPlaces(destination, category) {
   };
 
   const request = attempt(0).then((found) => {
+    writePlacesCache(key, found);
     // Don't keep an empty answer, so "Try again" can ask again.
     if (found.length === 0) placesRequests.delete(key);
     return found;
@@ -422,7 +448,17 @@ function findDayLabelForPlaceName(tripStateLike, name) {
   return place ? findDayLabelForPlace(tripStateLike, place.id) : null;
 }
 
-function mapExpenseFromApi(e, tripStateLike) {
+// Day label from the expense's date (the Day picker on Add expense).
+function findDayLabelForDate(tripStateLike, startDate, expenseDate) {
+  if (!startDate || !expenseDate) return null;
+  const start = new Date(String(startDate).slice(0, 10) + "T00:00:00");
+  const date = new Date(String(expenseDate).slice(0, 10) + "T00:00:00");
+  const index = Math.round((date - start) / 86400000);
+  const day = (tripStateLike.days || [])[index];
+  return day ? day.label : null;
+}
+
+function mapExpenseFromApi(e, tripStateLike, startDate = null) {
   const placeName = e.placeId ? findPlaceNameById(tripStateLike, e.placeId) : null;
   const categoryMatch = EXPENSE_CATEGORIES.find((c) => c.label === e.category);
   const isPlaceExpense = !categoryMatch && !!e.category;
@@ -432,7 +468,9 @@ function mapExpenseFromApi(e, tripStateLike) {
     label: placeName || e.category || "Expense",
     icon: categoryMatch ? categoryMatch.icon : placeName || isPlaceExpense ? "map-pin" : "wallet",
     description: e.description || "",
-    dayLabel: e.placeId
+    dayLabel: e.expenseDate
+      ? findDayLabelForDate(tripStateLike, startDate, e.expenseDate)
+      : e.placeId
       ? findDayLabelForPlace(tripStateLike, e.placeId)
       : isPlaceExpense
         ? findDayLabelForPlaceName(tripStateLike, e.category)
@@ -659,7 +697,7 @@ export default function TripPlanBuilderPage() {
                 // avoid showing them twice.
                 const mappedExpenses = (Array.isArray(expData) ? expData : [])
                   .filter((e) => !e.placeId)
-                  .map((e) => mapExpenseFromApi(e, hydrated));
+                  .map((e) => mapExpenseFromApi(e, hydrated, data.startDate));
                 setTripState((prev) => ({ ...prev, expenses: mappedExpenses }));
               }
             } catch (err) {
@@ -1997,7 +2035,8 @@ export default function TripPlanBuilderPage() {
     setCustomCostCategory("");
   };
 
-  const removeCost = (placeId, costId) => {
+  const removeCost = async (placeId, costId) => {
+    if (!(await confirm(t("confirmDeleteCost"), { danger: true, confirmLabel: t("dialogDelete") }))) return;
     applyChange((prev) =>
       updatePlaceEverywhere(prev, placeId, (p) => ({
         ...p,
@@ -3150,13 +3189,32 @@ ${dayHtml}${otherHtml}
 
           <h2 className="ww-builder-section-title">{t("budget")}</h2>
           <div className="ww-budget-card">
-            <p className="ww-budget-amount">₱{budgetSpent.toLocaleString()}.00</p>
+            <p className="ww-budget-amount">₱{formatPeso(budgetSpent)}</p>
             <p className="ww-budget-total">
-              {t("budgetLabel")}: ₱{budgetTotal.toLocaleString()}.00{" "}
+              {t("budgetLabel")}: ₱{formatPeso(budgetTotal)}{" "}
               <span className="ww-edit-icon" onClick={openEditBudget} style={{ cursor: "pointer" }}>
                 <Icon name="pencil" />
               </span>
             </p>
+            {/* Same as the mobile app: how much of the group budget is used,
+                and a clear warning when it goes over. */}
+            {budgetTotal > 0 && (
+              <>
+                <div className="ww-budget-progress" aria-hidden="true">
+                  <div
+                    className={`ww-budget-progress-fill ${budgetSpent > budgetTotal ? "over" : ""}`}
+                    style={{ width: `${Math.min(100, (budgetSpent / budgetTotal) * 100)}%` }}
+                  />
+                </div>
+                {budgetSpent > budgetTotal ? (
+                  <p className="ww-budget-over" role="alert">
+                    <Icon name="alert-triangle" /> {t("overBudget")} ₱{formatPeso(budgetSpent - budgetTotal)}
+                  </p>
+                ) : (
+                  <p className="ww-budget-remaining">{t("remaining")}: ₱{formatPeso(budgetTotal - budgetSpent)}</p>
+                )}
+              </>
+            )}
             <div className="ww-budget-buttons">
               <button className="ww-add-expense-btn" onClick={handleGoToAddExpense}>
                 + {t("addExpenseBtn")}
@@ -3179,7 +3237,7 @@ ${dayHtml}${otherHtml}
                   {e.description && <span className="ww-expense-desc"> · {e.description}</span>}
                 </span>
                 <span>
-                  ₱{e.amount.toLocaleString()}
+                  ₱{formatPeso(e.amount)}
                   <span
                     className="ww-cost-remove"
                     onClick={() =>

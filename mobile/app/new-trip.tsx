@@ -9,13 +9,13 @@ import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import { createTrip, ensureDestination, fetchDestinations } from '../services/tripService';
 import IconBadge from '../components/IconBadge';
-import CalendarPicker, { formatDate } from '../components/CalendarPicker';
+import CalendarPicker, { rangeLabel } from '../components/CalendarPicker';
 
 import { partsToISO as toISO } from '../utils/dates';
 
 export default function NewTripScreen() {
   const router = useRouter();
-  const { t, prefs } = useApp();
+  const { t, formatDateRange } = useApp();
   const [destination, setDestination] = useState('');
   const [allDestinations, setAllDestinations] = useState([]);
   const [focused, setFocused] = useState(false);
@@ -122,9 +122,7 @@ export default function NewTripScreen() {
         <Text style={styles.label}>{t('dates')}</Text>
         <TouchableOpacity style={styles.dateField} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
           <Text style={dateRange ? styles.dateFieldText : styles.dateFieldPlaceholder}>
-            {dateRange
-              ? `${formatDate(dateRange.start, prefs.dateFormat)} — ${formatDate(dateRange.end, prefs.dateFormat)}`
-              : t('selectDates')}
+            {rangeLabel(dateRange, { t, formatDateRange, dayTour: true })}
           </Text>
         </TouchableOpacity>
 
@@ -165,6 +163,7 @@ export default function NewTripScreen() {
         visible={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onConfirm={setDateRange}
+        onClear={() => setDateRange(null)}
         initialRange={dateRange}
         dayTour
       />

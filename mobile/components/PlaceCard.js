@@ -140,6 +140,19 @@ export default function PlaceCard({
         </View>}
       </TouchableOpacity>
 
+      {/* Babala na laging kita (parehong web): walang tiyak na lokasyon */}
+      {noLocation && !selecting && (
+        <View style={styles.unverifiedRow}>
+          <AppIcon name="warning" size={15} color={Colors.error} />
+          <Text style={styles.unverifiedText}>{t('locationUnverifiedWarning')}</Text>
+          {!readOnly && !!onPinLocation && (
+            <TouchableOpacity onPress={onPinLocation} hitSlop={8} accessibilityRole="button">
+              <IconLabel name="pin" textStyle={styles.unverifiedLink}>{t('pinOnMap')}</IconLabel>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {expanded && !selecting && (
         <View style={styles.details}>
           {notesMode === 'view' ? (
@@ -269,6 +282,9 @@ const styles = StyleSheet.create({
   chipNoLocationText: { color: Colors.error },
   noLocationHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: -4, marginBottom: 10 },
   notesPreview: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginBottom: 10 },
+  unverifiedRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FDECEA' },
+  unverifiedText: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 12, color: Colors.error },
+  unverifiedLink: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: Colors.brown900 },
   costError: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: Colors.error, marginBottom: 8 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: Colors.line },
   cardSelected: { borderColor: Colors.brown900, borderWidth: 1.5 },

@@ -11,7 +11,7 @@ import { useDialog } from '../../context/DialogContext';
 import {
   createBooking, deleteBooking, fetchMyBookings, fetchTripBookings, fetchTrips, fetchTripById,
 } from '../../services/tripService';
-import CalendarPicker, { formatDate as formatParts } from '../../components/CalendarPicker';
+import CalendarPicker, { rangeLabel } from '../../components/CalendarPicker';
 import { ChoiceChips, PrimaryButton, Wordmark, ErrorState } from '../../components/ui';
 import { partsToISO, rangeFromISO } from '../../utils/dates';
 
@@ -23,8 +23,20 @@ import { partsToISO, rangeFromISO } from '../../utils/dates';
 const BOOKING_SITES = ['Agoda', 'Klook', 'Booking.com', 'Airbnb', 'Traveloka'];
 
 const googleMapsHotelUrl = (dest) => `https://www.google.com/maps/search/${encodeURIComponent(`hotels in ${dest}`)}`;
-const agodaUrl = (dest, start, end) =>
-  `https://www.agoda.com/search?text=${encodeURIComponent(dest)}&checkIn=${start || ''}&checkOut=${end || ''}`;
+// Dala na rin ang petsa at bilang ng tao (ikaw + travel buddies) para
+// pareho ang lumabas sa Agoda.
+const agodaUrl = (dest, start, end, adults = 1) => {
+  const q = [`text=${encodeURIComponent(dest)}`];
+  if (start) q.push(`checkIn=${start}`);
+  if (end) q.push(`checkOut=${end}`);
+  if (start && end) {
+    const nights = Math.round((new Date(`${end}T00:00:00`).getTime() - new Date(`${start}T00:00:00`).getTime()) / 86400000);
+    if (nights > 0) q.push(`los=${nights}`);
+  }
+  const n = Math.max(1, adults);
+  q.push(`adults=${n}`, `rooms=${Math.max(1, Math.ceil(n / 2))}`, 'children=0');
+  return `https://www.agoda.com/search?${q.join('&')}`;
+};
 const klookUrl = (dest) => `https://www.klook.com/search/result/?query=${encodeURIComponent(dest)}`;
 
 export default function HotelsScreen() {
@@ -35,7 +47,7 @@ export default function HotelsScreen() {
 function HotelsContent({ params }) {
   const { top: topInset } = useSafeAreaInsets();
   const router = useRouter();
-  const { t, formatDate, prefs } = useApp();
+  const { t, formatDate, formatDateRange } = useApp();
   const { alert, confirm, toast } = useDialog();
 
   // "Trip mode": binuksan mula sa "Book a hotel" ng isang trip.
@@ -95,7 +107,7 @@ function HotelsContent({ params }) {
     const end = dateRange ? partsToISO(dateRange.end) : '';
     setOptionsFor(null);
     if (kind === 'maps') Linking.openURL(googleMapsHotelUrl(dest));
-    if (kind === 'agoda') Linking.openURL(agodaUrl(dest, start, end));
+    if (kind === 'agoda') Linking.openURL(agodaUrl(dest, start, end, travelers + 1));
     if (kind === 'klook') Linking.openURL(klookUrl(dest));
   }
 
@@ -216,7 +228,7 @@ function HotelsContent({ params }) {
           <TouchableOpacity style={[styles.inputWrap, styles.inputRow]} onPress={() => setPickerFor('search')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('selectDates')}>
             <AppIcon name="calendar" size={20} color={Colors.brown600} />
             <Text style={[dateRange ? styles.dateRangeText : styles.dateRangePlaceholder, { flex: 1 }]}>
-              {dateRange ? `${formatParts(dateRange.start, prefs.dateFormat)} — ${formatParts(dateRange.end, prefs.dateFormat)}` : t('selectDates')}
+              {rangeLabel(dateRange, { t, formatDateRange })}
             </Text>
           </TouchableOpacity>
 
@@ -331,7 +343,7 @@ function HotelsContent({ params }) {
             </Text>
             <TouchableOpacity style={styles.formInput} onPress={() => setPickerFor('booking')} activeOpacity={0.7}>
               <Text style={form.range ? styles.dateRangeText : styles.dateRangePlaceholder}>
-                {form.range ? `${formatParts(form.range.start, prefs.dateFormat)} — ${formatParts(form.range.end, prefs.dateFormat)}` : t('selectDates')}
+                {rangeLabel(form.range, { t, formatDateRange })}
               </Text>
             </TouchableOpacity>
 
@@ -377,6 +389,10 @@ function HotelsContent({ params }) {
           onConfirm={(range) => {
             if (pickerFor === 'booking') setForm((f) => ({ ...f, range }));
             else setDateRange(range);
+          }}
+          onClear={() => {
+            if (pickerFor === 'booking') setForm((f) => ({ ...f, range: null }));
+            else setDateRange(null);
           }}
           initialRange={pickerFor === 'booking' ? form.range : dateRange}
         />

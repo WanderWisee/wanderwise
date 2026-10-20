@@ -99,6 +99,7 @@ export default function BudgetBreakdownPage() {
     // Go back to the trip builder without losing anything — pass the
     // same tripState straight back through restoredTripState.
     navigate(returnPath, {
+      replace: true,
       state: { destination, startDate, endDate, people, restoredTripState: tripState },
     });
   };
@@ -132,4 +133,4 @@ export default function BudgetBreakdownPage() {
       </main>
     </div>
   );
-}
+}

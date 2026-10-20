@@ -7,6 +7,24 @@ import Icon from "../../components/Icon";
 
 let nextExpenseId = 1;
 
+// ISO date (yyyy-mm-dd) of trip day number `index` (0 = first day).
+function dayIso(startDate, index) {
+  if (!startDate) return null;
+  const d = new Date(String(startDate).slice(0, 10) + "T00:00:00");
+  if (isNaN(d)) return null;
+  d.setDate(d.getDate() + index);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Same money rules as the trip page (2 decimals, at most ₱1,000,000.00).
+const MAX_MONEY = 1000000;
+function keepMoney(value) {
+  let v = String(value ?? "").replace(/[^\d.]/g, "");
+  const dot = v.indexOf(".");
+  if (dot !== -1) v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  return v.slice(0, 10);
+}
+
 export default function AddExpensePage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,22 +53,31 @@ export default function AddExpensePage() {
     tripId = null,
   } = location.state || {};
 
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState("");
+  // Category and place are separate fields now: the category is required,
+  // the place (from the trip plan) and the day are optional.
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null); // holds the tripPlanItems id
+  const [selectedItem, setSelectedItem] = useState(""); // tripPlanItems id ("" = none)
+  const [selectedDay, setSelectedDay] = useState(""); // day index as string ("" = none)
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  // The day a place is on in the itinerary (for the day-by-day breakdown).
-  const dayLabelForPlace = (placeId) => {
-    const day = (tripState.days || []).find((d) => (d.placeIds || []).includes(placeId));
-    return day ? day.label : null;
+  const days = tripState.days || [];
+
+  // Picking a place also picks the day it is on in the itinerary.
+  const pickPlace = (id) => {
+    setSelectedItem(id);
+    const index = days.findIndex((d) => (d.placeIds || []).map(String).includes(String(id)));
+    if (index !== -1) setSelectedDay(String(index));
   };
 
   // Back to the trip builder without saving — passes the same tripState
   // back (same as the Breakdown page) so nothing on the trip is lost.
+  // replace: true so the browser Back button doesn't come back here.
   const handleBack = () => {
     navigate(returnPath, {
+      replace: true,
       state: {
         destination,
         startDate,
@@ -62,11 +89,13 @@ export default function AddExpensePage() {
   };
 
   const handleSave = async () => {
-    // Require at least one choice (category or trip-plan item) before saving.
-    if (!selectedCategory && !selectedItem) return;
     if (saving) return;
-
-    const numericAmount = Number(amount) || 0;
+    // Clear messages under the form that say how to fix the entry.
+    const numericAmount = Math.round((Number(amount) || 0) * 100) / 100;
+    if (numericAmount <= 0) return setError(t("expenseNeedAmount"));
+    if (numericAmount > MAX_MONEY) return setError(t("moneyTooHigh"));
+    if (!selectedCategory) return setError(t("expenseNeedCategory"));
+    setError("");
     setSaving(true);
 
     // Both "From a category" and "From a trip plan" are real expenses and
@@ -74,9 +103,12 @@ export default function AddExpensePage() {
     // different — that's only an estimated cost.) A place expense is saved
     // with the place NAME as its category and no placeId, because place ids
     // change every time the trip is saved.
-    const pickedPlace = selectedItem ? tripPlanItems.find((item) => item.id === selectedItem) : null;
-    // (Trimmed to 50 characters so it fits the category column.)
-    const categoryToSave = pickedPlace ? pickedPlace.name.trim().slice(0, 50) : selectedCategory;
+    const pickedPlace = selectedItem ? tripPlanItems.find((item) => String(item.id) === String(selectedItem)) : null;
+    const categoryToSave = selectedCategory;
+    // The place goes in front of the description ("Place · note").
+    const descriptionToSave = [pickedPlace?.name?.trim(), description.trim()].filter(Boolean).join(" · ").slice(0, 255);
+    const dayIndex = selectedDay === "" ? -1 : Number(selectedDay);
+    const expenseDate = dayIndex >= 0 ? dayIso(startDate, dayIndex) : null;
 
     let savedExpense = null;
     const token = localStorage.getItem("wanderwise_token");
@@ -92,28 +124,33 @@ export default function AddExpensePage() {
             placeId: null,
             category: categoryToSave,
             amount: numericAmount,
-            description: description.trim() || null,
+            description: descriptionToSave || null,
+            expenseDate,
           }),
         });
         if (resp.ok) {
           savedExpense = await resp.json();
         } else {
-          console.warn("Failed to save expense: server responded with", resp.status);
+          // Show the server's reason (e.g. "Amount must be more than 0") and stay on the page.
+          const body = await resp.json().catch(() => ({}));
+          setSaving(false);
+          return setError(`${t("saveFailed")}: ${body.error || resp.status}. ${t("checkInternetTryAgain")}`);
         }
       } catch (err) {
-        console.warn("Failed to save expense:", err);
+        setSaving(false);
+        return setError(`${t("saveFailed")}. ${t("checkInternetTryAgain")}`);
       }
-    } else {
-      console.warn("No tripId/token available — expense will not be saved to the server.");
     }
 
     const newExpense = {
       id: savedExpense?.id ?? nextExpenseId++,
       amount: numericAmount,
       label: categoryToSave,
-      icon: pickedPlace ? "map-pin" : categories.find((c) => c.label === selectedCategory)?.icon,
-      description: description.trim(),
-      dayLabel: pickedPlace ? dayLabelForPlace(pickedPlace.id) : null,
+      icon: categories.find((c) => c.label === selectedCategory)?.icon,
+      description: descriptionToSave,
+      dayLabel: dayIndex >= 0 && days[dayIndex] ? days[dayIndex].label : null,
+      category: categoryToSave,
+      expenseDate,
     };
 
     const updatedTripState = {
@@ -122,6 +159,7 @@ export default function AddExpensePage() {
     };
 
     navigate(returnPath, {
+      replace: true,
       state: {
         destination,
         startDate,
@@ -167,15 +205,16 @@ export default function AddExpensePage() {
           <span className="ww-amount-caret"><Icon name="chevron-down" /></span>
           <span className="ww-amount-peso">₱</span>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
+            placeholder="0.00"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => { setAmount(keepMoney(e.target.value)); setError(""); }}
+            onBlur={() => amount !== "" && setAmount((Number(amount) || 0).toFixed(2))}
           />
         </div>
 
-        <h2 className="ww-choose-item-title">{t("chooseAnItem")}</h2>
-
-        <h3 className="ww-choose-subtitle">{t("fromACategory")}</h3>
+        <h3 className="ww-choose-subtitle">{t("expenseCategoryLabel")}</h3>
         <div className="ww-category-grid">
           {categories.map((c) => (
             <button
@@ -183,7 +222,7 @@ export default function AddExpensePage() {
               className={`ww-category-btn ${selectedCategory === c.label ? "selected" : ""}`}
               onClick={() => {
                 setSelectedCategory(c.label);
-                setSelectedItem(null);
+                setError("");
               }}
             >
               <Icon name={c.icon} /> {t(c.key)}
@@ -191,25 +230,30 @@ export default function AddExpensePage() {
           ))}
         </div>
 
-        {tripPlanItems.length > 0 && (
-          <>
-            <h3 className="ww-choose-subtitle">{t("fromATripPlan")}</h3>
-            <div className="ww-trip-item-list">
-              {tripPlanItems.map((item) => (
-                <button
-                  key={item.id}
-                  className={`ww-trip-item-btn ${selectedItem === item.id ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedItem(item.id);
-                    setSelectedCategory(null);
-                  }}
-                >
-                  <Icon name="map-pin" /> {item.name}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        <div className="ww-expense-fields">
+          {tripPlanItems.length > 0 && (
+            <label className="ww-expense-field">
+              <span>{t("expensePlaceLabel")}</span>
+              <select value={selectedItem} onChange={(e) => pickPlace(e.target.value)}>
+                <option value="">{t("noPlace")}</option>
+                {tripPlanItems.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {days.length > 0 && (
+            <label className="ww-expense-field">
+              <span>{t("expenseDayLabel")}</span>
+              <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)}>
+                <option value="">{t("noDay")}</option>
+                {days.map((d, i) => (
+                  <option key={i} value={String(i)}>{t("dayN").replace("{n}", String(i + 1))} · {d.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
 
         <input
           className="ww-description-input"
@@ -218,10 +262,12 @@ export default function AddExpensePage() {
           onChange={(e) => setDescription(e.target.value)}
         />
 
+        {error && <p className="ww-money-error" role="alert">{error}</p>}
+
         <button className="ww-save-expense-btn" onClick={handleSave} disabled={saving}>
           {saving ? t("saving") : t("save")}
         </button>
       </main>
     </div>
   );
-}
+}

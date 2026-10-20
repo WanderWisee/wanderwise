@@ -18,10 +18,10 @@ import {
 import {
   getCached, getPendingSave, removePendingSave, isOffline, onOfflineChange, markTripOpen,
 } from '../../services/offlineStore';
-import { nearestRoute } from '../../utils/routeOptimization';
+import { bestOpenPath, fetchRouteTable, formatTravelDistance, formatTravelDuration, pathLength } from '../../utils/routeOptimization';
 import { startPinPicker } from '../../utils/pinPicker';
 import PlaceSuggestions from '../../components/PlaceSuggestions';
-import { hasCoords, getRoute, getRoutePath, googleSearchUrl } from '../../services/geoService';
+import { hasCoords, getRoutePath, googleSearchUrl } from '../../services/geoService';
 import SwipeToDelete from '../../components/SwipeToDelete';
 import PlaceCard from '../../components/PlaceCard';
 import InviteTripmatesSheet from '../../components/InviteTripmatesSheet';
@@ -228,6 +228,26 @@ function TripDetailContent({ id }) {
   });
   const [sectionError, setSectionError] = useState(false);
   const [optimizing, setOptimizing] = useState<string | null>(null);
+  // Resulta ng Optimize route bawat araw (parehong mensahe ng web, hindi
+  // nawawala agad): { status, beforeS, afterS, beforeM, afterM, skipped, noOrigin, forKeys }
+  const [optimizeInfo, setOptimizeInfo] = useState<Record<string, any>>({});
+  // Babala sa ilalim ng "Add place" ng araw kapag nasa ibang araw na ang lugar.
+  const [dayNotice, setDayNotice] = useState<Record<string, any>>({});
+  // Aling "Add place" ng araw ang naka-focus (para sa listahan ng mungkahi).
+  const [focusedDayKey, setFocusedDayKey] = useState<string | null>(null);
+
+  // Parehong web: habang nagta-type sa araw, ipakita ang mga lugar sa
+  // Where to go / ibang list na wala pa sa kahit anong araw.
+  function daySuggestions(dayKey) {
+    const typed = (dayInputs[dayKey] || '').trim().toLowerCase();
+    const seen = new Set();
+    return (trip?.sections || []).flatMap((s) => s.places).filter((p) => {
+      const name = String(p.name || '').trim().toLowerCase();
+      if (!name || p.itineraryDate || seen.has(name)) return false;
+      seen.add(name);
+      return !typed || name.includes(typed);
+    }).slice(0, 8);
+  }
   const [expensePlace, setExpensePlace] = useState('');
 
   const [crew, setCrew] = useState([]);
@@ -251,6 +271,10 @@ function TripDetailContent({ id }) {
   const [expenseCategory, setExpenseCategory] = useState(EXPENSE_CATEGORIES[0].label);
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDesc, setExpenseDesc] = useState('');
+  // Araw ng gastos (para lumabas sa Day-by-day) at mensahe ng mali sa form.
+  const [expenseDay, setExpenseDay] = useState('');
+  const [expenseError, setExpenseError] = useState('');
+  const [budgetError, setBudgetError] = useState('');
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
 
@@ -603,15 +627,33 @@ function TripDetailContent({ id }) {
     await persist(nextTrip);
   }
 
-  async function addPlaceToDay(dayKey) {
-    const text = (dayInputs[dayKey] || '').trim();
+  // Parehong web: isang araw lang ang bawat lugar. Kapag nasa ibang araw na,
+  // may babala; kapag nasa list na pero wala pang araw, iyon ang ilalagay
+  // (hindi na gagawa ng kapareho).
+  async function addPlaceToDay(dayKey, pickedName = null) {
+    const text = (pickedName ?? dayInputs[dayKey] ?? '').trim();
     if (!text) return;
-    const defaultSection = trip.sections.find((s) => s.isDefault) || trip.sections[0];
-    const newPlace = makePlace(text, dayKey, nextOrderFor(trip, dayKey));
+    const base = tripRef.current || trip;
+    const lower = text.toLowerCase();
+    const all = base.sections.flatMap((s) => s.places.map((p) => ({ ...p, sectionKey: s.key })));
+    const scheduled = all.find((p) => p.itineraryDate && p.name.trim().toLowerCase() === lower);
     setDayInputs((prev) => ({ ...prev, [dayKey]: '' }));
+    if (scheduled) {
+      const dayNumber = days.findIndex((d) => d.key === scheduled.itineraryDate) + 1;
+      setDayNotice((prev) => ({ ...prev, [dayKey]: { name: scheduled.name, dayNumber } }));
+      return;
+    }
+    setDayNotice((prev) => ({ ...prev, [dayKey]: null }));
+    const existing = all.find((p) => p.name.trim().toLowerCase() === lower);
+    if (existing) {
+      await persist(withPlaceChanged(base, existing.sectionKey, existing.key, (p) => ({ ...p, itineraryDate: dayKey, itineraryOrder: nextOrderFor(base, dayKey) })));
+      return;
+    }
+    const defaultSection = base.sections.find((s) => s.isDefault) || base.sections[0];
+    const newPlace = makePlace(text, dayKey, nextOrderFor(base, dayKey));
     await persist({
-      ...trip,
-      sections: trip.sections.map((s) =>
+      ...base,
+      sections: base.sections.map((s) =>
         s.key === defaultSection.key ? { ...s, places: [...s.places, newPlace] } : s
       ),
     });
@@ -760,42 +802,53 @@ function TripDetailContent({ id }) {
     try { await Share.share({ message: lines.join('\n') }); } catch { /* cancelled */ }
   }
 
+  // Parehong Optimize route ng web: nagsisimula sa kinaroroonan mo, ang
+  // mga lugar na walang location ay hindi kasama (nasa dulo) at sinasabi kung
+  // alin; ang resulta ay nakasulat sa ilalim ng araw.
   async function optimizeDay(dayKey) {
     if (!canEdit || optimizing) return;
     const snapshot = tripRef.current;
     const stops = sortStops(snapshot.sections.flatMap((s) => s.places).filter((p) => p.itineraryDate === dayKey));
-    if (stops.length < 2) return;
-    if (stops.length > 12) { toast(t('optimizeLimit')); return; }
-    if (stops.some((p) => !hasCoords(p))) { toast(t('locateAllStops')); return; }
+    const withCoords = stops.filter(hasCoords);
+    const withoutCoords = stops.filter((p) => !hasCoords(p));
+    const skipped = withoutCoords.map((p) => p.name);
+    if (withCoords.length < 2) return;
+    if (withCoords.length > 12) { setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'limit' } })); return; }
     setOptimizing(dayKey);
+    setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'loading' } }));
     try {
-      // Nagsisimula sa kinaroroonan mo (parehong ng web). Kapag naka-off ang
-      // location, ang unang lugar ng araw ang simula, gaya ng dati.
       const origin = await currentPosition();
-      if (!origin) toast(t('routeNoLocation'));
-      // Dalawang lugar at walang location: walang aayusin, ipakita ang daan.
-      if (stops.length === 2 && !origin) { void showDayRoute(dayKey, stops); return; }
-      const start = origin ? { ...origin, key: '__me__' } : null;
-      const candidate = start ? nearestRoute([start, ...stops]).slice(1) : nearestRoute(stops);
-      if (candidate.every((p, i) => p.key === stops[i].key)) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops, origin); return; }
-      const duration = async (list) => {
-        let total = 0;
-        for (let i = 1; i < list.length; i++) {
-          const route = await getRoute(list[i - 1], list[i], 'driving');
-          if (route.estimated) throw new Error(t('networkError'));
-          total += route.durationMin;
-        }
-        return total;
-      };
-      const [before, after] = await Promise.all([duration(start ? [start, ...stops] : stops), duration(start ? [start, ...candidate] : candidate)]);
-      if (after >= before) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops, origin); return; }
-      if (!(await confirm({ title: t('optimizeDay'), message: `${before} min → ${after} min`, confirmLabel: t('save'), cancelLabel: t('cancel') }))) return;
-      if (tripRef.current !== snapshot) { toast(t('tryAgain')); return; }
-      const order = Object.fromEntries(candidate.map((p, i) => [p.key, i]));
+      const noOrigin = !origin;
+      if (withCoords.length === 2 && !origin) {
+        setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'already', skipped, noOrigin, forKeys: stops.map((p) => p.key).join(',') } }));
+        void showDayRoute(dayKey, stops);
+        return;
+      }
+      const points = origin ? [origin, ...withCoords] : withCoords;
+      const { durations, distances } = await fetchRouteTable(points);
+      const current = points.map((_, i) => i);
+      const best = bestOpenPath(durations);
+      const beforeS = pathLength(current, durations);
+      const afterS = pathLength(best, durations);
+      const beforeM = distances ? pathLength(current, distances) : null;
+      const afterM = distances ? pathLength(best, distances) : null;
+      const bestOrder = origin ? best.slice(1).map((i) => i - 1) : best;
+      // Wala pang isang minutong matitipid: hindi na babaguhin ang ayos.
+      if (afterS >= beforeS - 60) {
+        setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'already', skipped, noOrigin, forKeys: stops.map((p) => p.key).join(',') } }));
+        void showDayRoute(dayKey, stops, origin);
+        return;
+      }
+      if (tripRef.current !== snapshot) { setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'error' } })); return; }
+      const ordered = [...bestOrder.map((i) => withCoords[i]), ...withoutCoords];
+      const order = Object.fromEntries(ordered.map((p, i) => [p.key, i]));
       const ok = await persist({ ...snapshot, sections: snapshot.sections.map((section) => ({ ...section, places: section.places.map((p) => p.key in order ? { ...p, itineraryOrder: order[p.key] } : p) })) });
-      if (ok) { toast(t('routeUpdated')); void showDayRoute(dayKey, candidate, origin); }
-    } catch (e) { toast(e.message); }
-    finally { setOptimizing(null); }
+      if (!ok) { setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'error' } })); return; }
+      setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'done', beforeS, afterS, beforeM, afterM, skipped, noOrigin, forKeys: ordered.map((p) => p.key).join(',') } }));
+      void showDayRoute(dayKey, ordered, origin);
+    } catch {
+      setOptimizeInfo((prev) => ({ ...prev, [dayKey]: { status: 'error' } }));
+    } finally { setOptimizing(null); }
   }
 
   async function addSuggestion(sectionKey, item) {
@@ -857,36 +910,43 @@ function TripDetailContent({ id }) {
 
   async function saveBudget() {
     const raw = parseFloat(String(budgetInput).replace(/,/g, ''));
-    setEditingBudget(false);
-    if (isNaN(raw) || raw < 0) return;
+    if (isNaN(raw) || raw < 0) { setBudgetError(''); setEditingBudget(false); return; }
     const value = Math.round(raw * 100) / 100;
-    if (value > MAX_MONEY) { toast(t('moneyTooHigh')); return; }
+    // Manatiling bukas ang field at ipakita sa ilalim kung paano aayusin.
+    if (value > MAX_MONEY) { setBudgetError(t('moneyTooHigh')); return; }
+    setBudgetError('');
+    setEditingBudget(false);
     await persist({ ...trip, budgetTotal: value });
   }
 
   async function handleAddExpense() {
     if (!canEdit || saving) return;
     const amount = parseFloat(String(expenseAmount).replace(/,/g, ''));
-    if (!expenseCategory || isNaN(amount) || amount <= 0) {
-      toast(t('expenseAmountRequired'));
-      return;
-    }
+    // Malinaw na mensahe sa ilalim ng form kung paano aayusin.
+    if (!expenseCategory) { setExpenseError(t('expenseNeedCategory')); return; }
+    if (isNaN(amount) || amount <= 0) { setExpenseError(t('expenseNeedAmount')); return; }
+    if (amount > MAX_MONEY) { setExpenseError(t('moneyTooHigh')); return; }
+    setExpenseError('');
     setSaving(true);
     try {
+      // Hiwalay na ang kategorya at ang lugar: laging kategorya ang naka-save,
+      // at ang lugar (kung pinili) ay nasa simula ng description.
       const selected = tripRef.current.sections.flatMap((s) => s.places).find((p) => p.key === expensePlace);
+      const desc = [selected?.name, expenseDesc.trim()].filter(Boolean).join(' · ').slice(0, 255);
       const created = await createExpense(id, {
-        category: selected ? selected.name.slice(0, 50) : expenseCategory,
-        expenseDate: selected?.itineraryDate || null,
+        category: expenseCategory,
+        expenseDate: expenseDay || selected?.itineraryDate || null,
         amount,
-        description: expenseDesc.trim(),
+        description: desc,
       });
       setExpenses((prev) => [...prev, created]);
       setExpenseAmount('');
       setExpenseDesc('');
       setExpensePlace('');
+      setExpenseDay('');
       toast(t('expenseAdded'));
     } catch (e) {
-      alert(t('saveFailed'), e.message);
+      setExpenseError(`${t('saveFailed')}: ${e.message}. ${t('checkInternetTryAgain')}`);
     } finally {
       setSaving(false);
     }
@@ -968,11 +1028,20 @@ function TripDetailContent({ id }) {
       onPinLocation: () => openPinPicker(sectionKey, place),
       onSetTime: (value) => updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, scheduledTime: value || '' })),
       onAddCost: (cost) => updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, costs: [...(p.costs || []), cost] })),
-      onRemoveCost: (costId) =>
+      onRemoveCost: async (costId) => {
+        const ok = await confirm({
+          title: t('deleteCostTitle'),
+          message: t('confirmDeleteCost'),
+          confirmLabel: t('dialogDelete'),
+          cancelLabel: t('cancel'),
+          danger: true,
+        });
+        if (!ok) return;
         updatePlaceAndSave(sectionKey, place.key, (p) => ({
           ...p,
           costs: (p.costs || []).filter((c) => c.id !== costId),
-        })),
+        }));
+      },
     };
   }
 
@@ -1137,7 +1206,12 @@ function TripDetailContent({ id }) {
                 </Text>
               </TouchableOpacity>
             </View>
-          ) : <Text style={styles.saveStatusText}>{t('viewOnlyNotice')}</Text>}
+          ) : (
+            <View style={styles.viewOnlyBanner} accessibilityRole="text">
+              <AppIcon name="eye" size={16} color={Colors.brown900} />
+              <Text style={styles.viewOnlyText}>{t('viewOnlyNotice')}</Text>
+            </View>
+          )}
 
           {canEdit && (
             <View style={styles.undoRow}>
@@ -1287,6 +1361,8 @@ function TripDetailContent({ id }) {
                 </View>
               )}
 
+              {!canEdit && allPlaces.length === 0 && <Text style={styles.emptyText}>{t('readonlyNoPlaces')}</Text>}
+
               {trip.sections.map((section, sIndex) => (
                 <View key={section.key} style={styles.sectionBlock}>
                   <View style={styles.sectionHeaderRow}>
@@ -1359,7 +1435,7 @@ function TripDetailContent({ id }) {
                     );
                   })}
 
-                  {canEdit && <PlaceSuggestions destination={trip.destination} sectionName={section.name} query={section.placeInput} exclude={section.places.map((p) => p.name)} onSelect={(item) => addSuggestion(section.key, item)} />}
+                  {canEdit && <PlaceSuggestions destination={trip.destination} isDefault={!!section.isDefault} sectionName={section.name} query={section.placeInput} exclude={section.places.map((p) => p.name)} onSelect={(item) => addSuggestion(section.key, item)} />}
                   <View pointerEvents={canEdit ? 'auto' : 'none'} style={[styles.addPlaceRow, !canEdit && { display: 'none' }]}>
                     <TextInput
                         editable={canEdit}
@@ -1396,10 +1472,12 @@ function TripDetailContent({ id }) {
                 <View style={styles.emptyStateCard}>
                   <AppIcon name="calendar" style={{ fontSize: 30 }} />
                   <Text style={styles.emptyStateTitle}>{t('noDatesSetYet')}</Text>
-                  <Text style={[styles.emptyText, { textAlign: 'center' }]}>{t('setDatesForDays')}</Text>
-                  <TouchableOpacity style={[styles.addExpenseButton, { paddingHorizontal: 20, marginTop: 8 }]} disabled={!canEdit} onPress={() => setDatesOpen(true)}>
-                    <IconLabel name="calendar" textStyle={styles.addExpenseButtonText}>{t('setTripDates')}</IconLabel>
-                  </TouchableOpacity>
+                  <Text style={[styles.emptyText, { textAlign: 'center' }]}>{t(canEdit ? 'setDatesForDays' : 'readonlyNoItinerary')}</Text>
+                  {canEdit && (
+                    <TouchableOpacity style={[styles.addExpenseButton, { paddingHorizontal: 20, marginTop: 8 }]} onPress={() => setDatesOpen(true)}>
+                      <IconLabel name="calendar" textStyle={styles.addExpenseButtonText}>{t('setTripDates')}</IconLabel>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ) : (
                 days.map((day, dIndex) => {
@@ -1415,7 +1493,31 @@ function TripDetailContent({ id }) {
                         <Text accessibilityRole="header" style={styles.dayHeading}>{day.label}</Text>
                         <Text style={styles.stopCount}>{stops.length} {t(stops.length === 1 ? 'itineraryStop' : 'itineraryStops')}</Text>
                       </View>
-                      {canEdit && stops.length >= 2 && <TouchableOpacity accessibilityRole="button" disabled={!!optimizing} onPress={() => optimizeDay(day.key)} style={{ paddingVertical: 12 }}><Text style={styles.linkAction}>{t(optimizing === day.key ? 'optimizing' : 'optimizeDay')}</Text></TouchableOpacity>}
+                      {canEdit && stops.filter(hasCoords).length >= 2 && <TouchableOpacity accessibilityRole="button" disabled={!!optimizing} onPress={() => optimizeDay(day.key)} style={{ paddingVertical: 12 }}><Text style={styles.linkAction}>{t(optimizing === day.key ? 'optimizing' : 'optimizeDay')}</Text></TouchableOpacity>}
+                      {(() => {
+                        const info = optimizeInfo[day.key];
+                        if (!info || info.status === 'loading') return null;
+                        // Itago kapag nagbago na ang list ng araw (parehong web).
+                        if ((info.status === 'done' || info.status === 'already') && info.forKeys !== stops.map((p) => p.key).join(',')) return null;
+                        return (
+                          <View style={{ gap: 4, marginBottom: 10 }}>
+                            {info.status === 'done' && (
+                              <IconLabel name="check" textStyle={styles.optimizeOk}>
+                                {`${t('routeOptimized')} ${formatTravelDuration(info.beforeS)} → ${formatTravelDuration(info.afterS)}${info.beforeM != null && info.afterM != null ? ` (${formatTravelDistance(info.beforeM)} → ${formatTravelDistance(info.afterM)})` : ''}`}
+                              </IconLabel>
+                            )}
+                            {info.status === 'already' && <IconLabel name="check" textStyle={styles.optimizeOk}>{t('routeAlreadyShortest')}</IconLabel>}
+                            {(info.status === 'done' || info.status === 'already') && info.skipped?.length > 0 && (
+                              <IconLabel name="warning" textStyle={styles.optimizeWarn}>{`${t('routeSkippedPlaces')} ${info.skipped.join(', ')}`}</IconLabel>
+                            )}
+                            {(info.status === 'done' || info.status === 'already') && info.noOrigin && (
+                              <IconLabel name="info" textStyle={styles.optimizeNote}>{t('routeNoLocation')}</IconLabel>
+                            )}
+                            {info.status === 'limit' && <IconLabel name="warning" textStyle={styles.optimizeWarn}>{t('optimizeLimit')}</IconLabel>}
+                            {info.status === 'error' && <IconLabel name="warning" textStyle={styles.optimizeWarn}>{t('routeOptimizeFailed')}</IconLabel>}
+                          </View>
+                        );
+                      })()}
 
                       {stays.map((b) => (
                         <View key={`stay-${b.id}`} style={styles.stayBanner}>
@@ -1485,13 +1587,39 @@ function TripDetailContent({ id }) {
                           placeholder={t('addNewPlacePlaceholder')}
                           placeholderTextColor={GREY_PLACEHOLDER}
                           value={dayInputs[day.key] || ''}
-                          onChangeText={(text) => setDayInputs((prev) => ({ ...prev, [day.key]: text }))}
+                          onChangeText={(text) => { setDayInputs((prev) => ({ ...prev, [day.key]: text })); if (dayNotice[day.key]) setDayNotice((prev) => ({ ...prev, [day.key]: null })); }}
                           onSubmitEditing={() => addPlaceToDay(day.key)}
+                          onFocus={() => setFocusedDayKey(day.key)}
+                          onBlur={() => setFocusedDayKey((cur) => (cur === day.key ? null : cur))}
                         />
                         <TouchableOpacity style={[styles.addPlaceButton, (saving || !(dayInputs[day.key] || '').trim()) && styles.controlDisabled]} accessibilityRole="button" accessibilityLabel={t('addNewPlacePlaceholder')} onPress={() => addPlaceToDay(day.key)} disabled={saving || !(dayInputs[day.key] || '').trim()}>
                           <AppIcon name="plus" style={styles.addPlaceButtonText} />
                         </TouchableOpacity>
                       </View>
+                      {canEdit && focusedDayKey === day.key && (() => {
+                        const list = daySuggestions(day.key);
+                        if (!list.length) return null;
+                        return (
+                          <View style={styles.daySuggestBox}>
+                            <Text style={styles.daySuggestTitle}>{t('pickFromWhereToGo')}</Text>
+                            {list.map((p) => (
+                              <TouchableOpacity
+                                key={p.key}
+                                accessibilityRole="button"
+                                style={styles.daySuggestItem}
+                                onPress={() => { setDayInputs((prev) => ({ ...prev, [day.key]: '' })); void addPlaceToDay(day.key, p.name); }}
+                              >
+                                <IconLabel name="pin" textStyle={styles.daySuggestText}>{p.name}</IconLabel>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        );
+                      })()}
+                      {!!dayNotice[day.key] && (
+                        <IconLabel name="warning" textStyle={styles.optimizeWarn}>
+                          {`${dayNotice[day.key].name} ${t('placeAlreadyOnDay')} ${dayNotice[day.key].dayNumber}. ${t('placeAlreadyOnDayHint')}`}
+                        </IconLabel>
+                      )}
                     </View>
                   );
                 })
@@ -1513,7 +1641,7 @@ function TripDetailContent({ id }) {
                         editable={canEdit}
                       style={styles.budgetInput}
                       value={budgetInput}
-                      onChangeText={(v) => setBudgetInput(keepMoney(v))}
+                      onChangeText={(v) => { setBudgetInput(keepMoney(v)); setBudgetError(''); }}
                       keyboardType="decimal-pad"
                       autoFocus
                       onSubmitEditing={saveBudget}
@@ -1530,6 +1658,7 @@ function TripDetailContent({ id }) {
                     <IconLabel trailing name="pencil" textStyle={styles.budgetAmount}>{budget > 0 ? formatPeso(budget) : t('setABudget')}</IconLabel>
                   </TouchableOpacity>
                 )}
+                {!!budgetError && <Text style={styles.budgetError} accessibilityRole="alert">{budgetError}</Text>}
 
                 <View style={styles.progressTrack}>
                   <View style={[styles.progressFill, { width: `${usedRatio * 100}%` }, overBudget && { backgroundColor: '#F4A19A' }]} />
@@ -1555,25 +1684,49 @@ function TripDetailContent({ id }) {
 
               {canEdit && <Text style={styles.sectionTitle}>{t('addExpenseTitle')}</Text>}
               <View pointerEvents={canEdit ? 'auto' : 'none'} style={[styles.addExpenseCard, !canEdit && { display: 'none' }]}>
-                <Text style={styles.emptyTextSmall}>{t('expenseFor')}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-                  <ChoiceChips style={{ flexWrap: 'nowrap' }} options={[{ value: '', label: t('categoryExpense') }, ...allPlaces.map((p) => ({ value: p.key, label: p.name }))]} value={expensePlace} onChange={setExpensePlace} />
-                </ScrollView>
+                <Text style={styles.emptyTextSmall}>{t('expenseCategoryLabel')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                   <ChoiceChips
                     style={{ flexWrap: 'nowrap' }}
                     options={EXPENSE_CATEGORIES.map((c) => ({ value: c.label, label: t(c.key), icon: c.icon }))}
                     value={expenseCategory}
-                    onChange={setExpenseCategory}
+                    onChange={(v) => { setExpenseCategory(v); setExpenseError(''); }}
                   />
                 </ScrollView>
+                <Text style={styles.emptyTextSmall}>{t('expensePlaceLabel')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                  <ChoiceChips
+                    style={{ flexWrap: 'nowrap' }}
+                    options={[{ value: '', label: t('noPlace') }, ...allPlaces.map((p) => ({ value: p.key, label: p.name }))]}
+                    value={expensePlace}
+                    onChange={(v) => {
+                      setExpensePlace(v);
+                      // Kusang piliin ang araw ng lugar sa itinerary.
+                      const picked = allPlaces.find((p) => p.key === v);
+                      if (picked?.itineraryDate) setExpenseDay(picked.itineraryDate);
+                    }}
+                  />
+                </ScrollView>
+                {days.length > 0 && (
+                  <>
+                    <Text style={styles.emptyTextSmall}>{t('expenseDayLabel')}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                      <ChoiceChips
+                        style={{ flexWrap: 'nowrap' }}
+                        options={[{ value: '', label: t('noDay') }, ...days.map((d, i) => ({ value: d.key, label: `${t('dayN').replace('{n}', String(i + 1))} · ${formatDate(d.key, 'short')}` }))]}
+                        value={expenseDay}
+                        onChange={setExpenseDay}
+                      />
+                    </ScrollView>
+                  </>
+                )}
                 <TextInput
                         editable={canEdit}
                   style={styles.expenseInput}
                   placeholder={`${t('amount')} (₱)`}
                   placeholderTextColor={GREY_PLACEHOLDER}
                   value={expenseAmount}
-                  onChangeText={setExpenseAmount}
+                  onChangeText={(v) => { setExpenseAmount(keepMoney(v)); setExpenseError(''); }}
                   keyboardType="decimal-pad"
                 />
                 <TextInput
@@ -1584,6 +1737,7 @@ function TripDetailContent({ id }) {
                   value={expenseDesc}
                   onChangeText={setExpenseDesc}
                 />
+                {!!expenseError && <Text style={styles.expenseError} accessibilityRole="alert">{expenseError}</Text>}
                 <TouchableOpacity style={styles.addExpenseButton} onPress={handleAddExpense} disabled={saving}>
                   {saving ? (
                     <ActivityIndicator size="small" color={Colors.onButton} />
@@ -1677,6 +1831,7 @@ function TripDetailContent({ id }) {
         onClose={() => setDatesOpen(false)}
         onConfirm={changeDates}
         initialRange={rangeFromISO(trip.startDate, trip.endDate)}
+        allowPast
         dayTour
       />
 
@@ -1861,6 +2016,17 @@ const styles = StyleSheet.create({
   budgetStatValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#FFFFFF' },
   budgetStatLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   budgetSplit: { fontFamily: 'Poppins_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 12 },
+  daySuggestBox: { marginTop: -4, marginBottom: 10, borderWidth: 1, borderColor: Colors.line, borderRadius: 12, backgroundColor: '#FFFFFF', overflow: 'hidden' },
+  daySuggestTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 11.5, color: Colors.brown600, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 },
+  daySuggestItem: { paddingHorizontal: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: Colors.line },
+  daySuggestText: { fontFamily: 'Poppins_400Regular', fontSize: 13.5, color: Colors.brown900 },
+  viewOnlyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.tintSky, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginTop: 6, marginBottom: 6 },
+  viewOnlyText: { flex: 1, fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: Colors.brown900, lineHeight: 18 },
+  optimizeOk: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: Colors.teal },
+  optimizeWarn: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: Colors.error },
+  optimizeNote: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600 },
+  budgetError: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: '#F4A19A', marginTop: 4 },
+  expenseError: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: Colors.error, marginBottom: 10 },
   addExpenseCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 20 },
   expenseInput: {
     fontFamily: 'Poppins_400Regular', fontSize: 14, color: Colors.brown900,

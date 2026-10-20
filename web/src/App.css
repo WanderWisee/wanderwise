@@ -9482,7 +9482,7 @@ textarea:focus-visible {
 }
 .ww-privacy-section h2 {
   font-size: 16px;
-  margin: 18px 0 6px;
+  margin: 18px 0 14px;
   color: var(--ww-text);
 }
 .ww-privacy-section p {
@@ -9901,4 +9901,54 @@ textarea:focus-visible {
   margin: -2px 0 8px;
   font-size: 12.5px;
   color: var(--ww-text-muted);
+}
+
+/* Add expense: category, place and day are separate fields */
+.ww-expense-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 18px 0 14px;
+}
+.ww-expense-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #6b5a48;
+}
+.ww-expense-field select {
+  padding: 10px 12px;
+  border: 1px solid #d9cdb8;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  color: #331c08;
+}
+
+/* Budget used / remaining (same as the mobile app) */
+.ww-budget-progress {
+  height: 8px;
+  margin: 12px 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.ww-budget-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #ffffff;
+}
+.ww-budget-progress-fill.over {
+  background: #f4a19a;
+}
+.ww-budget-remaining {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.ww-budget-over {
+  margin: 0 0 10px;
+  font-weight: 600;
+  color: #ffd2cc;
 }

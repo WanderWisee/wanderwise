@@ -626,6 +626,8 @@ export const translations = {
     moneyTooHigh: "The amount can't be more than ₱1,000,000.00.",
     moneyLimitHint: "Up to ₱1,000,000.00, with up to 2 decimal places.",
     pinOnMap: "Pin on map",
+    hideRoute: "Hide route",
+    routeNoLocation: "Your location is off, so the route starts from the day's first place. Allow location in your browser to start from where you are.",
     pinOnMapHelp: "Click the spot on the map where \"{name}\" is.",
     notOnMapWarning: "This place isn't on the map yet.",
     printItinerary: "Print / PDF",
@@ -1275,6 +1277,8 @@ export const translations = {
     moneyTooHigh: "Hindi puwedeng lumampas sa ₱1,000,000.00 ang halaga.",
     moneyLimitHint: "Hanggang ₱1,000,000.00, at hanggang 2 decimal places.",
     pinOnMap: "I-pin sa mapa",
+    hideRoute: "Itago ang ruta",
+    routeNoLocation: "Naka-off ang location mo, kaya nagsisimula ang ruta sa unang lugar ng araw. Payagan ang location sa browser para magsimula sa kinaroroonan mo.",
     pinOnMapHelp: "I-click sa mapa kung saan ang \"{name}\".",
     notOnMapWarning: "Wala pa sa mapa ang lugar na ito.",
     printItinerary: "Print / PDF",
@@ -1297,4 +1301,4 @@ export const translations = {
     commentPostFailed: "Hindi ma-post ang comment mo. Subukan ulit.",
     passwordUpdatedLogin: "Na-update na ang password. Mag-log in gamit ang bago mong password.",
   },
-};
+};

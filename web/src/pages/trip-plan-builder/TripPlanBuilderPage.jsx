@@ -1009,25 +1009,11 @@ export default function TripPlanBuilderPage() {
     return null;
   };
 
-  // One number per place everywhere (Where to go first, then the other
-  // lists), so the list, the itinerary and the map pins always match.
-  const placeNumbers = useMemo(() => {
-    const map = {};
-    let n = 0;
-    [...tripState.places, ...tripState.customSections.flatMap((s) => s.places)].forEach((p) => {
-      map[p.id] = ++n;
-    });
-    return map;
-  }, [tripState.places, tripState.customSections]);
-
-  // Places for the map: every list, with the same numbers as above.
+  // Places for the map: every list. Pins have no numbers; numbers only
+  // appear after "Optimize route" (the order of that day's route).
   const mapPlaces = useMemo(
-    () =>
-      [...tripState.places, ...tripState.customSections.flatMap((s) => s.places)].map((p) => ({
-        ...p,
-        displayNumber: placeNumbers[p.id],
-      })),
-    [tripState.places, tripState.customSections, placeNumbers]
+    () => [...tripState.places, ...tripState.customSections.flatMap((s) => s.places)],
+    [tripState.places, tripState.customSections]
   );
 
   // The day a place is planned for (from the itinerary), else the trip's
@@ -1730,6 +1716,37 @@ export default function TripPlanBuilderPage() {
   // lets the message disappear by itself once the day is changed again.
   const [optimizeInfo, setOptimizeInfo] = useState({});
 
+  // The day's route drawn on the trip map after "Optimize route": the
+  // places of that day, in the order of the list (1 → 2 → 3). Hidden again
+  // once that day's list changes.
+  const [dayRoute, setDayRoute] = useState(null); // { dayIndex, forIds, path, stops }
+  // origin = the user's location when the route starts from where they are.
+  const showDayRoute = async (dayIndex, orderedPlaces, forIds, origin = null) => {
+    const stops = orderedPlaces.filter((p) => p.lat != null && p.lng != null);
+    const points = origin ? [origin, ...stops] : stops;
+    if (points.length < 2) return;
+    // Straight lines first, so something shows right away; the road route
+    // replaces it when it arrives.
+    const straight = points.map((p) => [p.lat, p.lng]);
+    setDayRoute({ dayIndex, forIds, path: straight, stops, origin });
+    mapBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    try {
+      const coords = points.map((p) => `${p.lng},${p.lat}`).join(";");
+      const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+      const data = await res.json();
+      const line = data?.routes?.[0]?.geometry?.coordinates;
+      if (data.code === "Ok" && Array.isArray(line) && line.length > 1) {
+        setDayRoute((cur) =>
+          cur && cur.dayIndex === dayIndex && cur.forIds === forIds
+            ? { ...cur, path: line.map(([lng, lat]) => [lat, lng]) }
+            : cur
+        );
+      }
+    } catch {
+      // keep the straight lines
+    }
+  };
+
   const optimizeDay = async (dayIndex) => {
     const day = days[dayIndex];
     const entries = day.placeIds
@@ -1739,14 +1756,28 @@ export default function TripPlanBuilderPage() {
     const withCoords = entries.filter((p) => p.lat != null && p.lng != null);
     const withoutCoords = entries.filter((p) => p.lat == null || p.lng == null);
     const unknownIds = day.placeIds.filter((id) => !entries.some((p) => p.id === id));
-    if (withCoords.length < 3) return;
+    if (withCoords.length < 2) return;
+    // The route starts from where the user is now (so they can see why a
+    // place comes first). Without location access, the day's first place
+    // stays first, as before.
+    const origin = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null;
+    // Two places and no location: nothing to reorder, just show the route.
+    if (withCoords.length === 2 && !origin) {
+      setOptimizeInfo((prev) => ({
+        ...prev,
+        [dayIndex]: { status: "already", skippedNames: withoutCoords.map((p) => p.name), forIds: day.placeIds.join(",") },
+      }));
+      showDayRoute(dayIndex, entries, day.placeIds.join(","));
+      return;
+    }
 
     setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "loading" } }));
     // Places with no confirmed location can't be measured, so they're left
     // out of the calculation — named in the result so the student knows.
     const skippedNames = withoutCoords.map((p) => p.name);
     try {
-      const coords = withCoords.map((p) => `${p.lng},${p.lat}`).join(";");
+      const points = origin ? [origin, ...withCoords] : withCoords;
+      const coords = points.map((p) => `${p.lng},${p.lat}`).join(";");
       const res = await fetch(
         `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=duration,distance`
       );
@@ -1757,12 +1788,15 @@ export default function TripPlanBuilderPage() {
       // faster than a short road through town. Distance is only shown.
       const timeMatrix = data.durations;
       const distMatrix = data.distances;
-      const currentOrder = withCoords.map((_, i) => i);
-      const bestOrder = bestOpenPath(timeMatrix);
+      // Point 0 is the start (the user's location, or the first place).
+      const currentOrder = points.map((_, i) => i);
+      const bestPath = bestOpenPath(timeMatrix);
       const beforeS = pathLength(currentOrder, timeMatrix);
-      const afterS = pathLength(bestOrder, timeMatrix);
+      const afterS = pathLength(bestPath, timeMatrix);
       const beforeM = distMatrix ? pathLength(currentOrder, distMatrix) : null;
-      const afterM = distMatrix ? pathLength(bestOrder, distMatrix) : null;
+      const afterM = distMatrix ? pathLength(bestPath, distMatrix) : null;
+      // Places in the new order (without the user's location).
+      const bestOrder = origin ? bestPath.slice(1).map((i) => i - 1) : bestPath;
 
       // Less than a minute saved isn't worth reshuffling the student's list.
       if (afterS >= beforeS - 60) {
@@ -1770,6 +1804,7 @@ export default function TripPlanBuilderPage() {
           ...prev,
           [dayIndex]: { status: "already", skippedNames, forIds: day.placeIds.join(",") },
         }));
+        showDayRoute(dayIndex, entries, day.placeIds.join(","), origin);
         return;
       }
 
@@ -1796,6 +1831,7 @@ export default function TripPlanBuilderPage() {
           forIds: newIds.join(","),
         },
       }));
+      showDayRoute(dayIndex, [...bestOrder.map((i) => withCoords[i]), ...withoutCoords], newIds.join(","), origin);
     } catch (err) {
       console.warn("Route optimization failed:", err);
       setOptimizeInfo((prev) => ({ ...prev, [dayIndex]: { status: "error" } }));
@@ -2139,6 +2175,17 @@ export default function TripPlanBuilderPage() {
     </>
   );
 
+  // The optimized day's route, while that day's list is still the same.
+  const activeRoute =
+    dayRoute && days[dayRoute.dayIndex] && days[dayRoute.dayIndex].placeIds.join(",") === dayRoute.forIds
+      ? dayRoute
+      : null;
+  // Stop numbers (1, 2, 3 …) of the optimized day, in the order of its list.
+  const routeNums = activeRoute
+    ? Object.fromEntries(days[activeRoute.dayIndex].placeIds.map((id, i) => [id, i + 1]))
+    : {};
+  const mapMarkers = mapPlaces.map((p) => ({ ...p, displayNumber: routeNums[p.id] ?? null }));
+
   // ---- Print / Save as PDF ----
   // Opens a clean, printer-friendly copy of the itinerary in a new tab and
   // shows the browser's print dialog (choose "Save as PDF" there).
@@ -2147,10 +2194,10 @@ export default function TripPlanBuilderPage() {
       String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const title = tripName.trim() || defaultTripName;
     const scheduled = new Set(days.flatMap((d) => d.placeIds));
-    const placeRow = (p) => {
+    const placeRow = (p, n = "") => {
       const cost = (p.costs || []).reduce((sum, c) => sum + Number(c.amount || 0), 0);
       return `<tr>
-        <td class="n">${placeNumbers[p.id] ?? ""}</td>
+        <td class="n">${n}</td>
         <td class="time">${p.time ? esc(formatTime(p.time)) : "—"}</td>
         <td><strong>${esc(p.name)}</strong>${p.visited ? ` <span class="tag">${esc(t("visited"))}</span>` : ""}${
           p.note ? `<div class="note">${esc(p.note)}</div>` : ""
@@ -2170,13 +2217,13 @@ export default function TripPlanBuilderPage() {
       .map((day) => {
         const ps = day.placeIds.map((id) => findPlaceWithOrigin(tripState, id)?.place).filter(Boolean);
         return `<section><h2>${esc(day.label)}</h2>${
-          ps.length ? table(ps.map(placeRow).join("")) : `<p class="empty">${esc(t("printNoPlaces"))}</p>`
+          ps.length ? table(ps.map((p, i) => placeRow(p, i + 1)).join("")) : `<p class="empty">${esc(t("printNoPlaces"))}</p>`
         }</section>`;
       })
       .join("");
     const unscheduled = [...places, ...customSections.flatMap((sec) => sec.places)].filter((p) => !scheduled.has(p.id));
     const otherHtml = unscheduled.length
-      ? `<section><h2>${esc(t("printNotScheduled"))}</h2>${table(unscheduled.map(placeRow).join(""))}</section>`
+      ? `<section><h2>${esc(t("printNotScheduled"))}</h2>${table(unscheduled.map((p) => placeRow(p)).join(""))}</section>`
       : "";
     const totalExpected = [...places, ...customSections.flatMap((sec) => sec.places)].reduce(
       (sum, p) => sum + (p.costs || []).reduce((a, c) => a + Number(c.amount || 0), 0),
@@ -2414,6 +2461,23 @@ ${dayHtml}${otherHtml}
           )}
 
           <div className="ww-builder-map" ref={mapBoxRef}>
+            {activeRoute && (
+              <div className="ww-route-banner" role="status">
+                <span>
+                  <Icon name="navigation" /> <strong>{days[activeRoute.dayIndex]?.label}:</strong>{" "}
+                  {activeRoute.origin ? `${t("youAreHere")}  →  ` : ""}
+                  {days[activeRoute.dayIndex].placeIds
+                    .map((id) => findPlaceWithOrigin(tripState, id)?.place)
+                    .filter(Boolean)
+                    .map((p) => `${routeNums[p.id]}. ${p.name}`)
+                    .join("  →  ")}
+                </span>
+                <button type="button" className="ww-pin-cancel" onClick={() => setDayRoute(null)}>{t("hideRoute")}</button>
+              </div>
+            )}
+            {activeRoute && !activeRoute.origin && (
+              <p className="ww-route-note"><Icon name="info" /> {t("routeNoLocation")}</p>
+            )}
             {pinningPlace && (
               <div className="ww-pin-banner" role="status">
                 <span><Icon name="map-pin" /> {t("pinOnMapHelp").replace("{name}", pinningPlace.name)}</span>
@@ -2421,11 +2485,14 @@ ${dayHtml}${otherHtml}
               </div>
             )}
             <TripMap
-              places={mapPlaces}
+              places={mapMarkers}
               destinationMarker={destinationCoords}
               destinationLabel={destination}
               pinMode={!!pinningPlace}
               onPick={handleMapPick}
+              route={activeRoute}
+              origin={activeRoute?.origin || null}
+              originLabel={t("youAreHere")}
             />
           </div>
 
@@ -2593,7 +2660,7 @@ ${dayHtml}${otherHtml}
             <div className="ww-place-card" key={p.id}>
               <p className="ww-place-name">
                 {renderSelectBox("whereToGo", p)}
-                <Icon name="map-pin" />{placeNumbers[p.id]} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
+                <Icon name="map-pin" /> {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
               </p>
 
               {/* Shown when our free (OpenStreetMap) lookup could NOT
@@ -2768,7 +2835,7 @@ ${dayHtml}${otherHtml}
                 <div className="ww-place-card" key={p.id}>
                   <p className="ww-place-name">
                     {renderSelectBox(section.id, p)}
-                    <Icon name="map-pin" />{placeNumbers[p.id]} {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
+                    <Icon name="map-pin" /> {p.name} {p.visited && <span className="ww-visited-badge"><Icon name="check-circle" /> {t("visited")}</span>}
                   </p>
                   {canEdit && p.lat == null && p.geocodeStatus !== "pending" && (
                     <div className="ww-unverified-warning">
@@ -2864,7 +2931,7 @@ ${dayHtml}${otherHtml}
                           <Icon name="compass" /> {t("tourDayLink")}
                         </button>
                       )}
-                      {routablePlaces >= 3 && (
+                      {routablePlaces >= 2 && (
                         <button
                           type="button"
                           className="ww-optimize-btn"
@@ -2948,7 +3015,9 @@ ${dayHtml}${otherHtml}
                           </div>
                           <div>
                             <p className="ww-place-name">
-                              <Icon name="map-pin" />{placeNumbers[p.id]} {p.name}
+                              {activeRoute && activeRoute.dayIndex === dayIndex && routeNums[p.id]
+                                ? <span className="ww-stop-number">{routeNums[p.id]}</span>
+                                : <Icon name="map-pin" />}{" "}{p.name}
                               {/* Tells the student up front which places
                                   have no confirmed location, so they know
                                   why a place is skipped by "Optimize route"
@@ -3228,4 +3297,4 @@ ${dayHtml}${otherHtml}
       )}
     </div>
   );
-}
+}

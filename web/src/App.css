@@ -9855,3 +9855,50 @@ textarea:focus-visible {
 .ww-builder-readonly .ww-pin-btn {
   display: none !important;
 }
+
+/* Trip map: the optimized day's route (order of the itinerary list). */
+.ww-route-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--ww-primary);
+  color: #fff;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.ww-route-banner svg {
+  vertical-align: -2px;
+}
+
+/* Directions under places in Where to go and the other lists. */
+.ww-list-directions {
+  margin: 2px 0 0;
+}
+
+/* Itinerary: stop number shown after "Optimize route". */
+.ww-stop-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin-right: 2px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fc7e00;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Trip map: note when the route can't start from the user's location. */
+.ww-route-note {
+  margin: -2px 0 8px;
+  font-size: 12.5px;
+  color: var(--ww-text-muted);
+}

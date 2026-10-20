@@ -199,6 +199,24 @@ export async function getRoutePath(points, mode = 'driving') {
   return pts;
 }
 
+// Parehong mapa sa ibang tab (OpenStreetMap / OSRM): ipinapakita ang daan
+// na dumadaan sa lahat ng point, gaya ng nasa app.
+export function osmRouteUrl(points) {
+  const pts = (points || []).filter(hasCoords);
+  if (pts.length === 1) return `https://www.openstreetmap.org/?mlat=${pts[0].latitude}&mlon=${pts[0].longitude}#map=16/${pts[0].latitude}/${pts[0].longitude}`;
+  return `https://map.project-osrm.org/?${pts.map((p) => `loc=${Number(p.latitude).toFixed(6)},${Number(p.longitude).toFixed(6)}`).join('&')}&srv=0`;
+}
+
+// Lahat ng lugar bilang pin (may pangalan) sa OpenStreetMap map, sa ibang tab.
+export function osmPointsUrl(points) {
+  const features = (points || []).filter(hasCoords).map((p) => ({
+    type: 'Feature',
+    properties: { name: p.label || p.name || '' },
+    geometry: { type: 'Point', coordinates: [Number(Number(p.longitude).toFixed(6)), Number(Number(p.latitude).toFixed(6))] },
+  }));
+  return `https://geojson.io/#data=data:application/json,${encodeURIComponent(JSON.stringify({ type: 'FeatureCollection', features }))}`;
+}
+
 // Google Maps (kilala ang mas maraming lugar kaysa OpenStreetMap). Walang
 // "origin" = magsisimula sa kasalukuyang lokasyon ng phone.
 export function googleDirectionsUrl(to, destination, mode = 'driving') {

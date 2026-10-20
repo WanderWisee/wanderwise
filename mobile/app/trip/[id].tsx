@@ -19,6 +19,7 @@ import {
   getCached, getPendingSave, removePendingSave, isOffline, onOfflineChange, markTripOpen,
 } from '../../services/offlineStore';
 import { nearestRoute } from '../../utils/routeOptimization';
+import { startPinPicker } from '../../utils/pinPicker';
 import PlaceSuggestions from '../../components/PlaceSuggestions';
 import { hasCoords, getRoute, getRoutePath, googleSearchUrl } from '../../services/geoService';
 import SwipeToDelete from '../../components/SwipeToDelete';
@@ -638,14 +639,71 @@ function TripDetailContent({ id }) {
 
   // Daan ng araw sa mapa pagkatapos ng Optimize route, sunod sa ayos ng list
   // (1 → 2 → 3). Nawawala kapag nagbago ang list ng araw na iyon.
-  const [dayRoute, setDayRoute] = useState(null); // { dayKey, keys, path }
-  async function showDayRoute(dayKey, ordered) {
+  const [dayRoute, setDayRoute] = useState(null); // { dayKey, keys, path, origin }
+  async function showDayRoute(dayKey, ordered, origin = null) {
     const located = ordered.filter(hasCoords);
-    if (located.length < 2) return;
+    const points = origin ? [origin, ...located] : located;
+    if (points.length < 2) return;
     const keys = ordered.map((p) => p.key).join(',');
-    setDayRoute({ dayKey, keys, path: located.map((p) => ({ latitude: p.latitude, longitude: p.longitude })) });
-    const path = await getRoutePath(located, 'driving');
+    setDayRoute({ dayKey, keys, origin, path: points.map((p) => ({ latitude: p.latitude, longitude: p.longitude })) });
+    const path = await getRoutePath(points, 'driving');
     setDayRoute((cur) => (cur && cur.dayKey === dayKey && cur.keys === keys ? { ...cur, path } : cur));
+  }
+
+  // "Pin on map" (parehong ng web): bubukas ang Pin screen; ang napiling
+  // lokasyon ay ise-save sa lugar.
+  function openPinPicker(sectionKey, place) {
+    if (!canEdit) return;
+    const base = tripRef.current || trip;
+    const located = base.sections.flatMap((s) => s.places).filter(hasCoords);
+    // Habang nasa Pin screen, puwedeng ma-reload ang trip (live sync), at
+    // bagong "key" ang makukuha ng bawat lugar. Kaya hahanapin ulit ang lugar
+    // sa pinakabagong kopya gamit ang puwesto nito (list at index) at pangalan.
+    const sIdx = base.sections.findIndex((s) => s.key === sectionKey);
+    const pIdx = sIdx >= 0 ? base.sections[sIdx].places.findIndex((p) => p.key === place.key) : -1;
+    startPinPicker(async (coords) => {
+      const latest = tripRef.current;
+      if (!latest) return;
+      let si = sIdx;
+      let pi = pIdx;
+      if (latest.sections[si]?.places[pi]?.name !== place.name) {
+        si = latest.sections.findIndex((s) => s.places.some((p) => p.name === place.name));
+        pi = si >= 0 ? latest.sections[si].places.findIndex((p) => p.name === place.name) : -1;
+      }
+      if (si < 0 || pi < 0) { toast(t('saveFailed')); return; }
+      const next = {
+        ...latest,
+        sections: latest.sections.map((s, i) => i !== si ? s : {
+          ...s,
+          places: s.places.map((p, j) => (j === pi ? { ...p, latitude: coords.latitude, longitude: coords.longitude } : p)),
+        }),
+      };
+      await persist(next);
+      toast(t('locationSet'));
+    });
+    router.push({
+      pathname: '/pin-location',
+      params: {
+        name: place.name,
+        lat: located[0] ? String(located[0].latitude) : '',
+        lng: located[0] ? String(located[0].longitude) : '',
+        others: JSON.stringify(located.slice(0, 40).map((p) => ({ latitude: p.latitude, longitude: p.longitude, name: p.name }))),
+      },
+    });
+  }
+
+  // Kinaroroonan ngayon (null kapag naka-off ang location o walang GPS).
+  async function currentPosition() {
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) return null;
+      let timer;
+      const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), 10000); });
+      let pos = await Promise.race([Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null), timeout]);
+      clearTimeout(timer);
+      if (!pos) pos = await Location.getLastKnownPositionAsync().catch(() => null);
+      return pos ? { latitude: pos.coords.latitude, longitude: pos.coords.longitude } : null;
+    } catch { return null; }
   }
 
   // Directions mula sa kinaroroonan ngayon (parehong ng web). Lugar na wala
@@ -711,10 +769,15 @@ function TripDetailContent({ id }) {
     if (stops.some((p) => !hasCoords(p))) { toast(t('locateAllStops')); return; }
     setOptimizing(dayKey);
     try {
-      // Dalawang lugar lang: walang aayusin, ipakita na lang ang daan.
-      if (stops.length === 2) { void showDayRoute(dayKey, stops); return; }
-      const candidate = nearestRoute(stops);
-      if (candidate.every((p, i) => p.key === stops[i].key)) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops); return; }
+      // Nagsisimula sa kinaroroonan mo (parehong ng web). Kapag naka-off ang
+      // location, ang unang lugar ng araw ang simula, gaya ng dati.
+      const origin = await currentPosition();
+      if (!origin) toast(t('routeNoLocation'));
+      // Dalawang lugar at walang location: walang aayusin, ipakita ang daan.
+      if (stops.length === 2 && !origin) { void showDayRoute(dayKey, stops); return; }
+      const start = origin ? { ...origin, key: '__me__' } : null;
+      const candidate = start ? nearestRoute([start, ...stops]).slice(1) : nearestRoute(stops);
+      if (candidate.every((p, i) => p.key === stops[i].key)) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops, origin); return; }
       const duration = async (list) => {
         let total = 0;
         for (let i = 1; i < list.length; i++) {
@@ -724,13 +787,13 @@ function TripDetailContent({ id }) {
         }
         return total;
       };
-      const [before, after] = await Promise.all([duration(stops), duration(candidate)]);
-      if (after >= before) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops); return; }
+      const [before, after] = await Promise.all([duration(start ? [start, ...stops] : stops), duration(start ? [start, ...candidate] : candidate)]);
+      if (after >= before) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops, origin); return; }
       if (!(await confirm({ title: t('optimizeDay'), message: `${before} min → ${after} min`, confirmLabel: t('save'), cancelLabel: t('cancel') }))) return;
       if (tripRef.current !== snapshot) { toast(t('tryAgain')); return; }
       const order = Object.fromEntries(candidate.map((p, i) => [p.key, i]));
       const ok = await persist({ ...snapshot, sections: snapshot.sections.map((section) => ({ ...section, places: section.places.map((p) => p.key in order ? { ...p, itineraryOrder: order[p.key] } : p) })) });
-      if (ok) { toast(t('routeUpdated')); void showDayRoute(dayKey, candidate); }
+      if (ok) { toast(t('routeUpdated')); void showDayRoute(dayKey, candidate, origin); }
     } catch (e) { toast(e.message); }
     finally { setOptimizing(null); }
   }
@@ -902,8 +965,7 @@ function TripDetailContent({ id }) {
       onChangeNotes: (text) => updatePlaceLocal(sectionKey, place.key, { notes: text }),
       onEndNotes: () => persist(tripRef.current),
       onToggleVisited: () => toggleVisited(sectionKey, place.key),
-      onDirections: () => openDirections(place),
-      onUseMyLocation: () => setPlaceToMyLocation(sectionKey, place),
+      onPinLocation: () => openPinPicker(sectionKey, place),
       onSetTime: (value) => updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, scheduledTime: value || '' })),
       onAddCost: (cost) => updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, costs: [...(p.costs || []), cost] })),
       onRemoveCost: (costId) =>
@@ -961,8 +1023,6 @@ function TripDetailContent({ id }) {
   const allPlaces = trip.sections.flatMap((s) => s.places.map((p) => ({ ...p, sectionKey: s.key })));
   // Iisang numero ang bawat place sa lahat ng list, sa itinerary at sa
   // mapa (gaya ng web), kaya laging magkatugma.
-  const placeNumbers = {};
-  allPlaces.forEach((p, i) => { placeNumbers[p.key] = i + 1; });
   const mappedPlaces = allPlaces.filter(hasCoords);
 
   // ===== Budget =====
@@ -1181,12 +1241,16 @@ function TripDetailContent({ id }) {
             <>
               {/* Mapa ng lahat ng place na may coordinates */}
               <OsmMap
-                markers={mappedPlaces.map((p) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name, number: placeNumbers[p.key] }))}
+                markers={mappedPlaces.map((p) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name, number: '' }))}
                 height={180}
                 style={{ marginBottom: 6 }}
                 emptyLabel={allPlaces.length === 0 ? t('mapAddPlacesHint') : t('mapLocatingPlaces')}
                 fallbackCenter={{ latitude: 12.3, longitude: 122.5, zoom: 5 }}
                 singleZoom={14}
+                onPress={mappedPlaces.length ? () => router.push({
+                  pathname: '/map-view',
+                  params: { title: trip.destination || '', points: JSON.stringify(mappedPlaces.slice(0, 60).map((p) => ({ latitude: p.latitude, longitude: p.longitude, name: p.name }))) },
+                }) : null}
               />
               <Text style={styles.mapCaption}>
                 {mappedPlaces.length}/{allPlaces.length} {t('placesOnMap')}
@@ -1275,7 +1339,7 @@ function TripDetailContent({ id }) {
                           <PlaceCard
                             place={place}
                             index={pIndex}
-                            number={placeNumbers[place.key]}
+                            number={null}
                             notesMode="view"
                             expanded={isExpanded}
                             selecting={selectable}
@@ -1364,11 +1428,14 @@ function TripDetailContent({ id }) {
                       {dayRoute && dayRoute.dayKey === day.key && dayRoute.keys === stops.map((p) => p.key).join(',') && (
                         <View style={{ marginBottom: 12 }}>
                           <OsmMap
-                            markers={stops.filter(hasCoords).map((p) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name, number: placeNumbers[p.key] }))}
+                            markers={[
+                              ...(dayRoute.origin ? [{ ...dayRoute.origin, label: t('youAreHere'), number: '•', color: '#2F7AE0' }] : []),
+                              ...stops.map((p, i) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name, number: i + 1 })).filter(hasCoords),
+                            ]}
                             path={dayRoute.path}
                             height={200}
                           />
-                          <Text style={styles.mapCaption}>{stops.map((p) => `${placeNumbers[p.key]} ${p.name}`).join('  →  ')}</Text>
+                          <Text style={styles.mapCaption}>{[...(dayRoute.origin ? [t('youAreHere')] : []), ...stops.map((p, i) => `${i + 1}. ${p.name}`)].join('  →  ')}</Text>
                           <TouchableOpacity accessibilityRole="button" onPress={() => setDayRoute(null)} style={{ paddingVertical: 6 }}>
                             <Text style={styles.linkAction}>{t('hideRoute')}</Text>
                           </TouchableOpacity>
@@ -1388,10 +1455,11 @@ function TripDetailContent({ id }) {
                                 <PlaceCard
                                   place={place}
                                   index={index}
-                                  number={placeNumbers[place.key]}
+                                  number={dayRoute && dayRoute.dayKey === day.key && dayRoute.keys === stops.map((p) => p.key).join(',') ? index + 1 : null}
                                   expanded={isExpanded}
                                   onPress={() => setExpandedPlaceKey(isExpanded ? null : place.key)}
                                   {...placeCardHandlers(place.sectionKey, place)}
+                                  onDirections={() => openDirections(place)}
                                 />
                               </SwipeToDelete>
                               {canEdit && isExpanded && stops.length > 1 && (

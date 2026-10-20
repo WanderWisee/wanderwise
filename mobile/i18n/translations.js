@@ -459,7 +459,11 @@ export const translations = {
     bookingsRecordedCount: "booking(s) recorded for this trip",
     routeSkippedPlaces: "Not included (no location):",
     noLocationTag: "No location",
-    noLocationHint: "This place isn't on the map yet. Tap \"Use my current location\" when you're there, or pin it on the website.",
+    noLocationHint: "This place isn't on the map yet. Tap \"Pin on map\" to set its location.",
+    pinOnMap: "Pin on map",
+    pinDragHint: "Drag the map until the red pin is on \"{place}\", then save. Pinch with two fingers to zoom.",
+    savePinLocation: "Save location",
+    viewOnMap: "View on map",
     findInGoogleMaps: "Find in Google Maps",
     useMyLocationConfirm: "Set the location of \"{place}\" to where you are now?",
     locationSet: "Location saved.",
@@ -469,6 +473,7 @@ export const translations = {
     youAreHere: "You are here",
     routeEstimated: "estimated (straight distance)",
     hideRoute: "Hide route",
+    routeNoLocation: "Your location is off, so the route starts from the day's first place.",
     shareItinerary: "Share itinerary",
     // ===== Settings: saved preferences =====
     settingSaved: "Saved",
@@ -994,7 +999,11 @@ export const translations = {
     bookingsRecordedCount: "booking ang naitala para sa trip na ito",
     routeSkippedPlaces: "Hindi naisama (walang location):",
     noLocationTag: "Walang location",
-    noLocationHint: "Wala pa sa mapa ang lugar na ito. Pindutin ang \"Gamitin ang lokasyon ko\" kapag nandoon ka, o i-pin ito sa website.",
+    noLocationHint: "Wala pa sa mapa ang lugar na ito. Pindutin ang \"I-pin sa mapa\" para itakda ang lokasyon nito.",
+    pinOnMap: "I-pin sa mapa",
+    pinDragHint: "I-drag ang mapa hanggang nasa \"{place}\" ang pulang pin, tapos i-save. I-pinch gamit ang dalawang daliri para mag-zoom.",
+    savePinLocation: "I-save ang lokasyon",
+    viewOnMap: "Tingnan sa mapa",
     findInGoogleMaps: "Hanapin sa Google Maps",
     useMyLocationConfirm: "Itakda ang lokasyon ng \"{place}\" sa kinaroroonan mo ngayon?",
     locationSet: "Na-save ang lokasyon.",
@@ -1004,6 +1013,7 @@ export const translations = {
     youAreHere: "Nandito ka",
     routeEstimated: "tantiya (tuwid na layo)",
     hideRoute: "Itago ang ruta",
+    routeNoLocation: "Naka-off ang location mo, kaya nagsisimula ang ruta sa unang lugar ng araw.",
     shareItinerary: "Ibahagi ang itinerary",
     // ===== Settings: saved preferences =====
     settingSaved: "Na-save",
@@ -1069,4 +1079,4 @@ export const translations = {
     daysSuffix: "araw",
     clearDates: "I-clear",
   },
-};
+};

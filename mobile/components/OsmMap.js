@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import Svg, { Polyline } from 'react-native-svg';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
+import { osmRouteUrl } from '../services/geoService';
 
 // Totoong mapa gamit ang Esri World Street Map tiles (galing sa OpenStreetMap
 // at iba pang data). Hindi na tile.openstreetmap.org (403 "Access blocked" sa
@@ -19,11 +20,11 @@ import { useApp } from '../context/AppContext';
 // path (optional): [{ latitude, longitude }] — daan na iguguhit sa mapa.
 // number = numerong ipapakita sa pin (kapareho ng nasa list); wala = 1, 2, 3…
 
-const TILE = 256;
+export const TILE = 256;
 // Pansinin: z / y / x ang ayos sa Esri (hindi z / x / y).
-const tileUrl = (z, x, y) =>
+export const tileUrl = (z, x, y) =>
   `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
-const TILE_HEADERS = {
+export const TILE_HEADERS = {
   'User-Agent': 'WanderWise-Mobile/1.0 (+https://www.wanderwise.site)',
   Referer: 'https://www.wanderwise.site/',
 };
@@ -31,7 +32,7 @@ const TILE_HEADERS = {
 // Sentro ng Pilipinas kapag walang pin
 const PH_CENTER = { latitude: 12.3, longitude: 122.5, zoom: 5 };
 
-function project(lat, lon, zoom) {
+export function project(lat, lon, zoom) {
   const scale = TILE * 2 ** zoom;
   const clamped = Math.max(-85, Math.min(85, lat));
   const rad = (clamped * Math.PI) / 180;
@@ -67,7 +68,7 @@ function pickView(points, width, height, fallback) {
   return { zoom, center: project(points[0].latitude, points[0].longitude, zoom) };
 }
 
-function toLatLon(x, y, zoom) {
+export function toLatLon(x, y, zoom) {
   const scale = TILE * 2 ** zoom;
   const lon = (x / scale) * 360 - 180;
   const n = Math.PI - (2 * Math.PI * y) / scale;
@@ -139,6 +140,8 @@ export default function OsmMap({
   function openFullMap() {
     if (onPress) return onPress();
     if (!layout) return;
+    // May daan: buksan ang parehong ruta (lahat ng point) sa OpenStreetMap/OSRM.
+    if (pathPoints.length > 1 && points.length > 1) { Linking.openURL(osmRouteUrl(points)); return; }
     const { zoom, centerLatLon } = layout;
     const marker = points.length === 1 ? `mlat=${points[0].latitude}&mlon=${points[0].longitude}&` : '';
     Linking.openURL(

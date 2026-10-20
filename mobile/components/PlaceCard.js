@@ -40,7 +40,7 @@ export default function PlaceCard({
   // (Where to go at ibang list — sa itinerary lang isinusulat ang notes).
   notesMode = 'edit',
   onDirections = null,
-  onUseMyLocation = null,
+  onPinLocation = null,
 }) {
   const { t, formatTime } = useApp();
   const catLabel = (cat) => (COST_CATEGORY_KEYS[cat] ? t(COST_CATEGORY_KEYS[cat]) : cat);
@@ -94,9 +94,13 @@ export default function PlaceCard({
           </View>
         )}
 
-        <View style={styles.numberBadge}>
-          <Text style={styles.numberText}>{number ?? index + 1}</Text>
-        </View>
+        {number != null ? (
+          <View style={styles.numberBadge}>
+            <Text style={styles.numberText}>{number}</Text>
+          </View>
+        ) : (
+          <AppIcon name="pin" size={20} color={Colors.brown600} />
+        )}
 
         <View style={{ flex: 1 }}>
           <Text style={styles.name} numberOfLines={2}>{place.name}</Text>
@@ -175,9 +179,9 @@ export default function PlaceCard({
                 <IconLabel name="car" textStyle={[styles.actionText, styles.actionTextActive]}>{noLocation ? t('findInGoogleMaps') : t('directions')}</IconLabel>
               </TouchableOpacity>
             )}
-            {noLocation && !readOnly && !!onUseMyLocation && (
-              <TouchableOpacity onPress={onUseMyLocation} style={styles.actionButton}>
-                <IconLabel name="pin" textStyle={styles.actionText}>{t('useMyLocation')}</IconLabel>
+            {noLocation && !readOnly && !!onPinLocation && (
+              <TouchableOpacity onPress={onPinLocation} style={styles.actionButton}>
+                <IconLabel name="pin" textStyle={styles.actionText}>{t('pinOnMap')}</IconLabel>
               </TouchableOpacity>
             )}
           </View>
@@ -324,4 +328,4 @@ const styles = StyleSheet.create({
   costCancelText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.brown900 },
   costAdd: { flex: 1, minHeight: 44, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.brown900, alignItems: 'center', justifyContent: 'center' },
   costAddText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: Colors.onButton },
-});
+});

@@ -1,19 +1,18 @@
-import AppIcon from '../components/AppIcon';
 import { Text } from '../components/Typography';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Colors } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import OsmMap from '../components/OsmMap';
-import { ErrorState, Loading, PrimaryButton, ScreenHeader } from '../components/ui';
-import { getRoute, getRoutePath, googleDirectionsUrl } from '../services/geoService';
+import { ErrorState, Loading, ScreenHeader } from '../components/ui';
+import { getRoute, getRoutePath, osmRouteUrl } from '../services/geoService';
 
 // Directions mula sa kinaroroonan ngayon papunta sa isang lugar — parehong
-// Directions page ng web: daan sa mapa, oras at layo. Ang turn-by-turn ay
-// binubuksan sa Google Maps.
+// Directions page ng web: daan sa mapa, oras at layo. Pindutin ang mapa para
+// buksan ang parehong ruta sa OpenStreetMap.
 function formatDuration(mins: number) {
   if (mins < 60) return `${mins} min`;
   const h = Math.floor(mins / 60);
@@ -28,7 +27,7 @@ export default function DirectionsScreen() {
   const name = String(params.name || '');
   const destinationName = String(params.destination || '');
   const to = { latitude: Number(params.lat), longitude: Number(params.lng), name };
-  const [mode, setMode] = useState<'driving' | 'walking'>('driving');
+  const mode = 'driving';
   const [origin, setOrigin] = useState<any>(null);
   const [locError, setLocError] = useState('');
   const [route, setRoute] = useState<any>(null);
@@ -69,7 +68,7 @@ export default function DirectionsScreen() {
       setLoading(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin, mode, params.lat, params.lng]);
+  }, [origin, params.lat, params.lng]);
 
   const distanceText = route
     ? route.distanceKm < 1 && formatDistance(1000).endsWith('km') ? `${Math.round(route.distanceKm * 1000)} m` : formatDistance(route.distanceKm * 1000)
@@ -82,20 +81,7 @@ export default function DirectionsScreen() {
         <Text style={styles.place} numberOfLines={2}>{name}</Text>
         {!!destinationName && <Text style={styles.sub}>{destinationName}</Text>}
 
-        <View style={styles.modeRow}>
-          {(['driving', 'walking'] as const).map((m) => (
-            <TouchableOpacity
-              key={m}
-              accessibilityRole="button"
-              accessibilityState={{ selected: mode === m }}
-              onPress={() => setMode(m)}
-              style={[styles.modeChip, mode === m && styles.modeChipActive]}
-            >
-              <AppIcon name={m === 'driving' ? 'car' : 'user'} size={16} color={mode === m ? Colors.onButton : Colors.brown900} />
-              <Text style={[styles.modeText, mode === m && { color: Colors.onButton }]}>{t(m === 'driving' ? 'modeDriving' : 'modeWalking')}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <View style={{ height: 12 }} />
 
         {locError ? (
           <ErrorState message={locError} onRetry={locate} retryLabel={t('tryAgain')} />
@@ -109,7 +95,7 @@ export default function DirectionsScreen() {
               path={path}
               height={260}
               singleZoom={15}
-              onPress={() => Linking.openURL(googleDirectionsUrl(to, destinationName, mode))}
+              onPress={() => Linking.openURL(osmRouteUrl(origin ? [origin, to] : [to]))}
             />
             {loading ? <Loading style={{ marginTop: 16 }} /> : route && (
               <View style={styles.summary}>
@@ -120,11 +106,6 @@ export default function DirectionsScreen() {
           </>
         )}
 
-        <PrimaryButton
-          label={t('openInGoogleMaps')}
-          onPress={() => Linking.openURL(googleDirectionsUrl(to, destinationName, mode))}
-          style={{ alignSelf: 'stretch', marginTop: 16 }}
-        />
       </ScrollView>
     </SafeAreaView>
   );

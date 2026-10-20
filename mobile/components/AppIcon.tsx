@@ -7,7 +7,7 @@ import {
   Plus, Radio, Receipt, Search, Send, Settings, ShoppingBag, Sparkles,
   SquareCheck, Star, Luggage as Suitcase, Ticket, Trash2, TriangleAlert, User, Users,
   Utensils, Wallet, X, Ban, Maximize2, Briefcase, Bed, Banknote, Megaphone, CircleAlert,
-  UserPlus, type LucideIcon,
+  UserPlus, Undo2, Redo2, type LucideIcon,
 } from 'lucide-react-native';
 import { StyleSheet, View, type ColorValue, type StyleProp, type TextStyle } from 'react-native';
 import { Colors } from '../constants/theme';
@@ -28,7 +28,7 @@ const icons: Record<string, LucideIcon> = {
   user: User, users: Users, utensils: Utensils, wallet: Wallet, ban: Ban, expand: Maximize2, x: X,
   // Same icons as the web's notifications list
   briefcase: Briefcase, bed: Bed, banknote: Banknote, megaphone: Megaphone,
-  'alert-circle': CircleAlert, 'user-plus': UserPlus,
+  'alert-circle': CircleAlert, 'user-plus': UserPlus, undo: Undo2, redo: Redo2,
 };
 
 export default function AppIcon({ name, size = 22, color = Colors.brown900, style, filled = false }: {

@@ -3,6 +3,7 @@ import { Text } from './Typography';
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
+import Svg, { Polyline } from 'react-native-svg';
 import { Colors, Fonts } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
@@ -15,6 +16,7 @@ import { useApp } from '../context/AppContext';
 // mapa sa openstreetmap.org para makapag-zoom/pan ang user.
 //
 // markers: [{ latitude, longitude, label?, color?, number? }]
+// path (optional): [{ latitude, longitude }] — daan na iguguhit sa mapa.
 // number = numerong ipapakita sa pin (kapareho ng nasa list); wala = 1, 2, 3…
 
 const TILE = 256;
@@ -82,6 +84,7 @@ export default function OsmMap({
   fallbackCenter = PH_CENTER,
   singleZoom = 13,
   onPress = null,
+  path = null,
 }) {
   const [width, setWidth] = useState(0);
   const [failedTile, setFailedTile] = useState('');
@@ -95,9 +98,16 @@ export default function OsmMap({
     [markers]
   );
 
+  const pathPoints = useMemo(
+    () => (path || []).filter((p) => p && Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)))
+      .map((p) => ({ latitude: Number(p.latitude), longitude: Number(p.longitude) })),
+    [path]
+  );
+
   const layout = useMemo(() => {
     if (!width) return null;
-    const { zoom, center } = pickView(points, width, height, { ...fallbackCenter, singleZoom });
+    // Kasya sa view ang mga pin at ang buong daan.
+    const { zoom, center } = pickView([...points, ...pathPoints], width, height, { ...fallbackCenter, singleZoom });
     const left = center.x - width / 2;
     const top = center.y - height / 2;
     const maxTile = 2 ** zoom;
@@ -119,8 +129,12 @@ export default function OsmMap({
       return { ...p, index: i, left: pt.x - left, top: pt.y - top };
     });
     const centerLatLon = toLatLon(center.x, center.y, zoom);
-    return { zoom, tiles, pins, centerLatLon };
-  }, [width, height, points, fallbackCenter, singleZoom]);
+    const line = pathPoints.map((p) => {
+      const pt = project(p.latitude, p.longitude, zoom);
+      return `${(pt.x - left).toFixed(1)},${(pt.y - top).toFixed(1)}`;
+    }).join(' ');
+    return { zoom, tiles, pins, centerLatLon, line };
+  }, [width, height, points, pathPoints, fallbackCenter, singleZoom]);
 
   function openFullMap() {
     if (onPress) return onPress();
@@ -151,6 +165,12 @@ export default function OsmMap({
             style={[styles.tile, { left: tile.left, top: tile.top }]}
           />
         ))}
+
+      {layout && !!layout.line && pathPoints.length > 1 && (
+        <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width={width} height={height}>
+          <Polyline points={layout.line} fill="none" stroke={Colors.teal} strokeWidth={4} strokeOpacity={0.85} strokeLinejoin="round" strokeLinecap="round" />
+        </Svg>
+      )}
 
       {layout &&
         layout.pins.map((pin) => (

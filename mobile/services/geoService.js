@@ -181,6 +181,35 @@ export async function getRoute(from, to, mode = 'walking') {
   };
 }
 
+// Daan sa mapa (sunod-sunod na lugar): mga point ng totoong kalsada mula sa
+// OSRM. Kapag hindi naabot, tuwid na linya sa pagitan ng mga lugar.
+export async function getRoutePath(points, mode = 'driving') {
+  const pts = (points || []).filter(hasCoords).map((p) => ({ latitude: Number(p.latitude), longitude: Number(p.longitude) }));
+  if (pts.length < 2) return pts;
+  const profile = mode === 'walking' ? 'routed-foot' : 'routed-car';
+  const url = `${OSRM_URL}/${profile}/route/v1/driving/${pts.map((p) => `${p.longitude},${p.latitude}`).join(';')}?overview=full&geometries=geojson`;
+  try {
+    const res = await fetchWithTimeout(url, { headers: { 'User-Agent': USER_AGENT } }, 10000);
+    const data = await res.json();
+    const line = data?.routes?.[0]?.geometry?.coordinates;
+    if (Array.isArray(line) && line.length > 1) return line.map(([lon, lat]) => ({ latitude: lat, longitude: lon }));
+  } catch {
+    // tuwid na linya na lang
+  }
+  return pts;
+}
+
+// Google Maps (kilala ang mas maraming lugar kaysa OpenStreetMap). Walang
+// "origin" = magsisimula sa kasalukuyang lokasyon ng phone.
+export function googleDirectionsUrl(to, destination, mode = 'driving') {
+  const dest = hasCoords(to) ? `${to.latitude},${to.longitude}` : [to.name, destination].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=${mode === 'walking' ? 'walking' : 'driving'}`;
+}
+
+export function googleSearchUrl(name, destination) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([name, destination].filter(Boolean).join(', '))}`;
+}
+
 // ===== Directions link =====
 
 export function directionsUrl(from, to, mode, destination) {

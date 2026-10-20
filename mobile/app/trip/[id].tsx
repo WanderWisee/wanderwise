@@ -1,7 +1,8 @@
 import AppIcon, { IconLabel } from '../../components/AppIcon';
 import { Text, TextInput } from '../../components/Typography';
 import { useState, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Linking, Share } from 'react-native';
+import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
@@ -19,10 +20,9 @@ import {
 } from '../../services/offlineStore';
 import { nearestRoute } from '../../utils/routeOptimization';
 import PlaceSuggestions from '../../components/PlaceSuggestions';
-import { hasCoords, getRoute } from '../../services/geoService';
+import { hasCoords, getRoute, getRoutePath, googleSearchUrl } from '../../services/geoService';
 import SwipeToDelete from '../../components/SwipeToDelete';
 import PlaceCard from '../../components/PlaceCard';
-import DirectionsConnector from '../../components/DirectionsConnector';
 import InviteTripmatesSheet from '../../components/InviteTripmatesSheet';
 import CalendarPicker from '../../components/CalendarPicker';
 import OsmMap from '../../components/OsmMap';
@@ -302,6 +302,7 @@ function TripDetailContent({ id }) {
         if (cached && isCurrent()) {
           const local = hydrateTrip({ ...cached, ...pending.body, sections: pending.body.sections });
           setTrip(local);
+          clearHistory(local);
           baseVersionRef.current = pending.baseVersion || null;
           setSavedOnPhone(true);
           const localDays = buildDaysFromRange(local.startDate, local.endDate);
@@ -324,6 +325,7 @@ function TripDetailContent({ id }) {
       const hydrated = hydrateTrip(data);
       if (force || !snapshot || JSON.stringify(buildSaveBody(snapshot)) !== JSON.stringify(buildSaveBody(hydrated)) || snapshot.myRole !== hydrated.myRole) {
         setTrip(hydrated); tripRef.current = hydrated;
+        clearHistory(hydrated);
       }
       baseVersionRef.current = data.version || null;
       if (!isOffline()) setSavedOnPhone(false);
@@ -342,8 +344,39 @@ function TripDetailContent({ id }) {
 
   useLiveSync((isCurrent) => loadTrip(isCurrent), { resourceKey: String(id), interval: 15000 });
 
-  async function persist(nextTrip) {
+  // ===== Undo / Redo (parehong ng web) =====
+  // savedRef = huling na-save na kopya; ang undo ay ibinabalik ito.
+  const savedRef = useRef(null);
+  const undoRef = useRef([]);
+  const redoRef = useRef([]);
+  const [, setHistoryTick] = useState(0);
+  function clearHistory(base) {
+    savedRef.current = base;
+    undoRef.current = [];
+    redoRef.current = [];
+    setHistoryTick((n) => n + 1);
+  }
+  async function undo() {
+    if (!canEdit || !undoRef.current.length) return;
+    const prev = undoRef.current.pop();
+    redoRef.current.push(savedRef.current);
+    await persist({ ...prev, myRole: tripRef.current.myRole }, { record: false });
+  }
+  async function redo() {
+    if (!canEdit || !redoRef.current.length) return;
+    const next = redoRef.current.pop();
+    undoRef.current.push(savedRef.current);
+    await persist({ ...next, myRole: tripRef.current.myRole }, { record: false });
+  }
+
+  async function persist(nextTrip, { record = true } = {}) {
     if (!nextTrip || !['owner', 'editor'].includes(nextTrip.myRole)) return false;
+    if (record && savedRef.current && JSON.stringify(buildSaveBody(savedRef.current)) !== JSON.stringify(buildSaveBody(nextTrip))) {
+      undoRef.current = [...undoRef.current.slice(-29), savedRef.current];
+      redoRef.current = [];
+    }
+    savedRef.current = nextTrip;
+    setHistoryTick((n) => n + 1);
     tripRef.current = nextTrip;
     setTrip(nextTrip);
     dirtyRef.current = true;
@@ -603,17 +636,85 @@ function TripDetailContent({ id }) {
     });
   }
 
+  // Daan ng araw sa mapa pagkatapos ng Optimize route, sunod sa ayos ng list
+  // (1 → 2 → 3). Nawawala kapag nagbago ang list ng araw na iyon.
+  const [dayRoute, setDayRoute] = useState(null); // { dayKey, keys, path }
+  async function showDayRoute(dayKey, ordered) {
+    const located = ordered.filter(hasCoords);
+    if (located.length < 2) return;
+    const keys = ordered.map((p) => p.key).join(',');
+    setDayRoute({ dayKey, keys, path: located.map((p) => ({ latitude: p.latitude, longitude: p.longitude })) });
+    const path = await getRoutePath(located, 'driving');
+    setDayRoute((cur) => (cur && cur.dayKey === dayKey && cur.keys === keys ? { ...cur, path } : cur));
+  }
+
+  // Directions mula sa kinaroroonan ngayon (parehong ng web). Lugar na wala
+  // sa mapa: hahanapin sa Google Maps gamit ang pangalan.
+  function openDirections(place) {
+    if (!hasCoords(place)) { void Linking.openURL(googleSearchUrl(place.name, trip?.destination)); return; }
+    router.push({ pathname: '/directions', params: { lat: String(place.latitude), lng: String(place.longitude), name: place.name, destination: trip?.destination || '' } });
+  }
+
+  // Lugar na wala sa OpenStreetMap: itakda ang lokasyon gamit ang GPS ng
+  // phone habang nandoon (o i-pin sa web; magsi-sync dito).
+  async function setPlaceToMyLocation(sectionKey, place) {
+    if (!canEdit) return;
+    const ok = await confirm({ title: t('useMyLocation'), message: t('useMyLocationConfirm').replace('{place}', place.name), confirmLabel: t('save'), cancelLabel: t('cancel') });
+    if (!ok) return;
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) { alert(t('locationNeeded')); return; }
+      let timer;
+      const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), 15000); });
+      let pos = await Promise.race([Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null), timeout]);
+      clearTimeout(timer);
+      if (!pos) pos = await Location.getLastKnownPositionAsync().catch(() => null);
+      if (!pos) { alert(t('locationUnavailable')); return; }
+      const latitude = Math.round(pos.coords.latitude * 1e6) / 1e6;
+      const longitude = Math.round(pos.coords.longitude * 1e6) / 1e6;
+      await updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, latitude, longitude }));
+      toast(t('locationSet'));
+    } catch (e) {
+      alert(t('locationUnavailable'), e?.message);
+    }
+  }
+
+  // Ibahagi ang itinerary bilang text (Messenger, Gmail, atbp.).
+  async function shareItinerary() {
+    setMenuOpen(false);
+    const base = tripRef.current || trip;
+    if (!base) return;
+    const all = base.sections.flatMap((s) => s.places);
+    const lines = [`${base.tripName || `${t('tripToPrefix')} ${base.destination || ''}`.trim()}`];
+    if (base.startDate) lines.push(formatDateRange(base.startDate, base.endDate));
+    buildDaysFromRange(base.startDate, base.endDate).forEach((day) => {
+      lines.push('', `${day.label}`);
+      const stops = sortStops(all.filter((p) => p.itineraryDate === day.key));
+      if (!stops.length) lines.push(`  ${t('noStopsYet')}`);
+      stops.forEach((p, i) => {
+        const cost = (p.costs || []).reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+        lines.push(`  ${i + 1}. ${p.scheduledTime ? `${p.scheduledTime} ` : ''}${p.name}${cost ? ` (${formatPeso(cost)})` : ''}`);
+        if (p.notes) lines.push(`     ${p.notes}`);
+      });
+    });
+    if (base.budgetTotal) lines.push('', `${t('totalBudgetLabel')}: ${formatPeso(base.budgetTotal)}`);
+    lines.push('', 'WanderWise · www.wanderwise.site');
+    try { await Share.share({ message: lines.join('\n') }); } catch { /* cancelled */ }
+  }
+
   async function optimizeDay(dayKey) {
     if (!canEdit || optimizing) return;
     const snapshot = tripRef.current;
     const stops = sortStops(snapshot.sections.flatMap((s) => s.places).filter((p) => p.itineraryDate === dayKey));
-    if (stops.length < 3) return;
+    if (stops.length < 2) return;
     if (stops.length > 12) { toast(t('optimizeLimit')); return; }
     if (stops.some((p) => !hasCoords(p))) { toast(t('locateAllStops')); return; }
     setOptimizing(dayKey);
     try {
+      // Dalawang lugar lang: walang aayusin, ipakita na lang ang daan.
+      if (stops.length === 2) { void showDayRoute(dayKey, stops); return; }
       const candidate = nearestRoute(stops);
-      if (candidate.every((p, i) => p.key === stops[i].key)) { toast(t('routeUnchanged')); return; }
+      if (candidate.every((p, i) => p.key === stops[i].key)) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops); return; }
       const duration = async (list) => {
         let total = 0;
         for (let i = 1; i < list.length; i++) {
@@ -624,12 +725,12 @@ function TripDetailContent({ id }) {
         return total;
       };
       const [before, after] = await Promise.all([duration(stops), duration(candidate)]);
-      if (after >= before) { toast(t('routeUnchanged')); return; }
+      if (after >= before) { toast(t('routeUnchanged')); void showDayRoute(dayKey, stops); return; }
       if (!(await confirm({ title: t('optimizeDay'), message: `${before} min → ${after} min`, confirmLabel: t('save'), cancelLabel: t('cancel') }))) return;
       if (tripRef.current !== snapshot) { toast(t('tryAgain')); return; }
       const order = Object.fromEntries(candidate.map((p, i) => [p.key, i]));
       const ok = await persist({ ...snapshot, sections: snapshot.sections.map((section) => ({ ...section, places: section.places.map((p) => p.key in order ? { ...p, itineraryOrder: order[p.key] } : p) })) });
-      if (ok) toast(t('routeUpdated'));
+      if (ok) { toast(t('routeUpdated')); void showDayRoute(dayKey, candidate); }
     } catch (e) { toast(e.message); }
     finally { setOptimizing(null); }
   }
@@ -801,6 +902,8 @@ function TripDetailContent({ id }) {
       onChangeNotes: (text) => updatePlaceLocal(sectionKey, place.key, { notes: text }),
       onEndNotes: () => persist(tripRef.current),
       onToggleVisited: () => toggleVisited(sectionKey, place.key),
+      onDirections: () => openDirections(place),
+      onUseMyLocation: () => setPlaceToMyLocation(sectionKey, place),
       onSetTime: (value) => updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, scheduledTime: value || '' })),
       onAddCost: (cost) => updatePlaceAndSave(sectionKey, place.key, (p) => ({ ...p, costs: [...(p.costs || []), cost] })),
       onRemoveCost: (costId) =>
@@ -975,6 +1078,17 @@ function TripDetailContent({ id }) {
               </TouchableOpacity>
             </View>
           ) : <Text style={styles.saveStatusText}>{t('viewOnlyNotice')}</Text>}
+
+          {canEdit && (
+            <View style={styles.undoRow}>
+              <TouchableOpacity accessibilityRole="button" disabled={!undoRef.current.length} onPress={undo} style={[styles.undoButton, !undoRef.current.length && styles.controlDisabled]}>
+                <IconLabel name="undo" textStyle={styles.undoText}>{t('undo')}</IconLabel>
+              </TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" disabled={!redoRef.current.length} onPress={redo} style={[styles.undoButton, !redoRef.current.length && styles.controlDisabled]}>
+                <IconLabel name="redo" textStyle={styles.undoText}>{t('redo')}</IconLabel>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {offline && (
             <View style={styles.offlineBanner}>
@@ -1237,7 +1351,7 @@ function TripDetailContent({ id }) {
                         <Text accessibilityRole="header" style={styles.dayHeading}>{day.label}</Text>
                         <Text style={styles.stopCount}>{stops.length} {t(stops.length === 1 ? 'itineraryStop' : 'itineraryStops')}</Text>
                       </View>
-                      {canEdit && stops.length >= 3 && <TouchableOpacity accessibilityRole="button" disabled={!!optimizing} onPress={() => optimizeDay(day.key)} style={{ paddingVertical: 12 }}><Text style={styles.linkAction}>{t(optimizing === day.key ? 'optimizing' : 'optimizeDay')}</Text></TouchableOpacity>}
+                      {canEdit && stops.length >= 2 && <TouchableOpacity accessibilityRole="button" disabled={!!optimizing} onPress={() => optimizeDay(day.key)} style={{ paddingVertical: 12 }}><Text style={styles.linkAction}>{t(optimizing === day.key ? 'optimizing' : 'optimizeDay')}</Text></TouchableOpacity>}
 
                       {stays.map((b) => (
                         <View key={`stay-${b.id}`} style={styles.stayBanner}>
@@ -1247,9 +1361,22 @@ function TripDetailContent({ id }) {
 
                       {stops.length === 0 && <Text style={styles.emptyTextSmall}>{t('noStopsYet')}</Text>}
 
+                      {dayRoute && dayRoute.dayKey === day.key && dayRoute.keys === stops.map((p) => p.key).join(',') && (
+                        <View style={{ marginBottom: 12 }}>
+                          <OsmMap
+                            markers={stops.filter(hasCoords).map((p) => ({ latitude: p.latitude, longitude: p.longitude, label: p.name, number: placeNumbers[p.key] }))}
+                            path={dayRoute.path}
+                            height={200}
+                          />
+                          <Text style={styles.mapCaption}>{stops.map((p) => `${placeNumbers[p.key]} ${p.name}`).join('  →  ')}</Text>
+                          <TouchableOpacity accessibilityRole="button" onPress={() => setDayRoute(null)} style={{ paddingVertical: 6 }}>
+                            <Text style={styles.linkAction}>{t('hideRoute')}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
                       {stops.map((place, index) => {
                         const isExpanded = expandedPlaceKey === place.key;
-                        const next = stops[index + 1];
                         return (
                           <View key={place.key}>
                             <View style={{ marginBottom: 10 }}>
@@ -1278,7 +1405,6 @@ function TripDetailContent({ id }) {
                                 </View>
                               )}
                             </View>
-                            {next && <DirectionsConnector from={place} to={next} destination={trip.destination} />}
                           </View>
                         );
                       })}
@@ -1499,6 +1625,10 @@ function TripDetailContent({ id }) {
               <AppIcon name="calendar" style={styles.sheetIcon} />
               <Text style={styles.sheetLabel}>{t('changeDates')}</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.sheetRow} onPress={shareItinerary}>
+              <AppIcon name="send" style={styles.sheetIcon} />
+              <Text style={styles.sheetLabel}>{t('shareItinerary')}</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.sheetRow} onPress={openHotels}>
               <AppIcon name="hotel" style={styles.sheetIcon} />
               <Text style={styles.sheetLabel}>{t('bookAHotel')}</Text>
@@ -1532,6 +1662,9 @@ function TripDetailContent({ id }) {
 }
 
 const styles = StyleSheet.create({
+  undoRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  undoButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: Colors.cream2 },
+  undoText: { fontFamily: 'Poppins_500Medium', fontSize: 12.5, color: Colors.brown900 },
   osmAttribution: {
     fontFamily: 'Poppins_400Regular', fontSize: 10.5, color: GREY_PLACEHOLDER,
     textAlign: 'center', marginTop: 8,

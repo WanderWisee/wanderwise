@@ -6,6 +6,7 @@ import { Colors } from '../constants/theme';
 import TimePickerSheet from './TimePickerSheet';
 import { useApp } from '../context/AppContext';
 import { formatPeso, keepMoney, MAX_MONEY } from '../utils/dates';
+import { hasCoords } from '../services/geoService';
 
 const GREY_PLACEHOLDER = '#A8A29B';
 // Naka-save sa English (gaya ng web); isinasalin lang kapag ipinapakita.
@@ -38,6 +39,8 @@ export default function PlaceCard({
   // 'edit' = puwedeng isulat ang notes (itinerary); 'view' = ipinapakita lang
   // (Where to go at ibang list — sa itinerary lang isinusulat ang notes).
   notesMode = 'edit',
+  onDirections = null,
+  onUseMyLocation = null,
 }) {
   const { t, formatTime } = useApp();
   const catLabel = (cat) => (COST_CATEGORY_KEYS[cat] ? t(COST_CATEGORY_KEYS[cat]) : cat);
@@ -50,7 +53,10 @@ export default function PlaceCard({
 
   const costs = place.costs || [];
   const totalCost = costs.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
-  const hasChips = place.visited || place.scheduledTime || totalCost > 0 || dayLabel;
+  // Wala sa OpenStreetMap (walang coordinates): walang pin, oras ng biyahe
+  // o daan hangga't hindi naitatakda ang lokasyon.
+  const noLocation = !hasCoords(place);
+  const hasChips = place.visited || place.scheduledTime || totalCost > 0 || dayLabel || noLocation;
 
   function resetCostForm() {
     setAddingCost(false);
@@ -99,6 +105,11 @@ export default function PlaceCard({
               {!!dayLabel && (
                 <View style={[styles.chip, styles.chipDay]}>
                   <IconLabel name="calendar" textStyle={[styles.chipText, styles.chipDayText]}>{dayLabel}</IconLabel>
+                </View>
+              )}
+              {noLocation && (
+                <View style={[styles.chip, styles.chipNoLocation]}>
+                  <IconLabel name="warning" textStyle={[styles.chipText, styles.chipNoLocationText]}>{t('noLocationTag')}</IconLabel>
                 </View>
               )}
               {place.visited && (
@@ -156,6 +167,21 @@ export default function PlaceCard({
               <Text style={styles.actionText}>₱ {t('addCost')}</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Directions (lahat, kahit view-only) at lokasyon para sa lugar na wala sa mapa */}
+          <View style={styles.actionsRow}>
+            {!!onDirections && (
+              <TouchableOpacity onPress={onDirections} style={styles.actionButton}>
+                <IconLabel name="car" textStyle={[styles.actionText, styles.actionTextActive]}>{noLocation ? t('findInGoogleMaps') : t('directions')}</IconLabel>
+              </TouchableOpacity>
+            )}
+            {noLocation && !readOnly && !!onUseMyLocation && (
+              <TouchableOpacity onPress={onUseMyLocation} style={styles.actionButton}>
+                <IconLabel name="pin" textStyle={styles.actionText}>{t('useMyLocation')}</IconLabel>
+              </TouchableOpacity>
+            )}
+          </View>
+          {noLocation && <Text style={styles.noLocationHint}>{t('noLocationHint')}</Text>}
 
           {costs.length > 0 && (
             <View style={styles.costList}>
@@ -235,6 +261,9 @@ export default function PlaceCard({
 }
 
 const styles = StyleSheet.create({
+  chipNoLocation: { backgroundColor: '#FDECEA' },
+  chipNoLocationText: { color: Colors.error },
+  noLocationHint: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: Colors.brown600, marginTop: -4, marginBottom: 10 },
   notesPreview: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: Colors.brown600, marginBottom: 10 },
   costError: { fontFamily: 'Poppins_500Medium', fontSize: 12, color: Colors.error, marginBottom: 8 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: Colors.line },

@@ -1,5 +1,6 @@
 export const translations = {
   en: {
+    approxLocation: "Approximate location (±{km} km). A computer has no GPS, so the browser only estimates where you are. For your exact location, use the WanderWise app on your phone.",
     remaining: "Remaining",
     overBudget: "Over budget by",
     // ===== Shared / Navbar =====
@@ -665,6 +666,7 @@ export const translations = {
   },
 
   fil: {
+    approxLocation: "Tantiyang lokasyon (±{km} km). Walang GPS ang computer, kaya hinuhulaan lang ng browser kung nasaan ka. Para sa eksaktong lokasyon, gamitin ang WanderWise app sa phone.",
     remaining: "Natitira",
     overBudget: "Lampas sa badyet nang",
     historyViewedByLabel: "Nakita na ni",

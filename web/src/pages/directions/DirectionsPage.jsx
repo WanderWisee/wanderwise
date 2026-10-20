@@ -129,14 +129,28 @@ export default function DirectionsPage() {
     if (origin) saveLastOrigin(origin);
   }, [origin]);
 
+  // Always ask for a fresh, high-accuracy reading (the saved one is only
+  // shown first so the map isn't empty). A laptop has no GPS, so the
+  // browser estimates from Wi-Fi/IP; `accuracy` (meters) says how rough.
+  const [accuracy, setAccuracy] = useState(passedOrigin?.accuracy ?? null);
   useEffect(() => {
-    if (origin || !navigator.geolocation) return;
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) => setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setAccuracy(pos.coords.accuracy);
+        setLocationError(null);
+        // Only move the route if the reading changed by more than ~30 m,
+        // so the same route isn't loaded twice.
+        setOrigin((cur) =>
+          cur && Math.abs(cur.lat - next.lat) < 0.0003 && Math.abs(cur.lng - next.lng) < 0.0003 ? cur : next
+        );
+      },
       (err) => {
         console.warn("Geolocation failed:", err.message);
-        setLocationError("directionsLocationDenied");
-      }
+        if (!origin) setLocationError("directionsLocationDenied");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [passedOrigin]);
@@ -309,6 +323,11 @@ export default function DirectionsPage() {
             >
               {locationError && <p style={{ color: "#a33", margin: 0 }}><Icon name="alert-triangle" /> {t(locationError)}</p>}
               {!locationError && !origin && <p style={{ margin: 0 }}>{t("directionsLoadingLocation")}</p>}
+              {origin && accuracy > 1000 && (
+                <p className="ww-route-note" style={{ margin: 0 }}>
+                  <Icon name="info" /> {t("approxLocation").replace("{km}", String(Math.round(accuracy / 1000)))}
+                </p>
+              )}
               {origin && loadingRoute && <p style={{ margin: 0 }}>{t("directionsLoadingRoute")}</p>}
               {origin && !loadingRoute && routeError && (
                 <p style={{ color: "#a33", margin: 0 }}><Icon name="alert-triangle" /> {t(routeError)}</p>
@@ -360,4 +379,4 @@ export default function DirectionsPage() {
       </main>
     </div>
   );
-}
+}

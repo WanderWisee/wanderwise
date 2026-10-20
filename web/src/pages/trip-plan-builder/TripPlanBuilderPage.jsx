@@ -1116,14 +1116,18 @@ export default function TripPlanBuilderPage() {
       console.warn("Geolocation not supported by this browser.");
       return;
     }
+    // High accuracy + always a fresh reading (same as Tour Day). A laptop
+    // has no GPS, so the browser only estimates from Wi-Fi/IP — the
+    // accuracy (meters) is kept so the page can say when it's approximate.
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
       },
       (err) => {
         console.warn("Geolocation failed:", err.message);
         setUserLocation(null);
-      }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   }, []);
 
@@ -2516,6 +2520,11 @@ ${dayHtml}${otherHtml}
             )}
             {activeRoute && !activeRoute.origin && (
               <p className="ww-route-note"><Icon name="info" /> {t("routeNoLocation")}</p>
+            )}
+            {activeRoute && activeRoute.origin && userLocation?.accuracy > 1000 && (
+              <p className="ww-route-note">
+                <Icon name="info" /> {t("approxLocation").replace("{km}", String(Math.round(userLocation.accuracy / 1000)))}
+              </p>
             )}
             {pinningPlace && (
               <div className="ww-pin-banner" role="status">

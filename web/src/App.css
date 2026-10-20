@@ -9885,15 +9885,16 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  margin-right: 2px;
+  /* Same as the mobile app: dark brown circle, mint number */
+  min-width: 26px;
+  height: 26px;
+  margin-right: 4px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #fc7e00;
-  color: #fff;
+  background: #331c08;
+  color: #89d4d0;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Trip map: note when the route can't start from the user's location. */
